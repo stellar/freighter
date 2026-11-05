@@ -9,6 +9,7 @@ import {
 } from "@shared/api/helpers/userLinkConsent";
 import { SecretSourceType } from "@shared/api/types";
 import type { DataStorageAccess } from "background/helpers/dataStorageAccess";
+import { getPinnedSourceId } from "background/helpers/secret-sources";
 import { getSigningIdentity } from "background/helpers/signing-identity";
 import {
   getWalletSources,
@@ -29,7 +30,11 @@ jest.mock("background/helpers/signing-identity", () => ({
 jest.mock("background/helpers/wallet-sources", () => ({
   getWalletSources: jest.fn(),
 }));
+jest.mock("background/helpers/secret-sources", () => ({
+  getPinnedSourceId: jest.fn(),
+}));
 
+const mockGetPinnedSourceId = getPinnedSourceId as jest.Mock;
 const mockGetSigningIdentity = getSigningIdentity as jest.Mock;
 const mockGetWalletSources = getWalletSources as jest.Mock;
 
@@ -80,6 +85,7 @@ const makeWallet = (extra: number) => {
     sourceId: pinned.source.id,
     keypair: pinned.keypair,
   });
+  mockGetPinnedSourceId.mockResolvedValue(pinned.source.id);
   mockGetWalletSources.mockImplementation(async () => ({
     sources: [...sources],
     signers,
@@ -261,6 +267,20 @@ describe("linkWalletSources", () => {
     await linkWalletSources({ sessionStore, localStore: store, fetchImpl });
 
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("sends nothing and stores nothing when the signer is not the pin", async () => {
+    makeWallet(2);
+    // The pinned source did not derive this unlock: getSigningIdentity fell
+    // back to another held source.
+    mockGetPinnedSourceId.mockResolvedValue("ab".repeat(32));
+    const { store, data } = makeLocalStore();
+    const fetchImpl = server();
+
+    await linkWalletSources({ sessionStore, localStore: store, fetchImpl });
+
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(LINK_STATUS_ID in data).toBe(false);
   });
 
   it("coalesces overlapping calls into one request plus one rerun", async () => {

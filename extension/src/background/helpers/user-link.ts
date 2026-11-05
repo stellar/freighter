@@ -8,6 +8,7 @@ import {
   UserLinkBody,
 } from "@shared/api/helpers/userLinkConsent";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
+import { getPinnedSourceId } from "background/helpers/secret-sources";
 import {
   getSigningIdentity,
   SigningIdentity,
@@ -129,7 +130,8 @@ export const buildUserLinkBodies = ({
 /**
  * Resolves the pinned signer and the held sources, then groups the unsettled
  * ones into batches. Null when the session holds no signer (locked or
- * hardware-only), the same as getSigningIdentity.
+ * hardware-only), the same as getSigningIdentity, and also when the signer
+ * is not the pinned source.
  *
  * Nothing is signed yet. Sign each batch (signUserLinkBody) right before its
  * call, under the iat of the clock reading its JWT is built from
@@ -152,6 +154,16 @@ export const buildUserLinkRequest = async ({
 } | null> => {
   const identity = await getSigningIdentity({ sessionStore, localStore });
   if (!identity) {
+    return null;
+  }
+  // Link only as the pin. getSigningIdentity falls back to another held
+  // source when the pinned one did not derive this unlock, and a link signed
+  // by that source roots every held source under its user for good: the
+  // server never moves a claimed source or changes a user's canonical id.
+  // No pin here means getSigningIdentity's pin write failed. Skip the pass
+  // either way; the next trigger retries.
+  const pinned = await getPinnedSourceId({ localStore });
+  if (pinned !== identity.sourceId) {
     return null;
   }
   const { sources, signers } = await getWalletSources({

@@ -16,6 +16,7 @@ import {
   UserLinkBody,
 } from "@shared/api/helpers/userLinkConsent";
 import { SecretSourceType } from "@shared/api/types";
+import { getPinnedSourceId } from "background/helpers/secret-sources";
 import { getSigningIdentity } from "background/helpers/signing-identity";
 import {
   getWalletSources,
@@ -36,6 +37,11 @@ jest.mock("background/helpers/wallet-sources", () => ({
   getWalletSources: jest.fn(),
 }));
 
+jest.mock("background/helpers/secret-sources", () => ({
+  getPinnedSourceId: jest.fn(),
+}));
+
+const mockGetPinnedSourceId = getPinnedSourceId as jest.Mock;
 const mockGetSigningIdentity = getSigningIdentity as jest.Mock;
 const mockGetWalletSources = getWalletSources as jest.Mock;
 
@@ -267,9 +273,30 @@ describe("buildUserLinkRequest", () => {
     expect(mockGetWalletSources).not.toHaveBeenCalled();
   });
 
+  it("returns null when the signer is a fallback, not the pin", async () => {
+    const wallet = await makeWallet();
+    // The pinned source did not derive this unlock, so getSigningIdentity
+    // fell back to the first held source.
+    mockGetSigningIdentity.mockResolvedValue(wallet.identity);
+    mockGetPinnedSourceId.mockResolvedValue("ab".repeat(32));
+
+    expect(await buildUserLinkRequest(stores)).toBeNull();
+    expect(mockGetWalletSources).not.toHaveBeenCalled();
+  });
+
+  it("returns null when no pin is set", async () => {
+    const wallet = await makeWallet();
+    mockGetSigningIdentity.mockResolvedValue(wallet.identity);
+    mockGetPinnedSourceId.mockResolvedValue(null);
+
+    expect(await buildUserLinkRequest(stores)).toBeNull();
+    expect(mockGetWalletSources).not.toHaveBeenCalled();
+  });
+
   it("returns null when the session locks after the identity resolves", async () => {
     const wallet = await makeWallet();
     mockGetSigningIdentity.mockResolvedValue(wallet.identity);
+    mockGetPinnedSourceId.mockResolvedValue(wallet.identity.sourceId);
     // A lock landed during getSigningIdentity's pin read: the sources are gone.
     mockGetWalletSources.mockResolvedValue({ sources: [], signers: new Map() });
 
@@ -280,6 +307,7 @@ describe("buildUserLinkRequest", () => {
     const wallet = await makeWallet();
     const many = makeManySources(200);
     mockGetSigningIdentity.mockResolvedValue(wallet.identity);
+    mockGetPinnedSourceId.mockResolvedValue(wallet.identity.sourceId);
     mockGetWalletSources.mockResolvedValue({
       sources: [...wallet.sources, ...many.sources],
       signers: new Map([...wallet.signers, ...many.signers]),
