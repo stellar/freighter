@@ -93,13 +93,7 @@ export const Account = () => {
   const previousAccountBalancesRef = useRef<AccountBalances | null>(null);
   const sorobanErrorShownRef = useRef(false);
 
-  // Hold the first load until the Amplitude flags have settled. `useGetBalances`
-  // reads `balancesV2Selector` at call time, so firing before the fetch resolves
-  // would read the hardcoded default and send an enrolled user to the v1
-  // endpoint for the first request of every popup session (#3032).
-  // `isInitialized` is set on failure too, so Amplitude being down delays this
-  // by one round trip rather than wedging the screen. `accountData` sits in
-  // `RequestState.IDLE` meanwhile, which already renders as loading.
+  // The balances fetch reads feature flags, so wait until they've loaded.
   useEffect(() => {
     if (!isRemoteConfigInitialized) {
       return;

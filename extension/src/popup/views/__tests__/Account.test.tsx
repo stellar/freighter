@@ -846,12 +846,6 @@ describe("Account view", () => {
     });
   });
 
-  // #3032: `useGetBalances` reads the v2 flag at call time, so a fetch that
-  // starts before the Amplitude round trip lands reads the hardcoded default
-  // and sends an enrolled user to the wrong endpoint for the first request of
-  // the session. The guard is "no request at all until the flags settle" —
-  // asserting on the endpoint would pass for the wrong reason, since the
-  // default happens to match v1.
   it("does not fetch balances until the remote config flags have settled", async () => {
     const balancesSpy = jest
       .spyOn(ApiInternal, "getAccountBalances")
@@ -885,14 +879,11 @@ describe("Account view", () => {
       </Wrapper>,
     );
 
-    // Give the mount effects a tick; the fetch must still not have gone out.
     await act(async () => {
       await Promise.resolve();
     });
     expect(balancesSpy).not.toHaveBeenCalled();
 
-    // Flags land (this is also the shape the rejected path produces, which
-    // sets `isInitialized` so a dead Amplitude can't wedge the screen).
     await act(async () => {
       getTestStore()?.dispatch({
         type: fetchFeatureFlags.fulfilled.type,
