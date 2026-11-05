@@ -12,6 +12,7 @@ import { deriveAuthKeypair } from "@shared/api/helpers/deriveAuthKeypair";
 import { SecretSourceType } from "@shared/api/types";
 import { sessionSlice, timeoutAccountAccess } from "background/ducks/session";
 import { getAccountProvenance } from "background/helpers/account-provenance";
+import { flushSessionStore } from "background/store";
 import {
   ACCOUNT_PROVENANCE_ID,
   KEY_ID_LIST,
@@ -386,6 +387,29 @@ describe("getWalletSources", () => {
       const { sources, signers } = await inFlight;
       expect(sources).toEqual([]);
       expect(signers.size).toBe(0);
+    });
+
+    it("does not keep a derivation that starts while the lock is flushing", async () => {
+      const stores = await twoPhraseWallet(importedSecret);
+      // A message whose store was built before the lock still holds the hash key.
+      const staleSessionStore = configureStore({
+        reducer: combineReducers({ session: sessionSlice.reducer }),
+        preloadedState: stores.sessionStore.getState(),
+      });
+      (flushSessionStore as jest.Mock).mockImplementationOnce(async () => {
+        await getWalletSources({
+          sessionStore: staleSessionStore,
+          localStore: stores.localStore,
+        });
+      });
+
+      await clearSession(stores);
+
+      // Re-unlock under the same hash key: a stale entry would be served here.
+      mockDeriveAuthKeypair.mockClear();
+      await getWalletSources(await twoPhraseWallet(importedSecret));
+
+      expect(mockDeriveAuthKeypair).toHaveBeenCalledTimes(2);
     });
 
     it("is dropped by clearSession", async () => {

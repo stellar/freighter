@@ -42,10 +42,11 @@ export const signOut = async ({
   // dispatch, `buildHasPrivateKeySelector`'s HW branch would report
   // the wallet UNLOCKED for HW users immediately after sign-out.
   sessionStore.dispatch(lockHardwareWallet());
-  // The derived source signers must not outlive the session.
-  clearCachedWalletSources();
   await flushSessionStore(sessionStore);
   await localStore.remove(TEMPORARY_STORE_ID);
+  // The derived source signers must not outlive the session. Cleared after
+  // the keys are gone, so no derivation can start in between and re-cache them.
+  clearCachedWalletSources();
   await broadcastSessionState(SERVICE_TYPES.SESSION_LOCKED);
 
   return {

@@ -416,6 +416,11 @@ export const getMnemonic = async ({
   The value is the derivation's promise, so concurrent callers share one
   derivation. The generation is bumped on every lock, so a derivation that
   started before the lock cannot cache its signers after it.
+
+  Both lock paths clear it last, after the temporary store is removed. Until
+  then a message whose store was built before the lock still holds the hash
+  key and can decrypt every key, so a derivation that started after an
+  earlier clear would read the bumped generation and cache its signers.
 */
 let walletSourcesCache: {
   key: string;
@@ -468,7 +473,8 @@ export const clearSession = async ({
   // `localStore.isHardwareWalletActive` and is unaffected — so without
   // this dispatch the idle alarm would be a no-op on HW-only sessions.
   sessionStore.dispatch(lockHardwareWallet());
-  clearCachedWalletSources();
   await flushSessionStore(sessionStore);
   await localStore.remove(TEMPORARY_STORE_ID);
+  // Last, once the keys are gone: see walletSourcesCache.
+  clearCachedWalletSources();
 };

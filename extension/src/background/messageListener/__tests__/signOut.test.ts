@@ -137,4 +137,32 @@ describe("signOut handler", () => {
 
     expect(getCachedWalletSources("cache-key")).toBeNull();
   });
+
+  // A request that starts after the cache is cleared but before the keys are
+  // removed still sees an unlocked session and can cache its signers.
+  it("drops sources cached while the lock is flushing", async () => {
+    mockFlushSessionStore.mockImplementationOnce(async () => {
+      setCachedWalletSources(
+        "late-key",
+        Promise.resolve({ sources: [], signers: new Map() }),
+        getWalletSourcesGeneration(),
+      );
+    });
+
+    await signOut({
+      localStore: {
+        getItem: jest.fn().mockResolvedValue(""),
+        remove: jest.fn().mockResolvedValue(undefined),
+      } as any,
+      sessionStore: {
+        dispatch: jest.fn(),
+        getState: jest.fn().mockReturnValue({ session: { publicKey: "" } }),
+      } as any,
+      sessionTimer: {
+        stopSession: jest.fn().mockResolvedValue(undefined),
+      } as any,
+    });
+
+    expect(getCachedWalletSources("late-key")).toBeNull();
+  });
 });
