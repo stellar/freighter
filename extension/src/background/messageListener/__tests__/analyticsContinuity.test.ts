@@ -170,7 +170,7 @@ const analyticsId = () => getAnalyticsUserId(mockSessionStore, mockDataStorage);
 const expectSameId = async ({ unlocked }: { unlocked: boolean }) => {
   expect(await analyticsId()).toEqual({
     analyticsUserId: PRE_UPGRADE_METRICS_USER_ID,
-    confirmed: true,
+    isConfirmed: true,
   });
   expect(await mockDataStorage.getItem(PINNED_SOURCE_ID)).toBe(
     PRE_UPGRADE_METRICS_USER_ID,
@@ -203,7 +203,7 @@ describe("analytics id continuity after an upgrade (#70)", () => {
     // `metrics_user_id` stays in place until the first unlock.
     expect(await analyticsId()).toEqual({
       analyticsUserId: null,
-      confirmed: false,
+      isConfirmed: false,
     });
   });
 
