@@ -40,6 +40,12 @@ export interface LinkWalletSourcesParams {
 
 const LINK_PATH = "/user/link";
 
+// The server wraps every body in `data`. Fields stay unknown so idsOf does
+// the narrowing.
+interface UserLinkResponse {
+  data?: { sources?: unknown; conflicts?: unknown; userId?: unknown };
+}
+
 const idsOf = (list: unknown, key?: "id"): Set<string> => {
   const ids = new Set<string>();
   if (!Array.isArray(list)) {
@@ -91,10 +97,9 @@ const sendBody = async ({
     return false;
   }
 
-  // The server wraps every body in `data`.
-  const parsed = (await res.json().catch(() => null)) as {
-    data?: { sources?: unknown; conflicts?: unknown };
-  } | null;
+  const parsed = (await res
+    .json()
+    .catch(() => null)) as UserLinkResponse | null;
   const members = idsOf(parsed?.data?.sources, "id");
   const conflicts = idsOf(parsed?.data?.conflicts);
   const sent = body.sources.map(({ id }) => id);
