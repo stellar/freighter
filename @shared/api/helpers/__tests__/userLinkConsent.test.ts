@@ -4,7 +4,10 @@ import { Keypair, xdr } from "stellar-sdk";
 import { SecretSourceType } from "@shared/api/types";
 
 import { buildAuthJwt, issuedAtSeconds } from "../buildAuthJwt";
-import { LINK_PROOF_DOMAIN, LINK_PROOF_VECTORS } from "../linkProofVectors";
+import {
+  LINK_PROOF_DOMAIN,
+  LINK_PROOF_VECTORS,
+} from "./fixtures/linkProofVectors";
 import {
   buildLinkConsentMessage,
   signLinkConsent,

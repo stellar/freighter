@@ -11,8 +11,8 @@ import { SecretSourceType } from "@shared/api/types";
   be proven, not asserted").
 
   The format is a cross-platform contract pinned by the backend's
-  link_proof_vectors.json (see linkProofVectors.ts). A change needs a new
-  domain prefix on both sides, never an edit here.
+  link_proof_vectors.json (see __tests__/fixtures/linkProofVectors.ts). A
+  change needs a new domain prefix on both sides, never an edit here.
 */
 
 export const USER_LINK_CONSENT_DOMAIN = "freighter-user-link-v2";
