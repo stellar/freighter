@@ -176,6 +176,15 @@ describe("SwapAmount live receive-amount quote", () => {
       routes: [lifiRoute, classicRoute],
       unavailable: [],
     });
+    expect(transactionData.swapQuoteKey).toEqual({
+      account: "G123",
+      network: "PUBLIC",
+      networkUrl: MAINNET_NETWORK_DETAILS.networkUrl,
+      mode: "send",
+      sourceAsset: "native",
+      destAsset: AQUA,
+      amount: "5",
+    });
     expect(
       within(screen.getByTestId("swap-receive-card")).getByDisplayValue("42"),
     ).toBeInTheDocument();
@@ -228,6 +237,57 @@ describe("SwapAmount live receive-amount quote", () => {
       expect(cta()).toBeDisabled();
     },
   );
+
+  it("shows swaps as temporarily unavailable when the backend is unreachable", async () => {
+    fetchBackendV2.mockRejectedValue(new TypeError("Failed to fetch"));
+    renderSwapAmount({ amount: "5", destinationAsset: AQUA });
+
+    await settle();
+
+    expect(cta()).toHaveTextContent("Swaps are temporarily unavailable");
+  });
+
+  it("shows swaps as temporarily unavailable when classic errored", async () => {
+    fetchBackendV2.mockResolvedValue({
+      status: 200,
+      body: {
+        data: {
+          routes: [lifiRoute],
+          unavailable: [{ source: "classic", reason: "timeout" }],
+        },
+      },
+    });
+    renderSwapAmount({ amount: "5", destinationAsset: AQUA });
+
+    await settle();
+
+    expect(cta()).toHaveTextContent("Swaps are temporarily unavailable");
+  });
+
+  it("drops a quote that lands after the screen unmounts", async () => {
+    let resolve: (v: unknown) => void = () => {};
+    fetchBackendV2.mockReturnValue(
+      new Promise((r) => {
+        resolve = r;
+      }),
+    );
+    const { unmount } = renderSwapAmount({
+      amount: "5",
+      destinationAsset: AQUA,
+    });
+    await settle();
+    expect(fetchBackendV2).toHaveBeenCalledTimes(1);
+
+    unmount();
+    await act(async () => {
+      resolve(quotesReply([classicRoute]));
+    });
+
+    const { transactionData } =
+      getTestStore()!.getState().transactionSubmission;
+    expect(transactionData.destinationAmount).toBe("0");
+    expect(transactionData.swapQuotes).toBeNull();
+  });
 
   it("clears the unavailable state once a quote succeeds", async () => {
     fetchBackendV2.mockResolvedValueOnce({ status: 503, body: {} });

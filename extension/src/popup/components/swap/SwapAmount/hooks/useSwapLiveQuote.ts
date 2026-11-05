@@ -90,7 +90,7 @@ export const useSwapLiveQuote = ({
         } = liveQuoteArgsRef.current;
         (async () => {
           try {
-            const { route, quotes } = await getSwapQuote({
+            const { route, quotes, key } = await getSwapQuote({
               mode: "send",
               amount: quoteAmount,
               sourceAsset: src,
@@ -110,6 +110,7 @@ export const useSwapLiveQuote = ({
                 path: route?.path ?? [],
                 destinationAmount: route?.destinationAmount ?? "0",
                 quotes,
+                key,
               }),
             );
           } catch (e) {
@@ -129,7 +130,13 @@ export const useSwapLiveQuote = ({
     [],
   );
 
-  useEffect(() => () => debouncedQuote.cancel(), [debouncedQuote]);
+  useEffect(
+    () => () => {
+      debouncedQuote.cancel();
+      liveQuoteReqRef.current += 1;
+    },
+    [debouncedQuote],
+  );
 
   useEffect(() => {
     if (

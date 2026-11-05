@@ -3,10 +3,13 @@ import {
   NetworkDetails,
 } from "@shared/constants/stellar";
 import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
+import { captureException } from "@sentry/browser";
 import * as GetSwapQuotes from "@shared/api/helpers/getSwapQuotes";
 import * as HorizonGetBestPath from "popup/helpers/horizonGetBestPath";
 
 import { getSwapQuote } from "../swapQuote";
+
+jest.mock("@sentry/browser", () => ({ captureException: jest.fn() }));
 
 const ACCOUNT = "GCXRLIZUQNZ3YYJDGX6Z445P7FG5WXT7UILBO5CFIYYM7Z7YTIOELC6O";
 const USDC = "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
@@ -63,7 +66,10 @@ describe("getSwapQuote", () => {
       "horizonGetBestReceivePath",
     );
   });
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => {
+    jest.restoreAllMocks();
+    jest.clearAllMocks();
+  });
 
   describe("on a standard network", () => {
     it("asks the backend, not Horizon, with backend asset ids", async () => {
@@ -131,6 +137,7 @@ describe("getSwapQuote", () => {
           path: [AQUA],
         },
         quotes,
+        key: expect.any(Object),
       });
     });
 
@@ -177,7 +184,45 @@ describe("getSwapQuote", () => {
         publicKey: ACCOUNT,
       });
 
-      expect(result).toEqual({ route: null, quotes });
+      expect(result).toEqual({ route: null, quotes, key: expect.any(Object) });
+    });
+  });
+
+  describe("when classic can't quote", () => {
+    const quoteWith = (unavailable: { source: string; reason: string }[]) => {
+      getSwapQuotes.mockResolvedValue({ routes: [lifiRoute], unavailable });
+      return getSwapQuote({
+        mode: "send",
+        amount: "100",
+        sourceAsset: "native",
+        destAsset: USDC,
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        publicKey: ACCOUNT,
+      });
+    };
+
+    it.each(["error", "timeout", "rate_limited"])(
+      "reports classic %s as swaps unavailable, to Sentry",
+      async (reason) => {
+        const err = await quoteWith([{ source: "classic", reason }]).catch(
+          (e) => e,
+        );
+
+        expect(err).toBeInstanceOf(GetSwapQuotes.SwapQuotesError);
+        expect(err.kind).toBe("unavailable");
+        expect(captureException).toHaveBeenCalledTimes(1);
+      },
+    );
+
+    it.each([
+      [[{ source: "classic", reason: "no_route" }]],
+      [[{ source: "classic", reason: "insufficient_balance" }]],
+      [[{ source: "lifi", reason: "error" }]],
+      [[]],
+    ])("has no route for unavailable %j", async (unavailable) => {
+      const result = await quoteWith(unavailable);
+
+      expect(result.route).toBeNull();
     });
   });
 
@@ -219,6 +264,7 @@ describe("getSwapQuote", () => {
           path: [AQUA, "native"],
         },
         quotes: null,
+        key: expect.any(Object),
       });
     });
 
@@ -263,7 +309,11 @@ describe("getSwapQuote", () => {
         publicKey: ACCOUNT,
       });
 
-      expect(result).toEqual({ route: null, quotes: null });
+      expect(result).toEqual({
+        route: null,
+        quotes: null,
+        key: expect.any(Object),
+      });
     });
   });
 });

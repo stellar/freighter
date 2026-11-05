@@ -31,11 +31,19 @@ export const getSwapQuotes = async ({
   toAsset: string;
   amount: string;
 }): Promise<SwapQuotesResponse> => {
-  const { status, body } = await fetchBackendV2({
-    method: "POST",
-    path: `/swap/quotes?network=${network}`,
-    body: JSON.stringify({ account, mode, fromAsset, toAsset, amount }),
-  });
+  let status: number;
+  let body: unknown;
+  try {
+    ({ status, body } = await fetchBackendV2({
+      method: "POST",
+      path: `/swap/quotes?network=${network}`,
+      body: JSON.stringify({ account, mode, fromAsset, toAsset, amount }),
+    }));
+  } catch (e) {
+    const message = `Failed to reach swap quotes - ${e instanceof Error ? e.message : String(e)}`;
+    captureException(message);
+    throw new SwapQuotesError("unavailable", message);
+  }
 
   const data = (body as { data?: SwapQuotesResponse } | null)?.data;
   if (status === 200 && Array.isArray(data?.routes)) {

@@ -1,6 +1,11 @@
+import { captureException } from "@sentry/browser";
+import BigNumber from "bignumber.js";
 import { Horizon, StrKey } from "stellar-sdk";
 
-import { getSwapQuotes } from "@shared/api/helpers/getSwapQuotes";
+import {
+  getSwapQuotes,
+  SwapQuotesError,
+} from "@shared/api/helpers/getSwapQuotes";
 import {
   SwapQuoteMode,
   SwapQuotesResponse,
@@ -25,12 +30,67 @@ export interface SwapQuoteRoute {
   path: string[];
 }
 
+/** The request a quote answered; a stored quote is only reused for an equal key. */
+export interface SwapQuoteKey {
+  account: string;
+  network: string;
+  networkUrl: string;
+  mode: SwapQuoteMode;
+  sourceAsset: string;
+  destAsset: string;
+  amount: string;
+}
+
 export interface SwapQuoteResult {
   /** null = no route. */
   route: SwapQuoteRoute | null;
   /** The full backend response; null on custom networks (Horizon). */
   quotes: SwapQuotesResponse | null;
+  key: SwapQuoteKey;
 }
+
+interface SwapQuoteParams {
+  mode: SwapQuoteMode;
+  amount: string;
+  sourceAsset: string;
+  destAsset: string;
+  networkDetails: NetworkDetails;
+  publicKey: string;
+}
+
+export const getSwapQuoteKey = ({
+  mode,
+  amount,
+  sourceAsset,
+  destAsset,
+  networkDetails,
+  publicKey,
+}: SwapQuoteParams): SwapQuoteKey => ({
+  account: publicKey,
+  network: networkDetails.network,
+  networkUrl: networkDetails.networkUrl,
+  mode,
+  sourceAsset,
+  destAsset,
+  amount: cleanAmount(amount),
+});
+
+export const isSameSwapQuoteKey = (
+  a: SwapQuoteKey | null | undefined,
+  b: SwapQuoteKey,
+) =>
+  !!a &&
+  a.account === b.account &&
+  a.network === b.network &&
+  a.networkUrl === b.networkUrl &&
+  a.mode === b.mode &&
+  a.sourceAsset === b.sourceAsset &&
+  a.destAsset === b.destAsset &&
+  new BigNumber(a.amount).isEqualTo(b.amount);
+
+// Classic reasons that mean the source is down rather than that the pair has
+// no route.
+const CLASSIC_OUTAGE_REASONS = ["error", "timeout", "rate_limited"];
 
 // The client still builds a classic path payment itself, so only the classic
 // route is usable, even when another source quotes better.
@@ -83,21 +143,12 @@ const routeFromHorizon = (
  * `amount` is sold in "send" mode and received in "receive" mode. Custom
  * networks use Horizon directly because the backend can't reach them.
  */
-export const getSwapQuote = async ({
-  mode,
-  amount,
-  sourceAsset,
-  destAsset,
-  networkDetails,
-  publicKey,
-}: {
-  mode: SwapQuoteMode;
-  amount: string;
-  sourceAsset: string;
-  destAsset: string;
-  networkDetails: NetworkDetails;
-  publicKey: string;
-}): Promise<SwapQuoteResult> => {
+export const getSwapQuote = async (
+  params: SwapQuoteParams,
+): Promise<SwapQuoteResult> => {
+  const { mode, amount, sourceAsset, destAsset, networkDetails, publicKey } =
+    params;
+  const key = getSwapQuoteKey(params);
   if (isCustomNetwork(networkDetails)) {
     const record =
       mode === "send"
@@ -113,7 +164,7 @@ export const getSwapQuote = async ({
             destAsset,
             networkDetails,
           });
-    return { route: routeFromHorizon(record), quotes: null };
+    return { route: routeFromHorizon(record), quotes: null, key };
   }
 
   const quotes = await getSwapQuotes({
@@ -125,5 +176,16 @@ export const getSwapQuote = async ({
     amount: cleanAmount(amount),
   });
   const route = pickSwapRoute(quotes);
-  return { route: route ? routeFromBackend(route) : null, quotes };
+  if (!route) {
+    const outage = quotes.unavailable.find(
+      (u) =>
+        u.source === "classic" && CLASSIC_OUTAGE_REASONS.includes(u.reason),
+    );
+    if (outage) {
+      const message = `Swap quotes: classic source ${outage.reason}`;
+      captureException(message);
+      throw new SwapQuotesError("unavailable", message);
+    }
+  }
+  return { route: route ? routeFromBackend(route) : null, quotes, key };
 };

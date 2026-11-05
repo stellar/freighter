@@ -26,6 +26,7 @@ import {
 } from "@shared/api/types";
 
 import { SwapQuotesResponse } from "@shared/api/types/backend-api";
+import type { SwapQuoteKey } from "popup/helpers/swapQuote";
 import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 import { isCustomNetwork } from "@shared/helpers/stellar";
@@ -542,6 +543,7 @@ interface TransactionData {
   // The backend response behind `path`/`destinationAmount`; null on custom
   // networks and whenever the quote is cleared.
   swapQuotes: SwapQuotesResponse | null;
+  swapQuoteKey: SwapQuoteKey | null;
 }
 
 interface HardwareWalletData {
@@ -607,6 +609,7 @@ export const initialState: InitialState = {
     manualTransactionFee: null,
     swapSource: null,
     swapQuotes: null,
+    swapQuoteKey: null,
   },
   transactionSimulation: {
     response: null,
@@ -752,12 +755,14 @@ const transactionSubmissionSlice = createSlice({
         path: string[];
         destinationAmount: string;
         quotes?: SwapQuotesResponse | null;
+        key?: SwapQuoteKey | null;
       }>,
     ) => {
       state.transactionData.path = action.payload.path;
       state.transactionData.destinationAmount =
         action.payload.destinationAmount;
       state.transactionData.swapQuotes = action.payload.quotes ?? null;
+      state.transactionData.swapQuoteKey = action.payload.key ?? null;
     },
     saveDestinationTokenDetails: (
       state,
@@ -777,6 +782,9 @@ const transactionSubmissionSlice = createSlice({
       // instead of dead-ending in SubmitFail. These op codes only arise from
       // swap path payments, so this is a no-op for sends.
       state.isSwapQuoteExpired = isQuoteExpiredError(action.payload);
+      if (state.isSwapQuoteExpired) {
+        state.transactionData.swapQuoteKey = null;
+      }
     });
     builder.addCase(submitFreighterTransaction.fulfilled, (state, action) => {
       state.submitStatus = ActionStatus.SUCCESS;

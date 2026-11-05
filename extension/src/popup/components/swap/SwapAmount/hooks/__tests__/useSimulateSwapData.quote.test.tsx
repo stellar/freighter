@@ -48,7 +48,30 @@ const quotes = {
   unavailable: [],
 };
 
-const renderSimulate = () =>
+const storedKey = {
+  account: PUBLIC_KEY,
+  network: "PUBLIC",
+  networkUrl: MAINNET_NETWORK_DETAILS.networkUrl,
+  mode: "send",
+  sourceAsset: "native",
+  destAsset: USDC,
+  amount: "10",
+};
+
+const storedQuote = {
+  destinationAmount: "1.6",
+  path: [] as string[],
+  swapQuotes: quotes,
+  swapQuoteKey: storedKey,
+};
+
+const renderSimulate = (
+  stored: Record<string, unknown> = {
+    // No live quote yet: the hook must fetch one.
+    destinationAmount: "",
+    path: [],
+  },
+) =>
   renderHook(
     () =>
       useSimulateTxData({
@@ -74,9 +97,7 @@ const renderSimulate = () =>
               ...transactionSubmissionInitialState,
               transactionData: {
                 ...transactionSubmissionInitialState.transactionData,
-                // No live quote yet: the hook must fetch one.
-                destinationAmount: "",
-                path: [],
+                ...stored,
               },
             },
           }}
@@ -157,5 +178,70 @@ describe("useSimulateTxData quote when no live quote exists", () => {
 
     expect(fetchBackendV2).toHaveBeenCalled();
     expect(result.current.state.error).toBe("No path found for swap.");
+  });
+
+  describe("with a stored live quote", () => {
+    const opOf = (payload: any) =>
+      (
+        TransactionBuilder.fromXDR(
+          payload.transactionXdr,
+          MAINNET_NETWORK_DETAILS.networkPassphrase,
+        ) as any
+      ).operations[0];
+
+    it("reuses it when it answered these exact inputs", async () => {
+      const { result } = renderSimulate(storedQuote);
+
+      let payload: any;
+      await act(async () => {
+        payload = await result.current.fetchData({ amount: "10" });
+      });
+
+      expect(fetchBackendV2).not.toHaveBeenCalled();
+      // 1.6 less 1% slippage
+      expect(opOf(payload).destMin).toBe("1.5840000");
+    });
+
+    it("re-quotes when the amount changed before the debounced quote landed", async () => {
+      fetchBackendV2.mockResolvedValue({ status: 200, body: { data: quotes } });
+      const { result } = renderSimulate(storedQuote);
+
+      await act(async () => {
+        await result.current.fetchData({ amount: "100" });
+      });
+
+      expect(fetchBackendV2).toHaveBeenCalledTimes(1);
+      expect(JSON.parse(fetchBackendV2.mock.calls[0][0].body).amount).toBe(
+        "100",
+      );
+    });
+
+    it("re-quotes when the stored quote was for another destination", async () => {
+      fetchBackendV2.mockResolvedValue({ status: 200, body: { data: quotes } });
+      const { result } = renderSimulate({
+        ...storedQuote,
+        swapQuoteKey: { ...storedKey, destAsset: AQUA },
+      });
+
+      await act(async () => {
+        await result.current.fetchData({ amount: "10" });
+      });
+
+      expect(fetchBackendV2).toHaveBeenCalledTimes(1);
+    });
+
+    it("re-quotes when the stored quote has no key (expired at submit)", async () => {
+      fetchBackendV2.mockResolvedValue({ status: 200, body: { data: quotes } });
+      const { result } = renderSimulate({ ...storedQuote, swapQuoteKey: null });
+
+      let payload: any;
+      await act(async () => {
+        payload = await result.current.fetchData({ amount: "10" });
+      });
+
+      expect(fetchBackendV2).toHaveBeenCalledTimes(1);
+      // fresh quote's 1.5, not the stored 1.6
+      expect(opOf(payload).destMin).toBe("1.4850000");
+    });
   });
 });

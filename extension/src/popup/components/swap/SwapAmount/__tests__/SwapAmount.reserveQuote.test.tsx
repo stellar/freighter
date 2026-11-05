@@ -7,6 +7,7 @@ import {
   act,
 } from "@testing-library/react";
 import BigNumber from "bignumber.js";
+import { captureException } from "@sentry/browser";
 
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
@@ -20,6 +21,11 @@ import * as UseSimulateSwapData from "popup/components/swap/SwapAmount/hooks/use
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
 import * as HorizonGetBestPath from "popup/helpers/horizonGetBestPath";
 import * as XlmReserve from "popup/helpers/xlmReserve";
+
+jest.mock("@sentry/browser", () => ({
+  ...jest.requireActual("@sentry/browser"),
+  captureException: jest.fn(),
+}));
 
 const USDC_ISSUER = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
 const USDC = `USDC:${USDC_ISSUER}`;
@@ -97,7 +103,7 @@ describe("SwapAmount swap-for-reserve quote", () => {
   });
   afterEach(() => jest.restoreAllMocks());
 
-  it("prefills the amount from a backend receive quote for ~0.5 XLM", async () => {
+  const renderAndSwapForReserve = async () => {
     render(
       <Wrapper
         state={
@@ -142,7 +148,10 @@ describe("SwapAmount swap-for-reserve quote", () => {
     await act(async () => {
       fireEvent.click(screen.getByTestId("XlmReserveSheet__swap-for-reserve"));
     });
+  };
 
+  it("prefills the amount from a backend receive quote for ~0.5 XLM", async () => {
+    await renderAndSwapForReserve();
     expect(fetchBackendV2).toHaveBeenCalledWith({
       method: "POST",
       path: "/swap/quotes?network=PUBLIC",
@@ -161,5 +170,28 @@ describe("SwapAmount swap-for-reserve quote", () => {
         getTestStore()!.getState().transactionSubmission.transactionData.amount,
       ).toBe("3.2500000"),
     );
+  });
+
+  it("reports a classic outage instead of treating it as no route", async () => {
+    fetchBackendV2.mockImplementation(async () => ({
+      status: 200,
+      body: {
+        data: {
+          routes: [],
+          unavailable: [{ source: "classic", reason: "timeout" }],
+        },
+      },
+    }));
+
+    await renderAndSwapForReserve();
+
+    await waitFor(() =>
+      expect(captureException).toHaveBeenCalledWith(
+        "Swap quotes: classic source timeout",
+      ),
+    );
+    expect(
+      getTestStore()!.getState().transactionSubmission.transactionData.amount,
+    ).toBe("5");
   });
 });

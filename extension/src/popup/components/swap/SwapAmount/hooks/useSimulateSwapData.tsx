@@ -30,7 +30,11 @@ import {
 import { useScanTx } from "popup/helpers/blockaid";
 import { BlockAidScanTxResult, ErrorMessage } from "@shared/api/types";
 import { SwapQuotesError } from "@shared/api/helpers/getSwapQuotes";
-import { getSwapQuote } from "popup/helpers/swapQuote";
+import {
+  getSwapQuote,
+  getSwapQuoteKey,
+  isSameSwapQuoteKey,
+} from "popup/helpers/swapQuote";
 import { isQuoteExpiredError } from "popup/helpers/quoteExpiry";
 import { isContractId } from "popup/helpers/soroban";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
@@ -235,6 +239,7 @@ function useSimulateTxData({
     path: storedPath,
     destinationAmount: storedDestinationAmount,
     swapQuotes: storedSwapQuotes,
+    swapQuoteKey: storedSwapQuoteKey,
   } = useSelector(transactionDataSelector);
   const reduxDispatch = useDispatch<AppDispatch>();
 
@@ -270,26 +275,32 @@ function useSimulateTxData({
       // path + destination amount are in Redux) instead of re-fetching, so the
       // reviewed amount matches exactly what the user saw — no last-moment jump.
       // Any drift by submit time is bounded by destMin (slippage) and recovered
-      // via the quote-expiry flow. Only fetch a fresh path when no live quote
-      // exists yet (path may legitimately be empty for a direct swap).
+      // via the quote-expiry flow. Fetch a fresh path when no live quote exists
+      // for these exact inputs (path may legitimately be empty for a direct swap).
       let destinationAmount = storedDestinationAmount;
       let path: string[] = storedPath || [];
       let quotes = storedSwapQuotes;
+      let key = storedSwapQuoteKey;
+      const quoteParams = {
+        mode: "send" as const,
+        amount,
+        sourceAsset: getCanonicalFromAsset(
+          sourceAsset.code,
+          sourceAsset.issuer,
+        ),
+        destAsset: getCanonicalFromAsset(destAsset.code, destAsset.issuer),
+        networkDetails,
+        publicKey,
+      };
 
-      if (!destinationAmount || new BigNumber(destinationAmount).lte(0)) {
+      if (
+        !isSameSwapQuoteKey(storedSwapQuoteKey, getSwapQuoteKey(quoteParams)) ||
+        !destinationAmount ||
+        new BigNumber(destinationAmount).lte(0)
+      ) {
         let result;
         try {
-          result = await getSwapQuote({
-            mode: "send",
-            amount,
-            sourceAsset: getCanonicalFromAsset(
-              sourceAsset.code,
-              sourceAsset.issuer,
-            ),
-            destAsset: getCanonicalFromAsset(destAsset.code, destAsset.issuer),
-            networkDetails,
-            publicKey,
-          });
+          result = await getSwapQuote(quoteParams);
         } catch (e) {
           if (e instanceof SwapQuotesError && e.kind === "unavailable") {
             throw new Error(ERROR_TO_DISPLAY.SWAPS_UNAVAILABLE);
@@ -304,6 +315,7 @@ function useSimulateTxData({
         destinationAmount = result.route.destinationAmount;
         path = result.route.path;
         quotes = result.quotes;
+        key = result.key;
       }
       if (destinationRate) {
         payload.dstAmountPriceUsd = formatAmount(
@@ -343,6 +355,7 @@ function useSimulateTxData({
           path,
           destinationAmount,
           quotes,
+          key,
         }),
       );
 

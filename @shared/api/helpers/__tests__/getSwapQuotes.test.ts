@@ -1,3 +1,5 @@
+import { captureException } from "@sentry/browser";
+
 import { getSwapQuotes, SwapQuotesError } from "../getSwapQuotes";
 import { fetchBackendV2 } from "../fetchBackendV2";
 
@@ -93,6 +95,24 @@ describe("getSwapQuotes", () => {
       expect(err.kind).toBe("unavailable");
     },
   );
+
+  it("reports an unreachable backend as swaps unavailable", async () => {
+    mockedFetch.mockRejectedValue(new TypeError("Failed to fetch"));
+
+    const err = await getSwapQuotes(request).catch((e) => e);
+    expect(err).toBeInstanceOf(SwapQuotesError);
+    expect(err.kind).toBe("unavailable");
+    expect(captureException).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports a 5xx to Sentry but not a 400", async () => {
+    mockedFetch.mockResolvedValueOnce({ status: 503, body: {} });
+    await getSwapQuotes(request).catch(() => undefined);
+    mockedFetch.mockResolvedValueOnce({ status: 400, body: {} });
+    await getSwapQuotes(request).catch(() => undefined);
+
+    expect(captureException).toHaveBeenCalledTimes(1);
+  });
 
   it("rejects a 200 without a routes list as swaps unavailable", async () => {
     mockedFetch.mockResolvedValue({ status: 200, body: { data: {} } });
