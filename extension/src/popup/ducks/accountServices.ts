@@ -615,7 +615,7 @@ interface InitialState {
   bipPath: string;
   tokenIdList: string[];
   /**
-   * Source ids /user/link reported as belonging to another user (#68). Not
+   * Source ids /user/link reported as belonging to another user. Not
    * shown yet: the conflict UI is waiting on design.
    */
   linkConflicts: string[];

@@ -14,7 +14,7 @@ import { ACCOUNT_PROVENANCE_ID } from "constants/localStorageTypes";
   serves (accounts under their phrase) is visible in the UI anyway.
 
   Plain storage is what lets a locked wallet list every account's type and
-  source, and what lets the install-time migration (#76) backfill it with no
+  source, and what lets the install-time migration backfill it with no
   password. An id with no entry is "not yet attributed": a pre-V2 account the
   migration has not reached.
 

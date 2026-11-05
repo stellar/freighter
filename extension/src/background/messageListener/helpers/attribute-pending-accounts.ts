@@ -55,7 +55,7 @@ const findDerivationIndex = (
 };
 
 /*
-  The unlock pass of the pre-V2 migration (#76); the install pass and the
+  The unlock pass of the pre-V2 migration; the install pass and the
   rollback posture are described in `background/helpers/pre-v2-migration.ts`.
 
   Resolves every account the install pass left in `pendingAttribution`. It
@@ -74,7 +74,7 @@ const findDerivationIndex = (
     with `extra.imported` set: recovery before 5.45.0 preloaded funded phrase
     accounts with that flag.
   - Any other keystore with `extra.imported` set becomes its own "Secret Key
-    N". The phrase pre-#75 builds stamped into it is not its source.
+    N". The phrase older builds stamped into it is not its source.
 
   Every write is idempotent and an id leaves the pending list only once its
   provenance is written, so an interrupted pass resumes on the next unlock. A

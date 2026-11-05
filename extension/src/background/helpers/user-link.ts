@@ -19,10 +19,10 @@ import {
 } from "background/helpers/wallet-sources";
 
 /*
-  Builds the signed bodies for POST /api/v1/user/link (#67). The call's job is
+  Builds the signed bodies for POST /api/v1/user/link. The call's job is
   to register every held source under the user the pinned source resolves to
   (unified-user-model/v2.md "API Examples"). link-sources.ts sends them and
-  link-status.ts records what the server answered (#68).
+  link-status.ts records what the server answered.
 
   Every body carries `sub`, the signing source: a call without it would create
   a user no source resolves to, and the server rejects it. Each source in the

@@ -33,7 +33,7 @@ import {
   KEY_ID_LIST,
 } from "constants/localStorageTypes";
 
-// Acceptance for #75: every account's type and source live in a plain map a
+// Acceptance: every account's type and source live in a plain map a
 // locked wallet can read with no password; a secret-key import carries no
 // phrase in its keystore; unlock reads provenance from the map and never
 // from the keystore's `extra`.
@@ -146,8 +146,9 @@ const standaloneSourceId = async () =>
   ).sourceId;
 
 /**
- * A keystore written by hand, the way a pre-#75 install stamped every
- * keystore with the active phrase. Returns its id, listed and active.
+ * A keystore written by hand, the way an install from before the
+ * provenance map stamped every keystore with the active phrase. Returns its
+ * id, listed and active.
  */
 const seedStampedKeystore = async ({
   imported,
@@ -238,8 +239,8 @@ describe("account provenance", () => {
   });
 
   it("unlocks an import from the map, not from what its keystore says", async () => {
-    // A pre-#75 import: stamped with the phrase, and here even mislabelled
-    // as not imported. The map is the authority.
+    // An import from before the provenance map: stamped with the phrase,
+    // and here even mislabelled as not imported. The map is the authority.
     const keyId = await seedStampedKeystore({ imported: false });
     const sourceId = await standaloneSourceId();
     await setAccountProvenance({
@@ -262,7 +263,7 @@ describe("account provenance", () => {
   });
 
   it("unlocks an unattributed keystore with no source and no telemetry", async () => {
-    // A pre-V2 account the #76 migration has not reached: its keystore says
+    // A pre-V2 account the migration has not reached: its keystore says
     // "imported", but nothing reads that any more.
     const keyId = await seedStampedKeystore({ imported: true });
 

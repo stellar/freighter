@@ -351,7 +351,7 @@ export const loadAccount = (): Promise<{
   allAccounts: Array<Account>;
   bipPath: string;
   tokenIdList: string[];
-  /** Source ids another user owns, from /user/link (#68). */
+  /** Source ids another user owns, from /user/link. */
   linkConflicts?: string[];
 }> =>
   sendMessageToBackground({

@@ -23,7 +23,7 @@ import {
 
 /*
   Sends POST /api/v1/user/link for every held source the server has not
-  confirmed yet (#68). Onboarding, every source add and every unlock call
+  confirmed yet. Onboarding, every source add and every unlock call
   this. A source with a stored status is left out, so once every source is
   settled a trigger sends nothing.
 
@@ -116,7 +116,7 @@ const sendBody = async ({
     conflicts: sent.filter((id) => conflicts.has(id)),
     epoch,
   });
-  // The response names the caller's user, so the analytics id (#69) is
+  // The response names the caller's user, so the analytics id is
   // settled here without waiting for the next GET /user.
   const userId = userIdOf(parsed);
   if (recorded && userId) {

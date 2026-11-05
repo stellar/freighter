@@ -31,8 +31,8 @@ describe("normalizeMigratedData", () => {
     }
   });
 
-  // The root cause of the numeric `keyId` the old load-time repair undid
-  // (#76): a key-manager id such as "0.8123" parses as a number.
+  // The root cause of the numeric `keyId` the old load-time repair undid:
+  // a key-manager id such as "0.8123" parses as a number.
   it("keeps key-manager ids as strings", async () => {
     mockStorage[KEY_ID] = "0.8251530838260752";
     mockStorage[KEY_ID_LIST] = '["0.8251530838260752"]';

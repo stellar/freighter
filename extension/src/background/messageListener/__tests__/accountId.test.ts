@@ -34,7 +34,7 @@ import {
 import { storeHardwareWalletAccount } from "background/messageListener/helpers/store-hardware-wallet";
 import { KEY_ID, KEY_ID_LIST } from "constants/localStorageTypes";
 
-// Acceptance for #73: every account carries its keystore id and its source id;
+// Acceptance: every account carries its keystore id and its source id;
 // switching, renaming and unlocking resolve by id, so the order of
 // `allAccounts` changes nothing; an unknown id or public key is an error,
 // never a silent fall back to the first account. Two accounts never share an

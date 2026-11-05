@@ -13,7 +13,7 @@ import {
 import { decodeString, encodeObject } from "helpers/urls";
 
 /*
-  Pre-V2 -> multi-source storage migration (#76), install-time half.
+  Pre-V2 -> multi-source storage migration, install-time half.
 
   A pre-V2 install holds one phrase stamped into every keystore's `extra`, the
   global `keyDerivationNumber` counter, and none of `secretSources`,
@@ -64,7 +64,7 @@ import { decodeString, encodeObject } from "helpers/urls";
 
   LINKED FLAGS. The migration writes no linked state. A source with no linked
   entry is unlinked by definition, so every migrated source is unlinked and the
-  first unlock after upgrade fires the link call (#68).
+  first unlock after upgrade fires the link call.
 
   Keep this module free of imports from `background/helpers/account`: several
   suites replace that module with partial mocks, and `dataStorage.ts` imports

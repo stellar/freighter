@@ -5,7 +5,7 @@ import { DERIVATION_INDICES_ID } from "constants/localStorageTypes";
   The derivation indices each seed phrase has in use, keyed by the phrase's
   source id, persisted in PLAIN local storage beside `secretSources`. An index
   is not secret, and plain storage is what lets the install-time migration
-  (#76) seed "Seed Phrase 1"'s set from the old global counter with no
+  seed "Seed Phrase 1"'s set from the old global counter with no
   password.
 
   A new account on a phrase takes that phrase's lowest unused index, so every

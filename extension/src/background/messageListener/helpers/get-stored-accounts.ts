@@ -18,7 +18,7 @@ export const getStoredAccounts = async (
   const accountNameList = await getAccountNameList({ localStore });
   // Every account's type and source, from plain storage. The keystore's
   // `extra` is never consulted: an id with no entry is a pre-V2 account the
-  // #76 migration has not attributed yet, and it is listed without a source.
+  // pre-V2 migration has not attributed yet, and it is listed without a source.
   const provenance = await getAccountProvenance({ localStore });
   const unlockedAccounts = [] as Account[];
 

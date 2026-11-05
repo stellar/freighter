@@ -61,7 +61,7 @@ export const loginToAllAccounts = async (
     keyManager,
   });
 
-  // Pre-V2 migration, unlock pass (#76). It runs before the session rebuild
+  // Pre-V2 migration, unlock pass. It runs before the session rebuild
   // so the rebuilt account list reads the provenance it writes. Identity is
   // the pinned source, never the active keystore's phrase; the migration
   // alone applies the pre-V2 rule once, to pin the existing analytics id.

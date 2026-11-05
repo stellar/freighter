@@ -181,7 +181,7 @@ describe("linkWalletSources", () => {
     expect(data[LINK_STATUS_ID]).toEqual(
       Object.fromEntries(wallet.ids().map((id) => [id, "linked"])),
     );
-    // The analytics id (#69) comes from the response's userId.
+    // The analytics id comes from the response's userId.
     expect(data[CANONICAL_USER_ID]).toBe(wallet.sub);
   });
 

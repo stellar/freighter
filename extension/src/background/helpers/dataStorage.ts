@@ -413,7 +413,7 @@ export const markRebrandAnnouncementEligibility = async () => {
   );
 };
 
-// Pre-V2 -> multi-source model (#76). Not deferrable: it runs on the first
+// Pre-V2 -> multi-source model. Not deferrable: it runs on the first
 // start after upgrade with no password. See `pre-v2-migration.ts` for the two
 // passes and the rollback posture. The install pass is idempotent and runs on
 // every upgrade, not only below 5.50.0, so accounts a downgraded build added

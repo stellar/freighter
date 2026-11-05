@@ -3,7 +3,7 @@ import { getLinkStatusEpoch } from "background/helpers/link-status";
 import { CANONICAL_USER_ID } from "constants/localStorageTypes";
 
 /*
-  The user id the server last returned for this wallet (#69): the cluster's
+  The user id the server last returned for this wallet: the cluster's
   canonical source id, its root. It is the analytics id. Persisted in PLAIN
   local storage so a locked wallet still attributes events: like a source id,
   it is a one-way hash and cannot be linked back to a G address.

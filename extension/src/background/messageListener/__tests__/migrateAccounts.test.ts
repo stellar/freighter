@@ -27,10 +27,10 @@ import {
 import { AccountType } from "@shared/api/types";
 import { linkWalletSources } from "background/helpers/link-sources";
 
-// #73: the migration resolves the account to replace by its id, swaps the
+// The migration resolves the account to replace by its id, swaps the
 // replacement into that keystore's slot in `keyIdList` (not in
 // `allAccounts`), and activates an account that was actually migrated.
-// #74: each replacement derives at the migrated phrase's lowest unused index,
+// Each replacement derives at the migrated phrase's lowest unused index,
 // and an index derived in a run is never handed out twice in that run.
 
 const [PHRASE_1, PHRASE_2] = AUTH_KEYPAIR_VECTORS;
@@ -187,7 +187,7 @@ describe("migrateAccounts", () => {
       [PHRASE_1.userId]: [0, 1],
       [PHRASE_2.userId]: [0],
     });
-    // #75: the replaced id's provenance goes with it; the new id is rooted
+    // The replaced id's provenance goes with it; the new id is rooted
     // in the migrated phrase.
     expect(await provenance()).toEqual({
       [firstKeyId]: { type: AccountType.FREIGHTER, sourceId: PHRASE_1.userId },

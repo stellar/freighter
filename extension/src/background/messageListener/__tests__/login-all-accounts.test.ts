@@ -154,7 +154,7 @@ describe("loginToAllAccounts", () => {
     );
   });
 
-  // #73: a session persisted by a build that predates `Account.id` holds
+  // A session persisted by a build that predates `Account.id` holds
   // accounts nothing can resolve by id. Rebuild it from storage on unlock.
   it("rebuilds allAccounts when a held account has no id", async () => {
     const localStore = {
@@ -498,7 +498,7 @@ describe("loginToAllAccounts", () => {
     });
   });
 
-  // #65: the source identities are derived once the hash key is stored, so
+  // The source identities are derived once the hash key is stored, so
   // the first signed backend request finds them cached.
   describe("wallet sources", () => {
     const login = async () => {

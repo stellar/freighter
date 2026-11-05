@@ -32,8 +32,8 @@ import {
   never reads `extra.mnemonicPhrase` or account provenance. A key imported on
   its own that a held phrase also derives is therefore one source.
 
-  The pinned source signs the JWT (#66); each source in a /user/link body
-  signs its own consent (#67).
+  The pinned source signs the JWT; each source in a /user/link body
+  signs its own consent.
 */
 
 export interface WalletSource {

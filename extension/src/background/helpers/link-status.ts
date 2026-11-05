@@ -3,7 +3,7 @@ import { CANONICAL_USER_ID, LINK_STATUS_ID } from "constants/localStorageTypes";
 
 /*
   What the server last said about each source, keyed by source id and
-  persisted in PLAIN local storage (#68). A source id is a one-way hash, not a
+  persisted in PLAIN local storage. A source id is a one-way hash, not a
   key, and the status carries no secret.
 
   "linked": the server listed the source in the caller's cluster.

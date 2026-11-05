@@ -113,7 +113,7 @@ describe("signOut handler", () => {
     expect(lockHwIdx).toBeGreaterThan(logOutIdx);
   });
 
-  // #65: the derived source signers must not outlive the session.
+  // The derived source signers must not outlive the session.
   it("drops the cached wallet sources", async () => {
     setCachedWalletSources(
       "cache-key",

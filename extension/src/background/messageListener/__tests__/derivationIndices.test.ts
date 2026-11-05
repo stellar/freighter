@@ -31,7 +31,7 @@ import {
   KEY_ID_LIST,
 } from "constants/localStorageTypes";
 
-// Acceptance for #74: a new account takes its phrase's lowest unused
+// Acceptance: a new account takes its phrase's lowest unused
 // derivation index; two phrases each derive from 0 upward independently; the
 // source is explicit on the message or implied by the active account; a
 // released index is re-derived to the same key; the global counter is gone.
@@ -106,7 +106,7 @@ const recover = () =>
     isOverwritingAccount: false,
   } as RecoverAccountMessage);
 
-// No handler adds a second phrase yet (#54/#55); go through the helpers the
+// No handler adds a second phrase yet; go through the helpers the
 // handlers will use, at the phrase's index 0.
 const addSecondPhrase = async () => {
   const phraseSourceId = await getPhraseSourceId(PHRASE_2.mnemonic);
@@ -136,7 +136,7 @@ const keyIdList = (): Promise<string[]> => mockDataStorage.getItem(KEY_ID_LIST);
 const indexMap = (): Promise<Record<string, number[]>> =>
   mockDataStorage.getItem(DERIVATION_INDICES_ID);
 
-/** Drops an account the way a removal flow (#57/#58) will: session, list, index. */
+/** Drops an account the way a removal flow will: session, list, index. */
 const removeAccount = async (account: Account) => {
   const remaining = allAccounts().filter(({ id }) => id !== account.id);
   mockSessionStore.dispatch(

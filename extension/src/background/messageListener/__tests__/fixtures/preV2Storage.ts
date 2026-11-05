@@ -1,12 +1,12 @@
 /*
   A pre-V2 install's `browser.storage.local`, as the last single-phrase build
-  (master before the Unified User Model v2 stack, #72-#76) left it. Used by
+  (master before the Unified User Model v2 stack) left it. Used by
   `preV2Migration.test.ts` to prove the migration opens such a wallet with
   every account present.
 
   Shape it reproduces:
   - one phrase (`abandon ... about`) stamped into every keystore's `extra`,
-    including the secret-key import, as pre-#75 builds did;
+    including the secret-key import, as builds before the provenance map did;
   - the global `keyDerivationNumber` counter, at 1;
   - no `secretSources`, `pinnedSourceId`, `derivationIndices`,
     `accountProvenance` or `storageVersion` 5.50.0.

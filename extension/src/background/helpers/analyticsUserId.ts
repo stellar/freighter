@@ -23,7 +23,7 @@ export interface AnalyticsUserId {
 
 /**
  * The analytics user id: the canonical source id GET /api/v1/user returns
- * for the wallet's cluster (#69).
+ * for the wallet's cluster.
  *
  * - Cached: return it. No derivation, no request, and it works while locked.
  * - Unlocked, not cached: ask the server and cache a 200. Until the source

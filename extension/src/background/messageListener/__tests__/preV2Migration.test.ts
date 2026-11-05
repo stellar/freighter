@@ -48,7 +48,7 @@ import {
   PRE_V2_STORAGE,
 } from "./fixtures/preV2Storage";
 
-// Acceptance for #76: a wallet created before the multi-source model opens
+// Acceptance: a wallet created before the multi-source model opens
 // afterwards with every account present and attributed, pinned to the phrase
 // its analytics id was already derived from, with nothing re-onboarded.
 
@@ -296,7 +296,7 @@ describe("pre-V2 storage migration", () => {
     it("leaves every source unlinked, so the first unlock fires the link call", async () => {
       await unlock();
 
-      // The rule #68 builds on: a source with no linked entry is unlinked.
+      // The rule linking builds on: a source with no linked entry is unlinked.
       // The migration writes no linked state at all.
       const after = await snapshot();
       expect(Object.keys(after).filter((key) => /link/i.test(key))).toEqual([]);

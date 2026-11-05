@@ -221,7 +221,7 @@ export const getUserId = (): string => {
 /**
  * Adopts the background's analytics user id as the analytics/Sentry user id
  * when it differs from the persisted one. That id is the canonical source id
- * GET /api/v1/user returned (#69), cached by the background and available
+ * GET /api/v1/user returned, cached by the background and available
  * while locked. Before the wallet's first link it is the pinned source id,
  * marked unconfirmed. The overwrite sends no event and stitches nothing:
  * events under the old id stay there. This moves a secret-key-only wallet off
