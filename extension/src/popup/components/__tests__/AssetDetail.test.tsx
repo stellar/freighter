@@ -383,9 +383,7 @@ describe("AssetDetail", () => {
     expect(
       document.querySelector(".AssetDetail__options-actions"),
     ).toBeInTheDocument();
-    expect(
-      screen.queryByTestId("AssetDetail__hide"),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId("AssetDetail__hide")).not.toBeInTheDocument();
   });
 
   it("never offers to hide the native asset", async () => {
@@ -431,9 +429,7 @@ describe("AssetDetail", () => {
     if (options) {
       fireEvent.click(options);
     }
-    expect(
-      screen.queryByTestId("AssetDetail__hide"),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId("AssetDetail__hide")).not.toBeInTheDocument();
   });
 
   it("should hide dust payment if configured", async () => {
@@ -1932,9 +1928,7 @@ describe("AssetDetail history loading state", () => {
       );
       // Translations resolve to empty strings under test, so the label falls
       // back to the raw key; the interpolated code is not observable here.
-      expect(screen.getByTestId("AssetDetail__hide")).toHaveTextContent(
-        "Hide",
-      );
+      expect(screen.getByTestId("AssetDetail__hide")).toHaveTextContent("Hide");
     });
 
     it("does not offer Hide for native XLM", async () => {
@@ -1956,9 +1950,7 @@ describe("AssetDetail history loading state", () => {
 
       fireEvent.click(await screen.findByAltText("asset options"));
       await screen.findByText("Stellar.expert");
-      expect(
-        screen.queryByTestId("AssetDetail__hide"),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByTestId("AssetDetail__hide")).not.toBeInTheDocument();
     });
 
     it("hides the asset and closes the sheet", async () => {

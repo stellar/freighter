@@ -91,11 +91,14 @@
     text-overflow: ellipsis;
   }
 
-  // Figma's four 72px tiles leave 8px between them; with three (Earn is out of
-  // scope) they share the row at the same gap, as mobile's flex tiles do.
+  // Figma's four 72px tiles leave 8px between them. Auto columns rather than a
+  // fixed count: the Earn tile only renders while its flag is on and on
+  // networks with an allowlisted Blend pool, so the row is 3 or 4 wide, and
+  // three share it at the same gap, as mobile's flex tiles do.
   &__actions {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
     gap: pxToRem(8px);
 
     // Home button: a 20px icon in Foreground/Primary over a Text/SM/600 label

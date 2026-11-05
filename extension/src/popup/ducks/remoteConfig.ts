@@ -29,6 +29,7 @@ const ON_VARIANT_VALUES = ["on", "true", "enabled", "yes"];
 const BOOLEAN_FLAGS = [
   "use_token_prices_v2",
   "use_balances_v2",
+  "earn_deposit",
   "use_token_price_history",
 ] as const;
 
@@ -93,6 +94,9 @@ const initialState: RemoteConfigState = {
   // can flip it on to opt into the v2 account-balances endpoint without a
   // release.
   use_balances_v2: false,
+  // Earn entry point on Home. Ships ON; Amplitude can turn it off without a
+  // release.
+  earn_deposit: true,
   // Token price-history chart on AssetDetail. Ships ON — a kill switch, not
   // launch choreography (§11 of the token-price-graphs design).
   use_token_price_history: true,
@@ -270,6 +274,13 @@ export const balancesV2Selector = createSelector(
 export const tokenPriceHistoryEnabledSelector = killSwitchSelector(
   "use_token_price_history",
 );
+
+/**
+ * Whether the Earn deposit flow is exposed. Defaults to true and is read
+ * fail-closed, so the Home tile stays hidden until the flags settle rather
+ * than flashing in before Amplitude can turn it off.
+ */
+export const earnDepositSelector = killSwitchSelector("earn_deposit");
 
 /**
  * Returns true once the Experiment flags have been fetched (or failed).

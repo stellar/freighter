@@ -163,9 +163,15 @@ const SCREEN_BY_ROUTE: Partial<Record<ROUTES, ScreenDef>> = {
  * its per-step screens (send_payment_to / send_payment_amount / …) are emitted
  * by the Send flow's step effect, so tracking the bare container here would only
  * double-count. Mobile has no send_payment container either (RFC #2883, D8).
+ *
+ * Earn is a container for the same reason — earn_intro / earn_select_token /
+ * earn_amount come from the Earn flow's own step effect, and earn_review /
+ * earn_processing / earn_success from the screens that own them (the review
+ * sheet and EarnSubmit).
  */
 export const ROUTES_WITHOUT_SCREEN_VIEW = new Set<string>([
   ROUTES.sendPayment,
+  ROUTES.earn,
   // Redirects, not screens. The design-parity restructure turned these three
   // into `<Navigate to={ROUTES.account} replace />` -- the paths survive only so
   // a popup restoring its last location lands on Home. Emitting for them would

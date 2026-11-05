@@ -43,6 +43,28 @@ describe("METRIC_NAMES domain-event catalog", () => {
     expect(METRIC_NAMES.swapFailed).toBe("swap.failed");
   });
 
+  it("names the earn deposit funnel", () => {
+    expect(METRIC_NAMES.earnTokenSelected).toBe("earn.token_selected");
+    expect(METRIC_NAMES.earnBalanceInsufficientShown).toBe(
+      "earn.balance_insufficient_shown",
+    );
+    expect(METRIC_NAMES.earnFundingActionSelected).toBe(
+      "earn.funding_action_selected",
+    );
+    expect(METRIC_NAMES.earnSwapCompleted).toBe("earn.swap_completed");
+    expect(METRIC_NAMES.earnPoolDetailsOpened).toBe("earn.pool_details_opened");
+    expect(METRIC_NAMES.earnMaxAmountSelected).toBe("earn.max_amount_selected");
+    expect(METRIC_NAMES.earnXlmFeeInsufficientShown).toBe(
+      "earn.xlm_fee_insufficient_shown",
+    );
+    expect(METRIC_NAMES.earnSimulationFailed).toBe("earn.simulation_failed");
+    expect(METRIC_NAMES.earnDepositCompleted).toBe("earn.deposit_completed");
+    expect(METRIC_NAMES.earnDepositFailed).toBe("earn.deposit_failed");
+    expect(METRIC_NAMES.earnDepositDismissed).toBe(
+      "earn.deposit_processing_dismissed",
+    );
+  });
+
   it("names collectible-send and transaction-submission events", () => {
     expect(METRIC_NAMES.collectibleSendCompleted).toBe(
       "collectible_send.completed",

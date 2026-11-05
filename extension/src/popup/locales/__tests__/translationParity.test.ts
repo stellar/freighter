@@ -28,6 +28,91 @@ const swapKeys = [
   "Copy my wallet address",
 ];
 
+const earnKeys = [
+  "Choose an asset",
+  "In your wallet",
+  "Other supported assets",
+  "Supported tokens",
+  "No supported assets in your wallet",
+  "Add a supported asset to start earning.",
+  "APY may change based on protocol conditions.",
+  "{{rate}}% APY",
+  "Earn with Blend",
+  "Supply assets to Blend and earn variable yield.",
+  "Earn variable yield",
+  "Supply supported assets and earn based on current APY.",
+  "Stay in control",
+  "Manage and withdraw your supplied assets from your wallet.",
+  "Not enough {{code}}",
+  "Swap for {{code}}",
+  "Buy {{code}}",
+  "Deposit",
+  "You deposit",
+  "{{amount}} {{code}} available",
+  "Current APY: {{rate}}*",
+  "by Blend",
+  "Review deposit",
+  "Insufficient funds",
+  "You need some XLM for the network fee",
+  "Not enough XLM left for the network fee. Reduce your deposit by at least {{amount}} XLM.",
+  "Not enough XLM to cover the network fee. Try depositing a smaller amount.",
+  "Add XLM to your wallet to continue",
+  "Transaction failed. Try again.",
+  "Pool Performance",
+  "Deposit supported assets into this Blend pool to earn yield. APY may change over time. Withdraw anytime.",
+  "View pool details",
+  "Interest",
+  "Net APY",
+  "Supplied",
+  "Borrowed",
+  "Backstop",
+  "You are depositing",
+  "Position",
+  "Current APY",
+  "Monthly earnings (est.)",
+  "Yearly earnings (est.)",
+  "Depositing",
+  "Deposited!",
+  "{{amount}} {{code}} to {{pool}}",
+  "{{from}} has been swapped to {{to}}",
+];
+
+describe("earn i18n parity", () => {
+  it("defines every earn key in en and pt", () => {
+    earnKeys.forEach((k) => {
+      expect(en).toHaveProperty([k]);
+      expect(pt).toHaveProperty([k]);
+    });
+  });
+});
+
+// An empty value is never correct. i18next returns "" for a key whose value is
+// empty, so the UI renders BLANK — whereas a missing key falls back to the key
+// itself and at least reads. The i18next scanner adds newly-seen keys with empty
+// values on every build, so without this check a feature ships with unlabelled
+// buttons and nothing fails.
+const findEmptyValues = (bundle: Record<string, string>) =>
+  Object.entries(bundle)
+    .filter(([, value]) => value === "")
+    .map(([key]) => key);
+
+describe("i18n empty values", () => {
+  it.each([
+    ["en", en],
+    ["pt", pt],
+  ])("has no empty translation values in %s", (_name, bundle) => {
+    expect(findEmptyValues(bundle as Record<string, string>)).toEqual([]);
+  });
+
+  it("detects an empty value", () => {
+    // Guards the guard, as above: a check that never fires would let the
+    // scanner's blank entries through unnoticed.
+    expect(findEmptyValues({ Filled: "Preenchido", Blank: "" })).toEqual([
+      "Blank",
+    ]);
+  });
+});
+
 describe("swap i18n parity", () => {
   it("defines every swap key in en and pt", () => {
     swapKeys.forEach((k) => {

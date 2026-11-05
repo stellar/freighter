@@ -3165,6 +3165,32 @@ export const dismissDiscoverWelcome = async (): Promise<boolean> => {
   return !!hasSeenDiscoverWelcome;
 };
 
+export const getHasSeenEarnIntro = async (): Promise<boolean> => {
+  const { hasSeenEarnIntro, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.GET_EARN_INTRO_SEEN,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return !!hasSeenEarnIntro;
+};
+
+export const dismissEarnIntro = async (): Promise<boolean> => {
+  const { hasSeenEarnIntro, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.DISMISS_EARN_INTRO,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return !!hasSeenEarnIntro;
+};
+
 // True once per eligible wallet: the background flips pending to seen as it
 // answers, so only the first surface to ask shows the announcement.
 export const claimRebrandAnnouncement = async (): Promise<boolean> => {
