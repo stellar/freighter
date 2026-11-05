@@ -9,6 +9,7 @@ import {
 } from "background/helpers/canonical-user-id";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { getLinkStatusEpoch } from "background/helpers/link-status";
+import { getPinnedSourceId } from "background/helpers/secret-sources";
 import { getSigningIdentity } from "background/helpers/signing-identity";
 
 export interface AnalyticsUserId {
@@ -28,6 +29,9 @@ export interface AnalyticsUserId {
  * - Unlocked, not cached: ask the server and cache a 200. Until the source
  *   is linked (404) or while the server can't be reached, return the pinned
  *   source id, unconfirmed and uncached, so the caller asks again later.
+ * - Unlocked, but the signer is a fallback source and not the pin: skip the
+ *   request and return the pin (null if none is stored), unconfirmed and
+ *   uncached.
  * - Wallet replaced during the cache read or the request: null. Both ids
  *   are the old wallet's.
  * - Locked or hardware-only with nothing cached: null.
@@ -51,6 +55,19 @@ export const getAnalyticsUserId = async (
   const identity = await getSigningIdentity({ sessionStore, localStore });
   if (!identity) {
     return { analyticsUserId: null, isConfirmed: false };
+  }
+  // Ask only as the pin. getSigningIdentity falls back to another held
+  // source when the pinned one did not derive this unlock, and a 200 signed
+  // by that source is its user, which may not be this wallet's. Caching it
+  // would be permanent. No pin here means getSigningIdentity's pin write
+  // failed. Either way, skip the request; the next load asks again.
+  const pinned = await getPinnedSourceId({ localStore });
+  if (pinned !== identity.sourceId) {
+    // A wallet replaced during the pin read: the pin is the old wallet's.
+    if (epoch !== getLinkStatusEpoch()) {
+      return { analyticsUserId: null, isConfirmed: false };
+    }
+    return { analyticsUserId: pinned, isConfirmed: false };
   }
 
   try {

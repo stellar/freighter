@@ -3,7 +3,10 @@ import { callBackendV2 } from "background/helpers/callBackendV2";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { clearLinkStatus } from "background/helpers/link-status";
 import { getSigningIdentity } from "background/helpers/signing-identity";
-import { CANONICAL_USER_ID } from "constants/localStorageTypes";
+import {
+  CANONICAL_USER_ID,
+  PINNED_SOURCE_ID,
+} from "constants/localStorageTypes";
 
 jest.mock("background/helpers/signing-identity", () => ({
   getSigningIdentity: jest.fn(),
@@ -18,11 +21,13 @@ const mockCall = callBackendV2 as jest.Mock;
 
 const PINNED = "a".repeat(64);
 const ROOT = "b".repeat(64);
+const FALLBACK = "c".repeat(64);
 
 const sessionStore = {} as never;
 
 const makeLocalStore = () => {
-  const data: Record<string, unknown> = {};
+  // The signer the tests mock is the pin unless a test says otherwise.
+  const data: Record<string, unknown> = { [PINNED_SOURCE_ID]: PINNED };
   const store = {
     getItem: jest.fn(async (key: string) => data[key]),
     setItem: jest.fn(async (key: string, value: unknown) => {
@@ -205,6 +210,61 @@ describe("getAnalyticsUserId", () => {
       analyticsUserId: null,
       isConfirmed: false,
     });
+  });
+
+  it("skips GET /user when the signer is a fallback source, not the pin", async () => {
+    const { store, data } = makeLocalStore();
+    // The pin didn't derive this unlock, so getSigningIdentity fell back to
+    // another held source. A 200 signed by it would be that source's user.
+    mockIdentity.mockResolvedValue({
+      sourceId: FALLBACK,
+      keypair: { SECRET: "priv" },
+    });
+    mockCall.mockResolvedValue(userResponse(ROOT));
+
+    expect(await getAnalyticsUserId(sessionStore, store)).toEqual({
+      analyticsUserId: PINNED,
+      isConfirmed: false,
+    });
+    expect(mockCall).not.toHaveBeenCalled();
+    expect(data[CANONICAL_USER_ID]).toBeUndefined();
+  });
+
+  it("returns no id and skips GET /user when no pin is stored", async () => {
+    const { store, data } = makeLocalStore();
+    delete data[PINNED_SOURCE_ID];
+    mockCall.mockResolvedValue(userResponse(ROOT));
+
+    expect(await getAnalyticsUserId(sessionStore, store)).toEqual({
+      analyticsUserId: null,
+      isConfirmed: false,
+    });
+    expect(mockCall).not.toHaveBeenCalled();
+    expect(data[CANONICAL_USER_ID]).toBeUndefined();
+  });
+
+  it("returns no id when the wallet is replaced during the pin read", async () => {
+    const { store } = makeLocalStore();
+    mockIdentity.mockResolvedValue({
+      sourceId: FALLBACK,
+      keypair: { SECRET: "priv" },
+    });
+    // First read is the cache; the second is the pin.
+    const getItem = store.getItem as jest.Mock;
+    const read = getItem.getMockImplementation()!;
+    getItem
+      .mockImplementationOnce(read)
+      .mockImplementationOnce(async (key: string) => {
+        const value = await read(key);
+        await clearLinkStatus({ localStore: store });
+        return value;
+      });
+
+    expect(await getAnalyticsUserId(sessionStore, store)).toEqual({
+      analyticsUserId: null,
+      isConfirmed: false,
+    });
+    expect(mockCall).not.toHaveBeenCalled();
   });
 
   it("never returns keypair/private material", async () => {
