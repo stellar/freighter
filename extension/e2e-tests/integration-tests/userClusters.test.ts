@@ -25,10 +25,13 @@ import { SecretSourceType } from "../../../@shared/api/types/types";
  * driven over HTTP the way the extension's linker drives it: every request is
  * signed by the wallet's pinned source, and every source in a /user/link body
  * signs its own consent. No browser, so it covers the multi-phrase cases the
- * UI can't produce yet. Gated on IS_INTEGRATION_MODE.
+ * UI can't produce yet. Gated on IS_INTEGRATION_MODE and BACKEND_V2_URL.
  *
- * Run:  IS_INTEGRATION_MODE=true yarn workspace extension test:e2e userClusters
- * Env:  BACKEND_V2_URL            (default: http://localhost:3002)
+ * Run:  IS_INTEGRATION_MODE=true BACKEND_V2_URL=http://localhost:3002 \
+ *         yarn workspace extension test:e2e userClusters
+ * Env:  BACKEND_V2_URL            (required; the suite skips without it).
+ *                                 No staging default: every run writes
+ *                                 permanent users/user_sources rows.
  *       BACKEND_V2_DB_CONTAINER   (optional, e.g. freighter-backend-postgres):
  *                                 also asserts row ownership and counts in
  *                                 Postgres via `docker exec psql`.
@@ -40,7 +43,9 @@ import { SecretSourceType } from "../../../@shared/api/types/types";
  * root alone, which never moves once set.
  */
 const isIntegrationMode = process.env.IS_INTEGRATION_MODE === "true";
-const BASE = process.env.BACKEND_V2_URL ?? "http://localhost:3002";
+const BACKEND_V2_URL = process.env.BACKEND_V2_URL;
+// Empty only when the suite is skipped below.
+const BASE = BACKEND_V2_URL ?? "";
 const DB_CONTAINER = process.env.BACKEND_V2_DB_CONTAINER;
 const USER_PATH = "/api/v1/user";
 const LINK_PATH = "/api/v1/user/link";
@@ -181,8 +186,8 @@ const rowCounts = () => ({
 test.describe("user clusters and identity continuity (#70)", () => {
   test.describe.configure({ mode: "serial" });
   test.skip(
-    !isIntegrationMode,
-    "Requires a live freighter-backend-v2; run with IS_INTEGRATION_MODE=true",
+    !isIntegrationMode || !BACKEND_V2_URL,
+    "Requires a live freighter-backend-v2; run with IS_INTEGRATION_MODE=true and BACKEND_V2_URL set",
   );
 
   let phraseA: string;
