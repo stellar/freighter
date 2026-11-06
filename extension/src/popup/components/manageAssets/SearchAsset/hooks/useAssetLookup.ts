@@ -421,6 +421,12 @@ const useAssetLookup = () => {
         cachedAssetLists: assetsListsData, // Use the fetched/cached data we already have
       });
 
+    // A newer search replaced this one. Its answer can still land after the
+    // newer search's results (the request runs in the background), so drop it.
+    if (signal.aborted) {
+      return;
+    }
+
     const payload = {
       verifiedAssetRows: verifiedAssets,
       unverifiedAssetRows: unverifiedAssets,

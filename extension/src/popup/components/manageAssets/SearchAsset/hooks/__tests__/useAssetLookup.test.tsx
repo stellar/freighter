@@ -168,3 +168,61 @@ describe("useAssetLookup Blockaid scan", () => {
     });
   });
 });
+
+describe("useAssetLookup superseded search", () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  // A new search aborts the one before it, but that request runs in the
+  // background, so it still answers, with an AbortError. Its empty result used
+  // to replace the new search's rows when it answered after them.
+  it("keeps the new search's rows when the search it replaced answers late", async () => {
+    let answerFirstSearch: (error: Error) => void = () => {};
+    (searchAsset as jest.Mock)
+      .mockImplementationOnce(
+        () =>
+          new Promise((_resolve, reject) => {
+            answerFirstSearch = reject;
+          }),
+      )
+      .mockResolvedValueOnce({
+        _embedded: { records: [{ asset: `AQUA-${ISSUER}-1` }] },
+      });
+    const store = makeDummyStore({ settings: { assetsLists: {} } });
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <Provider store={store}>{children}</Provider>
+    );
+    const { result } = renderHook(() => useAssetLookup(), { wrapper });
+    const search = (asset: string) =>
+      result.current.fetchData({
+        asset,
+        isBlockaidEnabled: false,
+        publicKey: ISSUER,
+        isAllowListVerificationEnabled: false,
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      });
+    const rowCodes = () =>
+      result.current.state.data?.unverifiedAssetRows.map((row) => row.code);
+
+    let firstSearch: Promise<void> = Promise.resolve();
+    await act(async () => {
+      firstSearch = search("aqu");
+    });
+    // The first search's request is in flight before the second one starts.
+    await waitFor(() => expect(searchAsset).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      await search("aqua");
+    });
+    expect(rowCodes()).toEqual(["AQUA"]);
+
+    await act(async () => {
+      answerFirstSearch(
+        new DOMException("asset search request aborted", "AbortError"),
+      );
+      await firstSearch;
+    });
+
+    expect(rowCodes()).toEqual(["AQUA"]);
+  });
+});
