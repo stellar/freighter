@@ -10,31 +10,27 @@ import {
   isNativeAssetPair,
 } from "@shared/helpers/assetIdentity";
 import { isContractId } from "@shared/api/helpers/soroban";
-
-import { getApiStellarExpertUrl } from "popup/helpers/account";
+import { getStellarExpertAssets } from "@shared/api/internal";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 
-export const searchAsset = async ({
+// Goes through freighter-backend-v2, which holds our StellarExpert API key.
+// Outages throw instead of returning a non-records body, so callers (e.g. the
+// swap picker) can fall back to held-only with a "discovery unavailable"
+// notice rather than rendering an empty result set.
+export const searchAsset = ({
   asset,
   networkDetails,
   signal,
 }: {
-  asset: any;
+  asset: string;
   networkDetails: NetworkDetails;
   signal?: AbortSignal;
-}) => {
-  const res = await fetch(
-    `${getApiStellarExpertUrl(networkDetails)}/asset?search=${asset}`,
-    { signal },
-  );
-  // Surface backend outages instead of silently returning a non-records body:
-  // throwing lets callers (e.g. the swap picker) fall back to held-only with a
-  // "discovery unavailable" notice rather than rendering an empty result set.
-  if (!res.ok) {
-    throw new Error(res.statusText);
-  }
-  return res.json();
-};
+}) =>
+  getStellarExpertAssets<StellarExpertAssetRecord>({
+    networkDetails,
+    query: { search: asset },
+    signal,
+  });
 
 export const getNativeContractDetails = (networkDetails: NetworkDetails) => {
   const NATIVE_CONTRACT_DEFAULTS = {
