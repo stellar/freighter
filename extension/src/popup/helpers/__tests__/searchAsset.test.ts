@@ -8,6 +8,11 @@ import {
 } from "../searchAsset";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
+import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
+import { SERVICE_TYPES } from "@shared/constants/services";
+
+jest.mock("@shared/api/helpers/extensionMessaging");
+const mockedSend = sendMessageToBackground as jest.Mock;
 
 const MAINNET: NetworkDetails = {
   network: "PUBLIC",
@@ -18,32 +23,40 @@ const MAINNET: NetworkDetails = {
 } as NetworkDetails;
 
 describe("searchAsset", () => {
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => {
+    jest.clearAllMocks();
+    jest.restoreAllMocks();
+  });
 
-  it("returns the parsed body on a 2xx response", async () => {
+  it("searches through freighter-backend-v2, never StellarExpert directly", async () => {
+    const fetchSpy = jest
+      .spyOn(global, "fetch")
+      .mockRejectedValue(new Error("direct fetch"));
     const body = { _embedded: { records: [{ asset: "USDC-GUSD" }] } };
-    jest.spyOn(global, "fetch").mockResolvedValue({
-      ok: true,
-      json: async () => body,
-    } as unknown as Response);
+    mockedSend.mockResolvedValue({ status: 200, body: { data: body } });
 
     const result = await searchAsset({
       asset: "usdc",
       networkDetails: MAINNET,
     });
+
+    expect(mockedSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: SERVICE_TYPES.FETCH_BACKEND_V2,
+        method: "GET",
+        path: "/assets/search?network=PUBLIC&search=usdc",
+      }),
+    );
+    expect(fetchSpy).not.toHaveBeenCalled();
     expect(result).toEqual(body);
   });
 
-  it("throws on a non-ok response instead of returning a non-records body", async () => {
-    jest.spyOn(global, "fetch").mockResolvedValue({
-      ok: false,
-      statusText: "Bad Gateway",
-      json: async () => ({ error: "upstream" }),
-    } as unknown as Response);
+  it("throws on a non-200 response instead of returning a non-records body", async () => {
+    mockedSend.mockResolvedValue({ status: 502, body: { error: "upstream" } });
 
     await expect(
       searchAsset({ asset: "usdc", networkDetails: MAINNET }),
-    ).rejects.toThrow("Bad Gateway");
+    ).rejects.toThrow("502");
   });
 });
 
