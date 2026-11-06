@@ -16,6 +16,7 @@ import {
   accountNameSelector,
   publicKeySelector,
 } from "popup/ducks/accountServices";
+import { isRemoteConfigInitializedSelector } from "popup/ducks/remoteConfig";
 import { closeWindow, openTab } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { useSwapTopTokensPrewarm } from "popup/helpers/useSwapTopTokensPrewarm";
@@ -61,6 +62,9 @@ export const Account = () => {
   const reduxPublicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { activeTab } = useContext(AccountTabsContext);
+  const isRemoteConfigInitialized = useSelector(
+    isRemoteConfigInitializedSelector,
+  );
 
   const isFullscreenModeEnabled = isFullscreenMode();
   const {
@@ -89,13 +93,17 @@ export const Account = () => {
   const previousAccountBalancesRef = useRef<AccountBalances | null>(null);
   const sorobanErrorShownRef = useRef(false);
 
+  // The balances fetch reads feature flags, so wait until they've loaded.
   useEffect(() => {
+    if (!isRemoteConfigInitialized) {
+      return;
+    }
     const getData = async () => {
       await fetchData({ useAppDataCache: false });
     };
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isRemoteConfigInitialized]);
 
   useEffect(() => {
     if (!isSorobanSuported && !sorobanErrorShownRef.current) {
