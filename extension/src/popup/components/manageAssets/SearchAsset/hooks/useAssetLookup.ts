@@ -284,11 +284,12 @@ const useAssetLookup = () => {
       asset,
       networkDetails,
       signal,
-    }).catch(() => {
+    }).catch((error) => {
       if (signal.aborted) {
         return { _embedded: { records: [] } };
       }
-      throw new Error("Failed to fetch Stellar Expert data");
+      // Rethrow as is: the message carries the backend's status and reply.
+      throw error;
     });
 
     return resJson._embedded.records.map((record: StellarExpertAssetRecord) =>
@@ -388,9 +389,13 @@ const useAssetLookup = () => {
           signal,
         });
       } catch (error) {
-        captureException(
-          `Failed to fetch StellarExpert data - ${JSON.stringify(error)}`,
-        );
+        // The Error itself, not an interpolated string: stringifying an Error
+        // gives "{}", which drops the status that tells a missing route (404)
+        // from a rejected key (500) or StellarExpert being down (503).
+        captureException(error, {
+          tags: { operation: "searchAsset" },
+          extra: { network: networkDetails.network },
+        });
         console.error(error);
         dispatch({ type: "FETCH_DATA_ERROR", payload: DEFAULT_PAYLOAD });
         return;

@@ -22,7 +22,12 @@ jest.mock("popup/helpers/assetList", () => ({
     Promise.resolve({ verifiedAssets: [], unverifiedAssets: assets }),
   ),
 }));
+jest.mock("@sentry/browser", () => ({
+  ...jest.requireActual("@sentry/browser"),
+  captureException: jest.fn(),
+}));
 
+import { captureException } from "@sentry/browser";
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { searchAsset } from "popup/helpers/searchAsset";
 import { splitVerifiedAssetCurrency } from "popup/helpers/assetList";
@@ -224,5 +229,42 @@ describe("useAssetLookup superseded search", () => {
     });
 
     expect(rowCodes()).toEqual(["AQUA"]);
+    // A replaced search isn't a failure, so nothing goes to Sentry.
+    expect(captureException).not.toHaveBeenCalled();
+  });
+});
+
+describe("useAssetLookup search failure", () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  // The Error itself carries the backend's status and message, such as a 404
+  // before the route is deployed or a 503 while StellarExpert is down.
+  it("reports the search's own error to Sentry", async () => {
+    const failure = new Error(
+      'Failed to fetch asset search - 503: {"message":"asset search temporarily unavailable"}',
+    );
+    (searchAsset as jest.Mock).mockRejectedValueOnce(failure);
+    const store = makeDummyStore({ settings: { assetsLists: {} } });
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <Provider store={store}>{children}</Provider>
+    );
+    const { result } = renderHook(() => useAssetLookup(), { wrapper });
+
+    await act(async () => {
+      await result.current.fetchData({
+        asset: "aqua",
+        isBlockaidEnabled: false,
+        publicKey: ISSUER,
+        isAllowListVerificationEnabled: false,
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      });
+    });
+
+    expect(captureException).toHaveBeenCalledWith(failure, {
+      tags: { operation: "searchAsset" },
+      extra: { network: "PUBLIC" },
+    });
   });
 });
