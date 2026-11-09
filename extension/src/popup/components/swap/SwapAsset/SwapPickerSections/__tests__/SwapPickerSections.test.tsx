@@ -23,9 +23,13 @@ jest.mock("popup/components/BalanceRow", () => ({
 }));
 
 jest.mock("popup/components/AssetListRow", () => ({
-  AssetListRow: ({ code }: { code: string }) => (
-    <div data-testid={`row-${code}`} />
-  ),
+  AssetListRow: ({
+    code,
+    domain,
+  }: {
+    code: string;
+    domain?: string | null;
+  }) => <div data-testid={`row-${code}`} data-domain={domain ?? ""} />,
 }));
 
 const rec = (code: string, isHeld = false) => ({
@@ -51,10 +55,41 @@ const emptyResult = {
 const baseProps = {
   onClickAsset: jest.fn(),
   stellarExpertUrl: "https://stellar.expert/explorer/public",
-  // Destination picker triggers the Soroban empty states; the source picker is covered by a dedicated test.
 };
 
 describe("SwapPickerSections", () => {
+  it("subtitles a classic token with its home domain, a contract token with its shortened contract ID", () => {
+    const contract = "CBI7UCH5KGSVQRO5H4SUCZUTZABCITZLRHQQZTWL2TK4RZ72TAR6IHRV";
+    render(
+      <SwapPickerSections
+        {...baseProps}
+        searchTerm="t"
+        result={{
+          ...emptyResult,
+          unverified: [
+            rec("USDC"),
+            {
+              ...rec("TKN"),
+              canonical: `TKN:${contract}`,
+              issuer: contract,
+              domain: "lookalike.org",
+              isContract: true,
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId("row-USDC")).toHaveAttribute(
+      "data-domain",
+      "example.org",
+    );
+    expect(screen.getByTestId("row-TKN")).toHaveAttribute(
+      "data-domain",
+      "CBI7…IHRV",
+    );
+  });
+
   it("idle: renders Your tokens then Popular sections in order", () => {
     render(
       <SwapPickerSections

@@ -10,6 +10,7 @@ import {
 } from "popup/components/TokenVerificationSheets";
 import { AssetListRow } from "popup/components/AssetListRow";
 import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
+import { truncateString } from "helpers/stellar";
 import { SecurityLevel } from "popup/constants/blockaid";
 import type { SwapTokenRecord } from "../hooks/useSwapTokenLookup";
 import type { SwapPickerSelection } from "../index";
@@ -138,7 +139,9 @@ export const SwapPickerSections = ({
           bodyTestId={`SwapTokenRow-${code}-body`}
           code={code}
           issuer={r.issuer}
-          domain={r.domain}
+          // A contract token shows its contract ID, so a lookalike of a
+          // known token still looks different.
+          domain={r.isContract ? truncateString(r.issuer ?? "") : r.domain}
           iconUrl={r.image ?? r.icon ?? undefined}
           isSuspicious={isSuspicious}
           isMalicious={isMalicious}
