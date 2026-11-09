@@ -38,6 +38,14 @@ const sha256Hex = async (body?: string): Promise<string> => {
   return Buffer.from(digest).toString("hex");
 };
 
+/**
+ * The JWT `iat` for a clock reading: whole unix seconds, floored. A
+ * /user/link consent signs the iat of the JWT it travels with, so build both
+ * from the same `now` through this.
+ */
+export const issuedAtSeconds = (now?: number): number =>
+  Math.floor((now ?? Date.now()) / 1000);
+
 const encodeSegment = (value: unknown): string =>
   base64url(new TextEncoder().encode(JSON.stringify(value)));
 
@@ -52,7 +60,7 @@ export const buildAuthJwt = async ({
   body,
   now,
 }: BuildAuthJwtParams): Promise<string> => {
-  const iat = Math.floor((now ?? Date.now()) / 1000);
+  const iat = issuedAtSeconds(now);
   const payload = {
     sub: xdr.encodeBytes(keypair.rawPublicKey(), "hex"),
     iss: ISS,

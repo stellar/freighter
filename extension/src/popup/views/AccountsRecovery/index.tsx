@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { useSelector } from "react-redux";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Icon, Loader, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -9,7 +10,14 @@ import { newTabHref } from "helpers/urls";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { reRouteOnboarding } from "popup/helpers/route";
-import { AccountGroupKind, groupAccounts } from "popup/helpers/accountGroups";
+import {
+  AccountGroupKind,
+  groupAccountsBySource,
+} from "popup/helpers/accountGroups";
+import {
+  activeAccountIdSelector,
+  secretSourcesSelector,
+} from "popup/ducks/accountServices";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
@@ -19,10 +27,11 @@ import { useGetWalletsData } from "popup/components/account/AccountSheet/hooks/u
 
 import "./styles.scss";
 
-const GROUP_ICONS: Record<AccountGroupKind, React.ReactNode> = {
-  [AccountGroupKind.RecoveryPhrase]: <Icon.Passcode />,
-  [AccountGroupKind.SecretKey]: <Icon.Key02 />,
-  [AccountGroupKind.Hardware]: <Icon.Wallet02 />,
+const GROUP_ICON: Record<AccountGroupKind, React.ReactNode> = {
+  [AccountGroupKind.PHRASE]: <Icon.Passcode />,
+  [AccountGroupKind.SECRET_KEY]: <Icon.Key02 />,
+  [AccountGroupKind.HARDWARE]: <Icon.Wallet02 />,
+  [AccountGroupKind.OTHER]: <Icon.Wallet02 />,
 };
 
 export const AccountsRecovery = () => {
@@ -30,6 +39,8 @@ export const AccountsRecovery = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { state, fetchData } = useGetWalletsData();
+  const activeAccountId = useSelector(activeAccountIdSelector);
+  const secretSources = useSelector(secretSourcesSelector);
 
   useEffect(() => {
     fetchData(true);
@@ -79,15 +90,19 @@ export const AccountsRecovery = () => {
     state: state.state,
   });
 
-  const { publicKey: activePublicKey, allAccounts, accountValue } = state.data;
+  const { allAccounts, accountValue } = state.data;
   const isFetchingTokenPrices = state.data.isFetchingTokenPrices;
-  const groups = groupAccounts(allAccounts, t);
+  const groups = groupAccountsBySource({
+    accounts: allAccounts,
+    sources: secretSources,
+    t,
+  });
 
-  const openEditAccount = (publicKey: string) =>
+  const openEditAccount = (accountId: string) =>
     navigateTo(
       ROUTES.editAccount,
       navigate,
-      `?publicKey=${encodeURIComponent(publicKey)}`,
+      `?accountId=${encodeURIComponent(accountId)}`,
     );
 
   return (
@@ -115,15 +130,15 @@ export const AccountsRecovery = () => {
                 data-testid="accounts-recovery-group"
               >
                 <div className="AccountsRecovery__group__label">
-                  {GROUP_ICONS[group.kind]}
+                  {GROUP_ICON[group.kind]}
                   <span>{group.label}</span>
                 </div>
                 {group.accounts.map((account) => {
-                  const isSelected = account.publicKey === activePublicKey;
+                  const isSelected = account.id === activeAccountId;
                   const value = accountValue?.[account.publicKey];
                   return (
                     <div
-                      key={account.publicKey}
+                      key={account.id}
                       className="AccountsRecovery__row"
                       data-testid="accounts-recovery-row"
                       aria-current={isSelected ? true : undefined}
@@ -152,7 +167,7 @@ export const AccountsRecovery = () => {
                         type="button"
                         className="AccountsRecovery__row__edit"
                         aria-label={t("Edit {{name}}", { name: account.name })}
-                        onClick={() => openEditAccount(account.publicKey)}
+                        onClick={() => openEditAccount(account.id)}
                         data-testid="accounts-recovery-edit"
                       >
                         <Icon.Settings04 />

@@ -7,7 +7,10 @@ import {
   publicKeySelector,
 } from "background/ducks/session";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import { SessionTimer } from "background/helpers/session";
+import {
+  clearCachedWalletSources,
+  SessionTimer,
+} from "background/helpers/session";
 import { broadcastSessionState } from "../helpers/broadcast-session-state";
 import { flushSessionStore } from "background/store";
 import {
@@ -41,6 +44,9 @@ export const signOut = async ({
   sessionStore.dispatch(lockHardwareWallet());
   await flushSessionStore(sessionStore);
   await localStore.remove(TEMPORARY_STORE_ID);
+  // The derived source signers must not outlive the session. Cleared after
+  // the keys are gone, so no derivation can start in between and re-cache them.
+  clearCachedWalletSources();
   await broadcastSessionState(SERVICE_TYPES.SESSION_LOCKED);
 
   return {

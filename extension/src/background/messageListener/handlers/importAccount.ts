@@ -4,16 +4,27 @@ import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 import { captureException } from "@sentry/browser";
 
 import { ImportAccountMessage } from "@shared/api/types/message-request";
+import { ACCOUNT_ALREADY_EXISTS_ERROR } from "@shared/constants/errors";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
+import { linkWalletSources } from "background/helpers/link-sources";
 import {
+  getActiveHashKeyCryptoKey,
   getEncryptedTemporaryData,
   SessionTimer,
 } from "background/helpers/session";
-import { KEY_ID, TEMPORARY_STORE_EXTRA_ID } from "constants/localStorageTypes";
+import { KEY_ID } from "constants/localStorageTypes";
+import {
+  addSecretSource,
+  getSecretKeySourceId,
+} from "background/helpers/secret-sources";
+import { SecretSourceType } from "@shared/api/types";
 import { loginToAllAccounts } from "../helpers/login-all-accounts";
 import { getNonHwKeyID } from "../helpers/get-non-hw-key-id";
 import { unlockKeystore } from "../helpers/unlock-keystore";
-import { getIsHardwareWalletActive } from "background/helpers/account";
+import {
+  getIsHardwareWalletActive,
+  getActiveAccountId,
+} from "background/helpers/account";
 import { storeAccount } from "../helpers/store-account";
 import {
   allAccountsSelector,
@@ -37,13 +48,10 @@ export const importAccount = async ({
   const { password, privateKey } = request;
   let sourceKeys;
 
-  let mnemonicPhrase = await getEncryptedTemporaryData({
-    sessionStore,
-    localStore,
-    keyName: TEMPORARY_STORE_EXTRA_ID,
-  });
-
-  if (!mnemonicPhrase) {
+  // An import needs the unlocked session's hash key to store its private
+  // key. No phrase is involved: the import is its own source, registered
+  // below from its own key, and nothing of any phrase is written into it.
+  if ((await getActiveHashKeyCryptoKey({ sessionStore })) === null) {
     try {
       await loginToAllAccounts(
         password,
@@ -52,11 +60,6 @@ export const importAccount = async ({
         keyManager,
         sessionTimer,
       );
-      mnemonicPhrase = await getEncryptedTemporaryData({
-        sessionStore,
-        localStore,
-        keyName: TEMPORARY_STORE_EXTRA_ID,
-      });
     } catch (e) {
       captureException(
         `Error logging in to all accounts in Import Account - ${JSON.stringify(
@@ -91,15 +94,31 @@ export const importAccount = async ({
     privateKey,
   };
 
+  // An address the wallet already holds, hot or hardware, would give two
+  // accounts one address. Flows that only know the address can't tell them
+  // apart, so refuse before anything is stored.
+  const isDuplicate = allAccountsSelector(sessionStore.getState()).some(
+    (account) => account.publicKey === keyPair.publicKey,
+  );
+  if (isDuplicate) {
+    return { error: ACCOUNT_ALREADY_EXISTS_ERROR };
+  }
+
   try {
+    const sourceId = await getSecretKeySourceId(privateKey);
     await storeAccount({
       password,
       keyPair,
-      mnemonicPhrase,
+      sourceId,
       imported: true,
       sessionStore,
       localStore,
       keyManager,
+    });
+    await addSecretSource({
+      localStore,
+      id: sourceId,
+      type: SecretSourceType.SECRET_KEY,
     });
   } catch (e) {
     captureException(`Error importing account: ${JSON.stringify(e)}`);
@@ -111,11 +130,15 @@ export const importAccount = async ({
     return { error: "Error importing account" };
   }
 
+  // A key another user owns comes back as a conflict. Not awaited.
+  void linkWalletSources({ sessionStore, localStore });
+
   const currentState = sessionStore.getState();
   const hasPrivateKeySelector = buildHasPrivateKeySelector(localStore);
 
   return {
     publicKey: publicKeySelector(currentState),
+    activeAccountId: await getActiveAccountId({ localStore }),
     allAccounts: allAccountsSelector(currentState),
     hasPrivateKey: await hasPrivateKeySelector(currentState),
   };

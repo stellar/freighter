@@ -1,6 +1,12 @@
 import { SERVICE_TYPES } from "@shared/constants/services";
 
 import { lockHardwareWallet, logOut } from "background/ducks/session";
+import {
+  getCachedWalletSources,
+  getWalletSourcesGeneration,
+  setCachedWalletSources,
+} from "background/helpers/session";
+import { TEMPORARY_STORE_ID } from "constants/localStorageTypes";
 import { signOut } from "../handlers/signOut";
 
 const mockFlushSessionStore = jest.fn().mockResolvedValue(undefined);
@@ -39,7 +45,10 @@ describe("signOut handler", () => {
 
     expect(sessionTimer.stopSession).toHaveBeenCalledTimes(1);
     expect(mockFlushSessionStore).toHaveBeenCalledWith(sessionStore);
+    // Only the temporary store goes. The secret-source set and the pinned
+    // source id live under their own keys and survive a lock.
     expect(localStore.remove).toHaveBeenCalledTimes(1);
+    expect(localStore.remove).toHaveBeenCalledWith(TEMPORARY_STORE_ID);
     expect(mockBroadcastSessionState).toHaveBeenCalledWith(
       SERVICE_TYPES.SESSION_LOCKED,
     );
@@ -47,18 +56,18 @@ describe("signOut handler", () => {
     // stopSession must run before any state mutation so a pending
     // alarm can't fire `clearSession` (and emit a duplicate
     // SESSION_LOCKED broadcast) between the dispatch and the clear.
-    expect(
-      sessionTimer.stopSession.mock.invocationCallOrder[0],
-    ).toBeLessThan(sessionStore.dispatch.mock.invocationCallOrder[0]);
-    expect(
+    expect(sessionTimer.stopSession.mock.invocationCallOrder[0]).toBeLessThan(
       sessionStore.dispatch.mock.invocationCallOrder[0],
-    ).toBeLessThan(mockFlushSessionStore.mock.invocationCallOrder[0]);
-    expect(
+    );
+    expect(sessionStore.dispatch.mock.invocationCallOrder[0]).toBeLessThan(
       mockFlushSessionStore.mock.invocationCallOrder[0],
-    ).toBeLessThan(localStore.remove.mock.invocationCallOrder[0]);
-    expect(
+    );
+    expect(mockFlushSessionStore.mock.invocationCallOrder[0]).toBeLessThan(
       localStore.remove.mock.invocationCallOrder[0],
-    ).toBeLessThan(mockBroadcastSessionState.mock.invocationCallOrder[0]);
+    );
+    expect(localStore.remove.mock.invocationCallOrder[0]).toBeLessThan(
+      mockBroadcastSessionState.mock.invocationCallOrder[0],
+    );
   });
 
   // Regression: `logOut` resets session state to `initialState`, which
@@ -102,5 +111,58 @@ describe("signOut handler", () => {
     );
     expect(logOutIdx).toBeGreaterThanOrEqual(0);
     expect(lockHwIdx).toBeGreaterThan(logOutIdx);
+  });
+
+  // The derived source signers must not outlive the session.
+  it("drops the cached wallet sources", async () => {
+    setCachedWalletSources(
+      "cache-key",
+      Promise.resolve({ sources: [], signers: new Map() }),
+      getWalletSourcesGeneration(),
+    );
+
+    await signOut({
+      localStore: {
+        getItem: jest.fn().mockResolvedValue(""),
+        remove: jest.fn().mockResolvedValue(undefined),
+      } as any,
+      sessionStore: {
+        dispatch: jest.fn(),
+        getState: jest.fn().mockReturnValue({ session: { publicKey: "" } }),
+      } as any,
+      sessionTimer: {
+        stopSession: jest.fn().mockResolvedValue(undefined),
+      } as any,
+    });
+
+    expect(getCachedWalletSources("cache-key")).toBeNull();
+  });
+
+  // A request that starts after the cache is cleared but before the keys are
+  // removed still sees an unlocked session and can cache its signers.
+  it("drops sources cached while the lock is flushing", async () => {
+    mockFlushSessionStore.mockImplementationOnce(async () => {
+      setCachedWalletSources(
+        "late-key",
+        Promise.resolve({ sources: [], signers: new Map() }),
+        getWalletSourcesGeneration(),
+      );
+    });
+
+    await signOut({
+      localStore: {
+        getItem: jest.fn().mockResolvedValue(""),
+        remove: jest.fn().mockResolvedValue(undefined),
+      } as any,
+      sessionStore: {
+        dispatch: jest.fn(),
+        getState: jest.fn().mockReturnValue({ session: { publicKey: "" } }),
+      } as any,
+      sessionTimer: {
+        stopSession: jest.fn().mockResolvedValue(undefined),
+      } as any,
+    });
+
+    expect(getCachedWalletSources("late-key")).toBeNull();
   });
 });

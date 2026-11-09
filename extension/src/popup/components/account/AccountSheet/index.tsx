@@ -22,8 +22,10 @@ import { SlideupModal } from "popup/components/SlideupModal";
 import { showToast } from "popup/basics/shadcn/Toast";
 import {
   makeAccountActive,
+  activeAccountSelector,
   allAccountsSelector,
   publicKeySelector,
+  secretSourcesSelector,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
@@ -31,7 +33,10 @@ import {
   clearCollectiblesForAccount,
 } from "popup/ducks/cache";
 import { navigateTo } from "popup/helpers/navigate";
-import { AccountGroup, groupAccounts } from "popup/helpers/accountGroups";
+import {
+  AccountGroup,
+  groupAccountsBySource,
+} from "popup/helpers/accountGroups";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { WalletRow } from "popup/components/account/WalletRow";
 import { AddWallet } from "popup/components/account/AddWallet";
@@ -81,9 +86,11 @@ export const AccountSheet = ({
   const { state: dataState, fetchData } = useGetWalletsData();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const allAccounts = useSelector(allAccountsSelector);
+  const secretSources = useSelector(secretSourcesSelector);
   // Fallback for the error state, where the fetch yields no data but Redux
   // still holds the active account from the last successful load.
   const reduxPublicKey = useSelector(publicKeySelector);
+  const reduxActiveAccount = useSelector(activeAccountSelector);
 
   useEffect(() => {
     if (!isOpen) {
@@ -114,9 +121,14 @@ export const AccountSheet = ({
   const activePublicKey = resolvedData?.publicKey || reduxPublicKey;
   const accountValue = resolvedData?.accountValue;
   const isFetchingTokenPrices = resolvedData?.isFetchingTokenPrices || false;
+  // By id, not address: a hot account and a Ledger can share one.
+  const activeAccountId =
+    reduxActiveAccount?.publicKey === activePublicKey
+      ? reduxActiveAccount.id
+      : allAccounts.find((account) => account.publicKey === activePublicKey)
+          ?.id || "";
   const activeAccountName =
-    allAccounts.find((account) => account.publicKey === activePublicKey)
-      ?.name || "";
+    allAccounts.find((account) => account.id === activeAccountId)?.name || "";
 
   const copyAddress = async () => {
     try {
@@ -149,8 +161,14 @@ export const AccountSheet = ({
     setCollapsed(new Set(collapsedGroupKeys));
   };
 
-  const selectAccount = async (publicKey: string) => {
-    await dispatch(makeAccountActive(publicKey));
+  const selectAccount = async ({
+    id,
+    publicKey,
+  }: {
+    id: string;
+    publicKey: string;
+  }) => {
+    await dispatch(makeAccountActive({ id }));
     dispatch(clearBalancesForAccount({ publicKey, networkDetails }));
     dispatch(clearCollectiblesForAccount({ publicKey, networkDetails }));
     // Close before refetching: Home renders <Loading /> while the new account
@@ -161,20 +179,24 @@ export const AccountSheet = ({
   };
 
   const renderRows = (accounts: AccountGroup["accounts"]) =>
-    accounts.map(({ publicKey, name }) => (
+    accounts.map(({ id, publicKey, name }) => (
       <WalletRow
-        key={publicKey}
+        key={id}
         isFetchingTokenPrices={isFetchingTokenPrices}
         accountName={name}
         accountValue={accountValue ? accountValue[publicKey] : ""}
         publicKey={publicKey}
-        isSelected={activePublicKey === publicKey}
-        onClick={selectAccount}
+        isSelected={activeAccountId === id}
+        onClick={() => selectAccount({ id, publicKey })}
       />
     ));
 
   const renderGroups = () => {
-    const groups = groupAccounts(allAccounts, t);
+    const groups = groupAccountsBySource({
+      accounts: allAccounts,
+      sources: secretSources,
+      t,
+    });
 
     // One source has nothing to tell apart, and collapsing it would only hide
     // the whole list, so a single group renders flat.
@@ -198,7 +220,7 @@ export const AccountSheet = ({
               className="AccountSheet__group__toggle"
               onClick={() => toggleGroup(group.key)}
               aria-expanded={isExpanded}
-aria-controls={isExpanded ? listId : undefined}
+              aria-controls={isExpanded ? listId : undefined}
               data-testid="account-sheet-group-toggle"
             >
               <span>{group.label}</span>

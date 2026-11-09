@@ -168,17 +168,18 @@ export const IntegrationTest = () => {
 
       res = await makeAccountActive({
         activePublicKey: testPublicKey,
-        publicKey: testPublicKey,
+        account: { publicKey: testPublicKey },
       });
       runAsserts("makeAccountActive", () => {
         assertString(res.publicKey);
+        assertString(res.activeAccountId);
         assertString(res.bipPath);
         assertBoolean(res.hasPrivateKey);
       });
 
       res = await updateAccountName({
         activePublicKey: testPublicKey,
-        publicKey: testPublicKey,
+        id: res.activeAccountId,
         accountName: "new-name",
       });
       runAsserts("updateAccountName", () => {

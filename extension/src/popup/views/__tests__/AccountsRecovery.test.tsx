@@ -2,7 +2,7 @@ import React from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 
-import { Account } from "@shared/api/types";
+import { Account, SecretSource, SecretSourceType } from "@shared/api/types";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
@@ -17,21 +17,60 @@ import { Wrapper } from "../../__testHelpers__";
 const DERIVED_1 = "GDVEU3DD4KOFECV66VIHWEZOYX4ZKR3WV27L464SIIPOU2IUI3JCZA57";
 const DERIVED_2 = "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
 const IMPORTED_1 = "GD6ROJBYLKQMOW3E7N4M2YBPUHMZD7PL65VRHRMO24BOVSBV5H3BQRSL";
-const IMPORTED_2 = "GA7YNBW5CBTJZ3ZZOWX3ZNBKD6OE7A7IHUQVWMY62W2ZBG2SGZVOOPVH";
 const LEDGER = "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH";
 
-const accounts: Account[] = [
-  { publicKey: DERIVED_1, name: "Account 1", imported: false },
-  { publicKey: IMPORTED_1, name: "Account 2", imported: true },
-  { publicKey: DERIVED_2, name: "Account 3", imported: false },
+const sources: SecretSource[] = [
   {
+    id: "phrase-1",
+    type: SecretSourceType.PHRASE,
+    label: "Seed Phrase 1",
+    createdAt: 1,
+  },
+  {
+    id: "key-1",
+    type: SecretSourceType.SECRET_KEY,
+    label: "Secret Key 1",
+    createdAt: 2,
+  },
+  {
+    id: "phrase-2",
+    type: SecretSourceType.PHRASE,
+    label: "Seed Phrase 2",
+    createdAt: 3,
+  },
+];
+
+// Account 3 is derived from the second phrase, added after the imported key.
+const accounts: Account[] = [
+  {
+    id: "k1",
+    sourceId: "phrase-1",
+    publicKey: DERIVED_1,
+    name: "Account 1",
+    imported: false,
+  },
+  {
+    id: "k2",
+    sourceId: "key-1",
+    publicKey: IMPORTED_1,
+    name: "Account 2",
+    imported: true,
+  },
+  {
+    id: "k3",
+    sourceId: "phrase-2",
+    publicKey: DERIVED_2,
+    name: "Account 3",
+    imported: false,
+  },
+  {
+    id: `hw:${LEDGER}`,
     publicKey: LEDGER,
     name: "Account 4",
-    imported: false,
+    imported: true,
     hardwareWalletType: WalletType.LEDGER,
   },
-  { publicKey: IMPORTED_2, name: "Account 5", imported: true },
-] as Account[];
+];
 
 let mockWalletsState: unknown;
 jest.mock(
@@ -71,7 +110,18 @@ describe("AccountsRecovery", () => {
 
   const renderList = () =>
     render(
-      <Wrapper routes={[ROUTES.accountsRecovery]}>
+      <Wrapper
+        routes={[ROUTES.accountsRecovery]}
+        state={{
+          auth: {
+            publicKey: DERIVED_2,
+            activeAccountId: "k3",
+            applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+            allAccounts: accounts,
+            secretSources: sources,
+          },
+        }}
+      >
         <Routes>
           <Route
             path={ROUTES.accountsRecovery}
@@ -82,18 +132,30 @@ describe("AccountsRecovery", () => {
       </Wrapper>,
     );
 
-  it("lists every account once, under its group, with balances", () => {
+  it("lists every account once, under the source that roots it", () => {
     renderList();
 
     const groups = screen.getAllByTestId("accounts-recovery-group");
-    expect(groups).toHaveLength(4);
-    expect(screen.getAllByTestId("accounts-recovery-row")).toHaveLength(5);
-
-    const phrase = within(groups[0]);
-    expect(phrase.getByText(/^Recovery phrase/)).toBeInTheDocument();
-    expect(phrase.getByText("Account 1")).toBeInTheDocument();
-    expect(phrase.getByText("$1,149.23")).toBeInTheDocument();
-    expect(phrase.getByText("Account 3")).toBeInTheDocument();
+    expect(screen.getAllByTestId("accounts-recovery-row")).toHaveLength(4);
+    expect(
+      groups.map((group) => [
+        group.querySelector(".AccountsRecovery__group__label")?.textContent,
+        within(group)
+          .getAllByTestId("accounts-recovery-row")
+          .map(
+            (row) =>
+              row.querySelector(".AccountsRecovery__row__name")?.textContent,
+          ),
+      ]),
+    ).toEqual([
+      // The test i18n returns keys uninterpolated; the numbers are covered in
+      // accountGroups.test.ts.
+      ["Recovery phrase {{number}}", ["Account 1"]],
+      ["Recovery phrase {{number}}", ["Account 3"]],
+      ["Secret key {{number}}", ["Account 2"]],
+      ["Ledger", ["Account 4"]],
+    ]);
+    expect(within(groups[0]).getByText("$1,149.23")).toBeInTheDocument();
   });
 
   it("marks the active account", () => {
@@ -116,7 +178,7 @@ describe("AccountsRecovery", () => {
     fireEvent.click(within(imported).getByTestId("accounts-recovery-edit"));
 
     expect(screen.getByTestId("location")).toHaveTextContent(
-      `${ROUTES.editAccount}?publicKey=${IMPORTED_1}`,
+      `${ROUTES.editAccount}?accountId=k2`,
     );
   });
 });

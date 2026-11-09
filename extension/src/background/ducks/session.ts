@@ -131,15 +131,15 @@ export const sessionSlice = createSlice({
     }),
     updateAccountName: (
       state,
-      action: { payload: { publicKey: string; updatedAccountName: string } },
+      action: { payload: { id: string; updatedAccountName: string } },
     ) => {
-      const { updatedAccountName, publicKey } = action.payload;
+      const { updatedAccountName, id } = action.payload;
       if (!state.allAccounts) {
         return state;
       }
 
       const newAllAccounts = state.allAccounts.map((account) => {
-        if (publicKey === account.publicKey) {
+        if (id === account.id) {
           return {
             ...account,
             name: updatedAccountName,

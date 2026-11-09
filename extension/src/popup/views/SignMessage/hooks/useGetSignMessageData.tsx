@@ -51,7 +51,7 @@ function useGetSignMessageData(accountToSign?: string, url?: string) {
     dispatch({ type: "FETCH_DATA_START" });
     try {
       if (newPublicKey) {
-        await reduxDispatch(makeAccountActive(newPublicKey));
+        await reduxDispatch(makeAccountActive({ publicKey: newPublicKey }));
       }
       const appData = await fetchAppData();
       if (isError(appData)) {
@@ -73,7 +73,7 @@ function useGetSignMessageData(accountToSign?: string, url?: string) {
         publicKey,
         accountToSign,
         setActiveAccount: (account: string) =>
-          reduxDispatch(makeAccountActive(account)),
+          reduxDispatch(makeAccountActive({ publicKey: account })),
       });
 
       if (!currentAccount) {

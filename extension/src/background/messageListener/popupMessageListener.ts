@@ -332,10 +332,8 @@ export const popupMessageListener = (
       if (!isFromExtensionPage) return { error: "Unauthorized" };
       return revealSecretKey({
         request,
-        sessionStore,
         localStore,
         keyManager,
-        sessionTimer,
       });
     }
     case SERVICE_TYPES.CONFIRM_PASSWORD: {
@@ -736,13 +734,7 @@ export const popupMessageListener = (
       // for the webpack dev-server popup relay.
       if (!isFromExtensionPage && !isFromDevServer)
         return { error: "Unauthorized" };
-      return (async () => {
-        const analyticsUserId = await getAnalyticsUserId(
-          sessionStore,
-          localStore,
-        );
-        return { analyticsUserId };
-      })();
+      return getAnalyticsUserId(sessionStore, localStore);
     }
 
     default:

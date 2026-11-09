@@ -12,7 +12,13 @@ import {
   getStellarExpertUrl,
   isStellarExpertSupported,
 } from "popup/helpers/account";
-import { allAccountsSelector } from "popup/ducks/accountServices";
+import {
+  activeAccountIdSelector,
+  allAccountsSelector,
+  secretSourcesSelector,
+} from "popup/ducks/accountServices";
+import { getSourceLabel } from "popup/helpers/accountGroups";
+import { SecretSourceType } from "@shared/api/types";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -53,7 +59,8 @@ const Row = ({ label, value, trailingIcon, onClick, testId }: RowProps) => (
 
 /**
  * One account's settings: its name, its secret key, and its explorer link.
- * Reached with `?publicKey=`; without one it edits the active account.
+ * Reached with `?accountId=` (`Account.id`); without one it edits the active
+ * account.
  *
  * Networks and Hide wallet are out of scope.
  */
@@ -63,6 +70,8 @@ export const EditAccount = () => {
   const navigate = useNavigate();
   const [isRenaming, setIsRenaming] = useState(false);
   const allAccounts = useSelector(allAccountsSelector);
+  const activeAccountId = useSelector(activeAccountIdSelector);
+  const secretSources = useSelector(secretSourcesSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { state, fetchData } = useGetAppData();
 
@@ -111,21 +120,26 @@ export const EditAccount = () => {
     state: state.state,
   });
 
-  const publicKey =
-    new URLSearchParams(location.search).get("publicKey") ||
-    state.data.account.publicKey;
-  const account = allAccounts.find((acct) => acct.publicKey === publicKey);
+  const accountId =
+    new URLSearchParams(location.search).get("accountId") || activeAccountId;
+  const account = allAccounts.find((acct) => acct.id === accountId);
 
   if (!account) {
     return <Navigate to={ROUTES.account} replace />;
   }
 
+  const { publicKey } = account;
   // A hardware account's key never leaves the device.
   const hasSecretKey = !account.hardwareWalletType;
-  // An imported key has no phrase. Every other hot account was derived from
-  // the wallet's one phrase; with several phrases (user model v2) this must
-  // name the account's own source.
-  const hasRecoveryPhrase = hasSecretKey && !account.imported;
+  // Only the phrase that roots this account is offered. A secret-key import
+  // is its own source and has no phrase.
+  const phraseSource = hasSecretKey
+    ? secretSources.find(
+        (source) =>
+          source.id === account.sourceId &&
+          source.type === SecretSourceType.PHRASE,
+      )
+    : undefined;
 
   return (
     <React.Fragment>
@@ -146,14 +160,18 @@ export const EditAccount = () => {
           </div>
           {hasSecretKey ? (
             <div className="EditAccount__card">
-              {hasRecoveryPhrase ? (
+              {phraseSource ? (
                 <>
                   <Row
-                    label={t("Recovery phrase")}
+                    label={getSourceLabel(phraseSource, t)}
                     value={t("Unlock to reveal")}
                     trailingIcon={<Icon.ChevronRight />}
                     onClick={() =>
-                      navigateTo(ROUTES.revealRecoveryPhrase, navigate)
+                      navigateTo(
+                        ROUTES.revealRecoveryPhrase,
+                        navigate,
+                        `?sourceId=${encodeURIComponent(phraseSource.id)}`,
+                      )
                     }
                     testId="edit-account-recovery-phrase"
                   />
@@ -168,7 +186,7 @@ export const EditAccount = () => {
                   navigateTo(
                     ROUTES.revealSecretKey,
                     navigate,
-                    `?publicKey=${encodeURIComponent(publicKey)}`,
+                    `?accountId=${encodeURIComponent(account.id)}`,
                   )
                 }
                 testId="edit-account-secret-key"
@@ -201,7 +219,7 @@ export const EditAccount = () => {
           {isRenaming ? (
             <RenameWallet
               allAccounts={allAccounts}
-              publicKey={publicKey}
+              accountId={account.id}
               onSubmit={() => {}}
               onClose={() => setIsRenaming(false)}
             />

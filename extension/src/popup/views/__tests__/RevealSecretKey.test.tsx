@@ -2,6 +2,7 @@ import React from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
+import { SecretSourceType } from "@shared/api/types";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
@@ -14,6 +15,11 @@ import { TEST_PUBLIC_KEY, Wrapper } from "../../__testHelpers__";
 const SECRET = "SBXKUDBDMEJ3BH5OLVRTBKOHU4F4XQRZF7T4TXIIELRXNCEHFLSAZ3XN";
 const OTHER_PUBLIC_KEY =
   "GDVEU3DD4KOFECV66VIHWEZOYX4ZKR3WV27L464SIIPOU2IUI3JCZA57";
+
+const ACTIVE_ID = "keystore-1";
+const OTHER_ID = "keystore-2";
+const PHRASE_2_SOURCE = "phrase-source-2";
+const KEY_SOURCE = "key-source-1";
 
 const PHRASE =
   "gloom student label strategy tattoo promote brand mushroom problem divert carbon erode";
@@ -43,6 +49,7 @@ jest.mock("helpers/hooks/useGetAppData", () => {
           type: actual.AppDataType.RESOLVED,
           account: {
             publicKey,
+            activeAccountId: "keystore-1",
             applicationState: AppState.MNEMONIC_PHRASE_CONFIRMED,
           },
         },
@@ -62,18 +69,45 @@ const LocationProbe = () => {
   return <div data-testid="location">{`${pathname}${search}`}</div>;
 };
 
+// The active account is derived from the wallet's second phrase; the other is
+// an imported key, its own source.
 const authState = (hardwareWalletType = WalletType.NONE) => ({
   auth: {
     publicKey: TEST_PUBLIC_KEY,
+    activeAccountId: ACTIVE_ID,
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+    secretSources: [
+      {
+        id: "phrase-source-1",
+        type: SecretSourceType.PHRASE,
+        label: "Seed Phrase 1",
+        createdAt: 1,
+      },
+      {
+        id: PHRASE_2_SOURCE,
+        type: SecretSourceType.PHRASE,
+        label: "Seed Phrase 2",
+        createdAt: 2,
+      },
+      {
+        id: KEY_SOURCE,
+        type: SecretSourceType.SECRET_KEY,
+        label: "Secret Key 1",
+        createdAt: 3,
+      },
+    ],
     allAccounts: [
       {
+        id: hardwareWalletType ? `hw:${TEST_PUBLIC_KEY}` : ACTIVE_ID,
+        sourceId: hardwareWalletType ? undefined : PHRASE_2_SOURCE,
         publicKey: TEST_PUBLIC_KEY,
         name: "Account 1",
         imported: false,
         hardwareWalletType,
       },
       {
+        id: OTHER_ID,
+        sourceId: KEY_SOURCE,
         publicKey: OTHER_PUBLIC_KEY,
         name: "Account 2",
         imported: true,
@@ -121,7 +155,7 @@ describe("RevealSecretKey", () => {
 
   it("asks for consent, then the password, then shows the key", async () => {
     mockRevealSecretKey.mockResolvedValue({ secretKey: SECRET, error: "" });
-    renderReveal(`?publicKey=${OTHER_PUBLIC_KEY}`);
+    renderReveal(`?accountId=${OTHER_ID}`);
 
     expect(
       screen.getByText("Your secret key controls this wallet"),
@@ -139,7 +173,7 @@ describe("RevealSecretKey", () => {
     expect(screen.getByText("Tap to copy")).toBeInTheDocument();
     expect(mockRevealSecretKey).toHaveBeenCalledWith({
       activePublicKey: TEST_PUBLIC_KEY,
-      publicKey: OTHER_PUBLIC_KEY,
+      accountId: OTHER_ID,
       password: "hunter22",
     });
   });
@@ -153,7 +187,7 @@ describe("RevealSecretKey", () => {
 
     await waitFor(() =>
       expect(mockRevealSecretKey).toHaveBeenCalledWith(
-        expect.objectContaining({ publicKey: TEST_PUBLIC_KEY }),
+        expect.objectContaining({ accountId: ACTIVE_ID }),
       ),
     );
   });
@@ -207,6 +241,31 @@ describe("RevealRecoveryPhrase", () => {
     expect(mockShowBackupPhrase).toHaveBeenCalledWith({
       activePublicKey: TEST_PUBLIC_KEY,
       password: "hunter22",
+      sourceId: undefined,
+    });
+  });
+
+  it("asks for the phrase Edit account names", async () => {
+    mockShowBackupPhrase.mockResolvedValue({
+      mnemonicPhrase: PHRASE,
+      error: "",
+    });
+    render(
+      <Wrapper
+        routes={[`${ROUTES.revealRecoveryPhrase}?sourceId=${PHRASE_2_SOURCE}`]}
+      >
+        <RevealRecoveryPhrase />
+      </Wrapper>,
+    );
+
+    acknowledgeAndContinue("Reveal recovery phrase", "reveal-recovery-phrase");
+    await submitPassword("hunter22", "Reveal recovery phrase");
+
+    await screen.findByTestId("reveal-recovery-phrase-value");
+    expect(mockShowBackupPhrase).toHaveBeenCalledWith({
+      activePublicKey: TEST_PUBLIC_KEY,
+      password: "hunter22",
+      sourceId: PHRASE_2_SOURCE,
     });
   });
 
@@ -253,7 +312,7 @@ describe("EditAccount", () => {
     );
 
   it("shows the named account and opens its secret key reveal", () => {
-    renderEditAccount(`?publicKey=${OTHER_PUBLIC_KEY}`);
+    renderEditAccount(`?accountId=${OTHER_ID}`);
 
     expect(screen.getByTestId("edit-account-name")).toHaveTextContent(
       "Account 2",
@@ -263,30 +322,40 @@ describe("EditAccount", () => {
     fireEvent.click(screen.getByTestId("edit-account-secret-key"));
 
     expect(screen.getByTestId("location")).toHaveTextContent(
-      `${ROUTES.revealSecretKey}?publicKey=${OTHER_PUBLIC_KEY}`,
+      `${ROUTES.revealSecretKey}?accountId=${OTHER_ID}`,
     );
   });
 
-  it("offers a phrase-derived account both its phrase and its key", () => {
-    renderEditAccount(`?publicKey=${TEST_PUBLIC_KEY}`);
+  it("offers a phrase-derived account its own phrase and its key", () => {
+    renderEditAccount(`?accountId=${ACTIVE_ID}`);
 
     expect(screen.getByTestId("edit-account-secret-key")).toBeInTheDocument();
-    fireEvent.click(screen.getByTestId("edit-account-recovery-phrase"));
+    const phraseRow = screen.getByTestId("edit-account-recovery-phrase");
+    expect(phraseRow).toHaveTextContent(/^Recovery phrase/);
+    fireEvent.click(phraseRow);
 
     expect(screen.getByTestId("location")).toHaveTextContent(
-      ROUTES.revealRecoveryPhrase,
+      `${ROUTES.revealRecoveryPhrase}?sourceId=${PHRASE_2_SOURCE}`,
+    );
+  });
+
+  it("edits the active account when none is named", () => {
+    renderEditAccount("");
+
+    expect(screen.getByTestId("edit-account-name")).toHaveTextContent(
+      "Account 1",
     );
   });
 
   it("offers an imported account no recovery phrase", () => {
-    renderEditAccount(`?publicKey=${OTHER_PUBLIC_KEY}`);
+    renderEditAccount(`?accountId=${OTHER_ID}`);
 
     expect(screen.getByTestId("edit-account-secret-key")).toBeInTheDocument();
     expect(screen.queryByTestId("edit-account-recovery-phrase")).toBeNull();
   });
 
   it("offers no secret key for a hardware account", () => {
-    renderEditAccount(`?publicKey=${TEST_PUBLIC_KEY}`, WalletType.LEDGER);
+    renderEditAccount(`?accountId=hw:${TEST_PUBLIC_KEY}`, WalletType.LEDGER);
 
     expect(screen.getByTestId("edit-account-name")).toHaveTextContent(
       "Account 1",
@@ -296,7 +365,7 @@ describe("EditAccount", () => {
   });
 
   it("opens the rename sheet from Account name", () => {
-    renderEditAccount(`?publicKey=${OTHER_PUBLIC_KEY}`);
+    renderEditAccount(`?accountId=${OTHER_ID}`);
 
     fireEvent.click(screen.getByTestId("edit-account-name"));
 

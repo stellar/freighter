@@ -9,6 +9,8 @@ jest.mock("../helpers/store-hardware-wallet", () => ({
 }));
 
 jest.mock("background/helpers/account", () => ({
+  HW_PREFIX: "hw:",
+  getActiveAccountId: jest.fn().mockResolvedValue("hw:GBHW"),
   getBipPath: (...args: unknown[]) => mockGetBipPath(...args),
   getIsHardwareWalletActive: jest.fn().mockResolvedValue(true),
 }));
@@ -27,7 +29,11 @@ describe("importHardwareWallet handler", () => {
     const sessionStore = {
       dispatch: jest.fn(),
       getState: jest.fn().mockReturnValue({
-        session: { publicKey: "GBHW", allAccounts: [], isHardwareWalletLocked: false },
+        session: {
+          publicKey: "GBHW",
+          allAccounts: [],
+          isHardwareWalletLocked: false,
+        },
       }),
     } as any;
     const localStore = {

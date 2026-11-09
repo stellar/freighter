@@ -60,6 +60,34 @@ describe("authedFetch", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
+  it("does not retry a 401 when retryOnUnauthorized is false", async () => {
+    const fetchImpl = jest.fn().mockResolvedValue(resp(401));
+    const r = await authedFetch({
+      keypair: KP,
+      baseUrl: "http://x",
+      method: "POST",
+      path: "/p",
+      body: "{}",
+      fetchImpl,
+      retryOnUnauthorized: false,
+    });
+    expect(r.status).toBe(401);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("signs the JWT iat from the injected clock", async () => {
+    const fetchImpl = jest.fn().mockResolvedValue(resp(200));
+    await authedFetch({
+      keypair: KP,
+      baseUrl: "http://x",
+      method: "GET",
+      path: "/p",
+      fetchImpl,
+      now: 1_700_000_000_999,
+    });
+    expect(claimsOf(fetchImpl.mock.calls[0]).iat).toBe(1_700_000_000);
+  });
+
   it("sets Content-Type: application/json for non-GET by default", async () => {
     const fetchImpl = jest.fn().mockResolvedValue(resp(201));
     await authedFetch({

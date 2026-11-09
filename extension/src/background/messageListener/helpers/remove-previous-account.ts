@@ -1,5 +1,13 @@
 import { getKeyIdList } from "background/helpers/account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
+import { clearDerivationIndices } from "background/helpers/derivation-indices";
+import { clearAccountProvenance } from "background/helpers/account-provenance";
+import { clearLinkStatus } from "background/helpers/link-status";
+import { clearPendingAttribution } from "background/helpers/pre-v2-migration";
+import {
+  clearPinnedSourceId,
+  clearSecretSources,
+} from "background/helpers/secret-sources";
 import {
   ACCOUNT_NAME_LIST_ID,
   APPLICATION_ID,
@@ -32,4 +40,10 @@ export const removePreviousAccount = async ({
   }
 
   await localStore.remove(KEY_ID_LIST);
+  await clearSecretSources({ localStore });
+  await clearPinnedSourceId({ localStore });
+  await clearDerivationIndices({ localStore });
+  await clearAccountProvenance({ localStore });
+  await clearLinkStatus({ localStore });
+  await clearPendingAttribution({ localStore });
 };

@@ -1,69 +1,119 @@
-import { Account } from "@shared/api/types";
+import { Account, SecretSource, SecretSourceType } from "@shared/api/types";
 import { WalletType } from "@shared/constants/hardwareWallet";
 
-import { AccountGroupKind, groupAccounts } from "popup/helpers/accountGroups";
+import {
+  AccountGroupKind,
+  getSourceLabel,
+  groupAccountsBySource,
+} from "../accountGroups";
 
-const DERIVED_1 = "GDVEU3DD4KOFECV66VIHWEZOYX4ZKR3WV27L464SIIPOU2IUI3JCZA57";
-const DERIVED_2 = "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
-const IMPORTED_1 = "GD6ROJBYLKQMOW3E7N4M2YBPUHMZD7PL65VRHRMO24BOVSBV5H3BQRSL";
-const IMPORTED_2 = "GA7YNBW5CBTJZ3ZZOWX3ZNBKD6OE7A7IHUQVWMY62W2ZBG2SGZVOOPVH";
-const LEDGER = "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH";
-
-const accounts = [
-  { publicKey: DERIVED_1, name: "Account 1", imported: false },
-  { publicKey: IMPORTED_1, name: "Account 2", imported: true },
-  { publicKey: DERIVED_2, name: "Account 3", imported: false },
-  {
-    publicKey: LEDGER,
-    name: "Account 4",
-    imported: false,
-    hardwareWalletType: WalletType.LEDGER,
-  },
-  { publicKey: IMPORTED_2, name: "Account 5", imported: true },
-] as Account[];
-
-const identity = (key: string, options?: Record<string, unknown>) =>
+const t = (key: string, options?: Record<string, unknown>) =>
   options?.number !== undefined
     ? key.replace("{{number}}", String(options.number))
     : key;
 
-describe("groupAccounts", () => {
-  it("puts derived accounts under the phrase and each import in its own group", () => {
-    const groups = groupAccounts(accounts, identity);
+const phrase = (id: string, n: number, createdAt: number): SecretSource => ({
+  id,
+  type: SecretSourceType.PHRASE,
+  label: `Seed Phrase ${n}`,
+  createdAt,
+});
 
-    expect(
-      groups.map(({ label, kind, accounts: members }) => [
-        label,
-        kind,
-        members.map(({ publicKey }) => publicKey),
-      ]),
-    ).toEqual([
-      [
-        "Recovery phrase 1",
-        AccountGroupKind.RecoveryPhrase,
-        [DERIVED_1, DERIVED_2],
+const key = (id: string, n: number, createdAt: number): SecretSource => ({
+  id,
+  type: SecretSourceType.SECRET_KEY,
+  label: `Secret Key ${n}`,
+  createdAt,
+});
+
+const account = (id: string, sourceId?: string, extra = {}): Account => ({
+  id,
+  sourceId,
+  publicKey: `G-${id}`,
+  name: id,
+  imported: false,
+  ...extra,
+});
+
+const summarize = (groups: ReturnType<typeof groupAccountsBySource>) =>
+  groups.map((g) => [g.kind, g.label, g.accounts.map((a) => a.id)]);
+
+describe("getSourceLabel", () => {
+  it("keeps the stored number and translates the rest", () => {
+    expect(getSourceLabel(phrase("p", 3, 0), t)).toBe("Recovery phrase 3");
+    expect(getSourceLabel(key("k", 2, 0), t)).toBe("Secret key 2");
+  });
+
+  it("falls back to the stored label when it has no number", () => {
+    expect(getSourceLabel({ ...phrase("p", 1, 0), label: "Savings" }, t)).toBe(
+      "Savings",
+    );
+  });
+});
+
+describe("groupAccountsBySource", () => {
+  it("puts phrases first, then keys, then hardware, each oldest first", () => {
+    const groups = groupAccountsBySource({
+      sources: [key("k1", 1, 2), phrase("p2", 2, 3), phrase("p1", 1, 1)],
+      accounts: [
+        account("hw:G1", undefined, {
+          hardwareWalletType: WalletType.LEDGER,
+          imported: true,
+        }),
+        account("a3", "k1", { imported: true }),
+        account("a1", "p1"),
+        account("a2", "p2"),
+        account("a4", "p1"),
       ],
-      ["Secret key 1", AccountGroupKind.SecretKey, [IMPORTED_1]],
-      ["Secret key 2", AccountGroupKind.SecretKey, [IMPORTED_2]],
-      ["Ledger", AccountGroupKind.Hardware, [LEDGER]],
+      t,
+    });
+
+    expect(summarize(groups)).toEqual([
+      [AccountGroupKind.PHRASE, "Recovery phrase 1", ["a1", "a4"]],
+      [AccountGroupKind.PHRASE, "Recovery phrase 2", ["a2"]],
+      [AccountGroupKind.SECRET_KEY, "Secret key 1", ["a3"]],
+      [AccountGroupKind.HARDWARE, "Ledger", ["hw:G1"]],
     ]);
   });
 
-  it("numbers a lone imported key too", () => {
-    const groups = groupAccounts(accounts.slice(0, 3), identity);
+  it("keeps an account with no known source instead of dropping it", () => {
+    const groups = groupAccountsBySource({
+      sources: [phrase("p1", 1, 1)],
+      accounts: [account("a1", "p1"), account("a2"), account("a3", "gone")],
+      t,
+    });
 
-    expect(groups.map(({ label }) => label)).toEqual([
-      "Recovery phrase 1",
-      "Secret key 1",
+    expect(summarize(groups)).toEqual([
+      [AccountGroupKind.PHRASE, "Recovery phrase 1", ["a1"]],
+      [AccountGroupKind.OTHER, "Other accounts", ["a2", "a3"]],
     ]);
   });
 
   it("keeps each group's key stable when accounts are reordered", () => {
-    const keys = groupAccounts(accounts, identity).map(({ key }) => key);
-    const reversed = groupAccounts([...accounts].reverse(), identity).map(
-      ({ key }) => key,
-    );
+    const sources = [phrase("p1", 1, 1), key("k1", 1, 2)];
+    const accounts = [
+      account("a1", "p1"),
+      account("a2", "k1", { imported: true }),
+      account("hw:G1", undefined, {
+        hardwareWalletType: WalletType.LEDGER,
+        imported: true,
+      }),
+    ];
+    const keys = (list: Account[]) =>
+      groupAccountsBySource({ sources, accounts: list, t }).map((g) => g.key);
 
-    expect([...reversed].sort()).toEqual([...keys].sort());
+    expect(keys([...accounts].reverse())).toEqual(keys(accounts));
+  });
+
+  it("leaves out a source with no accounts", () => {
+    const groups = groupAccountsBySource({
+      sources: [phrase("p1", 1, 1), key("k1", 1, 2)],
+      accounts: [account("a1", "k1", { imported: true })],
+      t,
+    });
+
+    expect(summarize(groups)).toEqual([
+      [AccountGroupKind.SECRET_KEY, "Secret key 1", ["a1"]],
+    ]);
   });
 });

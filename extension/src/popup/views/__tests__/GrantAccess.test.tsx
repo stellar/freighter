@@ -25,6 +25,7 @@ const mockLoadAccount = () =>
   Promise.resolve({
     hasPrivateKey: true,
     publicKey: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+    activeAccountId: "",
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
     allAccounts: mockAccounts,
     bipPath: "bip-path",

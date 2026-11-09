@@ -396,6 +396,7 @@ describe("useGetSignTxData", () => {
       });
     jest.spyOn(ApiInternal, "makeAccountActive").mockResolvedValueOnce({
       publicKey: signingAccount,
+      activeAccountId: "",
       hasPrivateKey: true,
       bipPath: "",
     });

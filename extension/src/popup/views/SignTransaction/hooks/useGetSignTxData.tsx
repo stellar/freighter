@@ -120,7 +120,7 @@ function useGetSignTxData(
     iconsRef.current = {} as AssetIcons;
     try {
       if (newPublicKey) {
-        await reduxDispatch(makeAccountActive(newPublicKey));
+        await reduxDispatch(makeAccountActive({ publicKey: newPublicKey }));
       }
       const appData = await fetchAppData(false);
       if (isError(appData)) {
@@ -146,7 +146,9 @@ function useGetSignTxData(
         publicKey: activePublicKey,
         accountToSign,
         setActiveAccount: (account: string) => {
-          accountSwitch = reduxDispatch(makeAccountActive(account));
+          accountSwitch = reduxDispatch(
+            makeAccountActive({ publicKey: account }),
+          );
         },
       });
 
