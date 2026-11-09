@@ -1,4 +1,5 @@
 {
+  "Couldn't read this token's details. Please try again.": "Couldn't read this token's details. Please try again.",
   "No path found for swap.": "No path found for swap.",
   "We had an issue retrieving your transaction details. Please try again.": "We had an issue retrieving your transaction details. Please try again.",
   "{{appName}} disconnected": "{{appName}} disconnected",

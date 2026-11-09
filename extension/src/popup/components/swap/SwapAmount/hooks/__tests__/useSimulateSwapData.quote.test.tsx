@@ -23,6 +23,7 @@ import {
 } from "popup/ducks/transactionSubmission";
 import * as Blockaid from "popup/helpers/blockaid";
 import * as HorizonGetBestPath from "popup/helpers/horizonGetBestPath";
+import * as Soroban from "popup/helpers/soroban";
 
 import { useSimulateTxData } from "../useSimulateSwapData";
 
@@ -696,7 +697,10 @@ describe("useSimulateTxData quote when no live quote exists", () => {
       });
     });
 
-    it("does not build into a contract token whose decimals are unknown", async () => {
+    it("reads a picked token's decimals on chain and builds with them", async () => {
+      const getDecimals = jest
+        .spyOn(Soroban, "getDecimalsForAsset")
+        .mockResolvedValue(6);
       fetchBackendV2.mockImplementation(
         answer(lifiRoute("XLM", TOKEN_CONTRACT, "2.345678"), {
           status: 200,
@@ -712,12 +716,66 @@ describe("useSimulateTxData quote when no live quote exists", () => {
         await result.current.fetchData({ amount: "1" });
       });
 
-      expect(
-        fetchBackendV2.mock.calls.some(([{ path }]) =>
-          path.startsWith("/swap/tx"),
+      expect(getDecimals).toHaveBeenCalledWith(
+        expect.objectContaining({ assetIssuer: TOKEN_CONTRACT }),
+      );
+      // 2.345678 less 1%, down to the 6 decimals read on chain
+      expect(txRequest(fetchBackendV2)).toMatchObject({ minOut: "2.322221" });
+    });
+
+    it("scales the amount sold and minOut to each side's own decimals", async () => {
+      const BIG_CONTRACT = StrKey.encodeContract(Buffer.alloc(32, 5));
+      fetchBackendV2.mockImplementation(
+        answer(
+          lifiRoute(TOKEN_CONTRACT, BIG_CONTRACT, "0.123456789012345678"),
+          { status: 200, build: sorobanBuild("1123456") },
         ),
-      ).toBe(false);
-      expect(result.current.state.error).toBeTruthy();
+      );
+      const { result } = renderSimulate(undefined, {
+        sourceAsset: tokenAsset,
+        sourceDecimals: 6,
+        destAsset: getAssetFromCanonical(`BIG:${BIG_CONTRACT}`),
+        destDecimals: 18,
+      });
+
+      let payload: any;
+      await act(async () => {
+        payload = await result.current.fetchData({ amount: "1.123456" });
+      });
+
+      expect(txRequest(fetchBackendV2)).toMatchObject({
+        fromAsset: TOKEN_CONTRACT,
+        toAsset: BIG_CONTRACT,
+        amount: "1.123456",
+        minOut: "0.122222221122222221",
+      });
+      expect(payload.decoded.sendAmount).toBe("1.123456");
+    });
+
+    it("refuses up front, and reports, when a token's decimals can't be read", async () => {
+      jest
+        .spyOn(Soroban, "getDecimalsForAsset")
+        .mockRejectedValue(new Error("Unable to fetch decimals"));
+      fetchBackendV2.mockImplementation(
+        answer(lifiRoute("XLM", TOKEN_CONTRACT, "2.345678"), {
+          status: 200,
+          build: sorobanBuild("10000000"),
+        }),
+      );
+      const { result } = renderSimulate(undefined, {
+        destAsset: tokenAsset,
+        destDecimals: undefined,
+      });
+
+      await act(async () => {
+        await result.current.fetchData({ amount: "1" });
+      });
+
+      expect(fetchBackendV2).not.toHaveBeenCalled();
+      expect(result.current.state.error).toBe(
+        "Couldn't read this token's details. Please try again.",
+      );
+      expect(captureException).toHaveBeenCalled();
     });
   });
 

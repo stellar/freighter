@@ -45,7 +45,10 @@ import {
 } from "popup/helpers/swapQuote";
 import { decodeSwapTx, DecodedSwapTx } from "popup/helpers/decodeSwapTx";
 import { isQuoteExpiredError } from "popup/helpers/quoteExpiry";
-import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
+import {
+  CLASSIC_ASSET_DECIMALS,
+  getDecimalsForAsset,
+} from "popup/helpers/soroban";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { AppDispatch } from "popup/App";
 
@@ -55,6 +58,8 @@ export const ERROR_TO_DISPLAY = {
   NO_PATH_FOUND: "No path found for swap.",
   SWAPS_UNAVAILABLE: "Swaps are temporarily unavailable",
   NO_QUOTE: "No quote available",
+  TOKEN_DETAILS_UNAVAILABLE:
+    "Couldn't read this token's details. Please try again.",
   QUOTE_EXPIRED: "Quote has expired, please try again to get a new quote",
 };
 
@@ -88,8 +93,8 @@ interface SimulationParams {
   // the pick-time snapshot so defaulted/deep-linked destinations — which never
   // went through the picker — build the changeTrust op too.
   destRequiresTrustline: boolean;
-  sourceDecimals: number;
-  /** Unknown for a contract token the account doesn't hold and didn't pick. */
+  /** From the held balance; otherwise read on chain at build time. */
+  sourceDecimals?: number;
   destDecimals?: number;
 }
 
@@ -260,7 +265,7 @@ const buildFromBackend = async ({
   quotes: SwapQuotesResponse | null;
   key: SwapQuoteKey;
   allowedSlippage: string;
-  destDecimals?: number;
+  destDecimals: number;
   fee: string;
   timeout: number;
   onQuoteMoved: () => void;
@@ -268,9 +273,6 @@ const buildFromBackend = async ({
   const route = quotes ? pickSwapRoute(quotes) : undefined;
   if (!route) {
     throw new Error(ERROR_TO_DISPLAY.NO_PATH_FOUND);
-  }
-  if (destDecimals === undefined) {
-    throw new Error(`Swap: unknown decimals for ${key.destAsset}`);
   }
   const minOut = getMinOut(allowedSlippage, route.toAmount, destDecimals);
   try {
@@ -368,6 +370,30 @@ function useSimulateTxData({
       const payload = { transactionXdr: "" } as SimulateTxData;
       const { allowedSlippage, sourceAsset, destAsset } = simParams;
 
+      const readDecimals = (
+        asset: SimulationParams["sourceAsset"],
+        held?: number,
+      ) =>
+        held ??
+        getDecimalsForAsset({
+          assetIssuer: asset.issuer ?? null,
+          publicKey,
+          networkDetails,
+        });
+      let sourceDecimals: number;
+      let destDecimals: number;
+      try {
+        [sourceDecimals, destDecimals] = await Promise.all([
+          readDecimals(sourceAsset, simParams.sourceDecimals),
+          readDecimals(destAsset, simParams.destDecimals),
+        ]);
+      } catch (e) {
+        if (!isStale()) {
+          captureException(e);
+        }
+        throw new Error(ERROR_TO_DISPLAY.TOKEN_DETAILS_UNAVAILABLE);
+      }
+
       const baseFee = new BigNumber(transactionFee || stroopToXlm(BASE_FEE));
 
       // Reuse the quote the live "You receive" preview already surfaced (its
@@ -462,7 +488,7 @@ function useSimulateTxData({
             quotes,
             key: getSwapQuoteKey(quoteParams),
             allowedSlippage,
-            destDecimals: simParams.destDecimals,
+            destDecimals,
             fee: baseFee.toFixed(),
             timeout: transactionTimeout,
             onQuoteMoved: () => {
@@ -479,7 +505,7 @@ function useSimulateTxData({
           sourceAsset: quoteParams.sourceAsset,
           destAsset: quoteParams.destAsset,
           minOut,
-          sourceDecimals: simParams.sourceDecimals,
+          sourceDecimals,
         });
       } catch (e) {
         if (!isStale()) {

@@ -124,13 +124,11 @@ describe("SwapAmount with Soroban contract tokens", () => {
       tokenBalance,
     ]);
 
-    expect(lastSimParams()).toMatchObject({
-      sourceDecimals: 18,
-      destDecimals: 7,
-    });
+    expect(lastSimParams()).toMatchObject({ sourceDecimals: 18 });
+    expect(lastSimParams().destDecimals).toBeUndefined();
   });
 
-  it("builds with the picked row's decimals for a contract token not held", () => {
+  it("leaves a contract token not held to be read on chain, not the picked row's value", () => {
     renderSwapAmount({
       destinationAsset: TOKEN,
       destinationTokenDetails: {
@@ -141,10 +139,7 @@ describe("SwapAmount with Soroban contract tokens", () => {
       },
     });
 
-    expect(lastSimParams()).toMatchObject({
-      sourceDecimals: 7,
-      destDecimals: 6,
-    });
+    expect(lastSimParams().destDecimals).toBeUndefined();
   });
 
   it("adds no trustline into a contract token the account doesn't hold", () => {

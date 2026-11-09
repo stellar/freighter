@@ -77,7 +77,7 @@ import { SlideupModal } from "popup/components/SlideupModal";
 import { AmountCard } from "popup/components/amount/AmountCard";
 import { PercentageButtons } from "popup/components/amount/PercentageButtons";
 import { shouldShowXlmReservePreflight } from "popup/helpers/xlmReserve";
-import { getSwapQuote, getSwapTokenDecimals } from "popup/helpers/swapQuote";
+import { getHeldTokenDecimals, getSwapQuote } from "popup/helpers/swapQuote";
 import { SwapQuotesError } from "@shared/api/helpers/getSwapQuotes";
 import { XlmReserveSheet } from "popup/components/swap/XlmReserveSheet";
 import { useSwapLiveQuote } from "./hooks/useSwapLiveQuote";
@@ -159,14 +159,10 @@ export const SwapAmount = ({
       ? (swapAmountData.data.userBalances.unfilteredBalances ??
         swapAmountData.data.userBalances.balances)
       : [];
-  const sourceDecimals =
-    getSwapTokenDecimals({ canonical: asset, balances: heldBalances }) ??
-    CLASSIC_ASSET_DECIMALS;
-  const destDecimals = getSwapTokenDecimals({
-    canonical: destinationAsset,
-    balances: heldBalances,
-    picked: transactionData.destinationTokenDetails,
-  });
+  const heldSourceDecimals = getHeldTokenDecimals(asset, heldBalances);
+  const heldDestDecimals = getHeldTokenDecimals(destinationAsset, heldBalances);
+  // Input precision only: the build reads an unheld token's decimals on chain.
+  const sourceDecimals = heldSourceDecimals ?? CLASSIC_ASSET_DECIMALS;
   // Only a classic destination needs a trustline; a contract token holds its
   // own balances.
   const destRequiresTrustline =
@@ -201,8 +197,8 @@ export const SwapAmount = ({
       transactionTimeout,
       memo,
       destRequiresTrustline,
-      sourceDecimals,
-      destDecimals,
+      sourceDecimals: heldSourceDecimals,
+      destDecimals: heldDestDecimals,
     },
   });
 
@@ -838,7 +834,7 @@ export const SwapAmount = ({
                     isAmountTooHigh={false}
                     isReadOnly
                     autoFocus={false}
-                    cryptoDecimals={destDecimals ?? CLASSIC_ASSET_DECIMALS}
+                    cryptoDecimals={heldDestDecimals ?? CLASSIC_ASSET_DECIMALS}
                     onAmountChange={() => {}}
                     onAmountUsdChange={() => {}}
                     onToggleInputType={() => {}}

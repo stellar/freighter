@@ -21,7 +21,7 @@ import {
 } from "@shared/helpers/stellar";
 import { findAssetBalance } from "popup/helpers/balance";
 import { cleanAmount } from "popup/helpers/formatters";
-import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
+import { isContractId } from "popup/helpers/soroban";
 import {
   horizonGetBestPath,
   horizonGetBestReceivePath,
@@ -114,31 +114,17 @@ export const toBackendAsset = (canonical: string) => {
   return contractIssuer(canonical) ?? canonical;
 };
 
-/**
- * A contract token's decimals come from the account's balance, else from the
- * picker row it was chosen from; undefined when neither knows them.
- */
-export const getSwapTokenDecimals = ({
-  canonical,
-  balances,
-  picked,
-}: {
-  canonical: string;
-  balances: AssetType[];
-  picked?: { decimals?: number } | null;
-}): number | undefined => {
-  const contract = canonical ? contractIssuer(canonical) : undefined;
-  if (!contract) {
-    return CLASSIC_ASSET_DECIMALS;
+/** A held contract token's decimals; undefined for anything else. */
+export const getHeldTokenDecimals = (
+  canonical: string,
+  balances: AssetType[],
+): number | undefined => {
+  const { code, issuer } = canonical ? splitCanonical(canonical) : {};
+  if (!code || !isContractId(issuer)) {
+    return undefined;
   }
-  const held = findAssetBalance(balances, {
-    code: splitCanonical(canonical).code,
-    issuer: contract,
-  });
-  if (held && "decimals" in held) {
-    return Number(held.decimals);
-  }
-  return picked?.decimals;
+  const held = findAssetBalance(balances, { code, issuer });
+  return held && "decimals" in held ? Number(held.decimals) : undefined;
 };
 
 const fromBackendAsset = (asset: string) => {

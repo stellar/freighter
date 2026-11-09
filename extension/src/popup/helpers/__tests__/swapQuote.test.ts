@@ -7,7 +7,7 @@ import { captureException } from "@sentry/browser";
 import * as GetSwapQuotes from "@shared/api/helpers/getSwapQuotes";
 import * as HorizonGetBestPath from "popup/helpers/horizonGetBestPath";
 
-import { getSwapQuote, getSwapTokenDecimals } from "../swapQuote";
+import { getHeldTokenDecimals, getSwapQuote } from "../swapQuote";
 
 jest.mock("@sentry/browser", () => ({ captureException: jest.fn() }));
 
@@ -382,7 +382,7 @@ describe("getSwapQuote", () => {
   });
 });
 
-describe("getSwapTokenDecimals", () => {
+describe("getHeldTokenDecimals", () => {
   const TOKEN = `TKN:${TOKEN_CONTRACT}`;
   const heldToken = {
     token: { code: "TKN", issuer: { key: TOKEN_CONTRACT } },
@@ -390,42 +390,19 @@ describe("getSwapTokenDecimals", () => {
     decimals: 18,
   } as any;
 
-  it.each([
-    ["XLM", "native"],
-    ["a classic asset", USDC],
-  ])("is 7 for %s", (_name, canonical) => {
-    expect(
-      getSwapTokenDecimals({
-        canonical,
-        balances: [],
-        picked: { decimals: 3 },
-      }),
-    ).toBe(7);
-  });
-
   it("reads a held contract token's decimals from its balance", () => {
-    expect(
-      getSwapTokenDecimals({
-        canonical: TOKEN,
-        balances: [heldToken],
-        picked: { decimals: 6 },
-      }),
-    ).toBe(18);
+    expect(getHeldTokenDecimals(TOKEN, [heldToken])).toBe(18);
   });
 
-  it("falls back to the picked row's decimals", () => {
-    expect(
-      getSwapTokenDecimals({
-        canonical: TOKEN,
-        balances: [],
-        picked: { decimals: 6 },
-      }),
-    ).toBe(6);
+  it("is undefined for a contract token not held", () => {
+    expect(getHeldTokenDecimals(TOKEN, [])).toBeUndefined();
   });
 
-  it("is unknown for a contract token neither held nor picked", () => {
-    expect(
-      getSwapTokenDecimals({ canonical: TOKEN, balances: [] }),
-    ).toBeUndefined();
+  it.each([
+    ["a classic asset", USDC],
+    ["XLM", "native"],
+    ["no token", ""],
+  ])("is undefined for %s", (_name, canonical) => {
+    expect(getHeldTokenDecimals(canonical, [heldToken])).toBeUndefined();
   });
 });
