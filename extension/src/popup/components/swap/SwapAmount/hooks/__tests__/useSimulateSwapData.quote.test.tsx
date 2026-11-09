@@ -3,10 +3,14 @@ import { captureException } from "@sentry/browser";
 import { act, renderHook } from "@testing-library/react";
 import {
   Account,
+  Address,
   Asset,
+  nativeToScVal,
   Networks,
   Operation,
+  StrKey,
   TransactionBuilder,
+  xdr,
 } from "stellar-sdk";
 
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
@@ -137,12 +141,76 @@ const txRequest = (spy: jest.SpyInstance) =>
 const quoteCalls = (spy: jest.SpyInstance) =>
   spy.mock.calls.filter(([{ path }]) => path.startsWith("/swap/quotes"));
 
+const TOKEN_CONTRACT = StrKey.encodeContract(Buffer.alloc(32, 9));
+const TOKEN = `TKN:${TOKEN_CONTRACT}`;
+const ROUTER = StrKey.encodeContract(Buffer.alloc(32, 3));
+
+const backendContract = (a: string) =>
+  StrKey.isValidContract(a) ? a : backendAsset(a).contractId(Networks.PUBLIC);
+
+// A Soroban swap whose auth tree lets the router take `units` of fromAsset.
+const sorobanBuild = (units: string) => (req: any) => {
+  const call = (contract: string, fn: string, args: xdr.ScVal[]) =>
+    new xdr.InvokeContractArgs({
+      contractAddress: new Address(contract).toScAddress(),
+      functionName: fn,
+      args,
+    });
+  const swap = call(ROUTER, "swap", []);
+  const transfer = call(backendContract(req.fromAsset), "transfer", [
+    new Address(req.account).toScVal(),
+    new Address(ROUTER).toScVal(),
+    nativeToScVal(BigInt(units), { type: "i128" }),
+  ]);
+  const invocation = (fn: xdr.InvokeContractArgs, subs: any[] = []) =>
+    new xdr.SorobanAuthorizedInvocation({
+      function:
+        xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeContractFn(
+          fn,
+        ),
+      subInvocations: subs,
+    });
+  return new TransactionBuilder(new Account(req.account, "1"), {
+    fee: "100",
+    networkPassphrase: Networks.PUBLIC,
+  })
+    .addOperation(
+      Operation.invokeHostFunction({
+        func: xdr.HostFunction.hostFunctionTypeInvokeContract(swap),
+        auth: [
+          new xdr.SorobanAuthorizationEntry({
+            credentials:
+              xdr.SorobanCredentials.sorobanCredentialsSourceAccount(),
+            rootInvocation: invocation(swap, [invocation(transfer)]),
+          }),
+        ],
+      }),
+    )
+    .setTimeout(req.timeout)
+    .build()
+    .toXDR();
+};
+
+const lifiRoute = (from: string, to: string, toAmount: string) => ({
+  routes: [
+    {
+      source: "lifi",
+      fromAmount: "1",
+      toAmount,
+      paths: [{ share: "1", hops: [{ venue: "Aquarius", from, to }] }],
+      fees: [],
+    },
+  ],
+  unavailable: [],
+});
+
 const renderSimulate = (
   stored: Record<string, unknown> = {
     // No live quote yet: the hook must fetch one.
     destinationAmount: "",
     path: [],
   },
+  params: Record<string, unknown> = {},
 ) =>
   renderHook(
     () =>
@@ -158,6 +226,9 @@ const renderSimulate = (
           transactionFee: "0.00001",
           transactionTimeout: 180,
           destRequiresTrustline: false,
+          sourceDecimals: 7,
+          destDecimals: 7,
+          ...params,
         },
       }),
     {
@@ -571,6 +642,83 @@ describe("useSimulateTxData quote when no live quote exists", () => {
 
     expect(fetchBackendV2).toHaveBeenCalled();
     expect(result.current.state.error).toBe("No path found for swap.");
+  });
+
+  describe("Soroban contract tokens", () => {
+    const tokenAsset = getAssetFromCanonical(TOKEN);
+
+    it("sells a contract token at its own decimals", async () => {
+      fetchBackendV2.mockImplementation(
+        answer(lifiRoute(TOKEN_CONTRACT, USDC, "2"), {
+          status: 200,
+          build: sorobanBuild("1123456"),
+        }),
+      );
+      const { result } = renderSimulate(undefined, {
+        sourceAsset: tokenAsset,
+        sourceDecimals: 6,
+      });
+
+      let payload: any;
+      await act(async () => {
+        payload = await result.current.fetchData({ amount: "1.123456" });
+      });
+
+      expect(result.current.state.error).toBeNull();
+      expect(txRequest(fetchBackendV2)).toMatchObject({
+        fromAsset: TOKEN_CONTRACT,
+        toAsset: USDC,
+        amount: "1.123456",
+      });
+      expect(payload.decoded.sendAmount).toBe("1.123456");
+    });
+
+    it("rounds minOut to the bought token's decimals", async () => {
+      fetchBackendV2.mockImplementation(
+        answer(lifiRoute("XLM", TOKEN_CONTRACT, "2.345678"), {
+          status: 200,
+          build: sorobanBuild("10000000"),
+        }),
+      );
+      const { result } = renderSimulate(undefined, {
+        destAsset: tokenAsset,
+        destDecimals: 6,
+      });
+
+      await act(async () => {
+        await result.current.fetchData({ amount: "1" });
+      });
+
+      // 2.345678 less 1% = 2.32222122, down to 6 decimals
+      expect(txRequest(fetchBackendV2)).toMatchObject({
+        toAsset: TOKEN_CONTRACT,
+        minOut: "2.322221",
+      });
+    });
+
+    it("does not build into a contract token whose decimals are unknown", async () => {
+      fetchBackendV2.mockImplementation(
+        answer(lifiRoute("XLM", TOKEN_CONTRACT, "2.345678"), {
+          status: 200,
+          build: sorobanBuild("10000000"),
+        }),
+      );
+      const { result } = renderSimulate(undefined, {
+        destAsset: tokenAsset,
+        destDecimals: undefined,
+      });
+
+      await act(async () => {
+        await result.current.fetchData({ amount: "1" });
+      });
+
+      expect(
+        fetchBackendV2.mock.calls.some(([{ path }]) =>
+          path.startsWith("/swap/tx"),
+        ),
+      ).toBe(false);
+      expect(result.current.state.error).toBeTruthy();
+    });
   });
 
   describe("with a stored live quote", () => {

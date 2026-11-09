@@ -11,13 +11,17 @@ import {
   SwapQuotesResponse,
   SwapRoute,
 } from "@shared/api/types/backend-api";
+import { AssetType } from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import {
   getCanonicalFromAsset,
   isCustomNetwork,
+  splitCanonical,
 } from "@shared/helpers/stellar";
+import { findAssetBalance } from "popup/helpers/balance";
 import { cleanAmount } from "popup/helpers/formatters";
+import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
 import {
   horizonGetBestPath,
   horizonGetBestReceivePath,
@@ -98,12 +102,43 @@ export const pickSwapRoute = (
   quotes: SwapQuotesResponse,
 ): SwapRoute | undefined => quotes.routes[0];
 
+const contractIssuer = (canonical: string) => {
+  const issuer = canonical.split(":")[1];
+  return issuer && StrKey.isValidContract(issuer) ? issuer : undefined;
+};
+
 export const toBackendAsset = (canonical: string) => {
   if (isNativeAssetId(canonical)) {
     return "XLM";
   }
-  const issuer = canonical.split(":")[1];
-  return issuer && StrKey.isValidContract(issuer) ? issuer : canonical;
+  return contractIssuer(canonical) ?? canonical;
+};
+
+/**
+ * A contract token's decimals come from the account's balance, else from the
+ * picker row it was chosen from; undefined when neither knows them.
+ */
+export const getSwapTokenDecimals = ({
+  canonical,
+  balances,
+  picked,
+}: {
+  canonical: string;
+  balances: AssetType[];
+  picked?: { decimals?: number } | null;
+}): number | undefined => {
+  const contract = canonical ? contractIssuer(canonical) : undefined;
+  if (!contract) {
+    return CLASSIC_ASSET_DECIMALS;
+  }
+  const held = findAssetBalance(balances, {
+    code: splitCanonical(canonical).code,
+    issuer: contract,
+  });
+  if (held && "decimals" in held) {
+    return Number(held.decimals);
+  }
+  return picked?.decimals;
 };
 
 const fromBackendAsset = (asset: string) => {
@@ -151,6 +186,10 @@ export const getSwapQuote = async (
   const key = getSwapQuoteKey(params);
   const { amount } = key;
   if (isCustomNetwork(networkDetails)) {
+    // Contract tokens route only through the backend's Soroban sources.
+    if (contractIssuer(sourceAsset) || contractIssuer(destAsset)) {
+      return { route: null, quotes: null, key };
+    }
     const record =
       mode === "send"
         ? await horizonGetBestPath({

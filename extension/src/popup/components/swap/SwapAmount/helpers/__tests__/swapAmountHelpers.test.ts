@@ -7,17 +7,22 @@ import {
 
 describe("validateSwapAmount", () => {
   it("returns null for a valid amount", () => {
-    expect(validateSwapAmount("10")).toBeNull();
-    expect(validateSwapAmount("0.1234567")).toBeNull();
-    expect(validateSwapAmount("")).toBeNull();
+    expect(validateSwapAmount("10", 7)).toBeNull();
+    expect(validateSwapAmount("0.1234567", 7)).toBeNull();
+    expect(validateSwapAmount("", 7)).toBeNull();
   });
 
-  it("flags more than 7 decimals", () => {
-    expect(validateSwapAmount("0.12345678")).toBe(AMOUNT_ERROR.DEC_MAX);
+  it("flags more decimals than the token has", () => {
+    expect(validateSwapAmount("0.12345678", 7)).toBe(AMOUNT_ERROR.DEC_MAX);
+    expect(validateSwapAmount("0.1234567", 6)).toBe(AMOUNT_ERROR.DEC_MAX);
+  });
+
+  it("accepts up to an 18-decimal token's precision", () => {
+    expect(validateSwapAmount("0.123456789012345678", 18)).toBeNull();
   });
 
   it("flags an amount above the max send amount", () => {
-    expect(validateSwapAmount("1000000000000")).toBe(AMOUNT_ERROR.SEND_MAX);
+    expect(validateSwapAmount("1000000000000", 7)).toBe(AMOUNT_ERROR.SEND_MAX);
   });
 });
 

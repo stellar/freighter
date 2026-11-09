@@ -9,7 +9,7 @@ import {
 } from "popup/helpers/formatters";
 import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
 import { isNativeAssetId } from "@shared/helpers/assetIdentity";
-import { getAssetDecimals, getAvailableBalance } from "popup/helpers/soroban";
+import { getAvailableBalance } from "popup/helpers/soroban";
 import {
   findAssetBalance,
   getBalanceCanonicalKey,
@@ -41,7 +41,6 @@ interface GetSwapDerivedDataParams {
   data: ResolvedSwapAmountData;
   asset: string;
   destinationAsset: string;
-  isToken: boolean;
   destinationAmount: string;
   destinationTokenDetails: DestinationTokenDetails | null;
   /** formik.values.amount */
@@ -71,7 +70,6 @@ export const getSwapDerivedData = ({
   data,
   asset,
   destinationAsset,
-  isToken,
   destinationAmount,
   destinationTokenDetails,
   amount,
@@ -114,7 +112,6 @@ export const getSwapDerivedData = ({
     (isMainnet(data.networkDetails) && dstSpotPrice != null
       ? String(dstSpotPrice)
       : undefined);
-  const assetDecimals = getAssetDecimals(asset, sendData.userBalances, isToken);
   const priceValueUsd = assetPrice ? formatUsdValue(assetPrice, amount) : null;
   const supportsUsd = isMainnet(data.networkDetails) && assetPrice;
   const dstPriceValueUsd = dstAssetPrice
@@ -226,7 +223,6 @@ export const getSwapDerivedData = ({
     destinationIsNonHeld,
     assetPrice,
     dstAssetPrice,
-    assetDecimals,
     priceValueUsd,
     supportsUsd,
     dstPriceValueUsd,

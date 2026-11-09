@@ -38,7 +38,10 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import { closeWindow, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
-import { getAvailableBalance } from "popup/helpers/soroban";
+import {
+  CLASSIC_ASSET_DECIMALS,
+  getAvailableBalance,
+} from "popup/helpers/soroban";
 import { getBalanceCanonicalKey } from "popup/helpers/balance";
 import { useBlockaidOverrideState } from "popup/helpers/blockaid";
 import { AppDispatch } from "popup/App";
@@ -73,7 +76,7 @@ import { SlideupModal } from "popup/components/SlideupModal";
 import { AmountCard } from "popup/components/amount/AmountCard";
 import { PercentageButtons } from "popup/components/amount/PercentageButtons";
 import { shouldShowXlmReservePreflight } from "popup/helpers/xlmReserve";
-import { getSwapQuote } from "popup/helpers/swapQuote";
+import { getSwapQuote, getSwapTokenDecimals } from "popup/helpers/swapQuote";
 import { SwapQuotesError } from "@shared/api/helpers/getSwapQuotes";
 import { XlmReserveSheet } from "popup/components/swap/XlmReserveSheet";
 import { useSwapLiveQuote } from "./hooks/useSwapLiveQuote";
@@ -119,7 +122,6 @@ export const SwapAmount = ({
     destination,
     destinationAmount,
     destinationAsset,
-    isToken,
     memo,
     path,
     transactionFee,
@@ -156,6 +158,14 @@ export const SwapAmount = ({
       ? (swapAmountData.data.userBalances.unfilteredBalances ??
         swapAmountData.data.userBalances.balances)
       : [];
+  const sourceDecimals =
+    getSwapTokenDecimals({ canonical: asset, balances: heldBalances }) ??
+    CLASSIC_ASSET_DECIMALS;
+  const destDecimals = getSwapTokenDecimals({
+    canonical: destinationAsset,
+    balances: heldBalances,
+    picked: transactionData.destinationTokenDetails,
+  });
   const destRequiresTrustline =
     Boolean(destinationAsset) &&
     heldBalances.length > 0 &&
@@ -187,6 +197,8 @@ export const SwapAmount = ({
       transactionTimeout,
       memo,
       destRequiresTrustline,
+      sourceDecimals,
+      destDecimals,
     },
   });
 
@@ -287,7 +299,7 @@ export const SwapAmount = ({
   };
 
   const validate = (values: { amount: string }) => {
-    const error = validateSwapAmount(values.amount);
+    const error = validateSwapAmount(values.amount, sourceDecimals);
     return error ? { amount: error } : {};
   };
 
@@ -425,7 +437,6 @@ export const SwapAmount = ({
     destinationIsNonHeld,
     assetPrice,
     dstAssetPrice,
-    assetDecimals,
     priceValueUsd,
     supportsUsd,
     dstPriceValueUsd,
@@ -442,7 +453,6 @@ export const SwapAmount = ({
     data,
     asset,
     destinationAsset,
-    isToken,
     destinationAmount,
     destinationTokenDetails: transactionData.destinationTokenDetails,
     amount: formik.values.amount,
@@ -703,7 +713,7 @@ export const SwapAmount = ({
                     })}
                     isAmountTooHigh={isAmountTooHigh}
                     maxSpendableText={displayTotal}
-                    cryptoDecimals={assetDecimals}
+                    cryptoDecimals={sourceDecimals}
                     onAmountChange={({ amount: newAmount }) => {
                       // Normalize a cleared input back to the canonical "0".
                       const v = newAmount === "" ? DEFAULT_AMOUNT : newAmount;
@@ -720,7 +730,7 @@ export const SwapAmount = ({
                       const crypto = assetPrice
                         ? new BigNumber(cleanAmount(usd))
                             .dividedBy(assetPrice)
-                            .decimalPlaces(assetDecimals)
+                            .decimalPlaces(sourceDecimals)
                             .toFixed()
                         : DEFAULT_AMOUNT;
                       formik.setFieldValue("amount", crypto);
@@ -824,7 +834,7 @@ export const SwapAmount = ({
                     isAmountTooHigh={false}
                     isReadOnly
                     autoFocus={false}
-                    cryptoDecimals={7}
+                    cryptoDecimals={destDecimals ?? CLASSIC_ASSET_DECIMALS}
                     onAmountChange={() => {}}
                     onAmountUsdChange={() => {}}
                     onToggleInputType={() => {}}
@@ -859,7 +869,7 @@ export const SwapAmount = ({
                         cleanAmount(availableBalance),
                       )
                         .multipliedBy(new BigNumber(pct).dividedBy(100))
-                        .decimalPlaces(assetDecimals)
+                        .decimalPlaces(sourceDecimals)
                         .toFixed();
                       formik.setFieldValue("amount", pctAmount);
                       dispatch(saveAmount(pctAmount));

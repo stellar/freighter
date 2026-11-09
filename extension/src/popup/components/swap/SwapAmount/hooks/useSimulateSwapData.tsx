@@ -45,7 +45,7 @@ import {
 } from "popup/helpers/swapQuote";
 import { decodeSwapTx, DecodedSwapTx } from "popup/helpers/decodeSwapTx";
 import { isQuoteExpiredError } from "popup/helpers/quoteExpiry";
-import { isContractId } from "popup/helpers/soroban";
+import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { AppDispatch } from "popup/App";
 
@@ -53,7 +53,6 @@ const scanUrlstub = "internal";
 
 export const ERROR_TO_DISPLAY = {
   NO_PATH_FOUND: "No path found for swap.",
-  CUSTOM_TOKEN_NOT_SUPPORTED: "Swapping custom tokens is not supported yet.",
   SWAPS_UNAVAILABLE: "Swaps are temporarily unavailable",
   NO_QUOTE: "No quote available",
   QUOTE_EXPIRED: "Quote has expired, please try again to get a new quote",
@@ -62,12 +61,7 @@ export const ERROR_TO_DISPLAY = {
 const UNKNOWN_ERROR_DISPLAY =
   "We had an issue retrieving your transaction details. Please try again.";
 
-export const getSwapErrorMessage = (
-  error: unknown,
-  sourceAsset: { issuer?: string },
-  destAsset: { issuer?: string },
-): string => {
-  // Surface known error messages first, regardless of asset type
+export const getSwapErrorMessage = (error: unknown): string => {
   const errorStr =
     error instanceof Error
       ? error.message
@@ -76,10 +70,6 @@ export const getSwapErrorMessage = (
         : null;
   if (errorStr && Object.values(ERROR_TO_DISPLAY).includes(errorStr)) {
     return errorStr;
-  }
-  // For unrecognized errors involving contract-ID assets, show a specific message
-  if (isContractId(sourceAsset.issuer) || isContractId(destAsset.issuer)) {
-    return ERROR_TO_DISPLAY.CUSTOM_TOKEN_NOT_SUPPORTED;
   }
   return UNKNOWN_ERROR_DISPLAY;
 };
@@ -98,6 +88,9 @@ interface SimulationParams {
   // the pick-time snapshot so defaulted/deep-linked destinations — which never
   // went through the picker — build the changeTrust op too.
   destRequiresTrustline: boolean;
+  sourceDecimals: number;
+  /** Unknown for a contract token the account doesn't hold and didn't pick. */
+  destDecimals?: number;
 }
 
 export interface SimulateTxData {
@@ -243,17 +236,23 @@ export const getBuiltTx = async (
 
 // Exact decimal arithmetic, rounded down: computeDestMinWithSlippage's float
 // multiplier can miss the exact floor by a stroop.
-export const getMinOut = (allowedSlippage: string, toAmount: string) =>
+// The backend refuses a minOut with more decimals than the bought token has.
+export const getMinOut = (
+  allowedSlippage: string,
+  toAmount: string,
+  decimals: number,
+) =>
   new BigNumber(toAmount)
     .times(new BigNumber(100).minus(allowedSlippage))
     .div(100)
-    .decimalPlaces(7, BigNumber.ROUND_DOWN)
+    .decimalPlaces(decimals, BigNumber.ROUND_DOWN)
     .toFixed();
 
 const buildFromBackend = async ({
   quotes,
   key,
   allowedSlippage,
+  destDecimals,
   fee,
   timeout,
   onQuoteMoved,
@@ -261,6 +260,7 @@ const buildFromBackend = async ({
   quotes: SwapQuotesResponse | null;
   key: SwapQuoteKey;
   allowedSlippage: string;
+  destDecimals?: number;
   fee: string;
   timeout: number;
   onQuoteMoved: () => void;
@@ -269,7 +269,10 @@ const buildFromBackend = async ({
   if (!route) {
     throw new Error(ERROR_TO_DISPLAY.NO_PATH_FOUND);
   }
-  const minOut = getMinOut(allowedSlippage, route.toAmount);
+  if (destDecimals === undefined) {
+    throw new Error(`Swap: unknown decimals for ${key.destAsset}`);
+  }
+  const minOut = getMinOut(allowedSlippage, route.toAmount, destDecimals);
   try {
     const { xdr } = await buildSwapTx({
       network: key.network,
@@ -449,12 +452,17 @@ function useSimulateTxData({
             )
               .build()
               .toXdr(),
-            minOut: getMinOut(allowedSlippage, destinationAmount),
+            minOut: getMinOut(
+              allowedSlippage,
+              destinationAmount,
+              CLASSIC_ASSET_DECIMALS,
+            ),
           }
         : await buildFromBackend({
             quotes,
             key: getSwapQuoteKey(quoteParams),
             allowedSlippage,
+            destDecimals: simParams.destDecimals,
             fee: baseFee.toFixed(),
             timeout: transactionTimeout,
             onQuoteMoved: () => {
@@ -471,6 +479,7 @@ function useSimulateTxData({
           sourceAsset: quoteParams.sourceAsset,
           destAsset: quoteParams.destAsset,
           minOut,
+          sourceDecimals: simParams.sourceDecimals,
         });
       } catch (e) {
         if (!isStale()) {
@@ -509,9 +518,8 @@ function useSimulateTxData({
       if (isStale()) {
         return error;
       }
-      const { sourceAsset, destAsset } = simParams;
       // Every message is a key in the locale files.
-      const payload = t(getSwapErrorMessage(error, sourceAsset, destAsset));
+      const payload = t(getSwapErrorMessage(error));
 
       setIsQuoteExpired(
         (error instanceof Error &&

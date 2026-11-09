@@ -7,7 +7,7 @@ import { captureException } from "@sentry/browser";
 import * as GetSwapQuotes from "@shared/api/helpers/getSwapQuotes";
 import * as HorizonGetBestPath from "popup/helpers/horizonGetBestPath";
 
-import { getSwapQuote } from "../swapQuote";
+import { getSwapQuote, getSwapTokenDecimals } from "../swapQuote";
 
 jest.mock("@sentry/browser", () => ({ captureException: jest.fn() }));
 
@@ -269,6 +269,28 @@ describe("getSwapQuote", () => {
   });
 
   describe("on a custom network", () => {
+    it.each([
+      ["sold", `TKN:${TOKEN_CONTRACT}`, USDC],
+      ["bought", "native", `TKN:${TOKEN_CONTRACT}`],
+    ])(
+      "has no route, without asking Horizon, when a contract token is %s",
+      async (_side, sourceAsset, destAsset) => {
+        horizonSend.mockRejectedValue(new Error("Horizon must not be asked"));
+
+        const result = await getSwapQuote({
+          mode: "send",
+          amount: "1",
+          sourceAsset,
+          destAsset,
+          networkDetails: CUSTOM_NETWORK_DETAILS,
+          publicKey: ACCOUNT,
+        });
+
+        expect(horizonSend).not.toHaveBeenCalled();
+        expect(result.route).toBeNull();
+      },
+    );
+
     it("keeps Horizon strict-send path finding", async () => {
       horizonSend.mockResolvedValue({
         source_amount: "100",
@@ -357,5 +379,53 @@ describe("getSwapQuote", () => {
         key: expect.any(Object),
       });
     });
+  });
+});
+
+describe("getSwapTokenDecimals", () => {
+  const TOKEN = `TKN:${TOKEN_CONTRACT}`;
+  const heldToken = {
+    token: { code: "TKN", issuer: { key: TOKEN_CONTRACT } },
+    contractId: TOKEN_CONTRACT,
+    decimals: 18,
+  } as any;
+
+  it.each([
+    ["XLM", "native"],
+    ["a classic asset", USDC],
+  ])("is 7 for %s", (_name, canonical) => {
+    expect(
+      getSwapTokenDecimals({
+        canonical,
+        balances: [],
+        picked: { decimals: 3 },
+      }),
+    ).toBe(7);
+  });
+
+  it("reads a held contract token's decimals from its balance", () => {
+    expect(
+      getSwapTokenDecimals({
+        canonical: TOKEN,
+        balances: [heldToken],
+        picked: { decimals: 6 },
+      }),
+    ).toBe(18);
+  });
+
+  it("falls back to the picked row's decimals", () => {
+    expect(
+      getSwapTokenDecimals({
+        canonical: TOKEN,
+        balances: [],
+        picked: { decimals: 6 },
+      }),
+    ).toBe(6);
+  });
+
+  it("is unknown for a contract token neither held nor picked", () => {
+    expect(
+      getSwapTokenDecimals({ canonical: TOKEN, balances: [] }),
+    ).toBeUndefined();
   });
 });

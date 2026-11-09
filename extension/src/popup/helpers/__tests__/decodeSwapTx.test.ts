@@ -62,7 +62,46 @@ const decode = (transactionXdr: string, account = ACCOUNT, minOut = "1.715") =>
     sourceAsset: "native",
     destAsset: USDC,
     minOut,
+    sourceDecimals: 7,
   });
+
+const TOKEN_CONTRACT = StrKey.encodeContract(Buffer.alloc(32, 9));
+const TOKEN = `TKN:${TOKEN_CONTRACT}`;
+
+// One invoke from ACCOUNT whose auth tree lets `soldContract` move `amount`.
+const sorobanTx = (soldContract: string, amount: bigint) => {
+  const call = (contract: string, fn: string, args: xdr.ScVal[]) =>
+    new xdr.InvokeContractArgs({
+      contractAddress: new Address(contract).toScAddress(),
+      functionName: fn,
+      args,
+    });
+  const swap = call(OTHER_CONTRACT, "swap", [nativeToScVal(1)]);
+  const transfer = call(soldContract, "transfer", [
+    new Address(ACCOUNT).toScVal(),
+    new Address(OTHER_CONTRACT).toScVal(),
+    i128(amount),
+  ]);
+  const invocation = (fn: xdr.InvokeContractArgs, subs: any[] = []) =>
+    new xdr.SorobanAuthorizedInvocation({
+      function:
+        xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeContractFn(
+          fn,
+        ),
+      subInvocations: subs,
+    });
+  return txOf([
+    Operation.invokeHostFunction({
+      func: xdr.HostFunction.hostFunctionTypeInvokeContract(swap),
+      auth: [
+        new xdr.SorobanAuthorizationEntry({
+          credentials: xdr.SorobanCredentials.sorobanCredentialsSourceAccount(),
+          rootInvocation: invocation(swap, [invocation(transfer)]),
+        }),
+      ],
+    }),
+  ]);
+};
 
 // Rewrites one field of the LI.FI fixture's swap(params, …) call.
 const lifiWith = (edit: (params: any) => void) => {
@@ -171,6 +210,61 @@ describe("decodeSwapTx", () => {
     expect(() =>
       decode(env.toXDR("base64"), lifi.withTrust.account, "1.8340983"),
     ).toThrow(/transfer/);
+  });
+
+  describe("Soroban contract tokens", () => {
+    const decodeToken = (
+      transactionXdr: string,
+      sourceAsset: string,
+      destAsset: string,
+      sourceDecimals: number,
+    ) =>
+      decodeSwapTx({
+        transactionXdr,
+        networkPassphrase: Networks.PUBLIC,
+        account: ACCOUNT,
+        sourceAsset,
+        destAsset,
+        minOut: "1",
+        sourceDecimals,
+      });
+
+    it("reads the amount sold of a contract token at its own decimals", () => {
+      const decoded = decodeToken(
+        sorobanTx(TOKEN_CONTRACT, BigInt("1500000000000000000")),
+        TOKEN,
+        USDC,
+        18,
+      );
+
+      expect(decoded.sendAmount).toBe("1.5");
+      expect(decoded.addsTrustline).toBe(false);
+    });
+
+    it("reads a swap into a contract token", () => {
+      const xlmContract = Asset.native().contractId(Networks.PUBLIC);
+
+      expect(
+        decodeToken(
+          sorobanTx(xlmContract, BigInt(25_000_000)),
+          "native",
+          TOKEN,
+          7,
+        ).sendAmount,
+      ).toBe("2.5");
+    });
+
+    it("refuses a transfer of a token other than the one sold", () => {
+      expect(() =>
+        decodeToken(sorobanTx(OTHER_CONTRACT, BigInt(1)), TOKEN, USDC, 18),
+      ).toThrow(/transfer/);
+    });
+
+    it("refuses a classic path payment for a contract token", () => {
+      expect(() => decodeToken(classicTx(), "native", TOKEN, 7)).toThrow(
+        /does not match/,
+      );
+    });
   });
 
   describe("minimum received", () => {
