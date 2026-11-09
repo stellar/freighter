@@ -884,7 +884,15 @@ export const useSwapTokenLookup = () => {
         // Cancelled — silently ignore (another call is already in flight)
         return;
       }
-      captureException(`useSwapTokenLookup fallback - ${JSON.stringify(e)}`);
+      // The Error itself, not an interpolated string — see the note in
+      // useAssetLookup.
+      captureException(e, {
+        tags: { operation: "swapTokenLookup" },
+        extra: {
+          network: networkDetails.network,
+          lookup: isIdle ? "popular" : "search",
+        },
+      });
       // Serve the last good cached result (idle or this search term) on a
       // transient failure instead of dropping Popular to held-only; fall back
       // to held-only only when there's nothing cached.
