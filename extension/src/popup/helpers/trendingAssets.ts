@@ -1,7 +1,7 @@
 import { NetworkDetails } from "@shared/constants/stellar";
 import { TrendingAsset } from "@shared/api/types";
 import { getApiStellarExpertUrl } from "popup/helpers/account";
-import { isTestnet } from "helpers/stellar";
+import { isTestnet, truncateString } from "helpers/stellar";
 import { isContractId } from "popup/helpers/soroban";
 
 // Re-exported so existing `popup/helpers/trendingAssets` imports keep resolving.
@@ -59,7 +59,10 @@ export const fetchTrendingAssets = async ({
       if (isContractId(record.asset)) {
         return {
           ...common,
-          code: record.code || record.tomlInfo?.code || "",
+          code:
+            record.code ||
+            record.tomlInfo?.code ||
+            truncateString(record.asset),
           issuer: record.asset,
           contract: record.asset,
           decimals: record.decimals,

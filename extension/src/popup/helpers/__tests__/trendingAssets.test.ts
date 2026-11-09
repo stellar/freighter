@@ -112,6 +112,21 @@ describe("fetchTrendingAssets", () => {
     ]);
   });
 
+  it("names a contract token with no code by its shortened contract ID", async () => {
+    const contract = "CBI7UCH5KGSVQRO5H4SUCZUTZABCITZLRHQQZTWL2TK4RZ72TAR6IHRV";
+    jest
+      .spyOn(global, "fetch")
+      .mockResolvedValue(
+        recordsResponse([
+          { asset: contract, decimals: 7, volume7d: MIN_TRENDING_VOLUME7D + 5 },
+        ]) as unknown as Response,
+      );
+
+    const [token] = await fetchTrendingAssets({ networkDetails: MAINNET });
+
+    expect(token.code).toBe("CBI7…IHRV");
+  });
+
   it("keeps every testnet record regardless of volume (floor is a no-op)", async () => {
     jest.spyOn(global, "fetch").mockResolvedValue(
       recordsResponse([

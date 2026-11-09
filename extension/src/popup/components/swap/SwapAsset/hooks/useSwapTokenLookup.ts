@@ -16,7 +16,12 @@ import { AssetType } from "@shared/api/types/account-balance";
 
 import { initialState, reducer } from "helpers/request";
 import { RequestState } from "constants/request";
-import { isMainnet, isTestnet, getCanonicalFromAsset } from "helpers/stellar";
+import {
+  isMainnet,
+  isTestnet,
+  getCanonicalFromAsset,
+  truncateString,
+} from "helpers/stellar";
 import {
   isNativeAssetPair,
   isNativeBalance,
@@ -458,7 +463,8 @@ const recordFromSearchResult = (
 ): ManageAssetCurrency => {
   if (isContractId(record.asset)) {
     return {
-      code: record.code || record.tomlInfo?.code || "",
+      code:
+        record.code || record.tomlInfo?.code || truncateString(record.asset),
       issuer: record.asset,
       contract: record.asset,
       domain: record.domain ?? null,

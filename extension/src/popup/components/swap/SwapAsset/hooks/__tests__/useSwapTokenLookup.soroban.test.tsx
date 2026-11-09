@@ -115,6 +115,17 @@ describe("useSwapTokenLookup with Soroban contract tokens", () => {
     ]);
   });
 
+  it("names a found token with no code by its shortened contract ID", async () => {
+    (searchAsset as jest.Mock).mockResolvedValue({
+      _embedded: { records: [{ asset: CONTRACT, decimals: 7 }] },
+    });
+    const { result } = renderLookup();
+
+    const [row] = await search(result, "cbi7");
+
+    expect(row.code).toBe("CBI7…IHRV");
+  });
+
   describe("row icons", () => {
     const listing = (icon: string) => ({
       name: "List",
