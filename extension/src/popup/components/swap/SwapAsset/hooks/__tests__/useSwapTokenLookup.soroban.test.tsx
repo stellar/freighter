@@ -5,7 +5,11 @@ import { renderHook, act } from "@testing-library/react";
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 
 const mockState = {
-  cache: { tokenLists: [] as unknown[], popularTokens: {}, icons: {} },
+  cache: {
+    tokenLists: [] as unknown[],
+    popularTokens: {},
+    icons: {} as Record<string, string | null>,
+  },
 };
 jest.mock("popup/App", () => ({
   store: { getState: () => mockState },
@@ -109,5 +113,41 @@ describe("useSwapTokenLookup with Soroban contract tokens", () => {
         securityLevel: SecurityLevel.MALICIOUS,
       }),
     ]);
+  });
+
+  describe("row icons", () => {
+    const listing = (icon: string) => ({
+      name: "List",
+      assets: [{ contract: CONTRACT, code: "TKN", icon }],
+    });
+
+    it("prefer the user's asset lists over the issuer's stellar.toml", async () => {
+      mockState.cache.tokenLists = [listing("https://list.example/tkn.png")];
+      const { result } = renderLookup();
+
+      const [row] = await search(result, "tkn");
+
+      expect(row.image).toBe("https://list.example/tkn.png");
+    });
+
+    it("fall back to the stellar.toml image", async () => {
+      const { result } = renderLookup();
+
+      const [row] = await search(result, "tkn");
+
+      expect(row.image).toBe("https://toml.example/tkn.png");
+    });
+
+    it("use the icon the wallet already cached for the token", async () => {
+      mockState.cache.tokenLists = [listing("https://list.example/tkn.png")];
+      mockState.cache.icons = {
+        [`TKN:${CONTRACT}`]: "https://cached.example/tkn.png",
+      };
+      const { result } = renderLookup();
+
+      const [row] = await search(result, "tkn");
+
+      expect(row.image).toBe("https://cached.example/tkn.png");
+    });
   });
 });

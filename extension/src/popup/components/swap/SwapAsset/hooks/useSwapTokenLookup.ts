@@ -11,6 +11,7 @@ import {
 } from "@shared/api/types";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
+import { findTokenListIcon } from "@shared/api/helpers/getIconFromTokenList";
 import { AssetType } from "@shared/api/types/account-balance";
 
 import { initialState, reducer } from "helpers/request";
@@ -45,6 +46,7 @@ import {
 import { settingsSelector } from "popup/ducks/settings";
 import {
   tokensListsSelector,
+  iconsSelector,
   saveTokenLists,
   popularTokensSelector,
   savePopularTokens,
@@ -344,6 +346,43 @@ export const omitHiddenFromSections = (
       popular: visible(result.sections.popular),
       verified: visible(result.sections.verified),
       unverified: visible(result.sections.unverified),
+    },
+  };
+};
+
+/**
+ * Discover rows' icons, in the order of spec §6: the icon the wallet already
+ * cached for the token (so it looks the same everywhere), then the user's
+ * asset lists, then the issuer's stellar.toml image that stellar.expert
+ * returned with the record.
+ */
+export const withRowIcons = (
+  result: SwapTokenLookupResult,
+  cachedIcons: Record<string, string | null>,
+  assetsListsData: AssetListResponse[],
+): SwapTokenLookupResult => {
+  const withIcon = (r: SwapTokenRecord): SwapTokenRecord => {
+    if (!r.issuer) {
+      return r;
+    }
+    const image =
+      cachedIcons[r.canonical] ||
+      findTokenListIcon({
+        issuerId: r.isContract ? undefined : r.issuer,
+        contractId: r.isContract ? r.issuer : r.contract,
+        code: r.code ?? "",
+        assetsListsData,
+      }).icon ||
+      r.image;
+    return image === r.image ? r : { ...r, image };
+  };
+  return {
+    ...result,
+    sections: {
+      ...result.sections,
+      popular: result.sections.popular.map(withIcon),
+      verified: result.sections.verified.map(withIcon),
+      unverified: result.sections.unverified.map(withIcon),
     },
   };
 };
@@ -683,16 +722,20 @@ export const useSwapTokenLookup = () => {
         verifiedAssets = split.verifiedAssets;
       }
 
-      let payload = buildSwapSections({
-        searchTerm,
-        balances,
-        networkDetails,
-        icons,
-        tokenPrices,
-        popular,
-        verifiedAssets,
-        unverifiedAssets,
-      });
+      let payload = withRowIcons(
+        buildSwapSections({
+          searchTerm,
+          balances,
+          networkDetails,
+          icons,
+          tokenPrices,
+          popular,
+          verifiedAssets,
+          unverifiedAssets,
+        }),
+        iconsSelector(store.getState()),
+        assetsListsData,
+      );
 
       // A newer lookup (the user typed again or cleared the box) may have
       // superseded this one. Some awaits above don't honor the AbortSignal

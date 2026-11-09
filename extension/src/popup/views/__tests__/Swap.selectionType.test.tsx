@@ -11,7 +11,9 @@ import BigNumber from "bignumber.js";
 
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
-import { Wrapper } from "popup/__testHelpers__";
+import { Wrapper, getTestStore } from "popup/__testHelpers__";
+import * as ExtensionMessaging from "@shared/api/helpers/extensionMessaging";
+import { SERVICE_TYPES } from "@shared/constants/services";
 import { Swap } from "popup/views/Swap";
 import { emitMetric } from "helpers/metrics";
 import * as UseGetSwapAmountData from "popup/components/swap/SwapAmount/hooks/useGetSwapAmountData";
@@ -231,6 +233,64 @@ describe("Swap selectionType wiring", () => {
       asset_code: "USDC",
       source: "balances",
     });
+  });
+
+  it("caches a picked token's icon so it looks the same across the wallet", async () => {
+    const contract = "CBI7UCH5KGSVQRO5H4SUCZUTZABCITZLRHQQZTWL2TK4RZ72TAR6IHRV";
+    const canonical = `TKN:${contract}`;
+    const icon = "https://list.example/tkn.png";
+    const sendMessage = jest
+      .spyOn(ExtensionMessaging, "sendMessageToBackground")
+      .mockResolvedValue({} as any);
+    jest.spyOn(UseSwapTokenLookup, "useSwapTokenLookup").mockReturnValue({
+      fetchData: jest.fn().mockResolvedValue(undefined),
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          sections: {
+            yourTokens: [],
+            popular: [
+              {
+                canonical,
+                code: "TKN",
+                issuer: contract,
+                domain: null,
+                image: icon,
+                isHeld: false,
+                isContract: true,
+                requiresTrustline: false,
+                decimals: 18,
+              },
+            ],
+            verified: [],
+            unverified: [],
+          },
+          isSearch: false,
+          isFallback: false,
+        },
+        error: null,
+      },
+    } as any);
+
+    renderSwap();
+    const selectors = await screen.findAllByTestId(
+      "send-amount-edit-dest-asset",
+    );
+    await act(async () => {
+      fireEvent.click(selectors[1]);
+    });
+    await act(async () => {
+      fireEvent.click(await screen.findByTestId("SwapTokenRow-TKN-body"));
+    });
+
+    expect(getTestStore()!.getState().cache.icons[canonical]).toBe(icon);
+    expect(sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: SERVICE_TYPES.CACHE_ASSET_ICON,
+        assetCanonical: canonical,
+        iconUrl: icon,
+      }),
+    );
   });
 
   it("resets the source to (+) Select when the destination picker picks the current source token", async () => {
