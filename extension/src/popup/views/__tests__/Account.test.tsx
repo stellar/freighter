@@ -1662,7 +1662,7 @@ describe("Account view", () => {
 
     // Fast-forward 30 seconds
     jest.advanceTimersByTime(30000);
-    expect(getAccountBalancesSpy).toHaveBeenCalledTimes(3);
+    await waitFor(() => expect(getAccountBalancesSpy).toHaveBeenCalledTimes(3));
   });
 
   // An unfunded account holds nothing, so zero is its real total even on a

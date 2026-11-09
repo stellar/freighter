@@ -2,7 +2,10 @@ import { useReducer } from "react";
 import { captureException } from "@sentry/browser";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { tokenPricesSelector } from "popup/ducks/cache";
-import { tokenPricesV2Selector } from "popup/ducks/remoteConfig";
+import {
+  tokenPricesV2Selector,
+  waitForRemoteConfig,
+} from "popup/ducks/remoteConfig";
 import { getTokenPrices } from "@shared/api/internal";
 import { initialState, isCacheValid, reducer } from "helpers/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
@@ -80,6 +83,7 @@ export function useGetTokenPrices() {
       );
       if (unseenAssetIds.length) {
         try {
+          await waitForRemoteConfig(store);
           const useV2 = tokenPricesV2Selector(store.getState());
           const unseenPrices = await getTokenPrices(
             unseenAssetIds,
@@ -117,6 +121,7 @@ export function useGetTokenPrices() {
           // value) so a freshly resolved Amplitude flag isn't missed when this
           // fetch runs inside a long-lived async flow that closed over a stale
           // default.
+          await waitForRemoteConfig(store);
           const useV2 = tokenPricesV2Selector(store.getState());
           const fetchedTokenPrices = await getTokenPrices(
             assetIds,
@@ -148,6 +153,7 @@ export function useGetTokenPrices() {
       const missingExtra = additionalAssetIds.filter((id) => !(id in resolved));
       if (missingExtra.length) {
         try {
+          await waitForRemoteConfig(store);
           const useV2 = tokenPricesV2Selector(store.getState());
           const extraPrices = await getTokenPrices(
             missingExtra,
