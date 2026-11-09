@@ -4,7 +4,10 @@ import { captureException } from "@sentry/browser";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { lockHardwareWallet, logOut } from "background/ducks/session";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import { SessionTimer } from "background/helpers/session";
+import {
+  clearCachedWalletSources,
+  SessionTimer,
+} from "background/helpers/session";
 import { flushSessionStore } from "background/store";
 import {
   APPLICATION_ID,
@@ -71,6 +74,8 @@ export const resetWallet = async ({
     sessionStore.dispatch(logOut());
     sessionStore.dispatch(lockHardwareWallet());
     await flushSessionStore(sessionStore);
+    // As in signOut: the derived source signers must not outlive the wallet.
+    clearCachedWalletSources();
     await broadcastSessionState(SERVICE_TYPES.SESSION_LOCKED);
 
     const keysToErase = (await localStore.getAllKeys()).filter(

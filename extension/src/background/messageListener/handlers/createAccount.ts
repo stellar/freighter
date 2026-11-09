@@ -4,16 +4,21 @@ import StellarHDWallet from "stellar-hd-wallet";
 import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 
 import { CreateAccountMessage } from "@shared/api/types/message-request";
+import { getActiveAccountId } from "background/helpers/account";
 import { clearAccount } from "../helpers/clear-account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import {
   APPLICATION_ID,
   REBRAND_ANNOUNCEMENT_STATUS_ID,
-  KEY_DERIVATION_NUMBER_ID,
 } from "constants/localStorageTypes";
 import { REBRAND_ANNOUNCEMENT_STATUS } from "constants/rebrandAnnouncement";
 import { clearSession, SessionTimer } from "background/helpers/session";
 import { storeAccount } from "../helpers/store-account";
+import {
+  addSecretSource,
+  getPhraseSourceId,
+} from "background/helpers/secret-sources";
+import { SecretSourceType } from "@shared/api/types";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
   allAccountsSelector,
@@ -47,27 +52,34 @@ export const createAccount = async ({
   const mnemonicPhrase = generateMnemonic({ entropyBits: 128 });
   const wallet = fromMnemonic(mnemonicPhrase);
 
-  const KEY_DERIVATION_NUMBER = 0;
-  const keyId = KEY_DERIVATION_NUMBER.toString();
-
-  await localStore.setItem(KEY_DERIVATION_NUMBER_ID, keyId);
+  // A new phrase's first account is its index 0.
+  const DERIVATION_INDEX = 0;
 
   const keyPair = {
-    publicKey: wallet.getPublicKey(KEY_DERIVATION_NUMBER),
-    privateKey: wallet.getSecret(KEY_DERIVATION_NUMBER),
+    publicKey: wallet.getPublicKey(DERIVATION_INDEX),
+    privateKey: wallet.getSecret(DERIVATION_INDEX),
   };
 
   await clearSession({ localStore, sessionStore });
 
   try {
+    const phraseSourceId = await getPhraseSourceId(mnemonicPhrase);
     await storeAccount({
       password,
       keyPair,
       mnemonicPhrase,
+      phraseSourceId,
+      sourceId: phraseSourceId,
+      derivationIndex: DERIVATION_INDEX,
       isSettingHashKey: true,
       localStore,
       sessionStore,
       keyManager,
+    });
+    await addSecretSource({
+      localStore,
+      id: phraseSourceId,
+      type: SecretSourceType.PHRASE,
     });
   } catch (e) {
     console.error(e);
@@ -91,6 +103,7 @@ export const createAccount = async ({
   return {
     allAccounts: allAccountsSelector(currentState),
     publicKey: publicKeySelector(currentState),
+    activeAccountId: await getActiveAccountId({ localStore }),
     hasPrivateKey: await hasPrivateKeySelector(currentState),
   };
 };

@@ -13,6 +13,13 @@ import { SERVICE_TYPES } from "@shared/constants/services";
 import * as storageKeys from "constants/localStorageTypes";
 import {
   ACCOUNT_NAME_LIST_ID,
+  ACCOUNT_PROVENANCE_ID,
+  CANONICAL_USER_ID,
+  DERIVATION_INDICES_ID,
+  LINK_STATUS_ID,
+  PENDING_ATTRIBUTION_ID,
+  PINNED_SOURCE_ID,
+  SECRET_SOURCES_ID,
   ALLOWLIST_ID,
   APPLICATION_ID,
   ASSETS_LISTS_ID,
@@ -49,14 +56,23 @@ import {
   RECENT_ADDRESSES,
   RECENT_PROTOCOLS,
   STORAGE_VERSION,
-  TEMPORARY_STORE_EXTRA_ID,
   TEMPORARY_STORE_ID,
+  TEMPORARY_STORE_MNEMONICS_ID,
   TOKEN_ID_LIST,
   USDT0_LAUNCH_BANNER_DISMISSED,
 } from "constants/localStorageTypes";
 
+// The linker is fire-and-forget: a real pass outlives the test that started it
+// and writes into the next test's storage.
+jest.mock("background/helpers/link-sources", () => ({
+  linkWalletSources: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock("stellar-hd-wallet", () => ({
-  generateMnemonic: () => "mocked mnemonic phrase",
+  // A real BIP39 phrase: creating the wallet derives the phrase's source id.
+  generateMnemonic: () =>
+    jest.requireActual("@shared/api/helpers/authKeypairVectors")
+      .AUTH_KEYPAIR_VECTORS[0].mnemonic,
   fromMnemonic: () => ({
     getPublicKey: (_: number) => "pubKey",
     getSecret: (_: number) => "secret",
@@ -309,13 +325,24 @@ describe("RESET_WALLET", () => {
       TEMPORARY_STORE_ID,
       TOKEN_ID_LIST,
       USDT0_LAUNCH_BANNER_DISMISSED,
+      // The multi-source user model: secret sources, the pinned identity,
+      // per-source derivation indices, account provenance, accounts awaiting
+      // attribution, link status and the canonical analytics id all belong to
+      // the wallet being reset.
+      SECRET_SOURCES_ID,
+      PINNED_SOURCE_ID,
+      DERIVATION_INDICES_ID,
+      ACCOUNT_PROVENANCE_ID,
+      PENDING_ATTRIBUTION_ID,
+      LINK_STATUS_ID,
+      CANONICAL_USER_ID,
     ];
     // Not top-level browser.storage.local keys: the metrics keys live in page
-    // localStorage, and TEMPORARY_STORE_EXTRA_ID is nested in temporaryStore.
+    // localStorage, and TEMPORARY_STORE_MNEMONICS_ID is nested in temporaryStore.
     const notInStorageLocal = [
       METRICS_DATA,
       METRICS_USER_ID,
-      TEMPORARY_STORE_EXTRA_ID,
+      TEMPORARY_STORE_MNEMONICS_ID,
     ];
     const allConstants = (Object.values(storageKeys) as unknown[]).filter(
       (value): value is string => typeof value === "string",

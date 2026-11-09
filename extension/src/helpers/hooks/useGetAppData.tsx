@@ -98,6 +98,9 @@ function useGetAppData() {
             (isSidebarMode() || window.innerWidth === POPUP_WIDTH),
         } as NeedsReRoute;
         dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+        // Locked: adopt the background's cached canonical id, if any, so
+        // events sent from the lock screen carry it.
+        void reconcileAnalyticsUserId({ settle: false });
         return payload;
       }
 

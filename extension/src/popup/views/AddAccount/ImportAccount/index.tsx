@@ -19,6 +19,7 @@ import { navigateTo } from "popup/helpers/navigate";
 import { emitMetric } from "helpers/metrics";
 import { scrubStrKeys } from "helpers/stellarStrKey";
 import { FormRows } from "popup/basics/Forms";
+import { ACCOUNT_ALREADY_EXISTS_ERROR } from "@shared/constants/errors";
 import { importAccount, authErrorSelector } from "popup/ducks/accountServices";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -47,7 +48,11 @@ export const ImportAccount = () => {
 
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
-  const authError = useSelector(authErrorSelector);
+  const rawAuthError = useSelector(authErrorSelector);
+  const authError =
+    rawAuthError === ACCOUNT_ALREADY_EXISTS_ERROR
+      ? t("This account is already in your wallet.")
+      : rawAuthError;
   const navigate = useNavigate();
 
   const handleSubmit = async (values: FormValues) => {

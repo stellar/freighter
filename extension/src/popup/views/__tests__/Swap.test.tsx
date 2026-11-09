@@ -147,6 +147,7 @@ jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
   Promise.resolve({
     hasPrivateKey: true,
     publicKey: "G1",
+    activeAccountId: "",
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
     allAccounts: mockAccounts,
     bipPath: "bip-path",

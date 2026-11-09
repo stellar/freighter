@@ -180,18 +180,23 @@ export const mockTokenBalance = {
 
 export const mockAccounts = [
   {
+    id: "0.1",
+    sourceId: "phrase-1",
     hardwareWalletType: "" as WalletType,
     imported: false,
     name: "Account 1",
     publicKey: "G1",
   },
   {
+    id: "0.2",
+    sourceId: "secret-key-1",
     hardwareWalletType: "" as WalletType,
     imported: true,
     name: "Account 2",
     publicKey: "G2",
   },
   {
+    id: "hw:L1",
     hardwareWalletType: "Ledger" as WalletType,
     imported: true,
     name: "Ledger 1",

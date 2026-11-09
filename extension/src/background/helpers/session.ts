@@ -13,12 +13,14 @@ import { DataStorageAccess } from "./dataStorageAccess";
 import {
   AUTO_LOCK_TIMEOUT_MINUTES_ID,
   TEMPORARY_STORE_ID,
+  TEMPORARY_STORE_MNEMONICS_ID,
 } from "../../constants/localStorageTypes";
 import {
   AutoLockTimeoutMinutes,
   coerceAutoLockTimeoutMinutes,
 } from "@shared/constants/autoLock";
 import { encode, decode } from "./base64-arraybuffer";
+import type { WalletSources } from "./wallet-sources";
 
 export const SESSION_ALARM_NAME = "session-timer";
 
@@ -296,6 +298,166 @@ export const getEncryptedTemporaryData = async ({
   return "";
 };
 
+/*
+  The held mnemonics live in ONE encrypted entry of the temporary store, as a
+  JSON map of phrase source id -> mnemonic. A standalone secret key is a
+  source with no mnemonic, so a secret-key-only wallet has no entry at all.
+  The entry goes with the rest of the temporary store on lock.
+*/
+type MnemonicMap = Record<string, string>;
+
+interface StoreMnemonics {
+  localStore: DataStorageAccess;
+  hashKey: {
+    key: CryptoKey;
+  };
+  mnemonics: MnemonicMap;
+}
+
+/* Replace the held map wholesale. Unlock uses this to write every held phrase at once. */
+export const storeMnemonics = async ({
+  localStore,
+  hashKey,
+  mnemonics,
+}: StoreMnemonics) => {
+  await storeEncryptedTemporaryData({
+    localStore,
+    keyName: TEMPORARY_STORE_MNEMONICS_ID,
+    temporaryData: JSON.stringify(mnemonics),
+    hashKey,
+  });
+};
+
+const decryptMnemonicMap = async ({
+  localStore,
+  hashKey,
+}: {
+  localStore: DataStorageAccess;
+  hashKey: { key: CryptoKey };
+}): Promise<MnemonicMap> => {
+  const temporaryStore = (await localStore.getItem(TEMPORARY_STORE_ID)) || {};
+  const encrypted = temporaryStore[TEMPORARY_STORE_MNEMONICS_ID];
+
+  if (!encrypted) {
+    return {};
+  }
+
+  const json = await decryptHashString({
+    hash: decode(encrypted as string),
+    keyObject: hashKey,
+  });
+
+  return JSON.parse(json) as MnemonicMap;
+};
+
+interface AddMnemonic {
+  localStore: DataStorageAccess;
+  hashKey: {
+    key: CryptoKey;
+  };
+  sourceId: string;
+  mnemonic: string;
+}
+
+/*
+  Merge one phrase into the held map. Takes the hash key explicitly rather
+  than reading it from the session store: on wallet creation the key is
+  freshly derived and only dispatched to the store after the temporary data
+  is written.
+*/
+export const addMnemonic = async ({
+  localStore,
+  hashKey,
+  sourceId,
+  mnemonic,
+}: AddMnemonic) => {
+  const mnemonics = await decryptMnemonicMap({ localStore, hashKey });
+
+  await storeMnemonics({
+    localStore,
+    hashKey,
+    mnemonics: { ...mnemonics, [sourceId]: mnemonic },
+  });
+};
+
+interface GetMnemonics {
+  sessionStore: Store;
+  localStore: DataStorageAccess;
+}
+
+/* Every held phrase keyed by source id; empty when locked or when none is held. */
+export const getMnemonics = async ({
+  sessionStore,
+  localStore,
+}: GetMnemonics): Promise<MnemonicMap> => {
+  const hashKey = await getActiveHashKeyCryptoKey({ sessionStore });
+
+  if (hashKey === null) {
+    return {};
+  }
+
+  return decryptMnemonicMap({ localStore, hashKey });
+};
+
+export const getMnemonic = async ({
+  sessionStore,
+  localStore,
+  sourceId,
+}: GetMnemonics & { sourceId: string }): Promise<string> =>
+  (await getMnemonics({ sessionStore, localStore }))[sourceId] || "";
+
+/*
+  Per-unlock cache of the wallet's derived source identities (see
+  wallet-sources.ts). It lives here so both lock paths (clearSession and the
+  signOut handler) can drop it without wallet-sources and session importing
+  each other. In memory only: the signers are never written anywhere, and a
+  service worker restart simply re-derives them on the next call.
+
+  The value is the derivation's promise, so concurrent callers share one
+  derivation. The generation is bumped on every lock, so a derivation that
+  started before the lock cannot cache its signers after it.
+
+  Both lock paths clear it last, after the temporary store is removed. Until
+  then a message whose store was built before the lock still holds the hash
+  key and can decrypt every key, so a derivation that started after an
+  earlier clear would read the bumped generation and cache its signers.
+*/
+let walletSourcesCache: {
+  key: string;
+  value: Promise<WalletSources>;
+} | null = null;
+let walletSourcesGeneration = 0;
+
+export const getWalletSourcesGeneration = () => walletSourcesGeneration;
+
+/* The cached sources for this cache key, or null when none are cached for it. */
+export const getCachedWalletSources = (key: string) =>
+  walletSourcesCache?.key === key ? walletSourcesCache.value : null;
+
+/* Caches `value` under `key`, unless the wallet was locked since `generation`. */
+export const setCachedWalletSources = (
+  key: string,
+  value: Promise<WalletSources>,
+  generation: number,
+) => {
+  if (generation === walletSourcesGeneration) {
+    walletSourcesCache = { key, value };
+  }
+};
+
+/* Drops `value` if it is still the cached entry; a no-op otherwise. */
+export const dropCachedWalletSources = (value: Promise<WalletSources>) => {
+  if (walletSourcesCache?.value === value) {
+    walletSourcesCache = null;
+  }
+};
+
+/* Called on lock: drops the cache and invalidates any derivation in flight. */
+export const clearCachedWalletSources = () => {
+  walletSourcesCache = null;
+  walletSourcesGeneration += 1;
+};
+
 interface ClearSession {
   localStore: DataStorageAccess;
   sessionStore: Store;
@@ -313,4 +475,6 @@ export const clearSession = async ({
   sessionStore.dispatch(lockHardwareWallet());
   await flushSessionStore(sessionStore);
   await localStore.remove(TEMPORARY_STORE_ID);
+  // Last, once the keys are gone: see walletSourcesCache.
+  clearCachedWalletSources();
 };

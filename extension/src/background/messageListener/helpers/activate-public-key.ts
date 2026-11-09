@@ -4,33 +4,36 @@ import {
   allAccountsSelector,
   setActivePublicKey,
 } from "background/ducks/session";
-import { Account } from "@shared/api/types";
-import { getKeyIdList } from "background/helpers/account";
+import { findAccount } from "background/helpers/account";
 import { KEY_ID } from "constants/localStorageTypes";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 
+/**
+ * Makes one account active. Pass `id` whenever the caller has it: a public
+ * key alone resolves to the first account with that address, which is the
+ * wrong one when a hot account and a Ledger share it.
+ */
 export const activatePublicKey = async ({
+  id,
   publicKey,
   sessionStore,
   localStore,
 }: {
-  publicKey: string;
+  id?: string;
+  publicKey?: string;
   sessionStore: Store;
   localStore: DataStorageAccess;
 }) => {
-  const allAccounts = allAccountsSelector(sessionStore.getState());
-  let publicKeyIndex = allAccounts.findIndex(
-    (account: Account) => account.publicKey === publicKey,
-  );
-  publicKeyIndex = publicKeyIndex > -1 ? publicKeyIndex : 0;
+  // Resolve before touching anything: an unknown account throws and leaves
+  // the active account as it was.
+  const account = findAccount(allAccountsSelector(sessionStore.getState()), {
+    id,
+    publicKey,
+  });
 
-  const keyIdList = await getKeyIdList({ localStore });
-
-  const activeKeyId = keyIdList[publicKeyIndex];
-
-  await localStore.setItem(KEY_ID, activeKeyId);
+  await localStore.setItem(KEY_ID, account.id);
 
   await sessionStore.dispatch(
-    setActivePublicKey({ publicKey, localStore }) as any,
+    setActivePublicKey({ publicKey: account.publicKey, localStore }) as any,
   );
 };

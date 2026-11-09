@@ -26,7 +26,7 @@ export interface UserInfo {
   publicKey: string;
 }
 
-export type MigratableAccount = Account & { keyIdIndex: number };
+export type MigratableAccount = Account;
 
 export type IssuerKey = string; // {assetCode}:{issuer/contract ID} issuer pub key for classic, contract ID for tokens
 export type CollectibleKey = string; // {collectionAddress}:{tokenId}
@@ -186,6 +186,18 @@ export type ExternalRequest =
   | ExternalRequestAuthEntry;
 
 export interface Account {
+  /**
+   * The keystore id exactly as it appears in `keyIdList`: a raw KeyManager id
+   * for a hot account, `hw:<G...>` for a hardware account. Stable and unique;
+   * every lookup resolves by it, never by list position.
+   */
+  id: string;
+  /**
+   * The `SecretSource` this account is rooted in: the phrase it was derived
+   * from, or its own secret key for a standalone import. Hardware accounts
+   * carry none.
+   */
+  sourceId?: string;
   publicKey: string;
   name: string;
   imported: boolean;
@@ -197,6 +209,46 @@ export enum AccountType {
   IMPORTED = "IMPORTED",
   FREIGHTER = "FREIGHTER",
 }
+
+/**
+ * Where an account comes from, persisted in plain local storage per keystore
+ * id (see `background/helpers/account-provenance.ts`). `sourceId` is the
+ * phrase's source id for a derived account and the key's own source id for a
+ * secret-key import; a hardware account has none.
+ */
+export interface AccountProvenance {
+  type: AccountType;
+  sourceId?: string;
+}
+
+export type AccountProvenanceMap = Record<string, AccountProvenance>;
+
+/**
+ * A secret the wallet holds that roots accounts: one seed phrase, or one
+ * standalone imported secret key. Hardware accounts have no secret and are
+ * never a source. See wallet-eng-monorepo
+ * design-docs/unified-user-model/v2.md "Enumerating a wallet's
+ * identities".
+ */
+export enum SecretSourceType {
+  PHRASE = "phrase",
+  SECRET_KEY = "secret_key",
+}
+
+export interface SecretSource {
+  /**
+   * The source's v2 identity: `deriveAuthKeypair(mnemonic).userId` for a
+   * phrase, `deriveSourceIdentity(seed32).sourceId` for a secret key.
+   */
+  id: string;
+  type: SecretSourceType;
+  /** Sequential within its type: "Seed Phrase 1", "Secret Key 1", ... */
+  label: string;
+  /** Epoch milliseconds. */
+  createdAt: number;
+}
+
+export type SecretSourceMap = Record<string, SecretSource>;
 
 export interface Preferences {
   isDataSharingAllowed: boolean;
@@ -402,7 +454,8 @@ export interface BalanceToMigrate {
   minBalance: string;
   xlmBalance: string;
   trustlineBalances: Horizon.HorizonApi.BalanceLine[];
-  keyIdIndex: number;
+  /** The account's keystore id (`Account.id`). */
+  id: string;
 }
 
 export type MigratedAccount = BalanceToMigrate & {

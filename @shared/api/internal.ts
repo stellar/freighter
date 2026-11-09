@@ -84,6 +84,7 @@ import {
   PASSPHRASE_TO_PRICE_NETWORK,
 } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
+import { AccountRef } from "./types/message-request";
 import { isDev } from "../helpers/dev";
 import { SorobanRpcNotSupportedError } from "../constants/errors";
 import { APPLICATION_STATE } from "../constants/applicationState";
@@ -132,16 +133,18 @@ export const createAccount = async ({
   isOverwritingAccount: boolean;
 }): Promise<{
   publicKey: string;
+  activeAccountId: string;
   allAccounts: Array<Account>;
   hasPrivateKey: boolean;
 }> => {
   let publicKey = "";
+  let activeAccountId = "";
   let allAccounts = [] as Array<Account>;
   let hasPrivateKey = false;
   let error = "";
 
   try {
-    ({ allAccounts, publicKey, hasPrivateKey, error } =
+    ({ allAccounts, publicKey, activeAccountId, hasPrivateKey, error } =
       await sendMessageToBackground({
         activePublicKey: null,
         password,
@@ -156,7 +159,7 @@ export const createAccount = async ({
     throw new Error(error);
   }
 
-  return { allAccounts, publicKey, hasPrivateKey };
+  return { allAccounts, publicKey, activeAccountId, hasPrivateKey };
 };
 
 export const fundAccount = async ({
@@ -180,24 +183,30 @@ export const fundAccount = async ({
 export const addAccount = async ({
   activePublicKey,
   password,
+  sourceId,
 }: {
   activePublicKey: string;
   password: string;
+  /** The phrase source to derive from; see `AddAccountMessage`. */
+  sourceId?: string;
 }): Promise<{
   publicKey: string;
+  activeAccountId: string;
   allAccounts: Array<Account>;
   hasPrivateKey: boolean;
 }> => {
   let error = "";
   let publicKey = "";
+  let activeAccountId = "";
   let allAccounts = [] as Array<Account>;
   let hasPrivateKey = false;
 
   try {
-    ({ allAccounts, error, publicKey, hasPrivateKey } =
+    ({ allAccounts, error, publicKey, activeAccountId, hasPrivateKey } =
       await sendMessageToBackground({
         activePublicKey,
         password,
+        sourceId,
         type: SERVICE_TYPES.ADD_ACCOUNT,
       }));
   } catch (e) {
@@ -208,7 +217,7 @@ export const addAccount = async ({
     throw new Error(error);
   }
 
-  return { allAccounts, publicKey, hasPrivateKey };
+  return { allAccounts, publicKey, activeAccountId, hasPrivateKey };
 };
 
 export const importAccount = async ({
@@ -221,16 +230,18 @@ export const importAccount = async ({
   activePublicKey: string;
 }): Promise<{
   publicKey: string;
+  activeAccountId: string;
   allAccounts: Array<Account>;
   hasPrivateKey: boolean;
 }> => {
   let error = "";
   let publicKey = "";
+  let activeAccountId = "";
   let allAccounts = [] as Array<Account>;
   let hasPrivateKey = false;
 
   try {
-    ({ allAccounts, publicKey, error, hasPrivateKey } =
+    ({ allAccounts, publicKey, activeAccountId, error, hasPrivateKey } =
       await sendMessageToBackground({
         activePublicKey,
         password,
@@ -246,7 +257,7 @@ export const importAccount = async ({
     throw new Error(error);
   }
 
-  return { allAccounts, publicKey, hasPrivateKey };
+  return { allAccounts, publicKey, activeAccountId, hasPrivateKey };
 };
 
 export const importHardwareWallet = async ({
@@ -261,15 +272,19 @@ export const importHardwareWallet = async ({
   bipPath: string;
 }) => {
   let _publicKey = "";
+  let activeAccountId = "";
   let allAccounts = [] as Array<Account>;
   let hasPrivateKey = false;
   let _bipPath = "";
+  let error = "";
   try {
     ({
       publicKey: _publicKey,
+      activeAccountId,
       allAccounts,
       hasPrivateKey,
       bipPath: _bipPath,
+      error,
     } = await sendMessageToBackground({
       activePublicKey,
       publicKey,
@@ -280,9 +295,15 @@ export const importHardwareWallet = async ({
   } catch (e) {
     console.log({ e });
   }
+
+  if (error) {
+    throw new Error(error);
+  }
+
   return {
     allAccounts,
     publicKey: _publicKey,
+    activeAccountId,
     hasPrivateKey,
     bipPath: _bipPath,
   };
@@ -290,40 +311,48 @@ export const importHardwareWallet = async ({
 
 export const makeAccountActive = ({
   activePublicKey,
-  publicKey,
+  account,
 }: {
   activePublicKey: string;
+  account: AccountRef;
+}): Promise<{
   publicKey: string;
-}): Promise<{ publicKey: string; hasPrivateKey: boolean; bipPath: string }> =>
+  activeAccountId: string;
+  hasPrivateKey: boolean;
+  bipPath: string;
+}> =>
   sendMessageToBackground({
     activePublicKey,
-    publicKey,
+    ...account,
     type: SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE,
   });
 
 export const updateAccountName = ({
   activePublicKey,
   accountName,
-  publicKey,
+  id,
 }: {
   activePublicKey: string;
   accountName: string;
-  publicKey: string;
+  id: string;
 }): Promise<{ allAccounts: Array<Account> }> =>
   sendMessageToBackground({
     activePublicKey,
     accountName,
-    publicKey,
+    id,
     type: SERVICE_TYPES.UPDATE_ACCOUNT_NAME,
   });
 
 export const loadAccount = (): Promise<{
   hasPrivateKey: boolean;
   publicKey: string;
+  activeAccountId: string;
   applicationState: APPLICATION_STATE;
   allAccounts: Array<Account>;
   bipPath: string;
   tokenIdList: string[];
+  /** Source ids another user owns, from /user/link. */
+  linkConflicts?: string[];
 }> =>
   sendMessageToBackground({
     activePublicKey: null,
@@ -416,17 +445,19 @@ export const recoverAccount = async ({
   isOverwritingAccount: boolean;
 }): Promise<{
   publicKey: string;
+  activeAccountId: string;
   allAccounts: Array<Account>;
   hasPrivateKey: boolean;
   error: string;
 }> => {
   let publicKey = "";
+  let activeAccountId = "";
   let allAccounts = [] as Array<Account>;
   let hasPrivateKey = false;
   let error = "";
 
   try {
-    ({ allAccounts, publicKey, hasPrivateKey, error } =
+    ({ allAccounts, publicKey, activeAccountId, hasPrivateKey, error } =
       await sendMessageToBackground({
         activePublicKey: null,
         password,
@@ -438,24 +469,28 @@ export const recoverAccount = async ({
     console.error(e);
   }
 
-  return { allAccounts, publicKey, hasPrivateKey, error };
+  return { allAccounts, publicKey, activeAccountId, hasPrivateKey, error };
 };
 
 export const confirmPassword = async (
   password: string,
 ): Promise<{
   publicKey: string;
+  activeAccountId: string;
   hasPrivateKey: boolean;
   applicationState: APPLICATION_STATE;
   allAccounts: Array<Account>;
   bipPath: string;
+  linkConflicts: string[];
 }> => {
   let response = {
     publicKey: "",
+    activeAccountId: "",
     hasPrivateKey: false,
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
     allAccounts: [] as Array<Account>,
     bipPath: "",
+    linkConflicts: [] as string[],
   };
   try {
     response = await sendMessageToBackground({
@@ -513,24 +548,32 @@ export const getMigratableAccounts = async () => {
 };
 
 /**
- * Fetches the seed-derived analytics user id from the background. Returns
- * `null` when locked (no active session) or if the message fails.
+ * Fetches the analytics user id from the background. `isConfirmed` is true
+ * when it is the server's canonical id, false when it is the pinned source
+ * id standing in until the first link. The id is `null` when locked with
+ * nothing cached, or if the message fails.
  */
 export const getAnalyticsUserId = async (): Promise<{
   analyticsUserId: string | null;
+  isConfirmed: boolean;
 }> => {
   let analyticsUserId: string | null = null;
+  let isConfirmed = false;
 
   try {
-    ({ analyticsUserId } = await sendMessageToBackground({
-      activePublicKey: null,
-      type: SERVICE_TYPES.GET_ANALYTICS_USER_ID,
-    }));
+    ({ analyticsUserId = null, isConfirmed = false } =
+      await sendMessageToBackground<{
+        analyticsUserId?: string | null;
+        isConfirmed?: boolean;
+      }>({
+        activePublicKey: null,
+        type: SERVICE_TYPES.GET_ANALYTICS_USER_ID,
+      }));
   } catch (e) {
     console.error(e);
   }
 
-  return { analyticsUserId };
+  return { analyticsUserId, isConfirmed };
 };
 
 export const migrateAccounts = async ({
@@ -543,31 +586,46 @@ export const migrateAccounts = async ({
   recommendedFee: string;
 }): Promise<{
   publicKey: string;
+  activeAccountId: string;
   migratedAccounts: Array<MigratedAccount>;
   allAccounts: Array<Account>;
   hasPrivateKey: boolean;
   error: string;
 }> => {
   let publicKey = "";
+  let activeAccountId = "";
   let migratedAccounts = [] as Array<MigratedAccount>;
   let allAccounts = [] as Array<Account>;
   let hasPrivateKey = false;
   let error = "";
 
   try {
-    ({ migratedAccounts, allAccounts, publicKey, hasPrivateKey, error } =
-      await sendMessageToBackground({
-        activePublicKey: null,
-        balancesToMigrate,
-        isMergeSelected,
-        recommendedFee,
-        type: SERVICE_TYPES.MIGRATE_ACCOUNTS,
-      }));
+    ({
+      migratedAccounts,
+      allAccounts,
+      publicKey,
+      activeAccountId,
+      hasPrivateKey,
+      error,
+    } = await sendMessageToBackground({
+      activePublicKey: null,
+      balancesToMigrate,
+      isMergeSelected,
+      recommendedFee,
+      type: SERVICE_TYPES.MIGRATE_ACCOUNTS,
+    }));
   } catch (e) {
     console.error(e);
   }
 
-  return { migratedAccounts, allAccounts, publicKey, hasPrivateKey, error };
+  return {
+    migratedAccounts,
+    allAccounts,
+    publicKey,
+    activeAccountId,
+    hasPrivateKey,
+    error,
+  };
 };
 
 export const getAccountIndexerBalances = async ({
@@ -1092,6 +1150,54 @@ export const getTokenStats = async ({
   assertEchoes("token stats", { token }, data);
   assertTokenStats(data);
   return data;
+};
+
+/** A page of StellarExpert's `/asset` list, as StellarExpert sends it. */
+export interface StellarExpertAssetPage<TRecord> {
+  _embedded: { records: TRecord[] };
+}
+
+/**
+ * StellarExpert's `/asset` list (a search, or a sorted list such as trending),
+ * fetched through freighter-backend-v2 so the call carries our API key. `query`
+ * takes StellarExpert's own parameters; the backend accepts `search`, `sort`,
+ * `order`, `limit`, `cursor` and `includeUninitialized`. Networks StellarExpert
+ * doesn't serve get an empty page without a request.
+ *
+ * As with token-prices, the request runs in the background, which `signal`
+ * can't reach: an abort only skips a request not yet sent and rejects an
+ * answer that arrives late.
+ */
+export const getStellarExpertAssets = async <TRecord>({
+  networkDetails,
+  query,
+  signal,
+}: {
+  networkDetails: NetworkDetails;
+  query: Record<string, string>;
+  signal?: AbortSignal;
+}): Promise<StellarExpertAssetPage<TRecord>> => {
+  if (!PASSPHRASE_TO_PRICE_NETWORK[networkDetails.networkPassphrase]) {
+    return { _embedded: { records: [] } };
+  }
+  if (signal?.aborted) {
+    throw new DOMException("asset search request aborted", "AbortError");
+  }
+
+  const page = await getBackendV2Json<StellarExpertAssetPage<TRecord>>({
+    networkDetails,
+    label: "asset search",
+    buildPath: (network) =>
+      `/assets/search?${new URLSearchParams({ network, ...query }).toString()}`,
+  });
+
+  if (signal?.aborted) {
+    throw new DOMException("asset search request aborted", "AbortError");
+  }
+  if (!Array.isArray(page._embedded?.records)) {
+    throw new Error("asset search: response has no records");
+  }
+  return page;
 };
 
 export const getDiscoverData = async (): Promise<DiscoverData> => {
