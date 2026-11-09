@@ -147,15 +147,12 @@ describe("SearchAsset", () => {
     });
   });
   it("hides Show hidden once the user starts searching", async () => {
-    // Typing kicks off the (debounced) asset lookup; keep it off the network,
-    // give it the asset lists it reads, and let it fire before this test ends
-    // so no call leaks into the next test's fetch count.
-    const fetchSpy = jest.spyOn(global, "fetch").mockImplementation(() =>
-      Promise.resolve({
-        ok: true,
-        json: async () => ({ _embedded: { records: [] } }),
-      } as any),
-    );
+    // Typing kicks off the (debounced) asset lookup; keep it off the network
+    // and let it fire before this test ends so no call leaks into the next
+    // test's counts.
+    const searchSpy = jest
+      .spyOn(ApiInternal, "getStellarExpertAssets")
+      .mockResolvedValue({ _embedded: { records: [] } });
     render(
       <Wrapper
         routes={[ROUTES.searchAsset]}
@@ -190,10 +187,10 @@ describe("SearchAsset", () => {
     await waitFor(() => {
       expect(screen.queryByTestId("hidden-assets-btn")).not.toBeInTheDocument();
     });
-    await waitFor(() => expect(fetchSpy).toHaveBeenCalled(), {
+    await waitFor(() => expect(searchSpy).toHaveBeenCalled(), {
       timeout: 2000,
     });
-    fetchSpy.mockRestore();
+    searchSpy.mockRestore();
   });
 
   it("should cancel the request when search is changed", async () => {
@@ -212,44 +209,21 @@ describe("SearchAsset", () => {
       .spyOn(global, "AbortController")
       .mockImplementation(() => mockAbortController() as any);
 
-    const fetchSpy = jest.spyOn(global, "fetch").mockImplementation((url) => {
-      return new Promise((resolve) => {
-        if (
-          url === "https://api.stellar.expert/explorer/public/asset?search=USDC"
-        ) {
-          return resolve({
-            ok: true,
-            json: async () => ({
-              _embedded: {
-                records: [
-                  {
-                    asset:
-                      "USDC-GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
-                  },
-                ],
-              },
-            }),
-          } as any);
-        }
-        if (
-          url === "https://api.stellar.expert/explorer/public/asset?search=XLM"
-        ) {
-          return resolve({
-            ok: true,
-            json: async () => ({
-              _embedded: {
-                records: [
-                  {
-                    asset:
-                      "XLM-GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
-                  },
-                ],
-              },
-            }),
-          } as any);
-        }
-      });
-    });
+    const searchSpy = jest
+      .spyOn(ApiInternal, "getStellarExpertAssets")
+      .mockImplementation(async ({ query }) => ({
+        _embedded: {
+          records: [
+            {
+              asset: `${query.search}-GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM`,
+            },
+          ],
+        },
+      }));
+    // Blockaid scans never settle, so only each lookup's own rows render.
+    const fetchSpy = jest
+      .spyOn(global, "fetch")
+      .mockImplementation(() => new Promise(() => {}));
 
     render(
       <Wrapper
@@ -286,11 +260,11 @@ describe("SearchAsset", () => {
     });
 
     await waitFor(() => {
-      expect(fetchSpy).toHaveBeenCalledWith(
-        "https://api.stellar.expert/explorer/public/asset?search=USDC",
-        {
+      expect(searchSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          query: { search: "USDC" },
           signal: signalMock,
-        },
+        }),
       );
     });
     expect(abortMock).not.toHaveBeenCalled();
@@ -301,8 +275,9 @@ describe("SearchAsset", () => {
     await waitFor(() => {
       // the 2nd request for XLM should cancel the 1st request for a Blockaid scan of USDC
       expect(abortMock).toHaveBeenCalledTimes(1);
-      // expect 4 calls because we make 2 calls to stellar.expert and 2 calls to blockaid
-      expect(fetchSpy).toHaveBeenCalledTimes(4);
+      // one search per term, and one Blockaid scan per search
+      expect(searchSpy).toHaveBeenCalledTimes(2);
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
 
       // check that we only have results for our last search
       expect(screen.getByTestId("ManageAssetCode")).not.toHaveTextContent(

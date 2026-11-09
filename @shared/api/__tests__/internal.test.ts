@@ -792,6 +792,121 @@ describe("internalApi", () => {
     });
   });
 
+  describe("getStellarExpertAssets", () => {
+    const page = { _embedded: { records: [{ asset: "USDC-GUSD" }] } };
+
+    it("lists assets through the FETCH_BACKEND_V2 message", async () => {
+      mockedSend.mockResolvedValue({ status: 200, body: { data: page } });
+
+      const result = await internalApi.getStellarExpertAssets({
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        query: { sort: "volume7d", order: "desc", limit: "50" },
+      });
+
+      expect(mockedSend).toHaveBeenCalledWith({
+        type: SERVICE_TYPES.FETCH_BACKEND_V2,
+        activePublicKey: null,
+        method: "GET",
+        path: "/assets/search?network=PUBLIC&sort=volume7d&order=desc&limit=50",
+      });
+      expect(result).toEqual(page);
+    });
+
+    it("asks for Testnet assets on Testnet", async () => {
+      mockedSend.mockResolvedValue({ status: 200, body: { data: page } });
+
+      await internalApi.getStellarExpertAssets({
+        networkDetails: TESTNET_NETWORK_DETAILS,
+        query: { limit: "50" },
+      });
+
+      expect(mockedSend.mock.calls[0][0].path).toBe(
+        "/assets/search?network=TESTNET&limit=50",
+      );
+    });
+
+    // A raw "&" would start another parameter, which the backend refuses.
+    it("encodes the search term", async () => {
+      mockedSend.mockResolvedValue({ status: 200, body: { data: page } });
+
+      await internalApi.getStellarExpertAssets({
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        query: { search: "a&b c" },
+      });
+
+      expect(mockedSend.mock.calls[0][0].path).toBe(
+        "/assets/search?network=PUBLIC&search=a%26b+c",
+      );
+    });
+
+    it("returns no assets on networks StellarExpert doesn't serve, without a request", async () => {
+      const result = await internalApi.getStellarExpertAssets({
+        networkDetails: FUTURENET_NETWORK_DETAILS,
+        query: { search: "usdc" },
+      });
+
+      expect(result).toEqual({ _embedded: { records: [] } });
+      expect(mockedSend).not.toHaveBeenCalled();
+    });
+
+    it("throws on a non-200 response", async () => {
+      mockedSend.mockResolvedValue({
+        status: 503,
+        body: { error: "asset search temporarily unavailable" },
+      });
+
+      await expect(
+        internalApi.getStellarExpertAssets({
+          networkDetails: MAINNET_NETWORK_DETAILS,
+          query: { search: "usdc" },
+        }),
+      ).rejects.toThrow("503");
+    });
+
+    it("throws on a 200 whose body has no records", async () => {
+      mockedSend.mockResolvedValue({ status: 200, body: { data: {} } });
+
+      await expect(
+        internalApi.getStellarExpertAssets({
+          networkDetails: MAINNET_NETWORK_DETAILS,
+          query: { search: "usdc" },
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("sends nothing once the signal has aborted", async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      await expect(
+        internalApi.getStellarExpertAssets({
+          networkDetails: MAINNET_NETWORK_DETAILS,
+          query: { search: "usdc" },
+          signal: controller.signal,
+        }),
+      ).rejects.toMatchObject({ name: "AbortError" });
+      expect(mockedSend).not.toHaveBeenCalled();
+    });
+
+    // The background request can't be cancelled, so its late answer is
+    // refused instead.
+    it("rejects an answer that arrives after the abort", async () => {
+      const controller = new AbortController();
+      mockedSend.mockImplementation(async () => {
+        controller.abort();
+        return { status: 200, body: { data: page } };
+      });
+
+      await expect(
+        internalApi.getStellarExpertAssets({
+          networkDetails: MAINNET_NETWORK_DETAILS,
+          query: { search: "usdc" },
+          signal: controller.signal,
+        }),
+      ).rejects.toMatchObject({ name: "AbortError" });
+    });
+  });
+
   describe("getDiscoverData", () => {
     it("fetches /protocols via the FETCH_BACKEND_V2 message", async () => {
       mockedSend.mockResolvedValue({
