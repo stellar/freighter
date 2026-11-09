@@ -73,6 +73,13 @@ async function openSwapToPicker(page: Page) {
   await expect(page.getByText("Swap to")).toBeVisible();
 }
 
+// The CTA stays disabled until the quote for the entered amount lands.
+async function clickReviewSwap(page: Page) {
+  const cta = page.getByTestId("swap-amount-btn-continue");
+  await expect(cta).toBeEnabled({ timeout: 10000 });
+  await cta.click({ force: true });
+}
+
 // ---------------------------------------------------------------------------
 // 1. Held-to-held regression
 //    Verifies the existing swap flow (source + destination both already held)
@@ -138,7 +145,7 @@ test("held-to-held swap reaches review screen", async ({
     .getByTestId("swap-sell-card")
     .getByTestId("send-amount-amount-input")
     .fill("1");
-  await page.getByTestId("swap-amount-btn-continue").click({ force: true });
+  await clickReviewSwap(page);
 
   // Review screen
   await expect(page.getByText("You are swapping")).toBeVisible({
@@ -215,7 +222,7 @@ test("swap to new token shows trustline banner at review", async ({
     .getByTestId("swap-sell-card")
     .getByTestId("send-amount-amount-input")
     .fill("1");
-  await page.getByTestId("swap-amount-btn-continue").click({ force: true });
+  await clickReviewSwap(page);
 
   // Review screen should show trustline banner (AQUA not in account balances)
   await expect(page.getByTestId("review-tx-trustline-banner")).toBeVisible({
@@ -310,7 +317,7 @@ test("shows XLM-reserve sheet when balance cannot cover the reserve", async ({
     .getByTestId("swap-sell-card")
     .getByTestId("send-amount-amount-input")
     .fill("0.05");
-  await page.getByTestId("swap-amount-btn-continue").click({ force: true });
+  await clickReviewSwap(page);
 
   // XlmReserveSheet appears because spendable XLM < required reserve
   await expect(page.getByTestId("XlmReserveSheet")).toBeVisible({
@@ -368,7 +375,7 @@ test("flagged destination surfaces blockaid malicious warning at review", async 
     .getByTestId("swap-sell-card")
     .getByTestId("send-amount-amount-input")
     .fill("1");
-  await page.getByTestId("swap-amount-btn-continue").click({ force: true });
+  await clickReviewSwap(page);
 
   // Review screen: the unified transaction Blockaid banner must be visible
   // (tx scan takes precedence over the token verdict on the review).
@@ -577,7 +584,7 @@ test("flagged non-held destination stacks trustline and Blockaid banners", async
     .getByTestId("swap-sell-card")
     .getByTestId("send-amount-amount-input")
     .fill("1");
-  await page.getByTestId("swap-amount-btn-continue").click({ force: true });
+  await clickReviewSwap(page);
 
   // Both banners must render together at review.
   await expect(page.getByTestId("review-tx-trustline-banner")).toBeVisible({
@@ -676,7 +683,7 @@ test("completes a swap to a new token and shows the success summary", async ({
     .getByTestId("swap-sell-card")
     .getByTestId("send-amount-amount-input")
     .fill("1");
-  await page.getByTestId("swap-amount-btn-continue").click({ force: true });
+  await clickReviewSwap(page);
 
   // Review renders with the trustline banner (AQUA not yet trusted).
   await expect(page.getByTestId("review-tx-trustline-banner")).toBeVisible({
@@ -856,7 +863,7 @@ test("recovers to the amount screen when the swap quote expires at submit", asyn
     .getByTestId("swap-sell-card")
     .getByTestId("send-amount-amount-input")
     .fill("1");
-  await page.getByTestId("swap-amount-btn-continue").click({ force: true });
+  await clickReviewSwap(page);
 
   await expect(page.getByTestId("review-tx-trustline-banner")).toBeVisible({
     timeout: 30000,
@@ -870,6 +877,10 @@ test("recovers to the amount screen when the swap quote expires at submit", asyn
     page.getByText("Quote has expired, please try again to get a new quote"),
   ).toBeVisible({ timeout: 30000 });
   await expect(page.getByTestId("swap-sell-card")).toBeVisible();
+  // The expired quote's key is cleared, so the amount screen re-quotes.
+  await expect(page.getByTestId("swap-amount-btn-continue")).toBeEnabled({
+    timeout: 10000,
+  });
 });
 
 // ---------------------------------------------------------------------------

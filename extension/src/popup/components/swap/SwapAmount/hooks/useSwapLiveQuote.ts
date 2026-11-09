@@ -7,7 +7,7 @@ import { AppDispatch } from "popup/App";
 import { saveSwapBestPath } from "popup/ducks/transactionSubmission";
 import { SwapQuotesError } from "@shared/api/helpers/getSwapQuotes";
 import { cleanAmount } from "popup/helpers/formatters";
-import { getSwapQuote } from "popup/helpers/swapQuote";
+import { getSwapQuote, getSwapQuoteKey } from "popup/helpers/swapQuote";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 
@@ -88,16 +88,17 @@ export const useSwapLiveQuote = ({
           networkDetails: net,
           publicKey: account,
         } = liveQuoteArgsRef.current;
+        const quoteParams = {
+          mode: "send" as const,
+          amount: quoteAmount,
+          sourceAsset: src,
+          destAsset: dst,
+          networkDetails: net,
+          publicKey: account,
+        };
         (async () => {
           try {
-            const { route, quotes, key } = await getSwapQuote({
-              mode: "send",
-              amount: quoteAmount,
-              sourceAsset: src,
-              destAsset: dst,
-              networkDetails: net,
-              publicKey: account,
-            });
+            const { route, quotes, key } = await getSwapQuote(quoteParams);
             if (liveQuoteReqRef.current !== reqId || isReviewingRef.current) {
               return; // superseded by a newer quote, or frozen for review
             }
@@ -122,7 +123,13 @@ export const useSwapLiveQuote = ({
               e instanceof SwapQuotesError && e.kind === "unavailable",
             );
             // No path / bad input / network error: clear the stale amount.
-            dispatch(saveSwapBestPath({ path: [], destinationAmount: "0" }));
+            dispatch(
+              saveSwapBestPath({
+                path: [],
+                destinationAmount: "0",
+                key: getSwapQuoteKey(quoteParams),
+              }),
+            );
           }
         })();
       }, LIVE_QUOTE_DEBOUNCE_MS),

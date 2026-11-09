@@ -13,10 +13,10 @@ import {
 import { SwapAmount } from "popup/components/swap/SwapAmount";
 import * as UseGetSwapAmountData from "popup/components/swap/SwapAmount/hooks/useGetSwapAmountData";
 import * as UseSimulateSwapData from "popup/components/swap/SwapAmount/hooks/useSimulateSwapData";
+import * as UseSwapLiveQuote from "popup/components/swap/SwapAmount/hooks/useSwapLiveQuote";
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
 import * as FetchBackendV2 from "@shared/api/helpers/fetchBackendV2";
 import * as HorizonGetBestPath from "popup/helpers/horizonGetBestPath";
-import * as XlmReserve from "popup/helpers/xlmReserve";
 
 const nativeBalance = {
   token: { type: "native", code: "XLM" },
@@ -304,8 +304,8 @@ describe("SwapAmount live receive-amount quote", () => {
     expect(cta()).toHaveTextContent("Review swap");
   });
 
-  describe("starting the review with a live quote in flight", () => {
-    const inFlightLiveQuote = () => {
+  describe("while the quote for the current inputs is pending", () => {
+    const pendingQuote = () => {
       let resolve: (v: unknown) => void = () => {};
       fetchBackendV2.mockReturnValue(
         new Promise((r) => {
@@ -317,44 +317,95 @@ describe("SwapAmount live receive-amount quote", () => {
           resolve(quotesReply([classicRoute]));
         });
     };
-    const storedDestinationAmount = () =>
-      getTestStore()!.getState().transactionSubmission.transactionData
-        .destinationAmount;
+    const receiveCard = () => screen.getByTestId("swap-receive-card");
+    const expectQuoteLoading = () => {
+      expect(cta()).toHaveTextContent("Review swap");
+      expect(cta()).toBeDisabled();
+      expect(cta().querySelector(".Loader")).not.toBeNull();
+      expect(
+        within(receiveCard()).getByTestId("amount-card-amount-loading"),
+      ).toBeInTheDocument();
+      expect(within(receiveCard()).queryByRole("textbox")).toBeNull();
+    };
 
-    it("drops the live quote while the review is being built", async () => {
-      const resolveLiveQuote = inFlightLiveQuote();
-      jest.spyOn(UseSimulateSwapData, "useSimulateTxData").mockReturnValue({
-        state: { state: RequestState.IDLE, data: null, error: null },
-        isQuoteExpired: false,
-        fetchData: jest.fn(() => new Promise(() => {})),
-      } as any);
+    it("shows the CTA and the receive amount loading during the debounce and the fetch", async () => {
+      pendingQuote();
       renderSwapAmount({ amount: "5", destinationAsset: AQUA });
+
+      expectQuoteLoading();
       await settle();
-
-      await act(async () => {
-        fireEvent.click(cta());
-      });
-      await resolveLiveQuote();
-
-      expect(storedDestinationAmount()).toBe("0");
+      expect(fetchBackendV2).toHaveBeenCalledTimes(1);
+      expectQuoteLoading();
     });
 
-    it("drops the live quote when the reserve sheet opens instead", async () => {
-      const resolveLiveQuote = inFlightLiveQuote();
-      jest
-        .spyOn(XlmReserve, "shouldShowXlmReservePreflight")
-        .mockReturnValue(true);
+    it("shows loading when the stored quote is for other inputs, before the live-quote flag flips", () => {
+      jest.spyOn(UseSwapLiveQuote, "useSwapLiveQuote").mockReturnValue({
+        isLiveQuoteLoading: false,
+        isSwapUnavailable: false,
+        cancelLiveQuote: jest.fn(),
+      });
+      renderSwapAmount({
+        amount: "6",
+        destinationAsset: AQUA,
+        destinationAmount: "42",
+        swapQuoteKey: {
+          account: "G123",
+          network: "PUBLIC",
+          networkUrl: MAINNET_NETWORK_DETAILS.networkUrl,
+          mode: "send",
+          sourceAsset: "native",
+          destAsset: AQUA,
+          amount: "5",
+        },
+      });
+
+      expectQuoteLoading();
+    });
+
+    it("enables Review swap once the matching quote lands", async () => {
+      const resolveQuote = pendingQuote();
       renderSwapAmount({ amount: "5", destinationAsset: AQUA });
       await settle();
+      expectQuoteLoading();
 
-      await act(async () => {
-        fireEvent.click(cta());
-      });
-      expect(screen.getByTestId("XlmReserveSheet")).toBeInTheDocument();
-      await resolveLiveQuote();
+      await resolveQuote();
 
-      expect(storedDestinationAmount()).toBe("0");
+      expect(cta()).toHaveTextContent("Review swap");
+      expect(cta()).toBeEnabled();
+      expect(cta().querySelector(".Loader")).toBeNull();
+      expect(
+        within(receiveCard()).queryByTestId("amount-card-amount-loading"),
+      ).toBeNull();
+      expect(within(receiveCard()).getByDisplayValue("42")).toBeInTheDocument();
     });
+
+    it("shows insufficient balance without waiting for the quote", async () => {
+      pendingQuote();
+      renderSwapAmount({ amount: "500", destinationAsset: AQUA });
+      await settle();
+
+      expect(cta()).toHaveTextContent("Insufficient balance");
+      expect(cta()).toBeDisabled();
+      expect(cta().querySelector(".Loader")).toBeNull();
+    });
+  });
+
+  it("does not start the review while a live quote is in flight", async () => {
+    fetchBackendV2.mockReturnValue(new Promise(() => {}));
+    const fetchSimulation = jest.fn().mockResolvedValue(undefined);
+    jest.spyOn(UseSimulateSwapData, "useSimulateTxData").mockReturnValue({
+      state: { state: RequestState.IDLE, data: null, error: null },
+      isQuoteExpired: false,
+      fetchData: fetchSimulation,
+    } as any);
+    renderSwapAmount({ amount: "5", destinationAsset: AQUA });
+    await settle();
+
+    await act(async () => {
+      fireEvent.click(cta());
+    });
+
+    expect(fetchSimulation).not.toHaveBeenCalled();
   });
 
   it("quotes a percentage of a tiny balance as a plain decimal", async () => {

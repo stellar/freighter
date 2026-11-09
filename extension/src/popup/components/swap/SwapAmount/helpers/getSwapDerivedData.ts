@@ -23,6 +23,11 @@ import {
   pickBestNonXlmClassicCanonical,
 } from "popup/helpers/xlmReserve";
 import { InputType } from "helpers/transaction";
+import {
+  getSwapQuoteKey,
+  isSameSwapQuoteKey,
+  SwapQuoteKey,
+} from "popup/helpers/swapQuote";
 import { getSwapCtaState } from "./swapCtaState";
 import { ResolvedSwapAmountData } from "../hooks/useGetSwapAmountData";
 
@@ -54,6 +59,9 @@ interface GetSwapDerivedDataParams {
   inputType: InputType;
   isLiveQuoteLoading: boolean;
   isSwapUnavailable: boolean;
+  publicKey: string;
+  /** Key of the quote behind destinationAmount. */
+  swapQuoteKey: SwapQuoteKey | null;
   // Balances-derived "this swap adds a trustline", checked against the
   // UNFILTERED balances (a hidden held asset needs no new trustline). Drives
   // the reserve math; distinct from destinationIsNonHeld below, which is a
@@ -82,6 +90,8 @@ export const getSwapDerivedData = ({
   inputType,
   isLiveQuoteLoading,
   isSwapUnavailable,
+  publicKey,
+  swapQuoteKey,
   destRequiresTrustline,
 }: GetSwapDerivedDataParams) => {
   const sendData = data;
@@ -184,12 +194,28 @@ export const getSwapDerivedData = ({
       ? new BigNumber(cleanAmount(amount)).gt(0)
       : new BigNumber(cleanAmount(amountUsd)).gt(0);
 
-  // The live quote settled with no route for a positive amount → no swap path.
-  // While a quote is in flight (isLiveQuoteLoading) we leave the CTA enabled so
-  // it doesn't flicker disabled between keystrokes.
+  // The key check covers the render before the live-quote effect sets
+  // isLiveQuoteLoading; a failed quote also stores its key, so it settles.
+  const isQuotePending =
+    !!asset &&
+    !!destinationAsset &&
+    new BigNumber(cleanAmount(amount)).gt(0) &&
+    (isLiveQuoteLoading ||
+      !isSameSwapQuoteKey(
+        swapQuoteKey,
+        getSwapQuoteKey({
+          mode: "send",
+          amount,
+          sourceAsset: asset,
+          destAsset: destinationAsset,
+          networkDetails,
+          publicKey,
+        }),
+      ));
+
   const hasNoSwapPath =
     swapAmountPositive &&
-    !isLiveQuoteLoading &&
+    !isQuotePending &&
     new BigNumber(cleanAmount(destinationAmount || "0")).isZero();
 
   // Non-XLM swaps pay the network fee from the separate XLM balance; block the
@@ -217,6 +243,7 @@ export const getSwapDerivedData = ({
     insufficientXlmForFees,
     hasNoSwapPath,
     isSwapUnavailable,
+    isQuotePending,
   });
 
   return {
@@ -240,6 +267,7 @@ export const getSwapDerivedData = ({
     isAmountTooHigh,
     xlmSpendableForFees,
     insufficientXlmForFees,
+    isQuotePending,
     cta,
   };
 };
