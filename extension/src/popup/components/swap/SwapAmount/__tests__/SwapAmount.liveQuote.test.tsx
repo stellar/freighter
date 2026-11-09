@@ -220,6 +220,30 @@ describe("SwapAmount live receive-amount quote", () => {
     expect(cta()).toHaveTextContent("No quote available");
   });
 
+  it("shows no quote for a Soroban token no source routes, asking for its contract ID", async () => {
+    const contract = "CBI7UCH5KGSVQRO5H4SUCZUTZABCITZLRHQQZTWL2TK4RZ72TAR6IHRV";
+    fetchBackendV2.mockResolvedValue({
+      status: 200,
+      body: {
+        data: {
+          routes: [],
+          unavailable: [
+            { source: "classic", reason: "unsupported" },
+            { source: "lifi", reason: "no_route" },
+          ],
+        },
+      },
+    });
+    renderSwapAmount({ amount: "5", destinationAsset: `TKN:${contract}` });
+
+    await settle();
+
+    expect(JSON.parse(fetchBackendV2.mock.calls[0][0].body).toAsset).toBe(
+      contract,
+    );
+    expect(cta()).toHaveTextContent("No quote available");
+  });
+
   it("treats a 400 as no quote", async () => {
     fetchBackendV2.mockResolvedValue({
       status: 400,
