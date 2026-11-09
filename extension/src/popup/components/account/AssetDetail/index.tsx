@@ -399,7 +399,7 @@ export const AssetDetail = ({
       selectedBalance.contractId,
       networkDetails.networkPassphrase,
     );
-  const isShowingSwap = !isSorobanAsset && !isLpShare;
+  const isShowingSwap = !isLpShare;
   const isShowingSend = hasBalance;
 
   // See the `AssetDetail__price` div below for why this falls back to spot.
