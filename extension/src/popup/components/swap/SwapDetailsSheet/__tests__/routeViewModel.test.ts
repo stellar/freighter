@@ -155,6 +155,24 @@ describe("buildRouteView", () => {
     expect(view.providers).toEqual([{ name: "stellar-dex", icon: null }]);
   });
 
+  it("shows pools only on paths whose hops carry one", () => {
+    const view = buildRouteView({
+      route: {
+        ...lifiRoute,
+        paths: [
+          lifiRoute.paths[0],
+          {
+            share: "0.68",
+            hops: [{ venue: "stellar-dex", from: "XLM", to: USDC }],
+          },
+        ],
+      },
+      tokenContext: emptyContext,
+      protocols: PROTOCOLS,
+    })!;
+    expect(view.paths.map((p) => p.poolCount)).toEqual([3, null]);
+  });
+
   it("gives a venue /protocols doesn't list no icon", () => {
     const view = buildRouteView({
       route: classicRoute,

@@ -175,7 +175,7 @@ export const buildRouteView = ({
       share: formatShare(path.share),
       venues,
       tokens,
-      poolCount: isClassic ? null : path.hops.length,
+      poolCount: path.hops.some((h) => h.pool) ? path.hops.length : null,
     };
   });
 
