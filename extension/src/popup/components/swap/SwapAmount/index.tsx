@@ -299,7 +299,11 @@ export const SwapAmount = ({
   };
 
   const validate = (values: { amount: string }) => {
-    const error = validateSwapAmount(values.amount, sourceDecimals);
+    const error = validateSwapAmount(
+      values.amount,
+      sourceDecimals,
+      !isContractId(srcAsset?.issuer),
+    );
     return error ? { amount: error } : {};
   };
 
