@@ -226,6 +226,7 @@ describe("Account Creator View", () => {
       .spyOn(internalApi, "createAccount")
       .mockResolvedValue({
         publicKey: "",
+        activeAccountId: "",
         allAccounts: [],
         hasPrivateKey: false,
       });
