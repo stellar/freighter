@@ -5,7 +5,7 @@ import BigNumber from "bignumber.js";
 import { RequestState } from "constants/request";
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { AppDataType } from "helpers/hooks/useGetAppData";
-import { Wrapper } from "popup/__testHelpers__";
+import { Wrapper, getTestStore } from "popup/__testHelpers__";
 import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
 import * as UseGetSwapAmountData from "popup/components/swap/SwapAmount/hooks/useGetSwapAmountData";
@@ -255,6 +255,88 @@ describe("SwapAmount details sheet", () => {
       expect(screen.queryByTestId("swap-details-link")).toBeNull();
       expect(screen.getByTestId("swap-amount-fee-display")).toHaveTextContent(
         "0.00002 XLM",
+      );
+    });
+  });
+
+  describe("fees held back before review", () => {
+    const xlm = (total: string) => ({
+      token: { type: "native", code: "XLM" },
+      total: new BigNumber(total),
+      available: new BigNumber(total),
+      minimumBalance: new BigNumber("1"),
+      blockaidData: {},
+    });
+    const usdc = {
+      token: {
+        code: "USDC",
+        issuer: { key: USDC.split(":")[1] },
+      },
+      total: new BigNumber("100"),
+      available: new BigNumber("100"),
+      blockaidData: {},
+    };
+    const withBalances = (balances: unknown[]) =>
+      jest.spyOn(UseGetSwapAmountData, "useGetSwapAmountData").mockReturnValue({
+        state: {
+          state: RequestState.SUCCESS,
+          data: { ...swapData, userBalances: { balances } },
+          error: null,
+        },
+        fetchData: jest.fn().mockResolvedValue(undefined),
+      } as any);
+    const quotes = (route: Record<string, unknown>) => ({
+      ...swapQuotes,
+      routes: [{ ...swapQuotes.routes[0], ...route }],
+    });
+    const clickMax = () =>
+      fireEvent.click(screen.getByTestId("SendAmountSetMax"));
+    const savedAmount = () =>
+      getTestStore()!.getState().transactionSubmission.transactionData.amount;
+
+    // 100 XLM - 1 minimum balance - 0.5 new-trustline reserve - fees.
+    it("Max on an XLM source leaves a LI.FI route's resource fee", () => {
+      withBalances([xlm("100")]);
+      renderSwapAmount({ swapQuotes: quotes({ resourceFee: "0.0858459" }) });
+      clickMax();
+      expect(savedAmount()).toBe("98.4141341");
+    });
+
+    it("Max on an XLM source holds back the inclusion fee alone on a classic route", () => {
+      withBalances([xlm("100")]);
+      renderSwapAmount({ swapQuotes: quotes({ source: "classic" }) });
+      clickMax();
+      expect(savedAmount()).toBe("98.49998");
+    });
+
+    const nonXlmSource = (route: Record<string, unknown>) => ({
+      asset: USDC,
+      destinationAsset: "native",
+      swapQuotes: quotes(route),
+      swapQuoteKey: getSwapQuoteKey({
+        mode: "send",
+        amount: "5",
+        sourceAsset: USDC,
+        destAsset: "native",
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        publicKey: "G123",
+      }),
+    });
+
+    // 0.0001 XLM spendable covers the 0.00001 inclusion fee, not the total.
+    it("flags a non-XLM source short of XLM for the resource fee", () => {
+      withBalances([xlm("1.0001"), usdc]);
+      renderSwapAmount(nonXlmSource({ resourceFee: "0.0858459" }));
+      expect(screen.getByTestId("swap-amount-btn-continue")).toHaveTextContent(
+        "Not enough XLM for network fees",
+      );
+    });
+
+    it("lets a non-XLM source through on a classic route", () => {
+      withBalances([xlm("1.0001"), usdc]);
+      renderSwapAmount(nonXlmSource({ source: "classic" }));
+      expect(screen.getByTestId("swap-amount-btn-continue")).toHaveTextContent(
+        "Review swap",
       );
     });
   });

@@ -463,6 +463,31 @@ export const SwapAmount = ({
     state: swapAmountData.state,
   });
 
+  // The stored quote lags the inputs until the debounced re-quote lands.
+  const hasQuote =
+    !!srcAsset &&
+    !!dstAsset &&
+    new BigNumber(destinationAmount || "0").gt(0) &&
+    isSameSwapQuoteKey(
+      transactionData.swapQuoteKey,
+      getSwapQuoteKey({
+        mode: "send",
+        amount: amount || "0",
+        sourceAsset: asset,
+        destAsset: destinationAsset,
+        networkDetails,
+        publicKey,
+      }),
+    );
+  const quotedRoute =
+    hasQuote && transactionData.swapQuotes
+      ? pickSwapRoute(transactionData.swapQuotes)
+      : undefined;
+  const resourceFee = quotedRoute?.resourceFee;
+  const displayFee = resourceFee
+    ? new BigNumber(fee).plus(resourceFee).toFixed()
+    : fee;
+
   // All balance/price/fee/security/CTA derivation. Plain function (not a hook):
   // it runs below the early returns, where a hook would violate rules-of-hooks.
   const {
@@ -492,7 +517,8 @@ export const SwapAmount = ({
     destinationTokenDetails: transactionData.destinationTokenDetails,
     amount: formik.values.amount,
     amountUsd: formik.values.amountUsd,
-    fee,
+    // Max and the XLM fee check hold back what the swap will pay.
+    fee: displayFee,
     blockaidOverrideState,
     networkDetails,
     inputType,
@@ -599,30 +625,6 @@ export const SwapAmount = ({
     review: t("Review swap"),
   };
 
-  // The stored quote lags the inputs until the debounced re-quote lands.
-  const hasQuote =
-    !!srcAsset &&
-    !!dstAsset &&
-    new BigNumber(destinationAmount || "0").gt(0) &&
-    isSameSwapQuoteKey(
-      transactionData.swapQuoteKey,
-      getSwapQuoteKey({
-        mode: "send",
-        amount: amount || "0",
-        sourceAsset: asset,
-        destAsset: destinationAsset,
-        networkDetails,
-        publicKey,
-      }),
-    );
-  const quotedRoute =
-    hasQuote && transactionData.swapQuotes
-      ? pickSwapRoute(transactionData.swapQuotes)
-      : undefined;
-  const resourceFee = quotedRoute?.resourceFee;
-  const displayFee = resourceFee
-    ? new BigNumber(fee).plus(resourceFee).toFixed()
-    : fee;
   const xlmPrice = data.tokenPrices?.native?.currentPrice;
   const feeUsd = xlmPrice
     ? new BigNumber(displayFee).multipliedBy(xlmPrice)
