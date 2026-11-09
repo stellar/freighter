@@ -502,6 +502,8 @@ export const SwapAmount = ({
     // The receive side becomes XLM — a held token, so no trustline is needed.
     dispatch(saveDestinationAsset("native"));
     dispatch(saveDestinationTokenDetails(null));
+    // Both sides are classic from here on.
+    dispatch(saveIsToken(false));
 
     if (!sourceIsNonXlmClassic) {
       // Switching the sell side to a different token: reset the amount, since
