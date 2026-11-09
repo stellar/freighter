@@ -1,15 +1,23 @@
 import React, { useEffect } from "react";
+import { useSelector } from "react-redux";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Icon, Loader, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { Account } from "@shared/api/types";
 import { ROUTES } from "popup/constants/routes";
 import { closeWindow, navigateTo, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { reRouteOnboarding } from "popup/helpers/route";
+import {
+  AccountGroupKind,
+  groupAccountsBySource,
+} from "popup/helpers/accountGroups";
+import {
+  activeAccountIdSelector,
+  secretSourcesSelector,
+} from "popup/ducks/accountServices";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
@@ -19,64 +27,11 @@ import { useGetWalletsData } from "popup/components/account/AccountSheet/hooks/u
 
 import "./styles.scss";
 
-interface AccountGroup {
-  key: string;
-  label: string;
-  icon: React.ReactNode;
-  accounts: Account[];
-}
-
-/*
-  Groups accounts by what roots them. Until accounts carry a source id, this
-  is all the base branch can tell: every phrase-derived account comes from the
-  wallet's one phrase, each imported account is its own secret key, and a
-  hardware account is grouped by its device.
-*/
-export const groupAccounts = (
-  accounts: Account[],
-  t: (key: string, options?: Record<string, unknown>) => string,
-): AccountGroup[] => {
-  const derived = accounts.filter(
-    (acct) => !acct.imported && !acct.hardwareWalletType,
-  );
-  const imported = accounts.filter(
-    (acct) => acct.imported && !acct.hardwareWalletType,
-  );
-  const hardware = accounts.filter((acct) => !!acct.hardwareWalletType);
-
-  const groups: AccountGroup[] = [];
-
-  if (derived.length) {
-    groups.push({
-      key: "phrase-1",
-      label: t("Recovery phrase {{number}}", { number: 1 }),
-      icon: <Icon.Passcode />,
-      accounts: derived,
-    });
-  }
-
-  imported.forEach((acct, i) => {
-    groups.push({
-      key: `secret-key-${acct.publicKey}`,
-      label:
-        imported.length === 1
-          ? t("Secret key")
-          : t("Secret key {{number}}", { number: i + 1 }),
-      icon: <Icon.Key02 />,
-      accounts: [acct],
-    });
-  });
-
-  if (hardware.length) {
-    groups.push({
-      key: "hardware",
-      label: hardware[0].hardwareWalletType || t("Hardware wallet"),
-      icon: <Icon.Wallet02 />,
-      accounts: hardware,
-    });
-  }
-
-  return groups;
+const GROUP_ICON: Record<AccountGroupKind, React.ReactNode> = {
+  [AccountGroupKind.PHRASE]: <Icon.Passcode />,
+  [AccountGroupKind.SECRET_KEY]: <Icon.Key02 />,
+  [AccountGroupKind.HARDWARE]: <Icon.Wallet02 />,
+  [AccountGroupKind.OTHER]: <Icon.Wallet02 />,
 };
 
 export const AccountsRecovery = () => {
@@ -84,6 +39,8 @@ export const AccountsRecovery = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { state, fetchData } = useGetWalletsData();
+  const activeAccountId = useSelector(activeAccountIdSelector);
+  const secretSources = useSelector(secretSourcesSelector);
 
   useEffect(() => {
     fetchData(true);
@@ -133,15 +90,19 @@ export const AccountsRecovery = () => {
     state: state.state,
   });
 
-  const { publicKey: activePublicKey, allAccounts, accountValue } = state.data;
+  const { allAccounts, accountValue } = state.data;
   const isFetchingTokenPrices = state.data.isFetchingTokenPrices;
-  const groups = groupAccounts(allAccounts, t);
+  const groups = groupAccountsBySource({
+    accounts: allAccounts,
+    sources: secretSources,
+    t,
+  });
 
-  const openEditAccount = (publicKey: string) =>
+  const openEditAccount = (accountId: string) =>
     navigateTo(
       ROUTES.editAccount,
       navigate,
-      `?publicKey=${encodeURIComponent(publicKey)}`,
+      `?accountId=${encodeURIComponent(accountId)}`,
     );
 
   return (
@@ -169,15 +130,15 @@ export const AccountsRecovery = () => {
                 data-testid="accounts-recovery-group"
               >
                 <div className="AccountsRecovery__group__label">
-                  {group.icon}
+                  {GROUP_ICON[group.kind]}
                   <span>{group.label}</span>
                 </div>
                 {group.accounts.map((account) => {
-                  const isSelected = account.publicKey === activePublicKey;
+                  const isSelected = account.id === activeAccountId;
                   const value = accountValue?.[account.publicKey];
                   return (
                     <div
-                      key={account.publicKey}
+                      key={account.id}
                       className="AccountsRecovery__row"
                       data-testid="accounts-recovery-row"
                       aria-current={isSelected ? true : undefined}
@@ -206,7 +167,7 @@ export const AccountsRecovery = () => {
                         type="button"
                         className="AccountsRecovery__row__edit"
                         aria-label={t("Edit {{name}}", { name: account.name })}
-                        onClick={() => openEditAccount(account.publicKey)}
+                        onClick={() => openEditAccount(account.id)}
                         data-testid="accounts-recovery-edit"
                       >
                         <Icon.Settings04 />

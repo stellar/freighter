@@ -180,24 +180,29 @@ const RevealSecret = ({ kind }: { kind: SecretKind }) => {
   });
 
   const activePublicKey = state.data.account.publicKey;
-  // Edit account names the account; without one, the active account.
-  const publicKey =
-    new URLSearchParams(location.search).get("publicKey") || activePublicKey;
+  const params = new URLSearchParams(location.search);
+  // Edit account names the account (`Account.id`) or the phrase that roots
+  // it. Without one: the active account, or the wallet's default phrase.
+  const accountId =
+    params.get("accountId") || state.data.account.activeAccountId;
+  const sourceId = params.get("sourceId") || undefined;
 
   const handleSubmit = async ({ password }: { password: string }) => {
     let revealed = "";
     let error = "";
 
     if (isPhrase) {
-      // Until accounts carry a source, the wallet holds one phrase and it
-      // roots every phrase-derived account.
-      const res = await showBackupPhrase({ activePublicKey, password });
+      const res = await showBackupPhrase({
+        activePublicKey,
+        password,
+        sourceId,
+      });
       revealed = res.mnemonicPhrase;
       error = res.error;
     } else {
       const res = await revealSecretKey({
         activePublicKey,
-        publicKey,
+        accountId,
         password,
       });
       revealed = res.secretKey;

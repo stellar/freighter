@@ -332,10 +332,8 @@ export const popupMessageListener = (
       if (!isFromExtensionPage) return { error: "Unauthorized" };
       return revealSecretKey({
         request,
-        sessionStore,
         localStore,
         keyManager,
-        sessionTimer,
       });
     }
     case SERVICE_TYPES.CONFIRM_PASSWORD: {
