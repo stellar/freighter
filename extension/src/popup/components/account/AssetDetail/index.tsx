@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
+import { Asset } from "stellar-sdk";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
@@ -13,6 +14,7 @@ import {
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
+  getNativeContractId,
   isNativeAssetId,
   isNativeBalance,
 } from "@shared/helpers/assetIdentity";
@@ -290,8 +292,22 @@ export const AssetDetail = ({
     selectedBalance && "liquidityPoolId" in selectedBalance,
   );
   // A classic asset with an issuer, or a contract token. XLM and LP shares
-  // are neither: they have no address to copy and are never hidden.
+  // are neither, and are never hidden.
   const isIssuedToken = !isNativeBalance(selectedBalance) && !isLpShare;
+  // The address "Copy address" copies is always a contract id. XLM and a
+  // classic asset copy their Stellar Asset Contract id for this network, not
+  // the issuer account. A contract token copies its contract id. An LP share
+  // has no contract, so it has no address to copy.
+  let copyAddress = "";
+  if (isNativeBalance(selectedBalance)) {
+    copyAddress = getNativeContractId(networkDetails.networkPassphrase);
+  } else if (isSorobanBalance(selectedBalance)) {
+    copyAddress = selectedBalance.contractId;
+  } else if (!isLpShare && assetIssuer) {
+    copyAddress = new Asset(selectedBalance.token.code, assetIssuer).contractId(
+      networkDetails.networkPassphrase,
+    );
+  }
 
   // Chart + stats are mainnet-only; elsewhere the header keeps its 24h delta.
   // LP shares are excluded: `<pool-id>:lp` is not priceable (getTokenPrices
@@ -423,105 +439,92 @@ export const AssetDetail = ({
           customBackIcon={<Icon.X />}
           customBackAction={handleClose}
           rightButton={
-            // Native XLM has no address to copy and cannot be hidden
-            // (filterHiddenBalances always keeps it), so on a network without
-            // stellar.expert it would be an empty menu.
-            !isStellarExpertSupported &&
-            isNativeBalance(selectedBalance) ? null : (
-              <Popover open={optionsOpen} onOpenChange={setOptionsOpen}>
-                <PopoverTrigger
-                  asChild
-                  className="AssetDetail__options"
-                  onClick={() => setOptionsOpen(true)}
-                >
-                  <img src={IconEllipsis} alt={t("asset options")} />
-                </PopoverTrigger>
-                <PopoverContent
-                  align="end"
-                  className="AssetDetail__options-actions"
-                >
-                  {/* Reading an LP share's issuer would throw and blank
-                      the menu. */}
-                  {isIssuedToken ? (
-                    <div className="AssetDetail__options-actions__row">
-                      <CopyText
-                        textToCopy={
-                          isSorobanBalance(selectedBalance)
-                            ? selectedBalance.contractId
-                            : selectedBalance.token.issuer.key
+            <Popover open={optionsOpen} onOpenChange={setOptionsOpen}>
+              <PopoverTrigger
+                asChild
+                className="AssetDetail__options"
+                onClick={() => setOptionsOpen(true)}
+              >
+                <img src={IconEllipsis} alt={t("asset options")} />
+              </PopoverTrigger>
+              <PopoverContent
+                align="end"
+                className="AssetDetail__options-actions"
+              >
+                {/* An LP share has no address to copy. */}
+                {copyAddress ? (
+                  <div className="AssetDetail__options-actions__row">
+                    <CopyText textToCopy={copyAddress}>
+                      <div className="action">
+                        <div className="AssetDetail__options-actions__label">
+                          {t("Copy address")}
+                        </div>
+                        <Icon.Copy01 />
+                      </div>
+                    </CopyText>
+                  </div>
+                ) : null}
+                {isStellarExpertSupported ? (
+                  <div className="AssetDetail__options-actions__row">
+                    <Link
+                      className="action link"
+                      variant="secondary"
+                      rel="noreferrer"
+                      target="_blank"
+                      href={`https://stellar.expert/explorer/${networkDetails.network.toLowerCase()}/${stellarExpertAssetLinkSlug}`}
+                    >
+                      <>
+                        <div className="AssetDetail__options-actions__label">
+                          Stellar.expert
+                        </div>
+                        <Icon.LinkExternal01 />
+                      </>
+                    </Link>
+                  </div>
+                ) : null}
+                {canOfferHide ? (
+                  <div className="AssetDetail__options-actions__row">
+                    <button
+                      type="button"
+                      className="action"
+                      onClick={handleHideAsset}
+                      disabled={isHiding}
+                      data-testid="AssetDetail__hide"
+                    >
+                      <div className="AssetDetail__options-actions__label">
+                        {t("Hide {{code}}", { code: canonical.code })}
+                      </div>
+                      <Icon.EyeOff />
+                    </button>
+                  </div>
+                ) : null}
+                {isRemovable ? (
+                  <div className="AssetDetail__options-actions__row AssetDetail__options-actions__row--destructive">
+                    <button
+                      type="button"
+                      className="action"
+                      onClick={() => {
+                        setOptionsOpen(false);
+                        // Closing a trustline requires a zero balance, so
+                        // entering the flow with one held could only ever
+                        // fail on submit. Explain instead.
+                        if (shouldChangeTrust && hasBalance) {
+                          setIsBalanceWarningOpen(true);
+                          return;
                         }
-                      >
-                        <div className="action">
-                          <div className="AssetDetail__options-actions__label">
-                            {t("Copy address")}
-                          </div>
-                          <Icon.Copy01 />
-                        </div>
-                      </CopyText>
-                    </div>
-                  ) : null}
-                  {isStellarExpertSupported ? (
-                    <div className="AssetDetail__options-actions__row">
-                      <Link
-                        className="action link"
-                        variant="secondary"
-                        rel="noreferrer"
-                        target="_blank"
-                        href={`https://stellar.expert/explorer/${networkDetails.network.toLowerCase()}/${stellarExpertAssetLinkSlug}`}
-                      >
-                        <>
-                          <div className="AssetDetail__options-actions__label">
-                            Stellar.expert
-                          </div>
-                          <Icon.LinkExternal01 />
-                        </>
-                      </Link>
-                    </div>
-                  ) : null}
-                  {canOfferHide ? (
-                    <div className="AssetDetail__options-actions__row">
-                      <button
-                        type="button"
-                        className="action"
-                        onClick={handleHideAsset}
-                        disabled={isHiding}
-                        data-testid="AssetDetail__hide"
-                      >
-                        <div className="AssetDetail__options-actions__label">
-                          {t("Hide {{code}}", { code: canonical.code })}
-                        </div>
-                        <Icon.EyeOff />
-                      </button>
-                    </div>
-                  ) : null}
-                  {isRemovable ? (
-                    <div className="AssetDetail__options-actions__row AssetDetail__options-actions__row--destructive">
-                      <button
-                        type="button"
-                        className="action"
-                        onClick={() => {
-                          setOptionsOpen(false);
-                          // Closing a trustline requires a zero balance, so
-                          // entering the flow with one held could only ever
-                          // fail on submit. Explain instead.
-                          if (shouldChangeTrust && hasBalance) {
-                            setIsBalanceWarningOpen(true);
-                            return;
-                          }
-                          setBody("remove");
-                        }}
-                        data-testid="asset-detail-remove-button"
-                      >
-                        <div className="AssetDetail__options-actions__label">
-                          {t("Remove")}
-                        </div>
-                        <Icon.MinusCircle />
-                      </button>
-                    </div>
-                  ) : null}
-                </PopoverContent>
-              </Popover>
-            )
+                        setBody("remove");
+                      }}
+                      data-testid="asset-detail-remove-button"
+                    >
+                      <div className="AssetDetail__options-actions__label">
+                        {t("Remove")}
+                      </div>
+                      <Icon.MinusCircle />
+                    </button>
+                  </div>
+                ) : null}
+              </PopoverContent>
+            </Popover>
           }
         />
         <View.Content>
