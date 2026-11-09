@@ -155,24 +155,20 @@ test("a quote that moved before the build shows the quote-expired toast", async 
   test.slow();
 
   const stubOverrides = async () => {
-    await page.unroute("**/asset?search**");
-    await page.route("**/asset?search**", (route) =>
-      route.fulfill({
-        json: {
-          _embedded: {
-            records: [
-              {
-                asset:
-                  "AQUA-GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
-                volume7d: 1_000_000_000_000,
-              },
-            ],
+    await context.unroute(ASSET_SEARCH_ROUTE);
+    await context.route(ASSET_SEARCH_ROUTE, (route) =>
+      route.fulfill(
+        assetSearchResponse([
+          {
+            asset:
+              "AQUA-GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
+            volume7d: 1_000_000_000_000,
           },
-        },
-      }),
+        ]),
+      ),
     );
-    await page.route("**/asset?sort=volume7d**", (route) =>
-      route.fulfill({ json: { _embedded: { records: [] } } }),
+    await context.route(TRENDING_ASSETS_ROUTE, (route) =>
+      route.fulfill(assetSearchResponse([])),
     );
     await stubSwapQuotes(context, { toAmount: "0.95" });
     await stubSwapTx(context, { status: 409 });
