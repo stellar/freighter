@@ -28,7 +28,6 @@
  *  - trustline-info-sheet        TrustlineInfoSheet.tsx:16
  *  - XlmReserveSheet             XlmReserveSheet/index.tsx:27
  *  - swap-picker-fallback-notice SwapPickerSections/index.tsx:108
- *  - swap-picker-empty-soroban   SwapPickerSections/index.tsx:123
  *  - blockaid-malicious-label    WarningMessages/index.tsx:768,933
  *
  * testids NOT yet in source (design doc used wrong names; real counterparts above):
@@ -50,7 +49,7 @@ import {
   stubSwapQuotes,
   stubSwapTx,
 } from "./helpers/stubs";
-// Soroban contract address — searching for this should produce the Soroban empty state.
+// A Soroban-only token's contract address.
 const SOROBAN_CONTRACT_ADDRESS =
   "CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND";
 
@@ -445,11 +444,9 @@ test("flagged destination surfaces blockaid malicious warning at review", async 
 });
 
 // ---------------------------------------------------------------------------
-// 5. Search: Soroban contract address → Soroban empty state
-//    Entering a contract address in the "Swap to" search should surface the
-//    Soroban-unsupported empty state copy.
+// 5. Search: Soroban contract address → the contract token's row
 // ---------------------------------------------------------------------------
-test("search with Soroban contract address shows Soroban empty state", async ({
+test("search with a Soroban contract address lists the contract token", async ({
   page,
   extensionId,
   context,
@@ -457,12 +454,17 @@ test("search with Soroban contract address shows Soroban empty state", async ({
   test.slow();
 
   const stubOverrides = async () => {
-    // Return empty results — the Soroban detection happens in the picker via
-    // hadSorobanMatches logic in SwapPickerSections based on the search term
-    // being a contract-shaped address; no search result records needed.
     await page.unroute("**/asset?search**");
     await page.route("**/asset?search**", (route) =>
-      route.fulfill({ json: { _embedded: { records: [] } } }),
+      route.fulfill({
+        json: {
+          _embedded: {
+            records: [
+              { asset: SOROBAN_CONTRACT_ADDRESS, code: "TKN", decimals: 18 },
+            ],
+          },
+        },
+      }),
     );
     await page.route("**/asset?sort=volume7d**", (route) =>
       route.fulfill({ json: { _embedded: { records: [] } } }),
@@ -476,18 +478,11 @@ test("search with Soroban contract address shows Soroban empty state", async ({
   await expect(page.getByTestId("swap-sell-card")).toBeVisible();
 
   await openSwapToPicker(page);
-  // Type a Soroban contract address — SwapPickerSections.hadSorobanMatches
-  // triggers when the search term looks like a contract ID (56-char Stellar G/C address)
   await page.getByTestId("swap-from-search").fill(SOROBAN_CONTRACT_ADDRESS);
 
-  // The Soroban empty state message (swap-picker-empty-soroban)
-  // Text: "Soroban contract tokens aren't supported for swaps yet."
-  await expect(page.getByTestId("swap-picker-empty-soroban")).toBeVisible({
+  await expect(page.getByTestId("SwapTokenRow-TKN")).toBeVisible({
     timeout: 15000,
   });
-  await expect(
-    page.getByText(/Soroban contract tokens aren't supported/),
-  ).toBeVisible();
 });
 
 // ---------------------------------------------------------------------------

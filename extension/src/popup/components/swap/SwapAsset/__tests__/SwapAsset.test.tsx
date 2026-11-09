@@ -30,7 +30,6 @@ const emptyLookupResult = {
     unverified: [],
   },
   isSearch: false,
-  hadSorobanMatches: false,
   isFallback: false,
 };
 
@@ -112,7 +111,6 @@ describe("SwapAsset selectionType", () => {
             unverified: [],
           },
           isSearch: false,
-          hadSorobanMatches: false,
           isFallback: false,
         },
         error: null,

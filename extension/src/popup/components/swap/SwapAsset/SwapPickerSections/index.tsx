@@ -9,7 +9,7 @@ import {
   UnverifiedTokenInfoSheet,
 } from "popup/components/TokenVerificationSheets";
 import { AssetListRow } from "popup/components/AssetListRow";
-import { isContractId } from "popup/helpers/soroban";
+import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
 import { SecurityLevel } from "popup/constants/blockaid";
 import type { SwapTokenRecord } from "../hooks/useSwapTokenLookup";
 import type { SwapPickerSelection } from "../index";
@@ -19,17 +19,14 @@ import "./styles.scss";
 /** Which picker section a clicked row came from (used for telemetry). */
 type PickerSource = "balances" | "popular" | "search";
 
-/**
- * Builds the destination descriptor passed up to the Swap view on pick.
- * `decimals` is 7 for classic Stellar assets.
- */
+/** Builds the destination descriptor passed up to the Swap view on pick. */
 const buildSelection = (
   r: SwapTokenRecord,
   source: PickerSource,
 ): SwapPickerSelection => ({
   tokenCode: r.code ?? "",
   requiresTrustline: r.requiresTrustline,
-  decimals: 7,
+  decimals: r.isContract ? r.decimals : CLASSIC_ASSET_DECIMALS,
   issuer: r.issuer || undefined,
   securityLevel: r.securityLevel,
   securityWarnings: r.securityWarnings,
@@ -48,7 +45,6 @@ export interface SwapPickerSectionsResult {
   popular: SwapTokenRecord[];
   verified: SwapTokenRecord[];
   unverified: SwapTokenRecord[];
-  hadSorobanMatches: boolean;
   isFallback: boolean;
   /** True when the account has no held balances (new/unfunded account). */
   isNewAccount: boolean;
@@ -66,11 +62,6 @@ export interface SwapPickerSectionsProps {
     details?: SwapPickerSelection,
   ) => void;
   stellarExpertUrl: string;
-  /** True on the swap-TO (destination) picker. The Soroban "not supported"
-   * empty state only applies to the destination; the source picker shows the
-   * generic "no tokens match" empty state instead (you can only swap FROM a
-   * token you already hold). */
-  isDestination: boolean;
   /** Whether token discovery (Popular + search) exists on this network — true on
    * Mainnet/Testnet, false on custom/Futurenet. When false the discovery-
    * unavailable notice is suppressed: the network simply has no Popular list, so
@@ -84,7 +75,6 @@ export const SwapPickerSections = ({
   hiddenAssets = [],
   onClickAsset,
   stellarExpertUrl,
-  isDestination,
   isDiscoverySupported = false,
 }: SwapPickerSectionsProps) => {
   const { t } = useTranslation();
@@ -187,17 +177,7 @@ export const SwapPickerSections = ({
       )}
 
       {!hasResults ? (
-        isDestination &&
-        (result.hadSorobanMatches || isContractId(searchTerm.trim())) ? (
-          <div
-            className="SwapPickerSections__empty"
-            data-testid="swap-picker-empty-soroban"
-          >
-            {t(
-              "Soroban contract tokens aren't supported for swaps yet. Try searching for a Classic token instead.",
-            )}
-          </div>
-        ) : isSearching ? (
+        isSearching ? (
           <div
             className="SwapPickerSections__empty"
             data-testid="swap-picker-empty"

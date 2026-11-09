@@ -85,14 +85,12 @@ export interface SwapTokenLookupResult {
     unverified: SwapTokenRecord[];
   };
   isSearch: boolean;
-  hadSorobanMatches: boolean;
   isFallback: boolean;
 }
 
 export const EMPTY_RESULT: SwapTokenLookupResult = {
   sections: { yourTokens: [], popular: [], verified: [], unverified: [] },
   isSearch: false,
-  hadSorobanMatches: false,
   isFallback: false,
 };
 
@@ -110,12 +108,12 @@ const heldToRecord = (
   maybeTokenPrices?: ApiTokenPrices | null,
 ): SwapTokenRecord | null => {
   const tokenPrices = maybeTokenPrices ?? {};
-  // Classic-only: swaps run over the Classic path, so the "Your tokens" list
-  // shows native + classic assets only. Exclude liquidity-pool shares (no token)
-  // and custom Soroban contract tokens (carry a contractId).
-  if (!("token" in balance) || !balance.token || "contractId" in balance) {
+  // Liquidity-pool shares have no token to swap.
+  if (!("token" in balance) || !balance.token) {
     return null;
   }
+  const sorobanDecimals =
+    "contractId" in balance ? Number(balance.decimals) : undefined;
   const token = balance.token as {
     code: string;
     type?: string;
@@ -129,7 +127,7 @@ const heldToRecord = (
   // Held-token balance, fiat value and 24h delta (mirrors the account-home row).
   const total = new BigNumber(
     (balance as { total?: BigNumber.Value }).total ?? 0,
-  );
+  ).shiftedBy(-(sorobanDecimals ?? 0));
   const tokenAmount = formatAmount(total.toFixed());
   const price = tokenPrices[canonical];
   const fiatValue = price?.currentPrice
@@ -153,8 +151,9 @@ const heldToRecord = (
     fiatValue,
     percentChange24h,
     isHeld: true,
-    isContract: false,
+    isContract: sorobanDecimals !== undefined,
     requiresTrustline: false,
+    ...(sorobanDecimals !== undefined ? { decimals: sorobanDecimals } : {}),
   };
 };
 
@@ -188,13 +187,15 @@ const currencyToRecord = (
   const canonical = isNative
     ? "native"
     : getCanonicalFromAsset(asset.code || "", asset.issuer || "");
-  const isContract = !!(asset.contract && isContractId(asset.contract));
+  // Soroban-only: a classic asset's own contract (SAC) is listed in its
+  // classic form, which needs a trustline.
+  const isContract = isContractId(asset.issuer);
   return {
     ...asset,
     canonical,
     isHeld,
     isContract,
-    requiresTrustline: !isHeld && !isNative,
+    requiresTrustline: !isHeld && !isNative && !isContract,
     spotPrice: asset.price,
   };
 };
@@ -205,9 +206,6 @@ const currencyToRecord = (
  * Idle (no searchTerm):  yourTokens + popular (volume7d ∩ verified, held filtered out)
  * Search (searchTerm):   yourTokens + verified + unverified (mutually exclusive, deduped)
  * Fallback:              yourTokens only (held-in-memory filter), popular/verified/unverified empty
- *
- * Classic-only: any non-SAC Soroban contract is stripped and sets hadSorobanMatches = true.
-
  */
 export const buildSwapSections = ({
   searchTerm,
@@ -215,7 +213,6 @@ export const buildSwapSections = ({
   popular = [],
   verifiedAssets = [],
   unverifiedAssets = [],
-  searchResults = [],
   isFallback = false,
   icons = {},
   tokenPrices,
@@ -228,7 +225,6 @@ export const buildSwapSections = ({
   popular?: TrendingAsset[];
   verifiedAssets?: ManageAssetCurrency[];
   unverifiedAssets?: ManageAssetCurrency[];
-  searchResults?: ManageAssetCurrency[];
   isFallback?: boolean;
   icons?: Record<string, string | null>;
   tokenPrices?: ApiTokenPrices | null;
@@ -238,24 +234,6 @@ export const buildSwapSections = ({
 
   const heldRecords = balancesToHeldRecords({ balances, icons, tokenPrices });
   const heldCanonicals = new Set(heldRecords.map((r) => r.canonical));
-
-  // Classic-only filter: drop any record whose issuer or contract is a contract
-  // id — i.e. a custom Soroban token. Classic CODE-ISSUER records are kept,
-  // including SAC-backed assets, which stellar.expert returns in their classic
-  // form (a bare SAC contract id has no classic representation to swap).
-  // Side-effect: sets hadSorobanMatches so the picker can show the "try a
-  // Classic token" empty state.
-  let hadSorobanMatches = false;
-  const isClassic = (asset: ManageAssetCurrency): boolean => {
-    const isSorobanContract =
-      (asset.contract && isContractId(asset.contract)) ||
-      (asset.issuer && isContractId(asset.issuer));
-    if (isSorobanContract) {
-      hadSorobanMatches = true;
-      return false;
-    }
-    return true;
-  };
 
   if (!isSearch) {
     // IDLE mode
@@ -272,9 +250,9 @@ export const buildSwapSections = ({
           contract: p.contract,
           domain: p.domain,
           image: p.icon,
+          decimals: p.decimals,
         }),
       )
-      .filter(isClassic)
       .map((a) => currencyToRecord(a, false))
       .filter(
         (r) =>
@@ -289,7 +267,6 @@ export const buildSwapSections = ({
         unverified: [],
       },
       isSearch: false,
-      hadSorobanMatches,
       isFallback,
     };
   }
@@ -306,7 +283,6 @@ export const buildSwapSections = ({
     return {
       sections: { yourTokens, popular: [], verified: [], unverified: [] },
       isSearch: true,
-      hadSorobanMatches: false,
       isFallback: true,
     };
   }
@@ -317,7 +293,6 @@ export const buildSwapSections = ({
   const dedupe = (assets: ManageAssetCurrency[]): SwapTokenRecord[] => {
     const seen = new Set<string>();
     return assets
-      .filter(isClassic)
       .map((a) => currencyToRecord(a, false))
       .filter((r) => {
         if (heldSearchKeys.has(r.canonical) || seen.has(r.canonical)) {
@@ -328,10 +303,6 @@ export const buildSwapSections = ({
       });
   };
 
-  // Scan searchResults for Soroban entries to ensure hadSorobanMatches is set
-  // even when the split already stripped them from verifiedAssets/unverifiedAssets.
-  searchResults.forEach((a) => isClassic(a));
-
   return {
     sections: {
       yourTokens,
@@ -340,7 +311,6 @@ export const buildSwapSections = ({
       unverified: dedupe(unverifiedAssets),
     },
     isSearch: true,
-    hadSorobanMatches,
     isFallback: false,
   };
 };
@@ -451,6 +421,7 @@ const recordFromSearchResult = (
       domain: record.domain ?? null,
       image: record.tomlInfo?.image,
       price: record.price,
+      decimals: record.decimals,
     };
   }
   return {
@@ -643,7 +614,6 @@ export const useSwapTokenLookup = () => {
       let verifiedAssets: ManageAssetCurrency[] = [];
       let unverifiedAssets: ManageAssetCurrency[] = [];
       let popular: TrendingAsset[] = [];
-      let searchResults: ManageAssetCurrency[] = [];
 
       if (searchTerm.trim()) {
         // SEARCH path: fetch Stellar Expert results and split verified / unverified
@@ -652,7 +622,7 @@ export const useSwapTokenLookup = () => {
           networkDetails,
           signal,
         });
-        searchResults = (
+        const searchResults = (
           (resJson?._embedded?.records as AssetSearchRecord[]) ?? []
         ).map(recordFromSearchResult);
 
@@ -701,6 +671,7 @@ export const useSwapTokenLookup = () => {
         const popularAsCurrency: ManageAssetCurrency[] = popular.map((p) => ({
           code: p.code,
           issuer: p.issuer,
+          contract: p.contract,
           domain: p.domain,
         }));
         const split = await splitVerifiedAssetCurrency({
@@ -721,7 +692,6 @@ export const useSwapTokenLookup = () => {
         popular,
         verifiedAssets,
         unverifiedAssets,
-        searchResults,
       });
 
       // A newer lookup (the user typed again or cleared the box) may have
@@ -729,14 +699,14 @@ export const useSwapTokenLookup = () => {
       // (splitVerifiedAssetCurrency), so a superseded call can still reach here
       // and commit its stale sections over the current render — the "Your
       // tokens" flash. The guard below drops it before dispatch.
-      // Non-held classic candidates to scan with Blockaid (mainnet only;
-      // testnet has no Blockaid).
+      // Non-held candidates to scan with Blockaid (mainnet only; testnet has
+      // no Blockaid).
       const scanCandidates = isBlockaidEnabled(networkDetails)
         ? [
             ...payload.sections.popular,
             ...payload.sections.verified,
             ...payload.sections.unverified,
-          ].filter((r) => r.issuer && !isContractId(r.issuer))
+          ].filter((r) => r.issuer)
         : [];
 
       // Decorate the given payload's scannable sections from a scan map.

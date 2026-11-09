@@ -66,7 +66,6 @@ const resolvedFromState = {
 const emptyLookupResult = {
   sections: { yourTokens: [], popular: [], verified: [], unverified: [] },
   isSearch: false,
-  hadSorobanMatches: false,
   isFallback: false,
 };
 
@@ -280,7 +279,6 @@ describe("Swap selectionType wiring", () => {
             unverified: [],
           },
           isSearch: false,
-          hadSorobanMatches: false,
           isFallback: false,
         },
         error: null,

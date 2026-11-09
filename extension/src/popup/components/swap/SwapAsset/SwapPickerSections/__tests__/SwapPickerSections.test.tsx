@@ -44,7 +44,6 @@ const emptyResult = {
   popular: [],
   verified: [],
   unverified: [],
-  hadSorobanMatches: false,
   isFallback: false,
   isNewAccount: false,
 };
@@ -53,7 +52,6 @@ const baseProps = {
   onClickAsset: jest.fn(),
   stellarExpertUrl: "https://stellar.expert/explorer/public",
   // Destination picker triggers the Soroban empty states; the source picker is covered by a dedicated test.
-  isDestination: true,
 };
 
 describe("SwapPickerSections", () => {
@@ -131,44 +129,15 @@ describe("SwapPickerSections", () => {
     );
   });
 
-  it("Soroban empty state shown when hadSorobanMatches", () => {
+  it("shows the generic empty state for a pasted contract id with no matches", () => {
     render(
       <SwapPickerSections
         {...baseProps}
-        searchTerm="CABC"
-        result={{ ...emptyResult, hadSorobanMatches: true }}
-      />,
-    );
-
-    expect(screen.getByTestId("swap-picker-empty-soroban")).toBeInTheDocument();
-  });
-
-  it("Soroban empty state shown when the search term is a contract id with no results", () => {
-    render(
-      <SwapPickerSections
-        {...baseProps}
-        // A pasted contract id that returned no records (hadSorobanMatches false)
         searchTerm="CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA"
-        result={{ ...emptyResult, hadSorobanMatches: false }}
+        result={emptyResult}
       />,
     );
 
-    expect(screen.getByTestId("swap-picker-empty-soroban")).toBeInTheDocument();
-    expect(screen.queryByTestId("swap-picker-empty")).toBeNull();
-  });
-
-  it("source picker: a pasted contract id with no matches shows the generic empty state, not the Soroban one", () => {
-    render(
-      <SwapPickerSections
-        {...baseProps}
-        isDestination={false}
-        searchTerm="CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA"
-        result={{ ...emptyResult, hadSorobanMatches: false }}
-      />,
-    );
-
-    // The Soroban "not supported" copy only makes sense on the swap-TO picker.
-    expect(screen.queryByTestId("swap-picker-empty-soroban")).toBeNull();
     expect(screen.getByTestId("swap-picker-empty")).toBeInTheDocument();
   });
 

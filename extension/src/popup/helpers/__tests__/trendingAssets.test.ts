@@ -22,7 +22,13 @@ const TESTNET: NetworkDetails = {
 } as NetworkDetails;
 
 const recordsResponse = (
-  records: { asset: string; volume7d: number; domain?: string }[],
+  records: {
+    asset: string;
+    volume7d: number;
+    domain?: string;
+    code?: string;
+    decimals?: number;
+  }[],
 ) => ({
   json: async () => ({ _embedded: { records } }),
   ok: true,
@@ -79,6 +85,31 @@ describe("fetchTrendingAssets", () => {
 
     expect(result.map((r) => r.code)).toEqual(["BIG"]);
     expect(result[0].issuer).toBe("GBIG");
+  });
+
+  it("keeps Soroban contract tokens, by contract ID and with their decimals", async () => {
+    const contract = "CBI7UCH5KGSVQRO5H4SUCZUTZABCITZLRHQQZTWL2TK4RZ72TAR6IHRV";
+    jest.spyOn(global, "fetch").mockResolvedValue(
+      recordsResponse([
+        {
+          asset: contract,
+          code: "TKN",
+          decimals: 6,
+          volume7d: MIN_TRENDING_VOLUME7D + 5,
+        },
+      ]) as unknown as Response,
+    );
+
+    const result = await fetchTrendingAssets({ networkDetails: MAINNET });
+
+    expect(result).toEqual([
+      expect.objectContaining({
+        code: "TKN",
+        issuer: contract,
+        contract,
+        decimals: 6,
+      }),
+    ]);
   });
 
   it("keeps every testnet record regardless of volume (floor is a no-op)", async () => {

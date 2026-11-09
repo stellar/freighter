@@ -240,7 +240,6 @@ export const SwapAsset = ({
   const pickerResult: SwapPickerSectionsResult = lookupData
     ? {
         ...lookupData.sections,
-        hadSorobanMatches: lookupData.hadSorobanMatches,
         isFallback: lookupData.isFallback,
         isNewAccount: heldBalancesForNewAccount.length === 0,
       }
@@ -249,7 +248,6 @@ export const SwapAsset = ({
         popular: [],
         verified: [],
         unverified: [],
-        hadSorobanMatches: false,
         isFallback: false,
         isNewAccount: true,
       };
@@ -261,7 +259,6 @@ export const SwapAsset = ({
     popular: [],
     verified: [],
     unverified: [],
-    hadSorobanMatches: false,
     isFallback: false,
     isNewAccount: heldBalancesForNewAccount.length === 0,
   };
@@ -300,7 +297,6 @@ export const SwapAsset = ({
               hiddenAssets={hiddenAssets}
               onClickAsset={onClickAsset}
               stellarExpertUrl={stellarExpertUrl}
-              isDestination
               isDiscoverySupported={isDiscoverySupported}
             />
           ) : (
@@ -310,7 +306,6 @@ export const SwapAsset = ({
               hiddenAssets={hiddenAssets}
               onClickAsset={onClickAsset}
               stellarExpertUrl={stellarExpertUrl}
-              isDestination={false}
             />
           )}
         </div>
