@@ -1,4 +1,5 @@
 import React from "react";
+import { captureException } from "@sentry/browser";
 import { act, renderHook } from "@testing-library/react";
 import {
   Account,
@@ -20,6 +21,11 @@ import * as Blockaid from "popup/helpers/blockaid";
 import * as HorizonGetBestPath from "popup/helpers/horizonGetBestPath";
 
 import { useSimulateTxData } from "../useSimulateSwapData";
+
+jest.mock("@sentry/browser", () => ({
+  ...jest.requireActual("@sentry/browser"),
+  captureException: jest.fn(),
+}));
 
 jest.mock("@shared/api/helpers/stellarSdkServer", () => ({
   stellarSdkServer: () => ({
@@ -366,6 +372,129 @@ describe("useSimulateTxData quote when no live quote exists", () => {
       getTestStore()!.getState().transactionSubmission.transactionData
         .swapQuoteKey,
     ).toBeNull();
+  });
+
+  it("keeps the newest build when an older one lands after it", async () => {
+    const builds: Array<() => void> = [];
+    const respond = answer(quotes);
+    fetchBackendV2.mockImplementation(async (req: any) => {
+      if (!req.path.startsWith("/swap/tx")) {
+        return respond(req);
+      }
+      const reply = await respond(req);
+      return new Promise((resolve) => builds.push(() => resolve(reply)));
+    });
+    const { result } = renderSimulate();
+
+    let older: Promise<unknown>;
+    let newer: Promise<unknown>;
+    await act(async () => {
+      older = result.current.fetchData({ amount: "10" });
+      newer = result.current.fetchData({ amount: "20" });
+      await Promise.resolve();
+    });
+    await act(async () => {
+      while (builds.length < 2) {
+        // eslint-disable-next-line no-await-in-loop
+        await Promise.resolve();
+      }
+      builds[1]();
+      await newer;
+      builds[0]();
+      await older;
+    });
+
+    expect(result.current.state.data?.decoded?.sendAmount).toBe("20");
+    const prepared =
+      getTestStore()!.getState().transactionSubmission.transactionSimulation
+        .preparedTransaction;
+    expect(
+      (
+        TransactionBuilder.fromXDR(
+          prepared!,
+          MAINNET_NETWORK_DETAILS.networkPassphrase,
+        ) as any
+      ).operations[0].sendAmount,
+    ).toBe("20.0000000");
+  });
+
+  it("does not report a decode failure from a superseded build", async () => {
+    (captureException as jest.Mock).mockClear();
+    let finishOlder: () => void = () => {};
+    let builds = 0;
+    const respond = answer(quotes);
+    fetchBackendV2.mockImplementation(async (req: any) => {
+      const reply = await respond(req);
+      if (!req.path.startsWith("/swap/tx")) {
+        return reply;
+      }
+      builds += 1;
+      if (builds > 1) {
+        return reply;
+      }
+      // The older build pays another account, so it fails to decode.
+      const bad = {
+        status: 200,
+        body: {
+          data: {
+            xdr: classicBuild({
+              ...JSON.parse(req.body),
+              account: USDC_ISSUER,
+            }),
+            addsTrustline: false,
+          },
+        },
+      };
+      return new Promise((resolve) => {
+        finishOlder = () => resolve(bad);
+      });
+    });
+    const { result } = renderSimulate();
+
+    let older: Promise<unknown>;
+    await act(async () => {
+      older = result.current.fetchData({ amount: "10" });
+      await new Promise((r) => setTimeout(r, 0));
+      await result.current.fetchData({ amount: "20" });
+    });
+    await act(async () => {
+      finishOlder();
+      await older;
+    });
+
+    expect(captureException).not.toHaveBeenCalled();
+    expect(result.current.state.data?.decoded?.sendAmount).toBe("20");
+  });
+
+  it("stores nothing from a build that lands after unmount", async () => {
+    let finishBuild: () => void = () => {};
+    const respond = answer(quotes);
+    fetchBackendV2.mockImplementation(async (req: any) => {
+      const reply = await respond(req);
+      if (!req.path.startsWith("/swap/tx")) {
+        return reply;
+      }
+      return new Promise((resolve) => {
+        finishBuild = () => resolve(reply);
+      });
+    });
+    const { result, unmount } = renderSimulate();
+
+    let pending: Promise<unknown>;
+    await act(async () => {
+      pending = result.current.fetchData({ amount: "10" });
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    unmount();
+    await act(async () => {
+      finishBuild();
+      await pending;
+    });
+
+    const { transactionSimulation, transactionData } =
+      getTestStore()!.getState().transactionSubmission;
+    expect(transactionSimulation.preparedTransaction).toBeNull();
+    expect(transactionData.swapQuotes).toBeFalsy();
   });
 
   it("drops the previous review's transaction when a rebuild fails", async () => {

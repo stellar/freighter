@@ -237,9 +237,24 @@ export const SwapAmount = ({
     () => !!asset && !!destinationAsset,
   );
 
-  const handleContinue = async (values: { amount: string }) => {
-    // A live quote landing now would overwrite the quote the review builds.
+  // Live quotes stay frozen while any build is in flight, the review is
+  // open, or settings are open from it: one landing then would overwrite the
+  // quote being reviewed. A count, so an overlapping build's end can't thaw it.
+  const [buildsInFlight, setBuildsInFlight] = useState(0);
+  const [isSettingsFromReview, setIsSettingsFromReview] = useState(false);
+  const buildReview = async (
+    params: Parameters<typeof fetchSimulationData>[0],
+  ) => {
     cancelLiveQuote();
+    setBuildsInFlight((n) => n + 1);
+    try {
+      return await fetchSimulationData(params);
+    } finally {
+      setBuildsInFlight((n) => n - 1);
+    }
+  };
+
+  const handleContinue = async (values: { amount: string }) => {
     // Retrying after a quote-expiry submit failure: dismiss the stale notice
     // before re-simulating against a fresh quote.
     if (isSwapQuoteExpired) {
@@ -250,7 +265,7 @@ export const SwapAmount = ({
     // was entered in token or dollar terms.
     const cleanedAmount = cleanAmount(values.amount);
     dispatch(saveAmount(cleanedAmount));
-    await fetchSimulationData({
+    await buildReview({
       amount: cleanedAmount,
       destinationRate: dstAssetPrice,
     });
@@ -354,7 +369,10 @@ export const SwapAmount = ({
       destinationAmount,
       networkDetails,
       publicKey,
-      isReviewingTx,
+      isReviewingTx:
+        isReviewingTx ||
+        buildsInFlight > 0 ||
+        (isEditingSettings && isSettingsFromReview),
       swapAmountData,
       dispatch,
     });
@@ -574,7 +592,10 @@ export const SwapAmount = ({
                   size="md"
                   isRounded
                   variant="tertiary"
-                  onClick={() => setIsEditingSettings(true)}
+                  onClick={() => {
+                    setIsSettingsFromReview(false);
+                    setIsEditingSettings(true);
+                  }}
                 >
                   <Icon.Settings01 />
                 </Button>
@@ -896,9 +917,15 @@ export const SwapAmount = ({
               setIsEditingSettings(false);
               // Rebuild the quote with the new fee before the review comes
               // back, so Confirm never submits the old XDR.
-              await fetchSimulationData({
+              await buildReview({
                 amount,
                 destinationRate: dstAssetPrice,
+                transactionFee: getSwapTotalFee({
+                  recommendedFee,
+                  customFee: fee,
+                  opCount: swapOpCount,
+                }),
+                transactionTimeout: timeout,
               });
               returnToReview();
             }}
@@ -925,7 +952,10 @@ export const SwapAmount = ({
               skipRejectionRef.current = true;
               goToNext();
             }}
-            onEditSettings={openSettingsFromReview}
+            onEditSettings={() => {
+              setIsSettingsFromReview(true);
+              openSettingsFromReview();
+            }}
             sendAmount={reviewed?.sendAmount ?? amount}
             // Show the same fiat figure the amount screen displayed: the
             // entered dollars in fiat mode, the computed USD of the crypto

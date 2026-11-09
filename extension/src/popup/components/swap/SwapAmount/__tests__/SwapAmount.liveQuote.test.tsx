@@ -17,6 +17,7 @@ import * as UseNetworkFees from "popup/helpers/useNetworkFees";
 import * as FetchBackendV2 from "@shared/api/helpers/fetchBackendV2";
 import * as HorizonGetBestPath from "popup/helpers/horizonGetBestPath";
 import * as XlmReserve from "popup/helpers/xlmReserve";
+import * as Blockaid from "popup/helpers/blockaid";
 
 const nativeBalance = {
   token: { type: "native", code: "XLM" },
@@ -343,6 +344,101 @@ describe("SwapAmount live receive-amount quote", () => {
       await resolveLiveQuote();
 
       expect(storedDestinationAmount()).toBe("0");
+    });
+
+    it("ignores amount edits made while the review is being built", async () => {
+      jest.spyOn(UseSimulateSwapData, "useSimulateTxData").mockReturnValue({
+        state: { state: RequestState.IDLE, data: null, error: null },
+        isQuoteExpired: false,
+        fetchData: jest.fn(() => new Promise(() => {})),
+      } as any);
+      renderSwapAmount({ amount: "5", destinationAsset: AQUA });
+      await settle();
+      expect(storedDestinationAmount()).toBe("50");
+
+      await act(async () => {
+        fireEvent.click(cta());
+      });
+      fetchBackendV2.mockResolvedValue(quotesReply([classicRoute]));
+      await act(async () => {
+        getTestStore()!.dispatch(saveAmount("6"));
+      });
+      await settle();
+
+      expect(storedDestinationAmount()).toBe("50");
+    });
+
+    it("stays frozen until the newest of two overlapping builds finishes", async () => {
+      jest
+        .spyOn(XlmReserve, "shouldShowXlmReservePreflight")
+        .mockReturnValue(true);
+      let finishFirst: () => void = () => {};
+      const fetchData = jest
+        .fn()
+        .mockImplementationOnce(
+          () =>
+            new Promise<void>((r) => {
+              finishFirst = r;
+            }),
+        )
+        .mockImplementation(() => new Promise(() => {}));
+      jest.spyOn(UseSimulateSwapData, "useSimulateTxData").mockReturnValue({
+        state: { state: RequestState.IDLE, data: null, error: null },
+        isQuoteExpired: false,
+        fetchData,
+      } as any);
+      renderSwapAmount({ amount: "5", destinationAsset: AQUA });
+      await settle();
+
+      await act(async () => {
+        fireEvent.click(cta());
+      });
+      await act(async () => {
+        fireEvent.click(cta());
+      });
+      await act(async () => {
+        finishFirst();
+      });
+      fetchBackendV2.mockResolvedValue(quotesReply([classicRoute]));
+      await act(async () => {
+        getTestStore()!.dispatch(saveAmount("6"));
+      });
+      await settle();
+
+      expect(fetchData).toHaveBeenCalledTimes(2);
+      expect(storedDestinationAmount()).toBe("50");
+    });
+
+    it("stays frozen while settings are open from the review", async () => {
+      jest
+        .spyOn(Blockaid, "useShouldTreatTxAsUnableToScan")
+        .mockReturnValue(() => false);
+      jest.spyOn(UseSimulateSwapData, "useSimulateTxData").mockReturnValue({
+        state: {
+          state: RequestState.SUCCESS,
+          data: { transactionXdr: "AAAA", dstAmountPriceUsd: "0" },
+          error: null,
+        },
+        isQuoteExpired: false,
+        fetchData: jest.fn().mockResolvedValue(undefined),
+      } as any);
+      renderSwapAmount({ amount: "5", destinationAsset: AQUA });
+      await settle();
+
+      await act(async () => {
+        fireEvent.click(cta());
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("review-tx-settings-btn"));
+      });
+      expect(screen.getByLabelText("Timeout (seconds)")).toBeInTheDocument();
+      fetchBackendV2.mockResolvedValue(quotesReply([classicRoute]));
+      await act(async () => {
+        getTestStore()!.dispatch(saveAmount("6"));
+      });
+      await settle();
+
+      expect(storedDestinationAmount()).toBe("50");
     });
 
     it("drops the live quote when the reserve sheet opens instead", async () => {

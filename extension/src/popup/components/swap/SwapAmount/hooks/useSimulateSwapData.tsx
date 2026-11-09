@@ -1,4 +1,4 @@
-import { useReducer, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import { captureException } from "@sentry/browser";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -330,14 +330,31 @@ function useSimulateTxData({
   // errors and the backend's 409 quote_moved; consumed by the quote-expired
   // metric + Notification in SwapAmount.
   const [isQuoteExpired, setIsQuoteExpired] = useState(false);
+  // Only the newest fetchData may store its result: an older build landing
+  // late would otherwise be reviewed and signed.
+  const requestIdRef = useRef(0);
+  useEffect(
+    () => () => {
+      requestIdRef.current += 1;
+    },
+    [],
+  );
 
+  // The settings sheet passes the values it just saved: simParams still
+  // holds the previous render's.
   const fetchData = async ({
     amount,
     destinationRate,
+    transactionFee = simParams.transactionFee,
+    transactionTimeout = simParams.transactionTimeout,
   }: {
     amount: string;
     destinationRate?: string;
+    transactionFee?: string;
+    transactionTimeout?: number;
   }) => {
+    const requestId = ++requestIdRef.current;
+    const isStale = () => requestId !== requestIdRef.current;
     dispatch({ type: "FETCH_DATA_START" });
     // Nothing may submit an XDR this review has not decoded.
     reduxDispatch(
@@ -346,12 +363,9 @@ function useSimulateTxData({
     setIsQuoteExpired(false);
     try {
       const payload = { transactionXdr: "" } as SimulateTxData;
-      const { allowedSlippage, sourceAsset, destAsset, transactionTimeout } =
-        simParams;
+      const { allowedSlippage, sourceAsset, destAsset } = simParams;
 
-      const baseFee = new BigNumber(
-        simParams.transactionFee || stroopToXlm(BASE_FEE),
-      );
+      const baseFee = new BigNumber(transactionFee || stroopToXlm(BASE_FEE));
 
       // Reuse the quote the live "You receive" preview already surfaced (its
       // path + destination amount are in Redux) instead of re-fetching, so the
@@ -443,7 +457,11 @@ function useSimulateTxData({
             allowedSlippage,
             fee: baseFee.toFixed(),
             timeout: transactionTimeout,
-            onQuoteMoved: () => reduxDispatch(clearSwapQuoteKey()),
+            onQuoteMoved: () => {
+              if (!isStale()) {
+                reduxDispatch(clearSwapQuoteKey());
+              }
+            },
           });
       try {
         payload.decoded = decodeSwapTx({
@@ -455,7 +473,9 @@ function useSimulateTxData({
           minOut,
         });
       } catch (e) {
-        captureException(e);
+        if (!isStale()) {
+          captureException(e);
+        }
         throw e;
       }
       if (payload.decoded.resourceFee) {
@@ -466,6 +486,9 @@ function useSimulateTxData({
       }
       payload.transactionXdr = xdr;
       payload.scanResult = await scanTx(xdr, scanUrlstub, networkDetails);
+      if (isStale()) {
+        return payload;
+      }
       reduxDispatch(
         saveSimulation({
           preparedTransaction: xdr,
@@ -483,6 +506,9 @@ function useSimulateTxData({
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
+      if (isStale()) {
+        return error;
+      }
       const { sourceAsset, destAsset } = simParams;
       // Every message is a key in the locale files.
       const payload = t(getSwapErrorMessage(error, sourceAsset, destAsset));
