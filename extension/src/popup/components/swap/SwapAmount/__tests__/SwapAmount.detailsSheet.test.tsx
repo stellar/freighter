@@ -1,0 +1,161 @@
+import React from "react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import BigNumber from "bignumber.js";
+
+import { RequestState } from "constants/request";
+import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { Wrapper } from "popup/__testHelpers__";
+import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
+import { SwapAmount } from "popup/components/swap/SwapAmount";
+import * as UseGetSwapAmountData from "popup/components/swap/SwapAmount/hooks/useGetSwapAmountData";
+import * as UseSimulateSwapData from "popup/components/swap/SwapAmount/hooks/useSimulateSwapData";
+import * as UseSwapLiveQuote from "popup/components/swap/SwapAmount/hooks/useSwapLiveQuote";
+import * as UseNetworkFees from "popup/helpers/useNetworkFees";
+import * as Internal from "@shared/api/internal";
+import * as TokenList from "@shared/api/helpers/token-list";
+
+const USDC = "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+
+const swapData = {
+  type: AppDataType.RESOLVED,
+  applicationState: "MNEMONIC_PHRASE_CONFIRMED",
+  networkDetails: { network: "PUBLIC" },
+  icons: {},
+  userBalances: {
+    balances: [
+      {
+        token: { type: "native", code: "XLM" },
+        total: new BigNumber("100"),
+        available: new BigNumber("100"),
+        blockaidData: {},
+      },
+    ],
+  },
+  tokenPrices: { native: { currentPrice: "0.3" } },
+};
+
+const swapQuotes = {
+  routes: [
+    {
+      source: "lifi",
+      fromAmount: "5",
+      toAmount: "1.85",
+      fees: [],
+      paths: [
+        {
+          share: "1",
+          hops: [{ venue: "Aquarius", from: "XLM", to: USDC, pool: "p1" }],
+        },
+      ],
+    },
+  ],
+  unavailable: [],
+};
+
+const renderSwapAmount = (transactionData: Record<string, unknown>) =>
+  render(
+    <Wrapper
+      state={
+        {
+          settings: { networkDetails: MAINNET_NETWORK_DETAILS },
+          transactionSubmission: {
+            ...transactionSubmissionInitialState,
+            transactionData: {
+              ...transactionSubmissionInitialState.transactionData,
+              asset: "native",
+              amount: "5",
+              amountUsd: "0.00",
+              destinationAmount: "1.85",
+              allowedSlippage: "2",
+              transactionFee: "",
+              transactionTimeout: 180,
+              memo: "",
+              destination: "",
+              path: [],
+              destinationAsset: USDC,
+              destinationTokenDetails: null,
+              isToken: false,
+              swapQuotes,
+              ...transactionData,
+            },
+          },
+        } as any
+      }
+      routes={["/"]}
+    >
+      <SwapAmount
+        inputType="crypto"
+        setInputType={jest.fn()}
+        goBack={jest.fn()}
+        goToNext={jest.fn()}
+        goToEditSrc={jest.fn()}
+        goToEditDst={jest.fn()}
+      />
+    </Wrapper>,
+  );
+
+describe("SwapAmount details sheet", () => {
+  beforeEach(() => {
+    jest.spyOn(UseNetworkFees, "useNetworkFees").mockReturnValue({
+      networkCongestion: "LOW",
+      recommendedFee: "0.00001",
+    } as any);
+    jest.spyOn(UseGetSwapAmountData, "useGetSwapAmountData").mockReturnValue({
+      state: { state: RequestState.SUCCESS, data: swapData, error: null },
+      fetchData: jest.fn().mockResolvedValue(undefined),
+    } as any);
+    jest.spyOn(UseSimulateSwapData, "useSimulateTxData").mockReturnValue({
+      state: { state: RequestState.IDLE, data: null, error: null },
+      isQuoteExpired: false,
+      fetchData: jest.fn().mockResolvedValue(undefined),
+    } as any);
+    jest.spyOn(UseSwapLiveQuote, "useSwapLiveQuote").mockReturnValue({
+      isLiveQuoteLoading: false,
+      isSwapUnavailable: false,
+      cancelLiveQuote: jest.fn(),
+    } as any);
+    jest.spyOn(Internal, "getDiscoverData").mockResolvedValue([]);
+    jest.spyOn(TokenList, "getCombinedAssetListData").mockResolvedValue([]);
+  });
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it("opens Details from See details, then Route, then back", async () => {
+    renderSwapAmount({});
+    expect(screen.getByTestId("swap-details-link")).toHaveTextContent(
+      "{{fee}} XLM network fee",
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("swap-see-details"));
+    });
+    expect(screen.getByTestId("SwapDetails__fee")).toHaveTextContent(
+      "0.00002 XLM (<$0.01)",
+    );
+    expect(screen.getByTestId("SwapDetails__rate")).toHaveTextContent(
+      "1 XLM ≈ 0.37 USDC",
+    );
+
+    fireEvent.click(screen.getByTestId("SwapDetails__route"));
+    expect(screen.getByTestId("SwapRoute")).toBeInTheDocument();
+    expect(screen.getByTestId("SwapRoute__path-0")).toHaveTextContent("100%");
+
+    fireEvent.click(screen.getByTestId("SwapRoute__back"));
+    expect(screen.getByTestId("SwapDetails")).toBeInTheDocument();
+  });
+
+  it("hides the Route row when no backend quotes are stored", async () => {
+    renderSwapAmount({ swapQuotes: null });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("swap-see-details"));
+    });
+    expect(screen.getByTestId("SwapDetails")).toBeInTheDocument();
+    expect(screen.queryByTestId("SwapDetails__route")).toBeNull();
+  });
+
+  it("shows no See details link without a quote", () => {
+    renderSwapAmount({ destinationAmount: "0", swapQuotes: null });
+    expect(screen.queryByTestId("swap-details-link")).toBeNull();
+  });
+});

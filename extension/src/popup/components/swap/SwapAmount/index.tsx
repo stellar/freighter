@@ -82,9 +82,15 @@ import { SlideupModal } from "popup/components/SlideupModal";
 import { AmountCard } from "popup/components/amount/AmountCard";
 import { PercentageButtons } from "popup/components/amount/PercentageButtons";
 import { shouldShowXlmReservePreflight } from "popup/helpers/xlmReserve";
-import { getHeldTokenDecimals, getSwapQuote } from "popup/helpers/swapQuote";
+import {
+  getHeldTokenDecimals,
+  getSwapQuote,
+  pickSwapRoute,
+  toBackendAsset,
+} from "popup/helpers/swapQuote";
 import { SwapQuotesError } from "@shared/api/helpers/getSwapQuotes";
 import { XlmReserveSheet } from "popup/components/swap/XlmReserveSheet";
+import { SwapDetailsSheet } from "popup/components/swap/SwapDetailsSheet";
 import { useSwapLiveQuote } from "./hooks/useSwapLiveQuote";
 import { EditSlippage } from "./EditSlippage";
 
@@ -261,6 +267,7 @@ export const SwapAmount = ({
     });
   }, [isReviewingTx]);
   const [isXlmReserveOpen, setIsXlmReserveOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   // Tracks focus on the sell input so the "Enter an amount" CTA can disable
   // itself while the input is focused. The extension has no virtual keyboard,
   // so once the input is focused the tap-to-focus affordance is redundant.
@@ -590,6 +597,22 @@ export const SwapAmount = ({
     review: t("Review swap"),
   };
 
+  const hasQuote =
+    !!srcAsset &&
+    !!dstAsset &&
+    new BigNumber(amount || "0").gt(0) &&
+    new BigNumber(destinationAmount || "0").gt(0);
+  const xlmPrice = data.tokenPrices?.native?.currentPrice;
+  const feeUsd = xlmPrice
+    ? new BigNumber(fee).multipliedBy(xlmPrice)
+    : undefined;
+  let feeFiat: string | undefined;
+  if (feeUsd?.isFinite()) {
+    feeFiat = feeUsd.lt(0.01)
+      ? "<$0.01"
+      : `$${formatAmount(roundUsdValue(feeUsd.toString()))}`;
+  }
+
   const availableBalanceText = srcAsset
     ? `${displayTotal} ${srcAsset.code} ${t("available")}`
     : "";
@@ -875,6 +898,23 @@ export const SwapAmount = ({
                     }}
                   />
                 </div>
+                {hasQuote ? (
+                  <div
+                    className="SwapAsset__details-link"
+                    data-testid="swap-details-link"
+                  >
+                    <span>{t("{{fee}} XLM network fee", { fee })}</span>
+                    <span aria-hidden="true">·</span>
+                    <button
+                      type="button"
+                      data-testid="swap-see-details"
+                      onClick={() => setIsDetailsOpen(true)}
+                    >
+                      {t("See details")}
+                      <Icon.InfoCircle />
+                    </button>
+                  </div>
+                ) : null}
                 <div
                   className="SwapAsset__percentage-buttons"
                   data-testid="swap-percentage-buttons"
@@ -1015,6 +1055,47 @@ export const SwapAmount = ({
             sourceTokenSecurityLevel={sourceTokenSecurityLevel}
             sourceTokenSecurityWarnings={sourceTokenSecurityWarnings}
             requiresTrustline={reviewed?.addsTrustline ?? destRequiresTrustline}
+          />
+        ) : (
+          <></>
+        )}
+      </SlideupModal>
+      <SlideupModal
+        setIsModalOpen={() => setIsDetailsOpen(false)}
+        isModalOpen={isDetailsOpen}
+        ariaLabel={t("Details")}
+      >
+        {isDetailsOpen && srcAsset && dstAsset ? (
+          <SwapDetailsSheet
+            route={
+              transactionData.swapQuotes
+                ? pickSwapRoute(transactionData.swapQuotes)
+                : null
+            }
+            fee={fee}
+            feeFiat={feeFiat}
+            knownTokens={{
+              [toBackendAsset(asset)]: {
+                code: srcAsset.code,
+                issuer: srcAsset.issuer ?? "",
+                canonical: asset,
+                icon: assetIcon ?? null,
+              },
+              [toBackendAsset(destinationAsset)]: {
+                code: dstAsset.code,
+                issuer: dstAsset.issuer ?? "",
+                canonical: destinationAsset,
+                icon: dstAssetIcon ?? null,
+              },
+            }}
+            srcCode={srcAsset.code}
+            dstCode={dstAsset.code}
+            sendAmount={amount}
+            destinationAmount={destinationAmount}
+            icons={data.icons}
+            balances={heldBalances}
+            networkDetails={networkDetails}
+            onClose={() => setIsDetailsOpen(false)}
           />
         ) : (
           <></>
