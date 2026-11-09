@@ -483,9 +483,7 @@ test("search with a Soroban contract address lists the contract token", async ({
   await expect(page.getByTestId("SwapTokenRow-TKN")).toBeVisible({
     timeout: 15000,
   });
-  await expect(page.getByTestId("SwapTokenRow-TKN")).toContainText(
-    "CAZX…XSND",
-  );
+  await expect(page.getByTestId("SwapTokenRow-TKN")).toContainText("CAZX…XSND");
 });
 
 // ---------------------------------------------------------------------------
