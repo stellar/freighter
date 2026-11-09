@@ -85,6 +85,8 @@ import { shouldShowXlmReservePreflight } from "popup/helpers/xlmReserve";
 import {
   getHeldTokenDecimals,
   getSwapQuote,
+  getSwapQuoteKey,
+  isSameSwapQuoteKey,
   pickSwapRoute,
   toBackendAsset,
 } from "popup/helpers/swapQuote";
@@ -597,11 +599,22 @@ export const SwapAmount = ({
     review: t("Review swap"),
   };
 
+  // The stored quote lags the inputs until the debounced re-quote lands.
   const hasQuote =
     !!srcAsset &&
     !!dstAsset &&
-    new BigNumber(amount || "0").gt(0) &&
-    new BigNumber(destinationAmount || "0").gt(0);
+    new BigNumber(destinationAmount || "0").gt(0) &&
+    isSameSwapQuoteKey(
+      transactionData.swapQuoteKey,
+      getSwapQuoteKey({
+        mode: "send",
+        amount: amount || "0",
+        sourceAsset: asset,
+        destAsset: destinationAsset,
+        networkDetails,
+        publicKey,
+      }),
+    );
   const xlmPrice = data.tokenPrices?.native?.currentPrice;
   const feeUsd = xlmPrice
     ? new BigNumber(fee).multipliedBy(xlmPrice)
@@ -1065,7 +1078,7 @@ export const SwapAmount = ({
         isModalOpen={isDetailsOpen}
         ariaLabel={t("Details")}
       >
-        {isDetailsOpen && srcAsset && dstAsset ? (
+        {isDetailsOpen && hasQuote && srcAsset && dstAsset ? (
           <SwapDetailsSheet
             route={
               transactionData.swapQuotes
@@ -1090,7 +1103,7 @@ export const SwapAmount = ({
             }}
             srcCode={srcAsset.code}
             dstCode={dstAsset.code}
-            sendAmount={amount}
+            sendAmount={cleanAmount(amount)}
             destinationAmount={destinationAmount}
             icons={data.icons}
             balances={heldBalances}

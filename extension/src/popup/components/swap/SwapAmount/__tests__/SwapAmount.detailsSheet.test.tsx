@@ -14,6 +14,7 @@ import * as UseSwapLiveQuote from "popup/components/swap/SwapAmount/hooks/useSwa
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
 import * as Internal from "@shared/api/internal";
 import * as TokenList from "@shared/api/helpers/token-list";
+import { getSwapQuoteKey } from "popup/helpers/swapQuote";
 
 const USDC = "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
 
@@ -53,6 +54,18 @@ const swapQuotes = {
   unavailable: [],
 };
 
+const AQUA = "AQUA:GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA";
+
+const quoteKey = (amount: string, destAsset = USDC) =>
+  getSwapQuoteKey({
+    mode: "send",
+    amount,
+    sourceAsset: "native",
+    destAsset,
+    networkDetails: MAINNET_NETWORK_DETAILS,
+    publicKey: "G123",
+  });
+
 const renderSwapAmount = (transactionData: Record<string, unknown>) =>
   render(
     <Wrapper
@@ -77,6 +90,7 @@ const renderSwapAmount = (transactionData: Record<string, unknown>) =>
               destinationTokenDetails: null,
               isToken: false,
               swapQuotes,
+              swapQuoteKey: quoteKey("5"),
               ...transactionData,
             },
           },
@@ -153,6 +167,32 @@ describe("SwapAmount details sheet", () => {
     expect(screen.getByTestId("SwapDetails")).toBeInTheDocument();
     expect(screen.queryByTestId("SwapDetails__route")).toBeNull();
   });
+
+  it("reads a comma-formatted sell amount", async () => {
+    renderSwapAmount({
+      amount: "1,500",
+      destinationAmount: "555",
+      swapQuoteKey: quoteKey("1500"),
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("swap-see-details"));
+    });
+    expect(screen.getByTestId("SwapDetails__rate")).toHaveTextContent(
+      "1 XLM ≈ 0.37 USDC",
+    );
+  });
+
+  it.each([
+    ["the amount", { amount: "50" }],
+    ["the bought token", { swapQuoteKey: quoteKey("5", AQUA) }],
+    ["a cleared key", { swapQuoteKey: null }],
+  ])(
+    "shows no See details link while the quote is for other inputs (%s)",
+    (_, transactionData) => {
+      renderSwapAmount(transactionData);
+      expect(screen.queryByTestId("swap-details-link")).toBeNull();
+    },
+  );
 
   it("shows no See details link without a quote", () => {
     renderSwapAmount({ destinationAmount: "0", swapQuotes: null });
