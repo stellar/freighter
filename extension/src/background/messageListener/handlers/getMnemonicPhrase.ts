@@ -4,9 +4,9 @@ import { GetMnemonicPhraseMessage } from "@shared/api/types/message-request";
 import { getIsHardwareWalletActive } from "background/helpers/account";
 import { getNonHwKeyID } from "../helpers/get-non-hw-key-id";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import { KEY_ID, TEMPORARY_STORE_EXTRA_ID } from "constants/localStorageTypes";
+import { KEY_ID } from "constants/localStorageTypes";
 import { unlockKeystore } from "../helpers/unlock-keystore";
-import { getEncryptedTemporaryData } from "background/helpers/session";
+import { getDefaultMnemonic } from "background/helpers/secret-sources";
 import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 
 export const getMnemonicPhrase = async ({
@@ -36,11 +36,8 @@ export const getMnemonicPhrase = async ({
   }
 
   try {
-    mnemonicPhrase = await getEncryptedTemporaryData({
-      sessionStore,
-      localStore,
-      keyName: TEMPORARY_STORE_EXTRA_ID,
-    });
+    mnemonicPhrase =
+      (await getDefaultMnemonic({ sessionStore, localStore }))?.mnemonic ?? "";
   } catch (e) {
     console.error(e);
     return { error: "Mnemonic phrase not found" };

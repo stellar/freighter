@@ -225,6 +225,7 @@ jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
   Promise.resolve({
     hasPrivateKey: true,
     publicKey: TEST_PUBLIC_KEY,
+    activeAccountId: "",
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
     allAccounts: mockAccounts,
     bipPath: "bip-path",
@@ -1073,6 +1074,7 @@ describe("Account view", () => {
       Promise.resolve({
         hasPrivateKey: true,
         publicKey: TEST_PUBLIC_KEY,
+        activeAccountId: "",
         applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
         allAccounts: mockAccounts,
         bipPath: "bip-path",
@@ -2074,6 +2076,7 @@ describe("Account view", () => {
       Promise.resolve({
         hasPrivateKey: true,
         publicKey: TEST_PUBLIC_KEY,
+        activeAccountId: "",
         applicationState: APPLICATION_STATE.PASSWORD_CREATED,
         allAccounts: mockAccounts,
         bipPath: "bip-path",
@@ -2119,6 +2122,7 @@ describe("Account view", () => {
       Promise.resolve({
         hasPrivateKey: true,
         publicKey: TEST_PUBLIC_KEY,
+        activeAccountId: "",
         applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_FAILED,
         allAccounts: mockAccounts,
         bipPath: "bip-path",
@@ -2164,6 +2168,7 @@ describe("Account view", () => {
       Promise.resolve({
         hasPrivateKey: true,
         publicKey: "",
+        activeAccountId: "",
         applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
         allAccounts: mockAccounts,
         bipPath: "bip-path",

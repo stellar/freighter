@@ -160,26 +160,33 @@ const generateRandomUserId = (): string =>
 let sessionUserId: string | null = null;
 
 /**
- * Once-per-unlocked-session guard for `reconcileAnalyticsUserId`.
- * `fetchData` (useGetAppData) runs on many screens and re-runs on every
- * navigation/refresh; each reconcile hits the background's
- * `getAnalyticsUserId`, which decrypts the mnemonic and runs BIP39 seed
- * derivation (see callBackendV2's per-request PBKDF2 note). We only need to
- * reconcile once per unlocked session, so short-circuit after the first
- * successful resolve and reset the flag on lock (see
+ * Once-per-session guard for `reconcileAnalyticsUserId`. `fetchData`
+ * (useGetAppData) runs on many screens and re-runs on every
+ * navigation/refresh. Once the background has returned the server's
+ * canonical id (`isConfirmed`), nothing changes until the wallet is replaced,
+ * so short-circuit after that. A provisional id (the pinned source id before
+ * the first link) leaves the guard unset, so the next load asks again and
+ * picks up the canonical id once the link lands. Reset on lock (see
  * `resetAnalyticsUserIdReconciliation`, wired into SessionLockListener) so a
- * later unlock — possibly of a different wallet — reconciles again.
+ * later unlock, possibly of a replaced wallet, reconciles again.
  */
 let hasReconciledUserId = false;
 
 /**
+ * Bumped by every reset. A reconcile that started before a reset answers for
+ * the previous session, possibly a replaced wallet, and is dropped.
+ */
+let reconcileGeneration = 0;
+
+/**
  * Clears the once-per-session reconciliation guard so the next
- * `reconcileAnalyticsUserId` call re-derives the auth id. Called on every
+ * `reconcileAnalyticsUserId` call asks the background again. Called on every
  * lock transition (auto-lock and manual sign-out both broadcast
  * `SESSION_LOCKED`).
  */
 export const resetAnalyticsUserIdReconciliation = (): void => {
   hasReconciledUserId = false;
+  reconcileGeneration += 1;
 };
 
 /**
@@ -212,32 +219,47 @@ export const getUserId = (): string => {
 };
 
 /**
- * Resolves the seed-derived auth user id from the background and, when it
- * differs from the persisted id, adopts it as the canonical analytics/Sentry
- * user id (overwriting the random bootstrap id — this migrates existing
- * users onto a stable, cross-platform-consistent id). Idempotent; no-op
- * when locked (background returns `null`) or already reconciled. Never
- * throws into callers.
+ * Adopts the background's analytics user id as the analytics/Sentry user id
+ * when it differs from the persisted one. That id is the canonical source id
+ * GET /api/v1/user returned, cached by the background and available
+ * while locked. Before the wallet's first link it is the pinned source id,
+ * marked unconfirmed. The overwrite sends no event and stitches nothing:
+ * events under the old id stay there. This moves a secret-key-only wallet off
+ * its random bootstrap id, and a wallet that resolved to an existing user
+ * through a key onto that user's id. A phrase wallet's id is unchanged.
+ * Idempotent; a no-op when the background has no id or the session is
+ * already reconciled. Never throws into callers.
+ *
+ * Pass `settle: false` while locked: the cached id is still adopted, but the
+ * session is left unreconciled, so a wallet replaced from the lock screen
+ * (recover, lost-password reset) is asked about again.
  */
-export const reconcileAnalyticsUserId = async (): Promise<void> => {
-  // Already reconciled this unlocked session — skip the background round-trip
-  // (mnemonic decrypt + BIP39 derivation) entirely. The guard is reset on
-  // lock so the next unlocked session reconciles once more.
+export const reconcileAnalyticsUserId = async ({
+  settle = true,
+}: { settle?: boolean } = {}): Promise<void> => {
+  // Already confirmed this session: skip the background round-trip.
   if (hasReconciledUserId) return;
 
   // Whole body wrapped in one try/catch — a storage-quota throw from
   // setItem, or anything unexpected from amplitude/Sentry, must never
   // become an unhandled rejection for callers. Catch → return.
   try {
-    const res = await getAnalyticsUserId();
-    const authUserId = res.analyticsUserId;
+    const generation = reconcileGeneration;
+    const { analyticsUserId: authUserId, isConfirmed } =
+      await getAnalyticsUserId();
+    // Another call settled the session while this one waited: its answer is
+    // the server's, and this one may be stale. Or the session was reset
+    // (locked) while it waited, and this answer belongs to the one before.
+    if (hasReconciledUserId || generation !== reconcileGeneration) return;
 
-    // No id means the wallet is locked/unavailable; leave the guard unset so
-    // we retry once the session is actually unlocked.
+    // No id: locked with nothing cached, or the message failed. Leave the
+    // guard unset so we retry once the session is actually unlocked.
     if (!authUserId) return;
-    // A real id resolved — this session is reconciled. Mark it before the
+    // Only the server's id settles the session. Mark it before the
     // already-matching early return so routine reloads short-circuit above.
-    hasReconciledUserId = true;
+    if (isConfirmed && settle) {
+      hasReconciledUserId = true;
+    }
     if (localStorage.getItem(METRICS_USER_ID) === authUserId) return;
 
     localStorage.setItem(METRICS_USER_ID, authUserId);

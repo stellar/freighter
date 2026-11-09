@@ -23,6 +23,7 @@ jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
   Promise.resolve({
     hasPrivateKey: true,
     publicKey: TEST_PUBLIC_KEY,
+    activeAccountId: "",
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
     allAccounts: mockAccounts,
     bipPath: "bip-path",
@@ -168,6 +169,7 @@ describe("Account Creator View", () => {
       .mockImplementation(() =>
         Promise.resolve({
           publicKey: "",
+          activeAccountId: "",
           allAccounts: [],
           hasPrivateKey: false,
         }),
@@ -224,6 +226,7 @@ describe("Account Creator View", () => {
       .spyOn(internalApi, "createAccount")
       .mockResolvedValue({
         publicKey: "",
+        activeAccountId: "",
         allAccounts: [],
         hasPrivateKey: false,
       });

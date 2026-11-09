@@ -9,6 +9,8 @@ jest.mock("../helpers/store-hardware-wallet", () => ({
 }));
 
 jest.mock("background/helpers/account", () => ({
+  HW_PREFIX: "hw:",
+  getActiveAccountId: jest.fn().mockResolvedValue("hw:GBHW"),
   getBipPath: (...args: unknown[]) => mockGetBipPath(...args),
   getIsHardwareWalletActive: jest.fn().mockResolvedValue(true),
 }));

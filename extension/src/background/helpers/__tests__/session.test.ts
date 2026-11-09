@@ -1,17 +1,30 @@
+import { combineReducers } from "redux";
+import { configureStore } from "@reduxjs/toolkit";
+
 import {
+  addMnemonic,
   deriveKeyFromString,
   encryptHashString,
   decryptHashString,
+  getMnemonic,
+  getMnemonics,
   SessionTimer,
   SESSION_ALARM_NAME,
+  storeActiveHashKey,
+  storeEncryptedTemporaryData,
+  storeMnemonics,
 } from "../session";
 import browser from "webextension-polyfill";
 import {
   AUTO_LOCK_TIMEOUT_MINUTES_ID,
   TEMPORARY_STORE_ID,
+  TEMPORARY_STORE_MNEMONICS_ID,
 } from "constants/localStorageTypes";
 import { DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES } from "@shared/constants/autoLock";
-import { buildHasPrivateKeySelector } from "background/ducks/session";
+import {
+  buildHasPrivateKeySelector,
+  sessionSlice,
+} from "background/ducks/session";
 import { getIsHardwareWalletActive } from "background/helpers/account";
 
 jest.mock("background/helpers/account", () => ({
@@ -221,5 +234,180 @@ describe("buildHasPrivateKeySelector", () => {
     await expect(
       selector({ session: { isHardwareWalletLocked: false } } as any),
     ).resolves.toBe(true);
+  });
+});
+
+describe("mnemonic map in the temporary store", () => {
+  // One real PBKDF2 derivation for the whole block; it is the slow part.
+  let hashKey: { key: CryptoKey };
+
+  const makeSessionStore = () =>
+    configureStore({
+      reducer: combineReducers({ session: sessionSlice.reducer }),
+    });
+
+  const makeLocalStore = () => {
+    const data: Record<string, unknown> = {};
+    return {
+      data,
+      store: {
+        getItem: jest.fn(async (key: string) => data[key]),
+        setItem: jest.fn(async (key: string, value: unknown) => {
+          data[key] = value;
+        }),
+        remove: jest.fn(async (key: string) => {
+          delete data[key];
+        }),
+      } as any,
+    };
+  };
+
+  beforeAll(async () => {
+    hashKey = await deriveKeyFromString("password");
+  });
+
+  it("round-trips a map of source id to mnemonic", async () => {
+    const { store } = makeLocalStore();
+    const sessionStore = makeSessionStore();
+    await storeActiveHashKey({ sessionStore, hashKey });
+
+    await storeMnemonics({
+      localStore: store,
+      hashKey,
+      mnemonics: { "id-a": "phrase a", "id-b": "phrase b" },
+    });
+
+    expect(await getMnemonics({ sessionStore, localStore: store })).toEqual({
+      "id-a": "phrase a",
+      "id-b": "phrase b",
+    });
+  });
+
+  it("stores the map as one encrypted entry, not as plaintext", async () => {
+    const { store, data } = makeLocalStore();
+
+    await storeMnemonics({
+      localStore: store,
+      hashKey,
+      mnemonics: { "id-a": "phrase a" },
+    });
+
+    const temporaryStore = data[TEMPORARY_STORE_ID] as Record<string, string>;
+    expect(Object.keys(temporaryStore)).toEqual([TEMPORARY_STORE_MNEMONICS_ID]);
+    expect(temporaryStore[TEMPORARY_STORE_MNEMONICS_ID]).not.toContain(
+      "phrase a",
+    );
+  });
+
+  it("returns an empty map when no mnemonics are stored", async () => {
+    const { store } = makeLocalStore();
+    const sessionStore = makeSessionStore();
+    await storeActiveHashKey({ sessionStore, hashKey });
+
+    expect(await getMnemonics({ sessionStore, localStore: store })).toEqual({});
+  });
+
+  it("returns an empty map when the session is locked", async () => {
+    const { store } = makeLocalStore();
+    await storeMnemonics({
+      localStore: store,
+      hashKey,
+      mnemonics: { "id-a": "phrase a" },
+    });
+
+    expect(
+      await getMnemonics({
+        sessionStore: makeSessionStore(),
+        localStore: store,
+      }),
+    ).toEqual({});
+  });
+
+  it("addMnemonic merges into the held map and leaves other entries alone", async () => {
+    const { store, data } = makeLocalStore();
+    const sessionStore = makeSessionStore();
+    await storeActiveHashKey({ sessionStore, hashKey });
+    await storeEncryptedTemporaryData({
+      localStore: store,
+      keyName: "key-id-0",
+      temporaryData: "SSECRET",
+      hashKey,
+    });
+    await storeMnemonics({
+      localStore: store,
+      hashKey,
+      mnemonics: { "id-a": "phrase a" },
+    });
+
+    await addMnemonic({
+      localStore: store,
+      hashKey,
+      sourceId: "id-b",
+      mnemonic: "phrase b",
+    });
+
+    expect(await getMnemonics({ sessionStore, localStore: store })).toEqual({
+      "id-a": "phrase a",
+      "id-b": "phrase b",
+    });
+    expect(
+      Object.keys(data[TEMPORARY_STORE_ID] as Record<string, string>),
+    ).toEqual(["key-id-0", TEMPORARY_STORE_MNEMONICS_ID]);
+  });
+
+  it("addMnemonic works when no map exists yet", async () => {
+    const { store } = makeLocalStore();
+    const sessionStore = makeSessionStore();
+    await storeActiveHashKey({ sessionStore, hashKey });
+
+    await addMnemonic({
+      localStore: store,
+      hashKey,
+      sourceId: "id-a",
+      mnemonic: "phrase a",
+    });
+
+    expect(await getMnemonics({ sessionStore, localStore: store })).toEqual({
+      "id-a": "phrase a",
+    });
+  });
+
+  it("storeMnemonics replaces the held map rather than merging", async () => {
+    const { store } = makeLocalStore();
+    const sessionStore = makeSessionStore();
+    await storeActiveHashKey({ sessionStore, hashKey });
+    await storeMnemonics({
+      localStore: store,
+      hashKey,
+      mnemonics: { "id-a": "phrase a" },
+    });
+
+    await storeMnemonics({
+      localStore: store,
+      hashKey,
+      mnemonics: { "id-b": "phrase b" },
+    });
+
+    expect(await getMnemonics({ sessionStore, localStore: store })).toEqual({
+      "id-b": "phrase b",
+    });
+  });
+
+  it("getMnemonic returns the phrase for a held id and an empty string otherwise", async () => {
+    const { store } = makeLocalStore();
+    const sessionStore = makeSessionStore();
+    await storeActiveHashKey({ sessionStore, hashKey });
+    await storeMnemonics({
+      localStore: store,
+      hashKey,
+      mnemonics: { "id-a": "phrase a" },
+    });
+
+    expect(
+      await getMnemonic({ sessionStore, localStore: store, sourceId: "id-a" }),
+    ).toBe("phrase a");
+    expect(
+      await getMnemonic({ sessionStore, localStore: store, sourceId: "nope" }),
+    ).toBe("");
   });
 });

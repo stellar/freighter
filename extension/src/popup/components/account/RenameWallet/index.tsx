@@ -25,23 +25,22 @@ const ACCOUNT_NAME_MAX_LENGTH = 24;
 
 interface RenameWalletProps {
   allAccounts: Account[];
-  publicKey: string;
+  /** `Account.id`: two accounts can share a public key. */
+  accountId: string;
   onClose: () => void;
   onSubmit: () => void;
 }
 
 export const RenameWallet = ({
   allAccounts,
-  publicKey,
+  accountId,
   onClose,
   onSubmit,
 }: RenameWalletProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
-  const account = allAccounts.find(
-    (account) => account.publicKey === publicKey,
-  )!;
-  const accountName = account.name;
+  const account = allAccounts.find((account) => account.id === accountId)!;
+  const { name: accountName, publicKey } = account;
   const initialValues: FormValue = {
     accountName,
   };
@@ -51,7 +50,7 @@ export const RenameWallet = ({
     // always close. Only touch storage when the name actually differs.
     if (newAccountName !== accountName) {
       await dispatch(
-        updateAccountName({ accountName: newAccountName, publicKey }),
+        updateAccountName({ accountName: newAccountName, id: accountId }),
       );
       emitMetric(METRIC_NAMES.accountRenamed, { source: "wallets" });
       onSubmit();

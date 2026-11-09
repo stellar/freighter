@@ -11,7 +11,7 @@ import {
   publicKeySelector,
 } from "background/ducks/session";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import { getKeyIdList } from "background/helpers/account";
+import { getKeyIdList, getActiveAccountId } from "background/helpers/account";
 import { xlmToStroop } from "helpers/stellar";
 import {
   stellarSdkServer,
@@ -28,12 +28,20 @@ import { migrateTrustlines } from "background/helpers/migration";
 import { replaceAccount } from "../helpers/replace-account";
 import { activatePublicKey } from "../helpers/activate-public-key";
 import {
+  addMnemonic,
   clearSession,
   deriveKeyFromString,
   SessionTimer,
   storeActiveHashKey,
   storeEncryptedTemporaryData,
 } from "background/helpers/session";
+import {
+  addSecretSource,
+  getPhraseSourceId,
+} from "background/helpers/secret-sources";
+import { SecretSourceType } from "@shared/api/types";
+import { nextDerivationIndex } from "background/helpers/derivation-indices";
+import { linkWalletSources } from "background/helpers/link-sources";
 import { KEY_ID } from "constants/localStorageTypes";
 
 const { fromMnemonic } = StellarHDWallet;
@@ -64,8 +72,18 @@ export const migrateAccounts = async ({
   }
 
   const newWallet = fromMnemonic(migratedMnemonicPhrase);
-  const keyIdList: string = await getKeyIdList({ localStore });
+  // Read once: `replaceAccount` swaps ids in place, so membership is stable.
+  const keyIdList: string[] = await getKeyIdList({ localStore });
   const fee = xlmToStroop(recommendedFee).toFixed();
+  // The migrated phrase is the source of every account created below.
+  const phraseSourceId = await getPhraseSourceId(migratedMnemonicPhrase);
+  // Indices derived in this run but not yet marked: an account whose
+  // on-chain create succeeded and whose later step failed never reaches
+  // `replaceAccount`, and the next account must not re-derive its key.
+  const reserved = new Set<number>();
+  // The first account that actually migrated; it becomes the active one.
+  let firstMigratedKeyPair: { publicKey: string; privateKey: string } | null =
+    null;
 
   // we expect all migrations to be done on MAINNET
   const server = stellarSdkServer(
@@ -86,15 +104,31 @@ export const migrateAccounts = async ({
   */
 
   for (let i = 0; i < balancesToMigrate.length; i += 1) {
-    const { publicKey, xlmBalance, minBalance, trustlineBalances, keyIdIndex } =
-      balancesToMigrate[i];
+    const {
+      publicKey,
+      xlmBalance,
+      minBalance,
+      trustlineBalances,
+      id: keyID,
+    } = balancesToMigrate[i];
     const migratedAccount = {
       ...balancesToMigrate[i],
       newPublicKey: "",
       isMigrated: true,
     };
 
-    const keyID = keyIdList[keyIdIndex];
+    // The account to migrate is the keystore with this id. Its replacement
+    // takes the migrated phrase's lowest unused index, so the new phrase's
+    // accounts sit at 0, 1, ... and a later recovery of it finds them all.
+    if (!keyIdList.includes(keyID)) {
+      throw new Error(`No keystore with id ${keyID}`);
+    }
+    const derivationIndex = await nextDerivationIndex({
+      localStore,
+      sourceId: phraseSourceId,
+      exclude: reserved,
+    });
+    reserved.add(derivationIndex);
 
     const store = await unlockKeystore({ password, keyID, keyManager });
 
@@ -102,8 +136,8 @@ export const migrateAccounts = async ({
 
     // create a new keystore and migrate while replacing the keyId in the list
     const newKeyPair = {
-      publicKey: newWallet.getPublicKey(keyIdIndex),
-      privateKey: newWallet.getSecret(keyIdIndex),
+      publicKey: newWallet.getPublicKey(derivationIndex),
+      privateKey: newWallet.getSecret(derivationIndex),
     };
 
     const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
@@ -206,29 +240,28 @@ export const migrateAccounts = async ({
       await replaceAccount({
         args: {
           mnemonicPhrase: migratedMnemonicPhrase,
+          sourceId: phraseSourceId,
+          derivationIndex,
           password,
           keyPair: newKeyPair,
-          indexToReplace: keyIdIndex,
+          idToReplace: keyID,
         },
         localStore,
         sessionStore,
         keyManager,
       });
+      firstMigratedKeyPair = firstMigratedKeyPair || newKeyPair;
     }
 
     migratedAccount.newPublicKey = newKeyPair.publicKey;
     migratedAccounts.push(migratedAccount);
   }
 
-  const successfullyMigratedAccts = migratedAccounts.filter(
-    ({ isMigrated }) => isMigrated,
-  );
-
   // if any of the accounts have been successfully migrated, go ahead and log in
-  if (successfullyMigratedAccts.length) {
-    // let's make the first public key the active one
+  if (firstMigratedKeyPair) {
+    // let's make the first migrated account the active one
     await activatePublicKey({
-      publicKey: newWallet.getPublicKey(0),
+      publicKey: firstMigratedKeyPair.publicKey,
       sessionStore,
       localStore,
     });
@@ -240,13 +273,33 @@ export const migrateAccounts = async ({
     await storeEncryptedTemporaryData({
       localStore,
       keyName: await localStore.getItem(KEY_ID),
-      temporaryData: newWallet.getSecret(0),
+      temporaryData: firstMigratedKeyPair.privateKey,
       hashKey,
     });
+
+    // The migrated phrase is a new source the wallet now holds. The old
+    // phrase keeps its record even when every account migrated off it:
+    // telling requires opening every keystore, which a later issue does.
+    await addMnemonic({
+      localStore,
+      hashKey,
+      sourceId: phraseSourceId,
+      mnemonic: migratedMnemonicPhrase,
+    });
+    await addSecretSource({
+      localStore,
+      id: phraseSourceId,
+      type: SecretSourceType.PHRASE,
+    });
+
     await storeActiveHashKey({
       sessionStore,
       hashKey,
     });
+
+    // Link the migrated phrase and its accounts. Not awaited, so the
+    // migration result never waits on the backend.
+    void linkWalletSources({ sessionStore, localStore });
   }
 
   const currentState = sessionStore.getState();
@@ -255,6 +308,7 @@ export const migrateAccounts = async ({
   return {
     migratedAccounts,
     publicKey: publicKeySelector(currentState),
+    activeAccountId: await getActiveAccountId({ localStore }),
     allAccounts: allAccountsSelector(currentState),
     hasPrivateKey: await hasPrivateKeySelector(currentState),
   };

@@ -117,6 +117,11 @@ export interface CreateAccountMessage extends BaseMessage {
 export interface AddAccountMessage extends BaseMessage {
   type: SERVICE_TYPES.ADD_ACCOUNT;
   password: string;
+  /**
+   * The phrase source to derive the new account from. Absent, the active
+   * account's phrase is used, else the pinned source, else the first held.
+   */
+  sourceId?: string;
 }
 
 export interface ImportAccountMessage extends BaseMessage {
@@ -132,15 +137,24 @@ export interface ImportHardWareWalletMessage extends BaseMessage {
   bipPath: string;
 }
 
+/**
+ * Names one account. UI actions send `id`: two accounts can share a public
+ * key (a hot account and a Ledger on the same seed), so only the id tells
+ * them apart. Flows that only know an address, such as a dApp's
+ * `accountToSign`, send `publicKey` and get the first match.
+ */
+export type AccountRef = { id: string } | { publicKey: string };
+
 export interface MakeAccountActiveMessage extends BaseMessage {
   type: SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE;
-  publicKey: string;
+  id?: string;
+  publicKey?: string;
 }
 
 export interface UpdateAccountNameMessage extends BaseMessage {
   type: SERVICE_TYPES.UPDATE_ACCOUNT_NAME;
   accountName: string;
-  publicKey: string;
+  id: string;
 }
 
 export interface AddCustomNetworkMessage extends BaseMessage {

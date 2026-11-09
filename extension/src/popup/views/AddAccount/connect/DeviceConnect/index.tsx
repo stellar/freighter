@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button, Notification } from "@stellar/design-system";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
+import { ACCOUNT_ALREADY_EXISTS_ERROR } from "@shared/constants/errors";
 
 import { AppDispatch } from "popup/App";
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
@@ -51,15 +52,30 @@ export const DeviceConnect = () => {
     try {
       const publicKey = await createWalletConnection[walletType](bipPath);
 
-      setWalletConnectSuccessful(true);
-
-      dispatch(
+      const res = await dispatch(
         importHardwareWallet({
           publicKey,
           hardwareWalletType: walletType,
           bipPath,
         }),
       );
+
+      if (
+        importHardwareWallet.rejected.match(res) &&
+        res.payload?.errorMessage === ACCOUNT_ALREADY_EXISTS_ERROR
+      ) {
+        // A Ledger on the wallet's own seed derives an address the wallet
+        // already holds as a hot account. Refused in the background.
+        setConnectError(
+          t(
+            "This Ledger account is already in your wallet. Choose a different account on the device.",
+          ),
+        );
+        setIsDetecting(false);
+        return;
+      }
+
+      setWalletConnectSuccessful(true);
     } catch (e) {
       if (parseWalletError.hasOwnProperty(walletType)) {
         const isErrorParserFunction =

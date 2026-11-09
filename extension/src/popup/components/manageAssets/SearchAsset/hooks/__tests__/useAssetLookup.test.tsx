@@ -22,7 +22,12 @@ jest.mock("popup/helpers/assetList", () => ({
     Promise.resolve({ verifiedAssets: [], unverifiedAssets: assets }),
   ),
 }));
+jest.mock("@sentry/browser", () => ({
+  ...jest.requireActual("@sentry/browser"),
+  captureException: jest.fn(),
+}));
 
+import { captureException } from "@sentry/browser";
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { searchAsset } from "popup/helpers/searchAsset";
 import { splitVerifiedAssetCurrency } from "popup/helpers/assetList";
@@ -165,6 +170,101 @@ describe("useAssetLookup Blockaid scan", () => {
       const data = result.current.state.data;
       expect(data?.verifiedAssetRows[0].isMalicious).toBe(false);
       expect(data?.unverifiedAssetRows[0].isMalicious).toBe(true);
+    });
+  });
+});
+
+describe("useAssetLookup superseded search", () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  // A new search aborts the one before it, but that request runs in the
+  // background, so it still answers, with an AbortError. Its empty result used
+  // to replace the new search's rows when it answered after them.
+  it("keeps the new search's rows when the search it replaced answers late", async () => {
+    let answerFirstSearch: (error: Error) => void = () => {};
+    (searchAsset as jest.Mock)
+      .mockImplementationOnce(
+        () =>
+          new Promise((_resolve, reject) => {
+            answerFirstSearch = reject;
+          }),
+      )
+      .mockResolvedValueOnce({
+        _embedded: { records: [{ asset: `AQUA-${ISSUER}-1` }] },
+      });
+    const store = makeDummyStore({ settings: { assetsLists: {} } });
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <Provider store={store}>{children}</Provider>
+    );
+    const { result } = renderHook(() => useAssetLookup(), { wrapper });
+    const search = (asset: string) =>
+      result.current.fetchData({
+        asset,
+        isBlockaidEnabled: false,
+        publicKey: ISSUER,
+        isAllowListVerificationEnabled: false,
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      });
+    const rowCodes = () =>
+      result.current.state.data?.unverifiedAssetRows.map((row) => row.code);
+
+    let firstSearch: Promise<void> = Promise.resolve();
+    await act(async () => {
+      firstSearch = search("aqu");
+    });
+    // The first search's request is in flight before the second one starts.
+    await waitFor(() => expect(searchAsset).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      await search("aqua");
+    });
+    expect(rowCodes()).toEqual(["AQUA"]);
+
+    await act(async () => {
+      answerFirstSearch(
+        new DOMException("asset search request aborted", "AbortError"),
+      );
+      await firstSearch;
+    });
+
+    expect(rowCodes()).toEqual(["AQUA"]);
+    // A replaced search isn't a failure, so nothing goes to Sentry.
+    expect(captureException).not.toHaveBeenCalled();
+  });
+});
+
+describe("useAssetLookup search failure", () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  // The Error itself carries the backend's status and message, such as a 404
+  // before the route is deployed or a 503 while StellarExpert is down.
+  it("reports the search's own error to Sentry", async () => {
+    const failure = new Error(
+      'Failed to fetch asset search - 503: {"message":"asset search temporarily unavailable"}',
+    );
+    (searchAsset as jest.Mock).mockRejectedValueOnce(failure);
+    const store = makeDummyStore({ settings: { assetsLists: {} } });
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <Provider store={store}>{children}</Provider>
+    );
+    const { result } = renderHook(() => useAssetLookup(), { wrapper });
+
+    await act(async () => {
+      await result.current.fetchData({
+        asset: "aqua",
+        isBlockaidEnabled: false,
+        publicKey: ISSUER,
+        isAllowListVerificationEnabled: false,
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      });
+    });
+
+    expect(captureException).toHaveBeenCalledWith(failure, {
+      tags: { operation: "searchAsset" },
+      extra: { network: "PUBLIC" },
     });
   });
 });

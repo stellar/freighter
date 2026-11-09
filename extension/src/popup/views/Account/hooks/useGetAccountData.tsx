@@ -81,7 +81,9 @@ function useGetAccountData(options: {
     dispatch({ type: "FETCH_DATA_START" });
     try {
       if (updatedAppData && updatedAppData.publicKey) {
-        await reduxDispatch(makeAccountActive(updatedAppData.publicKey));
+        await reduxDispatch(
+          makeAccountActive({ publicKey: updatedAppData.publicKey }),
+        );
       }
 
       if (updatedAppData && updatedAppData.network) {
