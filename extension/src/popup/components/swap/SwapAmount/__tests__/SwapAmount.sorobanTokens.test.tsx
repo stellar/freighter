@@ -1,6 +1,7 @@
 import React from "react";
 import { render } from "@testing-library/react";
 import BigNumber from "bignumber.js";
+import { Asset, Networks } from "stellar-sdk";
 
 import { RequestState } from "constants/request";
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
@@ -146,6 +147,49 @@ describe("SwapAmount with Soroban contract tokens", () => {
     renderSwapAmount({ destinationAsset: TOKEN });
 
     expect(lastSimParams().destRequiresTrustline).toBe(false);
+  });
+
+  // A SAC added by contract ID without a trustline is held Soroban-shaped,
+  // named after its classic asset (injectLocalTokenBalances).
+  describe("a SAC held by its contract ID", () => {
+    const USDC_ISSUER = USDC.split(":")[1];
+    const sacId = new Asset("USDC", USDC_ISSUER).contractId(Networks.PUBLIC);
+    const sacBalance = {
+      token: { code: "USDC", issuer: { key: sacId } },
+      contractId: sacId,
+      total: new BigNumber(0),
+      decimals: 7,
+      name: USDC,
+      symbol: "USDC",
+    };
+
+    it("needs the classic asset's trustline", () => {
+      renderSwapAmount({ destinationAsset: `USDC:${sacId}` }, [
+        nativeBalance,
+        sacBalance,
+      ]);
+
+      expect(lastSimParams().destRequiresTrustline).toBe(true);
+    });
+
+    it("needs none when the trustline exists", () => {
+      const usdcTrustline = {
+        token: {
+          type: "credit_alphanum4",
+          code: "USDC",
+          issuer: { key: USDC_ISSUER },
+        },
+        total: new BigNumber(1),
+        available: new BigNumber(1),
+      };
+      renderSwapAmount({ destinationAsset: `USDC:${sacId}` }, [
+        nativeBalance,
+        sacBalance,
+        usdcTrustline,
+      ]);
+
+      expect(lastSimParams().destRequiresTrustline).toBe(false);
+    });
   });
 });
 

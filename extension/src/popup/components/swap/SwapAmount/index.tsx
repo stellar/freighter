@@ -31,6 +31,7 @@ import {
 } from "popup/helpers/formatters";
 import { useGetSwapAmountData } from "./hooks/useGetSwapAmountData";
 import { getAssetFromCanonical } from "helpers/stellar";
+import { splitCanonical } from "@shared/helpers/stellar";
 import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
@@ -42,8 +43,12 @@ import {
   CLASSIC_ASSET_DECIMALS,
   getAvailableBalance,
   isContractId,
+  isSacContract,
 } from "popup/helpers/soroban";
-import { getBalanceCanonicalKey } from "popup/helpers/balance";
+import {
+  findAssetBalance,
+  getBalanceCanonicalKey,
+} from "popup/helpers/balance";
 import { useBlockaidOverrideState } from "popup/helpers/blockaid";
 import { AppDispatch } from "popup/App";
 import { emitMetric, emitScreenViewed } from "helpers/metrics";
@@ -164,12 +169,29 @@ export const SwapAmount = ({
   // Input precision only: the build reads an unheld token's decimals on chain.
   const sourceDecimals = heldSourceDecimals ?? CLASSIC_ASSET_DECIMALS;
   // Only a classic destination needs a trustline; a contract token holds its
-  // own balances.
+  // own balances, except a SAC (held by contract ID, named CODE:ISSUER), which
+  // needs its classic asset's.
+  const dstContractBalance =
+    dstAsset && isContractId(dstAsset.issuer)
+      ? findAssetBalance(heldBalances, dstAsset)
+      : undefined;
+  const dstClassicCanonical =
+    dstContractBalance &&
+    "name" in dstContractBalance &&
+    isSacContract(
+      dstContractBalance.name,
+      dstContractBalance.contractId,
+      networkDetails.networkPassphrase,
+    )
+      ? dstContractBalance.name
+      : destinationAsset;
   const destRequiresTrustline =
     Boolean(destinationAsset) &&
-    !isContractId(dstAsset?.issuer) &&
+    !isContractId(splitCanonical(dstClassicCanonical).issuer) &&
     heldBalances.length > 0 &&
-    !heldBalances.some((b) => getBalanceCanonicalKey(b) === destinationAsset);
+    !heldBalances.some(
+      (b) => getBalanceCanonicalKey(b) === dstClassicCanonical,
+    );
 
   // A new-trustline swap is two ops; scale the recommended default fee by op
   // count so each op pays the recommended fee (a custom fee is the total and
