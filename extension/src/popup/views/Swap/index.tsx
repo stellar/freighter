@@ -30,9 +30,6 @@ import {
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { resetSimulation } from "popup/ducks/token-payment";
-import { iconsSelector, saveIconsForBalances } from "popup/ducks/cache";
-import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
-import { SERVICE_TYPES } from "@shared/constants/services";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { isAssetVisible } from "popup/helpers/settings";
@@ -259,22 +256,6 @@ export const Swap = () => {
             hiddenAssets={[transactionData.asset]}
             goBack={() => setActiveStep(STEPS.AMOUNT)}
             onClickAsset={(canonical, isContract, details) => {
-              const iconUrl = details?.iconUrl;
-              if (
-                iconUrl &&
-                !isNativeAssetId(canonical) &&
-                iconsSelector(store.getState())[canonical] !== iconUrl
-              ) {
-                dispatch(
-                  saveIconsForBalances({ icons: { [canonical]: iconUrl } }),
-                );
-                sendMessageToBackground({
-                  activePublicKey: null,
-                  assetCanonical: canonical,
-                  iconUrl,
-                  type: SERVICE_TYPES.CACHE_ASSET_ICON,
-                }).catch(() => undefined);
-              }
               dispatch(saveDestinationAsset(canonical));
               dispatch(saveIsToken(isContract));
               dispatch(saveDestinationTokenDetails(details ?? null));
