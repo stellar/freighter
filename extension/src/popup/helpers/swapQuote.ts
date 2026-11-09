@@ -1,6 +1,6 @@
 import { captureException } from "@sentry/browser";
 import BigNumber from "bignumber.js";
-import { Horizon, StrKey } from "stellar-sdk";
+import { Horizon } from "stellar-sdk";
 
 import {
   getSwapQuotes,
@@ -102,16 +102,16 @@ export const pickSwapRoute = (
   quotes: SwapQuotesResponse,
 ): SwapRoute | undefined => quotes.routes[0];
 
-const contractIssuer = (canonical: string) => {
-  const issuer = canonical.split(":")[1];
-  return issuer && StrKey.isValidContract(issuer) ? issuer : undefined;
-};
+const isContractToken = (canonical: string) =>
+  isContractId(splitCanonical(canonical).issuer);
 
 export const toBackendAsset = (canonical: string) => {
   if (isNativeAssetId(canonical)) {
     return "XLM";
   }
-  return contractIssuer(canonical) ?? canonical;
+  return isContractToken(canonical)
+    ? splitCanonical(canonical).issuer
+    : canonical;
 };
 
 /** A held contract token's decimals; undefined for anything else. */
@@ -119,11 +119,10 @@ export const getHeldTokenDecimals = (
   canonical: string,
   balances: AssetType[],
 ): number | undefined => {
-  const { code, issuer } = canonical ? splitCanonical(canonical) : {};
-  if (!code || !isContractId(issuer)) {
+  if (!isContractToken(canonical)) {
     return undefined;
   }
-  const held = findAssetBalance(balances, { code, issuer });
+  const held = findAssetBalance(balances, splitCanonical(canonical));
   return held && "decimals" in held ? Number(held.decimals) : undefined;
 };
 
@@ -173,7 +172,7 @@ export const getSwapQuote = async (
   const { amount } = key;
   if (isCustomNetwork(networkDetails)) {
     // Contract tokens route only through the backend's Soroban sources.
-    if (contractIssuer(sourceAsset) || contractIssuer(destAsset)) {
+    if (isContractToken(sourceAsset) || isContractToken(destAsset)) {
       return { route: null, quotes: null, key };
     }
     const record =

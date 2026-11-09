@@ -5,12 +5,12 @@ import {
   FeeBumpTransaction,
   Operation,
   scValToNative,
-  StrKey,
   Transaction,
   TransactionBuilder,
   xdr,
 } from "stellar-sdk";
 
+import { isContractId } from "@shared/api/helpers/soroban";
 import { getAssetFromCanonical } from "@shared/helpers/stellar";
 
 /** What the review shows, read from the transaction rather than the quote. */
@@ -45,7 +45,7 @@ const toSwapToken = (
   if (asset instanceof Asset) {
     return { classic: asset, contract: asset.contractId(networkPassphrase) };
   }
-  if (!StrKey.isValidContract(asset.issuer)) {
+  if (!isContractId(asset.issuer)) {
     throw new Error(`Swap: unsupported asset ${canonical}`);
   }
   return { contract: asset.issuer };
