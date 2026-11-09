@@ -212,6 +212,7 @@ const currencyToRecord = (
 export const buildSwapSections = ({
   searchTerm,
   balances,
+  networkDetails,
   popular = [],
   verifiedAssets = [],
   unverifiedAssets = [],
@@ -221,8 +222,6 @@ export const buildSwapSections = ({
 }: {
   searchTerm: string;
   balances: AssetType[];
-  // Accepted for call-site symmetry with the lookup context; the record filter
-  // keys purely on contract-id shape and does not use the network value.
   networkDetails: NetworkDetails;
   popular?: TrendingAsset[];
   verifiedAssets?: ManageAssetCurrency[];
@@ -236,6 +235,9 @@ export const buildSwapSections = ({
 
   const heldRecords = balancesToHeldRecords({ balances, icons, tokenPrices });
   const heldCanonicals = new Set(heldRecords.map((r) => r.canonical));
+  // Only mainnet has a source (LI.FI) that routes contract tokens.
+  const isDiscoverable = (r: SwapTokenRecord) =>
+    !r.isContract || isMainnet(networkDetails);
 
   if (!isSearch) {
     // IDLE mode
@@ -256,6 +258,7 @@ export const buildSwapSections = ({
         }),
       )
       .map((a) => currencyToRecord(a, false))
+      .filter(isDiscoverable)
       .filter(
         (r) =>
           !heldCanonicals.has(r.canonical) && verifiedKeys.has(r.canonical),
@@ -296,6 +299,7 @@ export const buildSwapSections = ({
     const seen = new Set<string>();
     return assets
       .map((a) => currencyToRecord(a, false))
+      .filter(isDiscoverable)
       .filter((r) => {
         if (heldSearchKeys.has(r.canonical) || seen.has(r.canonical)) {
           return false;

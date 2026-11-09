@@ -182,6 +182,42 @@ describe("buildSwapSections — search term", () => {
   });
 });
 
+describe("buildSwapSections — off mainnet", () => {
+  const TESTNET = {
+    network: "TESTNET",
+    networkPassphrase: "Test SDF Network ; September 2015",
+  } as NetworkDetails;
+  const wrap = { code: "WRAP", issuer: CONTRACT, domain: null, decimals: 7 };
+  const heldWrap = {
+    token: { code: "WRAP", issuer: { key: CONTRACT } },
+    contractId: CONTRACT,
+    total: "10000000",
+    decimals: 7,
+  } as any;
+
+  it("leaves unheld contract tokens out of search and Popular, keeping held ones", () => {
+    const search = buildSwapSections({
+      searchTerm: "wrap",
+      balances: [heldWrap],
+      networkDetails: TESTNET,
+      verifiedAssets: [{ code: "USDC", issuer: "GUSD", domain: null }],
+      unverifiedAssets: [{ ...wrap, code: "WRAP2" }],
+    });
+    const idle = buildSwapSections({
+      searchTerm: "",
+      balances: [],
+      networkDetails: TESTNET,
+      popular: [{ ...wrap, contract: CONTRACT, volume7d: 0 }],
+      verifiedAssets: [wrap],
+    });
+
+    expect(search.sections.yourTokens.map((r) => r.code)).toEqual(["WRAP"]);
+    expect(search.sections.verified.map((r) => r.code)).toEqual(["USDC"]);
+    expect(search.sections.unverified).toEqual([]);
+    expect(idle.sections.popular).toEqual([]);
+  });
+});
+
 describe("omitHiddenFromSections", () => {
   // A hidden token is left out of `balances`, so it would otherwise look new
   const hidden = { "USDC:GUSD": "hidden" } as const;
