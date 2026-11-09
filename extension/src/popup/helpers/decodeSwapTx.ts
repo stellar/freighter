@@ -15,7 +15,8 @@ import { getAssetFromCanonical } from "@shared/helpers/stellar";
 /** What the review shows, read from the transaction rather than the quote. */
 export interface DecodedSwapTx {
   sendAmount: string;
-  minReceived: string;
+  /** Classic only; a Soroban swap's minimum is checked by the backend. */
+  minReceived?: string;
   /** XLM. For a Soroban swap, inclusion plus resource fee. */
   fee: string;
   /** Soroban swaps only, XLM. */
@@ -26,6 +27,9 @@ export interface DecodedSwapTx {
 // Classic assets and their contracts both use 7 decimals. Soroban-only
 // tokens are rejected below until the picker allows them (C3).
 const CLASSIC_DECIMALS = 7;
+
+// The changeTrust default; the backend builds with txnbuild.MaxTrustlineLimit.
+const MAX_TRUSTLINE_LIMIT = "922337203685.4775807";
 
 const toClassicAsset = (canonical: string): Asset => {
   const asset = getAssetFromCanonical(canonical);
@@ -41,16 +45,27 @@ const fromStroops = (value: string | bigint | number) =>
 const mismatch = (what: string) =>
   new Error(`Swap transaction does not match the request: ${what}`);
 
+const atLeastMinOut = (amount: BigNumber, minOut: string) => {
+  if (!amount.gte(minOut)) {
+    throw mismatch("minimum received");
+  }
+};
+
 const decodeClassic = (
   tx: Transaction,
   account: string,
   from: Asset,
   to: Asset,
+  minOut: string,
 ): DecodedSwapTx => {
   const ops = tx.operations;
   const payment = ops[ops.length - 1];
   const changeTrust = ops.length === 2 ? ops[0] : null;
-  if (ops.length > 2 || payment.type !== "pathPaymentStrictSend") {
+  if (
+    ops.length < 1 ||
+    ops.length > 2 ||
+    payment.type !== "pathPaymentStrictSend"
+  ) {
     throw mismatch("operations");
   }
   if (
@@ -64,10 +79,12 @@ const decodeClassic = (
     changeTrust &&
     (changeTrust.type !== "changeTrust" ||
       !(changeTrust.line instanceof Asset) ||
-      !changeTrust.line.equals(to))
+      !changeTrust.line.equals(to) ||
+      changeTrust.limit !== MAX_TRUSTLINE_LIMIT)
   ) {
     throw mismatch("trustline");
   }
+  atLeastMinOut(new BigNumber(payment.destMin), minOut);
   return {
     sendAmount: new BigNumber(payment.sendAmount).toFixed(),
     minReceived: new BigNumber(payment.destMin).toFixed(),
@@ -79,10 +96,21 @@ const decodeClassic = (
 const contractFnName = (fn: xdr.InvokeContractArgs) =>
   fn.functionName.toString();
 
-// The LI.FI swap call is swap(params, receiver). params.args is the
-// aggregator's (account, token_in, amount_in, token_out, min_out, …); the
-// backend's lifi_checks.go reads the same fields.
-const decodeLifi = (
+const contractCalls = (
+  invocation: xdr.SorobanAuthorizedInvocation,
+): xdr.InvokeContractArgs[] => {
+  const fn = invocation.function;
+  const own =
+    fn.type === "sorobanAuthorizedFunctionTypeContractFn"
+      ? [fn.contractFn]
+      : [];
+  return own.concat(...invocation.subInvocations.map(contractCalls));
+};
+
+// Any source's Soroban swap: what it sells is what the auth tree lets the
+// account transfer of the sold token, so a new backend source needs no client
+// change. Its minimum is enforced by the backend's checks, not read here.
+const decodeSoroban = (
   tx: Transaction,
   account: string,
   from: Asset,
@@ -93,49 +121,44 @@ const decodeLifi = (
   if (op.func.type !== "hostFunctionTypeInvokeContract") {
     throw mismatch("host function");
   }
-  const call = op.func.invokeContract;
-  if (contractFnName(call) !== "swap" || call.args.length !== 2) {
-    throw mismatch("swap call");
-  }
-  const params = scValToNative(call.args[0]);
-  const receiver = scValToNative(call.args[1]);
   const fromContract = from.contractId(networkPassphrase);
   const toContract = to.contractId(networkPassphrase);
-  const args: unknown[] = Array.isArray(params?.args) ? params.args : [];
-  if (
-    receiver !== account ||
-    args[0] !== account ||
-    params.token_in !== fromContract ||
-    params.token_out !== toContract ||
-    typeof args[2] !== "bigint" ||
-    typeof params.min_amount_out !== "bigint"
-  ) {
-    throw mismatch("swap call");
-  }
 
-  const addsTrustline = (op.auth ?? []).some(({ rootInvocation }) =>
-    rootInvocation.subInvocations.some(({ function: fn }) => {
-      if (fn.type !== "sorobanAuthorizedFunctionTypeContractFn") {
-        return false;
+  let sent = new BigNumber(0);
+  let addsTrustline = false;
+  (op.auth ?? [])
+    .flatMap(({ rootInvocation }) => contractCalls(rootInvocation))
+    .forEach((fn) => {
+      const contract = Address.fromScAddress(fn.contractAddress).toString();
+      const name = contractFnName(fn);
+      const firstArg = fn.args.length ? scValToNative(fn.args[0]) : undefined;
+      if (firstArg !== account) {
+        return;
       }
-      const inner = fn.contractFn;
-      return (
-        Address.fromScAddress(inner.contractAddress).toString() ===
-          toContract &&
-        contractFnName(inner) === "trust" &&
-        inner.args.length === 1 &&
-        scValToNative(inner.args[0]) === account
-      );
-    }),
-  );
+      if (name === "transfer") {
+        const amount: unknown = scValToNative(fn.args[2]);
+        if (
+          contract !== fromContract ||
+          typeof amount !== "bigint" ||
+          amount < BigInt(0)
+        ) {
+          throw mismatch("transfer");
+        }
+        sent = sent.plus(amount.toString());
+      } else if (contract === toContract && name === "trust") {
+        addsTrustline = true;
+      }
+    });
+  if (!sent.gt(0)) {
+    throw mismatch("amount");
+  }
 
   const env = tx.toEnvelope();
   const ext = env.type === "envelopeTypeTx" ? env.v1.tx.ext : null;
   const resourceFee =
     ext?.type === "sorobanData" ? ext.sorobanData.resourceFee : undefined;
   return {
-    sendAmount: fromStroops(args[2] as bigint),
-    minReceived: fromStroops(params.min_amount_out),
+    sendAmount: fromStroops(sent.toFixed()),
     fee: fromStroops(tx.fee),
     ...(resourceFee !== undefined
       ? { resourceFee: fromStroops(resourceFee.toString()) }
@@ -145,10 +168,10 @@ const decodeLifi = (
 };
 
 /**
- * Reads the review values out of a swap transaction and refuses one that
- * does not swap `sourceAsset` into `destAsset` for `account` and pay `account`.
- * Recognises a classic path payment (optionally after its changeTrust) and the
- * LI.FI swap contract call.
+ * Reads the review values out of a swap transaction built for `account`. A
+ * classic path payment (optionally after its changeTrust) must swap
+ * `sourceAsset` into `destAsset` and pay `account`; a single Soroban contract
+ * call from any source is read from what its auth tree lets `account` move.
  */
 export const decodeSwapTx = ({
   transactionXdr,
@@ -156,12 +179,15 @@ export const decodeSwapTx = ({
   account,
   sourceAsset,
   destAsset,
+  minOut,
 }: {
   transactionXdr: string;
   networkPassphrase: string;
   account: string;
   sourceAsset: string;
   destAsset: string;
+  /** The floor the build was asked for; a lower classic minimum is refused. */
+  minOut: string;
 }): DecodedSwapTx => {
   const parsed = TransactionBuilder.fromXdr(transactionXdr, networkPassphrase);
   if (parsed instanceof FeeBumpTransaction) {
@@ -180,7 +206,7 @@ export const decodeSwapTx = ({
     tx.operations.length === 1 &&
     tx.operations[0].type === "invokeHostFunction"
   ) {
-    return decodeLifi(tx, account, from, to, networkPassphrase);
+    return decodeSoroban(tx, account, from, to, networkPassphrase);
   }
-  return decodeClassic(tx, account, from, to);
+  return decodeClassic(tx, account, from, to, minOut);
 };

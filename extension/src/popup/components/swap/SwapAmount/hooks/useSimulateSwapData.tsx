@@ -241,6 +241,15 @@ export const getBuiltTx = async (
   return transaction;
 };
 
+// Exact decimal arithmetic, rounded down: computeDestMinWithSlippage's float
+// multiplier can miss the exact floor by a stroop.
+export const getMinOut = (allowedSlippage: string, toAmount: string) =>
+  new BigNumber(toAmount)
+    .times(new BigNumber(100).minus(allowedSlippage))
+    .div(100)
+    .decimalPlaces(7, BigNumber.ROUND_DOWN)
+    .toFixed();
+
 const buildFromBackend = async ({
   quotes,
   key,
@@ -260,10 +269,7 @@ const buildFromBackend = async ({
   if (!route) {
     throw new Error(ERROR_TO_DISPLAY.NO_PATH_FOUND);
   }
-  // Rounded down so the floor never exceeds the quote less slippage.
-  const minOut = computeDestMinWithSlippage(allowedSlippage, route.toAmount)
-    .decimalPlaces(7, BigNumber.ROUND_DOWN)
-    .toFixed();
+  const minOut = getMinOut(allowedSlippage, route.toAmount);
   try {
     const { xdr } = await buildSwapTx({
       network: key.network,
@@ -278,7 +284,7 @@ const buildFromBackend = async ({
       timeout,
       paths: route.paths,
     });
-    return xdr;
+    return { xdr, minOut };
   } catch (e) {
     if (!(e instanceof SwapTxError)) {
       throw e;
@@ -407,27 +413,30 @@ function useSimulateTxData({
         );
       }
       // Custom networks keep the local build: the backend can't reach them.
-      const xdr = isCustomNetwork(networkDetails)
-        ? (
-            await getBuiltTx(
-              publicKey,
-              {
-                sourceAsset,
-                destAsset,
-                amount,
-                destinationAmount,
-                allowedSlippage,
-                path,
-                requiresTrustline: simParams.destRequiresTrustline,
-              },
-              baseFee.toString(),
-              transactionTimeout,
-              networkDetails,
-              memo,
+      const { xdr, minOut } = isCustomNetwork(networkDetails)
+        ? {
+            xdr: (
+              await getBuiltTx(
+                publicKey,
+                {
+                  sourceAsset,
+                  destAsset,
+                  amount,
+                  destinationAmount,
+                  allowedSlippage,
+                  path,
+                  requiresTrustline: simParams.destRequiresTrustline,
+                },
+                baseFee.toString(),
+                transactionTimeout,
+                networkDetails,
+                memo,
+              )
             )
-          )
-            .build()
-            .toXdr()
+              .build()
+              .toXdr(),
+            minOut: getMinOut(allowedSlippage, destinationAmount),
+          }
         : await buildFromBackend({
             quotes,
             key: getSwapQuoteKey(quoteParams),
@@ -443,6 +452,7 @@ function useSimulateTxData({
           account: publicKey,
           sourceAsset: quoteParams.sourceAsset,
           destAsset: quoteParams.destAsset,
+          minOut,
         });
       } catch (e) {
         captureException(e);

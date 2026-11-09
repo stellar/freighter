@@ -1,6 +1,7 @@
 import { Asset } from "stellar-sdk";
 
 import {
+  getMinOut,
   getBuiltTx,
   getPerOpBaseFee,
   getSwapTotalFee,
@@ -30,6 +31,16 @@ const baseOpData = {
   destinationAmount: "9.5",
   path: [] as string[],
 };
+
+describe("getMinOut", () => {
+  it.each([
+    ["1.0000001", "1", "0.99"],
+    ["100", "7", "93"],
+    ["3", "0.7", "2.979"],
+  ])("takes %s less %s%% exactly, rounded down", (toAmount, slip, minOut) => {
+    expect(getMinOut(slip, toAmount)).toBe(minOut);
+  });
+});
 
 describe("getPerOpBaseFee", () => {
   it("divides total fee across ops in stroops", () => {

@@ -158,6 +158,24 @@ describe("useSimulateTxData error copy", () => {
   });
   afterEach(() => jest.restoreAllMocks());
 
+  it("translates the error for a build the decoder refuses", async () => {
+    fetchBackendV2.mockImplementation(
+      answer(quotes, {
+        status: 200,
+        build: (req) => classicBuild({ ...req, minOut: "0.0000001" }),
+      }),
+    );
+    const { result } = renderSimulate();
+
+    await act(async () => {
+      await result.current.fetchData({ amount: "10" });
+    });
+
+    expect(result.current.state.error).toBe(
+      "t:We had an issue retrieving your transaction details. Please try again.",
+    );
+  });
+
   it("translates the error for a 400 build", async () => {
     fetchBackendV2.mockImplementation(answer(quotes, { status: 400 }));
     const { result } = renderSimulate();

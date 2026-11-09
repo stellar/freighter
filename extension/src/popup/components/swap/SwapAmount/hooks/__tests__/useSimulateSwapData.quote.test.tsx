@@ -334,6 +334,22 @@ describe("useSimulateTxData quote when no live quote exists", () => {
     ).toBeNull();
   });
 
+  it("refuses a build whose minimum is below the minOut sent", async () => {
+    fetchBackendV2.mockImplementation(
+      answer(quotes, {
+        status: 200,
+        build: (req) => classicBuild({ ...req, minOut: "1.4849999" }),
+      }),
+    );
+    const { result } = renderSimulate();
+
+    await act(async () => {
+      await result.current.fetchData({ amount: "10" });
+    });
+
+    expect(result.current.state.state).toBe("ERROR");
+  });
+
   it("treats a 409 quote_moved as an expired quote and re-quotes next time", async () => {
     fetchBackendV2.mockImplementation(answer(quotes, { status: 409 }));
     const { result } = renderSimulate(storedQuote);
