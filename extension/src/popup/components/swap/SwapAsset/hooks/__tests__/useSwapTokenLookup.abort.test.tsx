@@ -22,6 +22,19 @@ jest.mock("popup/helpers/searchAsset", () => ({
 jest.mock("popup/helpers/assetList", () => ({
   splitVerifiedAssetCurrency: jest.fn(),
 }));
+jest.mock("popup/helpers/trendingAssets", () => ({
+  ...jest.requireActual("popup/helpers/trendingAssets"),
+  fetchTrendingAssets: jest.fn().mockResolvedValue([]),
+}));
+// The disk cache lives in the background; nothing is persisted.
+jest.mock("popup/helpers/swapPopularTokensCache", () => ({
+  getPersistedPopularTokens: jest.fn().mockResolvedValue(null),
+  setPersistedPopularTokens: jest.fn().mockResolvedValue(undefined),
+}));
+jest.mock("@sentry/browser", () => ({
+  ...jest.requireActual("@sentry/browser"),
+  captureException: jest.fn(),
+}));
 // The real read goes to the background, which tests don't run. Nothing is
 // hidden unless a test says otherwise.
 const mockReadHiddenAssets = jest.fn().mockResolvedValue({});
@@ -29,8 +42,10 @@ jest.mock("popup/helpers/useHiddenAssets", () => ({
   readHiddenAssets: (...args: unknown[]) => mockReadHiddenAssets(...args),
 }));
 
+import { captureException } from "@sentry/browser";
 import { splitVerifiedAssetCurrency } from "popup/helpers/assetList";
 import { searchAsset } from "popup/helpers/searchAsset";
+import { fetchTrendingAssets } from "popup/helpers/trendingAssets";
 import { makeDummyStore } from "popup/__testHelpers__";
 import {
   useSwapTokenLookup,
@@ -166,4 +181,47 @@ describe("useSwapTokenLookup fetchData — abort race (§ batch4 task 7)", () =>
     expect(verifiedCodes).toContain("FRESH");
     expect(verifiedCodes).not.toContain("STALE");
   });
+});
+
+describe("useSwapTokenLookup fetchData — failure reporting", () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+    resetSwapIdleCacheForTests();
+  });
+
+  // The Error itself carries the backend's status and message, such as a 404
+  // before the route is deployed or a 503 while StellarExpert is down.
+  it.each([
+    ["search", "aqua"],
+    ["popular", ""],
+  ])(
+    "reports the %s lookup's own error to Sentry",
+    async (lookup, searchTerm) => {
+      const failure = new Error(
+        'Failed to fetch asset search - 503: {"message":"asset search temporarily unavailable"}',
+      );
+      const failingCall =
+        lookup === "search" ? searchAsset : fetchTrendingAssets;
+      (failingCall as jest.Mock).mockRejectedValueOnce(failure);
+      const store = makeDummyStore({ settings: { assetsLists: {} } });
+      const wrapper = ({ children }: { children: React.ReactNode }) => (
+        <Provider store={store}>{children}</Provider>
+      );
+      const { result } = renderHook(() => useSwapTokenLookup(), { wrapper });
+
+      await act(async () => {
+        await result.current.fetchData({
+          balances: [],
+          publicKey: "GADUMMY",
+          networkDetails: TESTNET,
+          searchTerm,
+        });
+      });
+
+      expect(captureException).toHaveBeenCalledWith(failure, {
+        tags: { operation: "swapTokenLookup" },
+        extra: { network: "TESTNET", lookup },
+      });
+    },
+  );
 });

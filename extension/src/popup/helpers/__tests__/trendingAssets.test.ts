@@ -4,6 +4,11 @@ import {
   TRENDING_LIMIT,
 } from "../trendingAssets";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
+import { SERVICE_TYPES } from "@shared/constants/services";
+
+jest.mock("@shared/api/helpers/extensionMessaging");
+const mockedSend = sendMessageToBackground as jest.Mock;
 
 const MAINNET: NetworkDetails = {
   network: "PUBLIC",
@@ -21,7 +26,7 @@ const TESTNET: NetworkDetails = {
   sorobanRpcUrl: "https://soroban-testnet.stellar.org",
 } as NetworkDetails;
 
-const recordsResponse = (
+const respondWithRecords = (
   records: {
     asset: string;
     volume7d: number;
@@ -29,57 +34,57 @@ const recordsResponse = (
     code?: string;
     decimals?: number;
   }[],
-) => ({
-  json: async () => ({ _embedded: { records } }),
-  ok: true,
-});
+) =>
+  mockedSend.mockResolvedValue({
+    status: 200,
+    body: { data: { _embedded: { records } } },
+  });
+
+const requestedPath = () => mockedSend.mock.calls[0][0].path as string;
 
 describe("fetchTrendingAssets", () => {
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => {
+    jest.clearAllMocks();
+    jest.restoreAllMocks();
+  });
 
-  it("hits the volume7d-sorted endpoint with limit=50 on mainnet", async () => {
+  it("asks freighter-backend-v2 for the volume7d-sorted list on mainnet, never StellarExpert directly", async () => {
     const fetchSpy = jest
       .spyOn(global, "fetch")
-      .mockResolvedValue(
-        recordsResponse([
-          { asset: "AQUA-GBNZ", volume7d: MIN_TRENDING_VOLUME7D + 1 },
-        ]) as unknown as Response,
-      );
+      .mockRejectedValue(new Error("direct fetch"));
+    respondWithRecords([
+      { asset: "AQUA-GBNZ", volume7d: MIN_TRENDING_VOLUME7D + 1 },
+    ]);
 
     await fetchTrendingAssets({ networkDetails: MAINNET });
 
-    const calledUrl = fetchSpy.mock.calls[0][0] as string;
-    expect(calledUrl).toContain("api.stellar.expert/explorer/public/asset");
-    expect(calledUrl).toContain("sort=volume7d");
-    expect(calledUrl).toContain("order=desc");
-    expect(calledUrl).toContain(`limit=${TRENDING_LIMIT}`);
+    expect(mockedSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: SERVICE_TYPES.FETCH_BACKEND_V2,
+        method: "GET",
+      }),
+    );
+    expect(requestedPath()).toBe(
+      `/assets/search?network=PUBLIC&sort=volume7d&order=desc&limit=${TRENDING_LIMIT}`,
+    );
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it("omits sort/order params on testnet", async () => {
-    const fetchSpy = jest
-      .spyOn(global, "fetch")
-      .mockResolvedValue(
-        recordsResponse([
-          { asset: "USDC-GTEST", volume7d: 0 },
-        ]) as unknown as Response,
-      );
+    respondWithRecords([{ asset: "USDC-GTEST", volume7d: 0 }]);
 
     await fetchTrendingAssets({ networkDetails: TESTNET });
 
-    const calledUrl = fetchSpy.mock.calls[0][0] as string;
-    expect(calledUrl).toContain("api.stellar.expert/explorer/testnet/asset");
-    expect(calledUrl).not.toContain("sort=volume7d");
-    expect(calledUrl).not.toContain("order=desc");
-    expect(calledUrl).toContain(`limit=${TRENDING_LIMIT}`);
+    expect(requestedPath()).toBe(
+      `/assets/search?network=TESTNET&limit=${TRENDING_LIMIT}`,
+    );
   });
 
   it("drops mainnet records below the volume floor", async () => {
-    jest.spyOn(global, "fetch").mockResolvedValue(
-      recordsResponse([
-        { asset: "BIG-GBIG", volume7d: MIN_TRENDING_VOLUME7D + 5 },
-        { asset: "SMALL-GSMALL", volume7d: MIN_TRENDING_VOLUME7D - 5 },
-      ]) as unknown as Response,
-    );
+    respondWithRecords([
+      { asset: "BIG-GBIG", volume7d: MIN_TRENDING_VOLUME7D + 5 },
+      { asset: "SMALL-GSMALL", volume7d: MIN_TRENDING_VOLUME7D - 5 },
+    ]);
 
     const result = await fetchTrendingAssets({ networkDetails: MAINNET });
 
@@ -89,16 +94,14 @@ describe("fetchTrendingAssets", () => {
 
   it("keeps Soroban contract tokens, by contract ID and with their decimals", async () => {
     const contract = "CBI7UCH5KGSVQRO5H4SUCZUTZABCITZLRHQQZTWL2TK4RZ72TAR6IHRV";
-    jest.spyOn(global, "fetch").mockResolvedValue(
-      recordsResponse([
-        {
-          asset: contract,
-          code: "TKN",
-          decimals: 6,
-          volume7d: MIN_TRENDING_VOLUME7D + 5,
-        },
-      ]) as unknown as Response,
-    );
+    respondWithRecords([
+      {
+        asset: contract,
+        code: "TKN",
+        decimals: 6,
+        volume7d: MIN_TRENDING_VOLUME7D + 5,
+      },
+    ]);
 
     const result = await fetchTrendingAssets({ networkDetails: MAINNET });
 
@@ -114,13 +117,9 @@ describe("fetchTrendingAssets", () => {
 
   it("names a contract token with no code by its shortened contract ID", async () => {
     const contract = "CBI7UCH5KGSVQRO5H4SUCZUTZABCITZLRHQQZTWL2TK4RZ72TAR6IHRV";
-    jest
-      .spyOn(global, "fetch")
-      .mockResolvedValue(
-        recordsResponse([
-          { asset: contract, decimals: 7, volume7d: MIN_TRENDING_VOLUME7D + 5 },
-        ]) as unknown as Response,
-      );
+    respondWithRecords([
+      { asset: contract, decimals: 7, volume7d: MIN_TRENDING_VOLUME7D + 5 },
+    ]);
 
     const [token] = await fetchTrendingAssets({ networkDetails: MAINNET });
 
@@ -128,32 +127,29 @@ describe("fetchTrendingAssets", () => {
   });
 
   it("keeps every testnet record regardless of volume (floor is a no-op)", async () => {
-    jest.spyOn(global, "fetch").mockResolvedValue(
-      recordsResponse([
-        { asset: "A-GA", volume7d: 0 },
-        { asset: "B-GB", volume7d: 0 },
-      ]) as unknown as Response,
-    );
+    respondWithRecords([
+      { asset: "A-GA", volume7d: 0 },
+      { asset: "B-GB", volume7d: 0 },
+    ]);
 
     const result = await fetchTrendingAssets({ networkDetails: TESTNET });
     expect(result.map((r) => r.code)).toEqual(["A", "B"]);
   });
 
-  it("propagates the error when the fetch rejects (so the picker can flag discovery-down)", async () => {
-    jest.spyOn(global, "fetch").mockRejectedValue(new Error("network down"));
+  it("propagates the error when the request rejects (so the picker can flag discovery-down)", async () => {
+    mockedSend.mockRejectedValue(new Error("network down"));
     await expect(
       fetchTrendingAssets({ networkDetails: MAINNET }),
     ).rejects.toThrow("network down");
   });
 
-  it("throws on a non-ok response instead of returning []", async () => {
-    jest.spyOn(global, "fetch").mockResolvedValue({
-      ok: false,
-      statusText: "Service Unavailable",
-      json: async () => ({}),
-    } as unknown as Response);
+  it("throws on a non-200 response instead of returning []", async () => {
+    mockedSend.mockResolvedValue({
+      status: 503,
+      body: { error: "asset search temporarily unavailable" },
+    });
     await expect(
       fetchTrendingAssets({ networkDetails: MAINNET }),
-    ).rejects.toThrow("Service Unavailable");
+    ).rejects.toThrow("503");
   });
 });

@@ -7,15 +7,16 @@
  *  3. XLM-reserve pre-flight sheet (low-XLM account)
  *  4. Blockaid-flagged destination: malicious warning at review
  *  5. Search: Soroban contract address: empty Soroban state
- *  6. stellar.expert unreachable fallback: fallback-notice shown
+ *  6. Asset search unreachable fallback: fallback-notice shown
  *  7. Testnet: blockaid badges absent
  *
- * Stub URL shapes:
- *  - Asset search:  getApiStellarExpertUrl(networkDetails) + "/asset?search=" + term
- *                   pattern: "** /asset?search**" (already in stubAllExternalApis via stubAssetSearch)
- *  - Popular fetch: mainnet ".../asset?sort=volume7d&order=desc&limit=50"
- *                   testnet ".../asset?limit=50"
- *                   patterns: "** /asset?sort=volume7d**" or "** /asset?limit=50**"
+ * Stub URL shapes (asset search and Popular go through freighter-backend-v2
+ * from the background service worker, so they're stubbed on the context):
+ *  - Asset search:  ".../assets/search?network=PUBLIC&search=" + term
+ *                   ASSET_SEARCH_ROUTE (already in stubAllExternalApis via stubAssetSearch)
+ *  - Popular fetch: mainnet ".../assets/search?network=PUBLIC&sort=volume7d&order=desc&limit=50"
+ *                   testnet ".../assets/search?network=TESTNET&limit=50"
+ *                   TRENDING_ASSETS_ROUTE or TESTNET_TRENDING_ASSETS_ROUTE
  *  - scan-tx:       "** /scan-tx**" (registered by stubScanTx in stubAllExternalApis)
  *
  * testid index:
@@ -42,12 +43,16 @@ import { test, expect } from "./test-fixtures";
 import { Page } from "@playwright/test";
 import { loginToTestAccount, switchToMainnet } from "./helpers/login";
 import {
+  ASSET_SEARCH_ROUTE,
+  assetSearchResponse,
   stubAccountBalancesV2,
   stubScanAssetSafe,
   stubScanTxMalicious,
   stubScanTxSafe,
   stubSwapQuotes,
   stubSwapTx,
+  TESTNET_TRENDING_ASSETS_ROUTE,
+  TRENDING_ASSETS_ROUTE,
 } from "./helpers/stubs";
 // A Soroban-only token's contract address.
 const SOROBAN_CONTRACT_ADDRESS =
@@ -149,24 +154,20 @@ test("a quote that moved before the build shows the quote-expired toast", async 
   test.slow();
 
   const stubOverrides = async () => {
-    await page.unroute("**/asset?search**");
-    await page.route("**/asset?search**", (route) =>
-      route.fulfill({
-        json: {
-          _embedded: {
-            records: [
-              {
-                asset:
-                  "AQUA-GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
-                volume7d: 1_000_000_000_000,
-              },
-            ],
+    await context.unroute(ASSET_SEARCH_ROUTE);
+    await context.route(ASSET_SEARCH_ROUTE, (route) =>
+      route.fulfill(
+        assetSearchResponse([
+          {
+            asset:
+              "AQUA-GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
+            volume7d: 1_000_000_000_000,
           },
-        },
-      }),
+        ]),
+      ),
     );
-    await page.route("**/asset?sort=volume7d**", (route) =>
-      route.fulfill({ json: { _embedded: { records: [] } } }),
+    await context.route(TRENDING_ASSETS_ROUTE, (route) =>
+      route.fulfill(assetSearchResponse([])),
     );
     await stubSwapQuotes(context, { toAmount: "0.95" });
     await stubSwapTx(context, { status: 409 });
@@ -207,45 +208,37 @@ test("swap to new token shows trustline banner at review", async ({
   test.slow();
 
   const stubOverrides = async () => {
-    // Stub stellar.expert asset search to return AQUA.
-    // Real URL: https://api.stellar.expert/explorer/public/asset?search=AQUA
-    // Pattern matches stubAssetSearch in stubs.ts: "**/asset?search**"
-    await page.unroute("**/asset?search**");
-    await page.route("**/asset?search**", (route) =>
-      route.fulfill({
-        json: {
-          _embedded: {
-            records: [
-              {
-                asset: `AQUA-GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA`,
-                num_accounts: 50000,
-                num_trades: 100000,
-                bidding_liabilities: "1000000",
-                asking_liabilities: "2000000",
-                volume7d: 1_000_000_000_000,
-              },
-            ],
+    // Stub the asset search to return AQUA.
+    // Real URL: <INDEXER_V2_URL>/assets/search?network=PUBLIC&search=aqua
+    // Same route as stubAssetSearch in stubs.ts: ASSET_SEARCH_ROUTE
+    await context.unroute(ASSET_SEARCH_ROUTE);
+    await context.route(ASSET_SEARCH_ROUTE, (route) =>
+      route.fulfill(
+        assetSearchResponse([
+          {
+            asset: `AQUA-GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA`,
+            num_accounts: 50000,
+            num_trades: 100000,
+            bidding_liabilities: "1000000",
+            asking_liabilities: "2000000",
+            volume7d: 1_000_000_000_000,
           },
-        },
-      }),
+        ]),
+      ),
     );
     // Also stub the popular-tokens fetch (mainnet: sort=volume7d) so the idle
-    // picker state has data without hitting the real stellar.expert.
-    await page.route("**/asset?sort=volume7d**", (route) =>
-      route.fulfill({
-        json: {
-          _embedded: {
-            records: [
-              {
-                asset:
-                  "AQUA-GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
-                volume7d: 1_000_000_000_000,
-                domain: "aquarius.world",
-              },
-            ],
+    // picker state has data without hitting the real backend.
+    await context.route(TRENDING_ASSETS_ROUTE, (route) =>
+      route.fulfill(
+        assetSearchResponse([
+          {
+            asset:
+              "AQUA-GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
+            volume7d: 1_000_000_000_000,
+            domain: "aquarius.world",
           },
-        },
-      }),
+        ]),
+      ),
     );
   };
 
@@ -333,26 +326,20 @@ test("shows XLM-reserve sheet when balance cannot cover the reserve", async ({
     );
     await stubAccountBalancesV2(page, balancesJson);
     // Stub search so AQUA appears in results
-    await page.unroute("**/asset?search**");
-    await page.route("**/asset?search**", (route) =>
-      route.fulfill({
-        json: {
-          _embedded: {
-            records: [
-              {
-                asset:
-                  "AQUA-GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
-                volume7d: 1_000_000_000_000,
-              },
-            ],
+    await context.unroute(ASSET_SEARCH_ROUTE);
+    await context.route(ASSET_SEARCH_ROUTE, (route) =>
+      route.fulfill(
+        assetSearchResponse([
+          {
+            asset:
+              "AQUA-GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
+            volume7d: 1_000_000_000_000,
           },
-        },
-      }),
+        ]),
+      ),
     );
-    await page.route("**/asset?sort=volume7d**", (route) =>
-      route.fulfill({
-        json: { _embedded: { records: [] } },
-      }),
+    await context.route(TRENDING_ASSETS_ROUTE, (route) =>
+      route.fulfill(assetSearchResponse([])),
     );
   };
 
@@ -394,23 +381,19 @@ test("flagged destination surfaces blockaid malicious warning at review", async 
 
   const stubOverrides = async () => {
     // Override asset search to return a "scam" token
-    await page.unroute("**/asset?search**");
-    await page.route("**/asset?search**", (route) =>
-      route.fulfill({
-        json: {
-          _embedded: {
-            records: [
-              {
-                asset:
-                  "SCAM-GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
-              },
-            ],
+    await context.unroute(ASSET_SEARCH_ROUTE);
+    await context.route(ASSET_SEARCH_ROUTE, (route) =>
+      route.fulfill(
+        assetSearchResponse([
+          {
+            asset:
+              "SCAM-GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
           },
-        },
-      }),
+        ]),
+      ),
     );
-    await page.route("**/asset?sort=volume7d**", (route) =>
-      route.fulfill({ json: { _embedded: { records: [] } } }),
+    await context.route(TRENDING_ASSETS_ROUTE, (route) =>
+      route.fulfill(assetSearchResponse([])),
     );
     // Stub a swap path so the simulation succeeds and reaches the review
     // screen (where the transaction scan runs). Without this the swap dies at
@@ -454,20 +437,16 @@ test("search with a Soroban contract address lists the contract token", async ({
   test.slow();
 
   const stubOverrides = async () => {
-    await page.unroute("**/asset?search**");
-    await page.route("**/asset?search**", (route) =>
-      route.fulfill({
-        json: {
-          _embedded: {
-            records: [
-              { asset: SOROBAN_CONTRACT_ADDRESS, code: "TKN", decimals: 18 },
-            ],
-          },
-        },
-      }),
+    await context.unroute(ASSET_SEARCH_ROUTE);
+    await context.route(ASSET_SEARCH_ROUTE, (route) =>
+      route.fulfill(
+        assetSearchResponse([
+          { asset: SOROBAN_CONTRACT_ADDRESS, code: "TKN", decimals: 18 },
+        ]),
+      ),
     );
-    await page.route("**/asset?sort=volume7d**", (route) =>
-      route.fulfill({ json: { _embedded: { records: [] } } }),
+    await context.route(TRENDING_ASSETS_ROUTE, (route) =>
+      route.fulfill(assetSearchResponse([])),
     );
   };
 
@@ -487,12 +466,12 @@ test("search with a Soroban contract address lists the contract token", async ({
 });
 
 // ---------------------------------------------------------------------------
-// 6. stellar.expert unreachable → fallback notice + held-only tokens
+// 6. Asset search unreachable → fallback notice + held-only tokens
 //    When the asset search AND popular-tokens fetch both fail (network abort),
 //    the picker falls back to showing only held tokens and displays the
 //    "Token discovery is temporarily unavailable" soft notice.
 // ---------------------------------------------------------------------------
-test("stellar.expert unreachable falls back to held-only with fallback notice", async ({
+test("asset search unreachable falls back to held-only with fallback notice", async ({
   page,
   extensionId,
   context,
@@ -502,13 +481,15 @@ test("stellar.expert unreachable falls back to held-only with fallback notice", 
   const stubOverrides = async () => {
     // Abort both the popular-tokens fetch (mainnet and testnet shapes) and any
     // asset search so the lookup lands in the isFallback=true branch.
-    await page.unroute("**/asset?search**");
-    await page.route("**/asset?search**", (route) => route.abort("failed"));
-    await page.route("**/asset?sort=volume7d**", (route) =>
+    await context.unroute(ASSET_SEARCH_ROUTE);
+    await context.route(ASSET_SEARCH_ROUTE, (route) => route.abort("failed"));
+    await context.route(TRENDING_ASSETS_ROUTE, (route) =>
       route.abort("failed"),
     );
     // Testnet popular uses limit=50 without sort params
-    await page.route("**/asset?limit=50**", (route) => route.abort("failed"));
+    await context.route(TESTNET_TRENDING_ASSETS_ROUTE, (route) =>
+      route.abort("failed"),
+    );
   };
 
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
@@ -573,23 +554,19 @@ test("flagged non-held destination stacks trustline and Blockaid banners", async
 
   const stubOverrides = async () => {
     // Search returns a non-held "SCAM" token (no trustline yet).
-    await page.unroute("**/asset?search**");
-    await page.route("**/asset?search**", (route) =>
-      route.fulfill({
-        json: {
-          _embedded: {
-            records: [
-              {
-                asset:
-                  "SCAM-GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
-              },
-            ],
+    await context.unroute(ASSET_SEARCH_ROUTE);
+    await context.route(ASSET_SEARCH_ROUTE, (route) =>
+      route.fulfill(
+        assetSearchResponse([
+          {
+            asset:
+              "SCAM-GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
           },
-        },
-      }),
+        ]),
+      ),
     );
-    await page.route("**/asset?sort=volume7d**", (route) =>
-      route.fulfill({ json: { _embedded: { records: [] } } }),
+    await context.route(TRENDING_ASSETS_ROUTE, (route) =>
+      route.fulfill(assetSearchResponse([])),
     );
     // Path so the simulation succeeds and reaches review.
     await stubSwapQuotes(context, { toAmount: "0.95" });
@@ -674,37 +651,29 @@ test("completes a swap to a new token and shows the success summary", async ({
     "GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA";
 
   const stubOverrides = async () => {
-    await page.unroute("**/asset?search**");
-    await page.route("**/asset?search**", (route) =>
-      route.fulfill({
-        json: {
-          _embedded: {
-            records: [
-              {
-                asset: `AQUA-${AQUA_ISSUER}`,
-                num_accounts: 50000,
-                num_trades: 100000,
-                volume7d: 1_000_000_000_000,
-              },
-            ],
+    await context.unroute(ASSET_SEARCH_ROUTE);
+    await context.route(ASSET_SEARCH_ROUTE, (route) =>
+      route.fulfill(
+        assetSearchResponse([
+          {
+            asset: `AQUA-${AQUA_ISSUER}`,
+            num_accounts: 50000,
+            num_trades: 100000,
+            volume7d: 1_000_000_000_000,
           },
-        },
-      }),
+        ]),
+      ),
     );
-    await page.route("**/asset?sort=volume7d**", (route) =>
-      route.fulfill({
-        json: {
-          _embedded: {
-            records: [
-              {
-                asset: `AQUA-${AQUA_ISSUER}`,
-                volume7d: 1_000_000_000_000,
-                domain: "aquarius.world",
-              },
-            ],
+    await context.route(TRENDING_ASSETS_ROUTE, (route) =>
+      route.fulfill(
+        assetSearchResponse([
+          {
+            asset: `AQUA-${AQUA_ISSUER}`,
+            volume7d: 1_000_000_000_000,
+            domain: "aquarius.world",
           },
-        },
-      }),
+        ]),
+      ),
     );
     // Path so the swap simulates and builds a prepared transaction to submit.
     await stubSwapQuotes(context, { toAmount: "0.95" });
@@ -882,25 +851,21 @@ test("recovers to the amount screen when the swap quote expires at submit", asyn
     "GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA";
 
   const stubOverrides = async () => {
-    await page.unroute("**/asset?search**");
-    await page.route("**/asset?search**", (route) =>
-      route.fulfill({
-        json: {
-          _embedded: {
-            records: [
-              {
-                asset: `AQUA-${AQUA_ISSUER}`,
-                num_accounts: 50000,
-                num_trades: 100000,
-                volume7d: 1_000_000_000_000,
-              },
-            ],
+    await context.unroute(ASSET_SEARCH_ROUTE);
+    await context.route(ASSET_SEARCH_ROUTE, (route) =>
+      route.fulfill(
+        assetSearchResponse([
+          {
+            asset: `AQUA-${AQUA_ISSUER}`,
+            num_accounts: 50000,
+            num_trades: 100000,
+            volume7d: 1_000_000_000_000,
           },
-        },
-      }),
+        ]),
+      ),
     );
-    await page.route("**/asset?sort=volume7d**", (route) =>
-      route.fulfill({ json: { _embedded: { records: [] } } }),
+    await context.route(TRENDING_ASSETS_ROUTE, (route) =>
+      route.fulfill(assetSearchResponse([])),
     );
     await stubSwapQuotes(context, { toAmount: "0.95" });
     await stubSwapTx(context, { addsTrustline: true });
@@ -970,12 +935,14 @@ test("swap picker fallback still lists held tokens", async ({
 
   const stubOverrides = async () => {
     // Discovery down (search + popular fail) → fallback branch.
-    await page.unroute("**/asset?search**");
-    await page.route("**/asset?search**", (route) => route.abort("failed"));
-    await page.route("**/asset?sort=volume7d**", (route) =>
+    await context.unroute(ASSET_SEARCH_ROUTE);
+    await context.route(ASSET_SEARCH_ROUTE, (route) => route.abort("failed"));
+    await context.route(TRENDING_ASSETS_ROUTE, (route) =>
       route.abort("failed"),
     );
-    await page.route("**/asset?limit=50**", (route) => route.abort("failed"));
+    await context.route(TESTNET_TRENDING_ASSETS_ROUTE, (route) =>
+      route.abort("failed"),
+    );
     // The account still holds USDC (besides XLM), so the held-only fallback has
     // something to show and remains usable.
     const balancesJson = {
