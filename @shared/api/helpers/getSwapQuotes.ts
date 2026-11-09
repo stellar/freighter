@@ -1,8 +1,5 @@
-import { captureException } from "@sentry/browser";
-
 import { SwapQuoteMode, SwapQuotesResponse } from "../types/backend-api";
-import { fetchBackendV2 } from "./fetchBackendV2";
-import { redactErrorBody } from "./redactErrorBody";
+import { postSwapBackend } from "./postSwapBackend";
 
 export type SwapQuotesErrorKind = "badRequest" | "unavailable";
 
@@ -16,7 +13,7 @@ export class SwapQuotesError extends Error {
   }
 }
 
-export const getSwapQuotes = async ({
+export const getSwapQuotes = ({
   network,
   account,
   mode,
@@ -30,31 +27,15 @@ export const getSwapQuotes = async ({
   fromAsset: string;
   toAsset: string;
   amount: string;
-}): Promise<SwapQuotesResponse> => {
-  let status: number;
-  let body: unknown;
-  try {
-    ({ status, body } = await fetchBackendV2({
-      method: "POST",
-      path: `/swap/quotes?network=${network}`,
-      body: JSON.stringify({ account, mode, fromAsset, toAsset, amount }),
-    }));
-  } catch (e) {
-    const message = `Failed to reach swap quotes - ${e instanceof Error ? e.message : String(e)}`;
-    captureException(message);
-    throw new SwapQuotesError("unavailable", message);
-  }
-
-  const data = (body as { data?: SwapQuotesResponse } | null)?.data;
-  if (status === 200 && Array.isArray(data?.routes)) {
-    return data;
-  }
-
-  const message = `Failed to fetch swap quotes - ${status}: ${redactErrorBody(body)}`;
-  // A 400 is the input (e.g. an unfunded account), not an outage.
-  if (status === 400) {
-    throw new SwapQuotesError("badRequest", message);
-  }
-  captureException(message);
-  throw new SwapQuotesError("unavailable", message);
-};
+}): Promise<SwapQuotesResponse> =>
+  postSwapBackend({
+    path: `/swap/quotes?network=${network}`,
+    body: { account, mode, fromAsset, toAsset, amount },
+    isValid: (data): data is SwapQuotesResponse =>
+      Array.isArray((data as SwapQuotesResponse | undefined)?.routes),
+    // A 400 is the input (e.g. an unfunded account), not an outage.
+    quietStatuses: { 400: "badRequest" as const },
+    toError: (kind, message) => new SwapQuotesError(kind, message),
+    unreachableMessage: "Failed to reach swap quotes",
+    failedMessage: "Failed to fetch swap quotes",
+  });
