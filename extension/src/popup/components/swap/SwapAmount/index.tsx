@@ -521,6 +521,9 @@ export const SwapAmount = ({
     }
   };
 
+  // Review shows the built transaction, not the quote or the inputs.
+  const reviewed = simulationState.data?.decoded;
+
   const ctaLabels: Record<SwapCtaLabelKey, string> = {
     select: t("Select a token"),
     enter: t("Enter an amount"),
@@ -912,7 +915,7 @@ export const SwapAmount = ({
         {isReviewingTx ? (
           <ReviewTx
             assetIcon={assetIcon}
-            fee={fee}
+            fee={reviewed?.fee ?? fee}
             networkDetails={networkDetails}
             onCancel={() => setIsReviewingTx(false)}
             // The trustline-added + swap-success metrics fire post-confirmation
@@ -923,7 +926,7 @@ export const SwapAmount = ({
               goToNext();
             }}
             onEditSettings={openSettingsFromReview}
-            sendAmount={amount}
+            sendAmount={reviewed?.sendAmount ?? amount}
             // Show the same fiat figure the amount screen displayed: the
             // entered dollars in fiat mode, the computed USD of the crypto
             // amount in crypto mode.
@@ -943,10 +946,7 @@ export const SwapAmount = ({
             destinationTokenDetails={transactionData.destinationTokenDetails}
             sourceTokenSecurityLevel={sourceTokenSecurityLevel}
             sourceTokenSecurityWarnings={sourceTokenSecurityWarnings}
-            // Balances-derived, so the trustline disclosure also renders for
-            // defaulted/deep-linked destinations that have no pick-time
-            // snapshot — the same flag that made getBuiltTx add the op.
-            requiresTrustline={destRequiresTrustline}
+            requiresTrustline={reviewed?.addsTrustline ?? destRequiresTrustline}
           />
         ) : (
           <></>

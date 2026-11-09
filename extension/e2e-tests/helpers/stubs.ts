@@ -1,4 +1,11 @@
 import { BrowserContext, Page } from "@playwright/test";
+import {
+  Account,
+  Asset,
+  Networks,
+  Operation,
+  TransactionBuilder,
+} from "stellar-sdk";
 import { USDC_TOKEN_ADDRESS, TEST_TOKEN_ADDRESS } from "./test-token";
 
 export const createAssetObject = (assetCode: string | null, issuer: string) => {
@@ -1079,6 +1086,62 @@ export const stubSwapQuotes = async (
         },
       },
     });
+  });
+};
+
+const backendAsset = (asset: string) => {
+  if (asset === "XLM") {
+    return Asset.native();
+  }
+  const [code, issuer] = asset.split(":");
+  return new Asset(code, issuer);
+};
+
+/**
+ * freighter-backend-v2 `POST /swap/tx`, sent from the service worker. Builds
+ * the classic transaction the backend would: a path payment of the request,
+ * after a changeTrust when `addsTrustline`. `status` other than 200 answers
+ * with that error instead (409 is quote_moved).
+ */
+export const stubSwapTx = async (
+  context: BrowserContext,
+  {
+    addsTrustline = false,
+    status = 200,
+  }: { addsTrustline?: boolean; status?: number } = {},
+) => {
+  await context.route("**/swap/tx**", async (route) => {
+    if (status !== 200) {
+      await route.fulfill({ status, json: { error: "stubbed" } });
+      return;
+    }
+    const req = route.request().postDataJSON();
+    const network = new URL(route.request().url()).searchParams.get("network");
+    const builder = new TransactionBuilder(new Account(req.account, "1"), {
+      fee: "100",
+      networkPassphrase:
+        network === "PUBLIC" ? Networks.PUBLIC : Networks.TESTNET,
+    });
+    if (addsTrustline) {
+      builder.addOperation(
+        Operation.changeTrust({ asset: backendAsset(req.toAsset) }),
+      );
+    }
+    const xdr = builder
+      .addOperation(
+        Operation.pathPaymentStrictSend({
+          sendAsset: backendAsset(req.fromAsset),
+          sendAmount: req.amount,
+          destination: req.account,
+          destAsset: backendAsset(req.toAsset),
+          destMin: req.minOut,
+          path: [],
+        }),
+      )
+      .setTimeout(req.timeout)
+      .build()
+      .toXDR();
+    await route.fulfill({ json: { data: { xdr, addsTrustline } } });
   });
 };
 
@@ -3489,6 +3552,7 @@ export const stubAllExternalApis = async (
   await stubScanDapp(context);
 
   await stubSwapQuotes(context);
+  await stubSwapTx(context);
 };
 
 export const stubBackendSettings = async (page: Page) => {

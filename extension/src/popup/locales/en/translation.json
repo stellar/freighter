@@ -1,4 +1,7 @@
 {
+  "No path found for swap.": "No path found for swap.",
+  "Swapping custom tokens is not supported yet.": "Swapping custom tokens is not supported yet.",
+  "We had an issue retrieving your transaction details. Please try again.": "We had an issue retrieving your transaction details. Please try again.",
   "{{appName}} disconnected": "{{appName}} disconnected",
   "{{code}} hidden": "{{code}} hidden",
   "{{code}} unhidden": "{{code}} unhidden",

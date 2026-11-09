@@ -93,12 +93,12 @@ export const isSameSwapQuoteKey = (
 // no route.
 const CLASSIC_OUTAGE_REASONS = ["error", "timeout", "rate_limited"];
 
-// The client still builds a classic path payment itself, so only the classic
-// route is usable, even when another source quotes better.
-export const pickSwapRoute = (quotes: SwapQuotesResponse) =>
-  quotes.routes.find((route) => route.source === "classic");
+// The backend ranks routes best first.
+export const pickSwapRoute = (
+  quotes: SwapQuotesResponse,
+): SwapRoute | undefined => quotes.routes[0];
 
-const toBackendAsset = (canonical: string) => {
+export const toBackendAsset = (canonical: string) => {
   if (isNativeAssetId(canonical)) {
     return "XLM";
   }

@@ -1,11 +1,21 @@
 import React from "react";
 import { act, renderHook } from "@testing-library/react";
-import { Asset, TransactionBuilder } from "stellar-sdk";
+import {
+  Account,
+  Asset,
+  Networks,
+  Operation,
+  TransactionBuilder,
+} from "stellar-sdk";
 
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import * as FetchBackendV2 from "@shared/api/helpers/fetchBackendV2";
+import { getAssetFromCanonical } from "@shared/helpers/stellar";
 import { Wrapper, getTestStore } from "popup/__testHelpers__";
-import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
+import {
+  initialState as transactionSubmissionInitialState,
+  saveSimulation,
+} from "popup/ducks/transactionSubmission";
 import * as Blockaid from "popup/helpers/blockaid";
 import * as HorizonGetBestPath from "popup/helpers/horizonGetBestPath";
 
@@ -61,9 +71,65 @@ const storedKey = {
 const storedQuote = {
   destinationAmount: "1.6",
   path: [] as string[],
-  swapQuotes: quotes,
+  swapQuotes: {
+    ...quotes,
+    routes: [{ ...quotes.routes[0], toAmount: "1.6" }],
+  },
   swapQuoteKey: storedKey,
 };
+
+const backendAsset = (a: string) =>
+  a === "XLM" ? Asset.native() : (getAssetFromCanonical(a) as Asset);
+
+// /swap/tx as #178's classic source builds it, from the request.
+const classicBuild = (req: any) =>
+  new TransactionBuilder(new Account(req.account, "1"), {
+    fee: "100",
+    networkPassphrase: Networks.PUBLIC,
+  })
+    .addOperation(
+      Operation.pathPaymentStrictSend({
+        sendAsset: backendAsset(req.fromAsset),
+        sendAmount: req.amount,
+        destination: req.account,
+        destAsset: backendAsset(req.toAsset),
+        destMin: req.minOut,
+        path: req.paths[0].hops
+          .slice(1)
+          .map((h: { from: string }) => backendAsset(h.from)),
+      }),
+    )
+    .setTimeout(req.timeout)
+    .build()
+    .toXDR();
+
+const answer = (
+  quotesResponse: unknown,
+  tx: { status: number; build?: (req: any) => string } = {
+    status: 200,
+    build: classicBuild,
+  },
+) =>
+  jest.fn(async ({ path, body }: { path: string; body: string }) => {
+    if (path.startsWith("/swap/quotes")) {
+      return { status: 200, body: { data: quotesResponse } };
+    }
+    if (tx.status !== 200 || !tx.build) {
+      return { status: tx.status, body: { error: "x" } };
+    }
+    return {
+      status: 200,
+      body: { data: { xdr: tx.build(JSON.parse(body)), addsTrustline: false } },
+    };
+  });
+
+const txRequest = (spy: jest.SpyInstance) =>
+  JSON.parse(
+    spy.mock.calls.find(([{ path }]) => path.startsWith("/swap/tx"))[0].body,
+  );
+
+const quoteCalls = (spy: jest.SpyInstance) =>
+  spy.mock.calls.filter(([{ path }]) => path.startsWith("/swap/quotes"));
 
 const renderSimulate = (
   stored: Record<string, unknown> = {
@@ -124,7 +190,7 @@ describe("useSimulateTxData quote when no live quote exists", () => {
   afterEach(() => jest.restoreAllMocks());
 
   it("builds the path payment from the backend's classic route", async () => {
-    fetchBackendV2.mockResolvedValue({ status: 200, body: { data: quotes } });
+    fetchBackendV2.mockImplementation(answer(quotes));
     const { result } = renderSimulate();
 
     let payload: any;
@@ -151,6 +217,174 @@ describe("useSimulateTxData quote when no live quote exists", () => {
       getTestStore()!.getState().transactionSubmission;
     expect(transactionData.swapQuotes).toEqual(quotes);
   });
+
+  it("sends the route, minOut, slippage, fee and timeout to /swap/tx", async () => {
+    fetchBackendV2.mockImplementation(answer(quotes));
+    const { result } = renderSimulate();
+
+    await act(async () => {
+      await result.current.fetchData({ amount: "10" });
+    });
+
+    expect(fetchBackendV2).toHaveBeenCalledWith(
+      expect.objectContaining({ path: "/swap/tx?network=PUBLIC" }),
+    );
+    expect(txRequest(fetchBackendV2)).toEqual({
+      account: PUBLIC_KEY,
+      source: "classic",
+      fromAsset: "XLM",
+      toAsset: USDC,
+      amount: "10",
+      minOut: "1.485",
+      fee: "0.00001",
+      slippage: "1",
+      timeout: 180,
+      paths: quotes.routes[0].paths,
+    });
+  });
+
+  it("builds the backend's best route even when it is not classic", async () => {
+    const lifiFirst = {
+      ...quotes,
+      routes: [
+        {
+          source: "lifi",
+          fromAmount: "10",
+          toAmount: "2",
+          paths: [
+            {
+              share: "1",
+              hops: [{ venue: "Aquarius", from: "XLM", to: USDC, pool: "p" }],
+            },
+          ],
+          fees: [],
+        },
+        ...quotes.routes,
+      ],
+    };
+    fetchBackendV2.mockImplementation(answer(lifiFirst));
+    const { result } = renderSimulate();
+
+    await act(async () => {
+      await result.current.fetchData({ amount: "10" });
+    });
+
+    expect(txRequest(fetchBackendV2)).toMatchObject({
+      source: "lifi",
+      minOut: "1.98",
+    });
+  });
+
+  it("returns the review values decoded from the built transaction", async () => {
+    // A build that sells less than asked must show what it sells.
+    fetchBackendV2.mockImplementation(
+      answer(quotes, {
+        status: 200,
+        build: (req) => classicBuild({ ...req, amount: "9" }),
+      }),
+    );
+    const { result } = renderSimulate();
+
+    let payload: any;
+    await act(async () => {
+      payload = await result.current.fetchData({ amount: "10" });
+    });
+
+    expect(payload.decoded).toEqual({
+      sendAmount: "9",
+      minReceived: "1.485",
+      fee: "0.00001",
+      addsTrustline: false,
+    });
+  });
+
+  it("refuses a built transaction that pays another account", async () => {
+    fetchBackendV2.mockImplementation(
+      answer(quotes, {
+        status: 200,
+        build: (req) =>
+          new TransactionBuilder(new Account(req.account, "1"), {
+            fee: "100",
+            networkPassphrase: Networks.PUBLIC,
+          })
+            .addOperation(
+              Operation.pathPaymentStrictSend({
+                sendAsset: Asset.native(),
+                sendAmount: req.amount,
+                destination: USDC_ISSUER,
+                destAsset: backendAsset(req.toAsset),
+                destMin: req.minOut,
+              }),
+            )
+            .setTimeout(180)
+            .build()
+            .toXDR(),
+      }),
+    );
+    const { result } = renderSimulate();
+
+    await act(async () => {
+      await result.current.fetchData({ amount: "10" });
+    });
+
+    expect(result.current.state.state).toBe("ERROR");
+    expect(
+      getTestStore()!.getState().transactionSubmission.transactionSimulation
+        .preparedTransaction,
+    ).toBeNull();
+  });
+
+  it("treats a 409 quote_moved as an expired quote and re-quotes next time", async () => {
+    fetchBackendV2.mockImplementation(answer(quotes, { status: 409 }));
+    const { result } = renderSimulate(storedQuote);
+
+    await act(async () => {
+      await result.current.fetchData({ amount: "10" });
+    });
+
+    expect(result.current.isQuoteExpired).toBe(true);
+    expect(result.current.state.error).toBe(
+      "Quote has expired, please try again to get a new quote",
+    );
+    expect(
+      getTestStore()!.getState().transactionSubmission.transactionData
+        .swapQuoteKey,
+    ).toBeNull();
+  });
+
+  it("drops the previous review's transaction when a rebuild fails", async () => {
+    fetchBackendV2.mockImplementation(answer(quotes, { status: 503 }));
+    const { result } = renderSimulate();
+    getTestStore()!.dispatch(
+      saveSimulation({ response: null, preparedTransaction: "OLD_XDR" }),
+    );
+
+    await act(async () => {
+      await result.current.fetchData({ amount: "10" });
+    });
+
+    expect(
+      getTestStore()!.getState().transactionSubmission.transactionSimulation
+        .preparedTransaction,
+    ).toBeNull();
+  });
+
+  it.each([502, 503])(
+    "reports swaps unavailable when the build is a %s",
+    async (status) => {
+      fetchBackendV2.mockImplementation(answer(quotes, { status }));
+      const { result } = renderSimulate();
+
+      await act(async () => {
+        await result.current.fetchData({ amount: "10" });
+      });
+
+      expect(result.current.state.error).toBe(
+        "Swaps are temporarily unavailable",
+      );
+      expect(result.current.isQuoteExpired).toBe(false);
+    },
+  );
 
   it("reports swaps unavailable when the backend can't quote", async () => {
     fetchBackendV2.mockResolvedValue({ status: 503, body: {} });
@@ -179,7 +413,7 @@ describe("useSimulateTxData quote when no live quote exists", () => {
     expect(result.current.state.error).toBe("No quote available");
   });
 
-  it("reports no path when the response has no classic route", async () => {
+  it("reports no path when the response has no route", async () => {
     fetchBackendV2.mockResolvedValue({
       status: 200,
       body: { data: { routes: [], unavailable: [] } },
@@ -204,6 +438,7 @@ describe("useSimulateTxData quote when no live quote exists", () => {
       ).operations[0];
 
     it("reuses it when it answered these exact inputs", async () => {
+      fetchBackendV2.mockImplementation(answer(storedQuote.swapQuotes));
       const { result } = renderSimulate(storedQuote);
 
       let payload: any;
@@ -211,27 +446,27 @@ describe("useSimulateTxData quote when no live quote exists", () => {
         payload = await result.current.fetchData({ amount: "10" });
       });
 
-      expect(fetchBackendV2).not.toHaveBeenCalled();
+      expect(quoteCalls(fetchBackendV2)).toHaveLength(0);
       // 1.6 less 1% slippage
       expect(opOf(payload).destMin).toBe("1.5840000");
     });
 
     it("re-quotes when the amount changed before the debounced quote landed", async () => {
-      fetchBackendV2.mockResolvedValue({ status: 200, body: { data: quotes } });
+      fetchBackendV2.mockImplementation(answer(quotes));
       const { result } = renderSimulate(storedQuote);
 
       await act(async () => {
         await result.current.fetchData({ amount: "100" });
       });
 
-      expect(fetchBackendV2).toHaveBeenCalledTimes(1);
-      expect(JSON.parse(fetchBackendV2.mock.calls[0][0].body).amount).toBe(
+      expect(quoteCalls(fetchBackendV2)).toHaveLength(1);
+      expect(JSON.parse(quoteCalls(fetchBackendV2)[0][0].body).amount).toBe(
         "100",
       );
     });
 
     it("re-quotes when the stored quote was for another destination", async () => {
-      fetchBackendV2.mockResolvedValue({ status: 200, body: { data: quotes } });
+      fetchBackendV2.mockImplementation(answer(quotes));
       const { result } = renderSimulate({
         ...storedQuote,
         swapQuoteKey: { ...storedKey, destAsset: AQUA },
@@ -241,11 +476,11 @@ describe("useSimulateTxData quote when no live quote exists", () => {
         await result.current.fetchData({ amount: "10" });
       });
 
-      expect(fetchBackendV2).toHaveBeenCalledTimes(1);
+      expect(quoteCalls(fetchBackendV2)).toHaveLength(1);
     });
 
     it("re-quotes when the stored quote has no key (expired at submit)", async () => {
-      fetchBackendV2.mockResolvedValue({ status: 200, body: { data: quotes } });
+      fetchBackendV2.mockImplementation(answer(quotes));
       const { result } = renderSimulate({ ...storedQuote, swapQuoteKey: null });
 
       let payload: any;
@@ -253,7 +488,7 @@ describe("useSimulateTxData quote when no live quote exists", () => {
         payload = await result.current.fetchData({ amount: "10" });
       });
 
-      expect(fetchBackendV2).toHaveBeenCalledTimes(1);
+      expect(quoteCalls(fetchBackendV2)).toHaveLength(1);
       // fresh quote's 1.5, not the stored 1.6
       expect(opOf(payload).destMin).toBe("1.4850000");
     });

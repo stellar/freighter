@@ -48,6 +48,7 @@ import {
   stubScanTxMalicious,
   stubScanTxSafe,
   stubSwapQuotes,
+  stubSwapTx,
 } from "./helpers/stubs";
 // Soroban contract address — searching for this should produce the Soroban empty state.
 const SOROBAN_CONTRACT_ADDRESS =
@@ -141,6 +142,58 @@ test("held-to-held swap reaches review screen", async ({
   });
 });
 
+test("a quote that moved before the build shows the quote-expired toast", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+
+  const stubOverrides = async () => {
+    await page.unroute("**/asset?search**");
+    await page.route("**/asset?search**", (route) =>
+      route.fulfill({
+        json: {
+          _embedded: {
+            records: [
+              {
+                asset:
+                  "AQUA-GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
+                volume7d: 1_000_000_000_000,
+              },
+            ],
+          },
+        },
+      }),
+    );
+    await page.route("**/asset?sort=volume7d**", (route) =>
+      route.fulfill({ json: { _embedded: { records: [] } } }),
+    );
+    await stubSwapQuotes(context, { toAmount: "0.95" });
+    await stubSwapTx(context, { status: 409 });
+  };
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await switchToMainnet(page);
+
+  await page.getByTestId("nav-link-swap").click();
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
+  await openSwapToPicker(page);
+  await page.getByTestId("swap-from-search").fill("AQUA");
+  await page.getByText("AQUA").first().click({ force: true });
+  await page
+    .getByTestId("swap-sell-card")
+    .getByTestId("send-amount-amount-input")
+    .fill("1");
+  await page.getByTestId("swap-amount-btn-continue").click({ force: true });
+
+  await expect(
+    page
+      .getByText("Quote has expired, please try again to get a new quote")
+      .first(),
+  ).toBeVisible({ timeout: 30000 });
+});
+
 // ---------------------------------------------------------------------------
 // 2. Swap-to-new-token happy path
 //    User searches for AQUA (non-held, verified on Mainnet), picks it, and at
@@ -200,6 +253,7 @@ test("swap to new token shows trustline banner at review", async ({
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   // Registered after login so it overrides the default no-route stub.
   await stubSwapQuotes(context, { toAmount: "0.95" });
+  await stubSwapTx(context, { addsTrustline: true });
   await switchToMainnet(page);
 
   await page.getByTestId("nav-link-swap").click();
@@ -543,6 +597,7 @@ test("flagged non-held destination stacks trustline and Blockaid banners", async
     );
     // Path so the simulation succeeds and reaches review.
     await stubSwapQuotes(context, { toAmount: "0.95" });
+    await stubSwapTx(context, { addsTrustline: true });
     // Flag the destination TOKEN malicious via the bulk-scan endpoint. The swap
     // reads data.results["CODE-ISSUER"], so the map MUST be keyed exactly by
     // "SCAM-<issuer>". The transaction scan stays safe, so the review's single
@@ -657,6 +712,7 @@ test("completes a swap to a new token and shows the success summary", async ({
     );
     // Path so the swap simulates and builds a prepared transaction to submit.
     await stubSwapQuotes(context, { toAmount: "0.95" });
+    await stubSwapTx(context, { addsTrustline: true });
     // Token + transaction both scan clean, so the review shows the normal
     // Confirm button (no "Confirm anyway").
     await page.route("**/scan-asset-bulk**", (route) =>
@@ -851,6 +907,7 @@ test("recovers to the amount screen when the swap quote expires at submit", asyn
       route.fulfill({ json: { _embedded: { records: [] } } }),
     );
     await stubSwapQuotes(context, { toAmount: "0.95" });
+    await stubSwapTx(context, { addsTrustline: true });
     await stubScanTxSafe(page);
     await stubScanAssetSafe(page);
     // Submit fails with a quote-expiry op code → the flow recovers to review.

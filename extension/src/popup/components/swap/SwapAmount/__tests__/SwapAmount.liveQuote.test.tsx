@@ -164,14 +164,14 @@ describe("SwapAmount live receive-amount quote", () => {
     expect(horizonGetBestPath).not.toHaveBeenCalled();
   });
 
-  it("stores the classic route's amount and path, and the full response", async () => {
+  it("stores the best route's amount and path, and the full response", async () => {
     renderSwapAmount({ amount: "5", destinationAsset: AQUA });
 
     await settle();
 
     const { transactionData } =
       getTestStore()!.getState().transactionSubmission;
-    expect(transactionData.destinationAmount).toBe("42");
+    expect(transactionData.destinationAmount).toBe("50");
     expect(transactionData.path).toEqual([USDC]);
     expect(transactionData.swapQuotes).toEqual({
       routes: [lifiRoute, classicRoute],
@@ -187,20 +187,26 @@ describe("SwapAmount live receive-amount quote", () => {
       amount: "5",
     });
     expect(
-      within(screen.getByTestId("swap-receive-card")).getByDisplayValue("42"),
+      within(screen.getByTestId("swap-receive-card")).getByDisplayValue("50"),
     ).toBeInTheDocument();
     expect(cta()).toHaveTextContent("Review swap");
   });
 
-  it("shows no quote when the response has no classic route", async () => {
-    fetchBackendV2.mockResolvedValue(quotesReply([lifiRoute]));
+  it("offers review when LI.FI is the only source that quotes", async () => {
+    fetchBackendV2.mockResolvedValue({
+      status: 200,
+      body: {
+        data: {
+          routes: [lifiRoute],
+          unavailable: [{ source: "classic", reason: "timeout" }],
+        },
+      },
+    });
     renderSwapAmount({ amount: "5", destinationAsset: AQUA });
 
     await settle();
 
-    expect(fetchBackendV2).toHaveBeenCalled();
-    expect(cta()).toHaveTextContent("No quote available");
-    expect(cta()).toBeDisabled();
+    expect(cta()).toHaveTextContent("Review swap");
   });
 
   it("shows no quote on empty routes", async () => {
@@ -248,12 +254,12 @@ describe("SwapAmount live receive-amount quote", () => {
     expect(cta()).toHaveTextContent("Swaps are temporarily unavailable");
   });
 
-  it("shows swaps as temporarily unavailable when classic errored", async () => {
+  it("shows swaps as temporarily unavailable when classic errored and nothing quoted", async () => {
     fetchBackendV2.mockResolvedValue({
       status: 200,
       body: {
         data: {
-          routes: [lifiRoute],
+          routes: [],
           unavailable: [{ source: "classic", reason: "timeout" }],
         },
       },

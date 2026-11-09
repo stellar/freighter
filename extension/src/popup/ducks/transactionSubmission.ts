@@ -648,6 +648,10 @@ const transactionSubmissionSlice = createSlice({
     clearSwapQuoteExpired: (state) => {
       state.isSwapQuoteExpired = false;
     },
+    // The quote no longer builds, so the next review must re-quote.
+    clearSwapQuoteKey: (state) => {
+      state.transactionData.swapQuoteKey = null;
+    },
     saveDestination: (state, action) => {
       state.transactionData.destination = action.payload;
     },
@@ -888,6 +892,7 @@ export const {
   resetSubmitStatus,
   setSubmitError,
   clearSwapQuoteExpired,
+  clearSwapQuoteKey,
   saveDestination,
   saveRecipientName,
   saveFederationAddress,

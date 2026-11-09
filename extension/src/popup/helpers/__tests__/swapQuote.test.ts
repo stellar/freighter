@@ -117,8 +117,8 @@ describe("getSwapQuote", () => {
       );
     });
 
-    it("uses the classic route, even when it is not the best, and keeps the full response", async () => {
-      const quotes = { routes: [lifiRoute, classicRoute], unavailable: [] };
+    it("uses the backend's best route and keeps the full response", async () => {
+      const quotes = { routes: [classicRoute, lifiRoute], unavailable: [] };
       getSwapQuotes.mockResolvedValue(quotes);
 
       const result = await getSwapQuote({
@@ -168,11 +168,8 @@ describe("getSwapQuote", () => {
       expect(result.route?.path).toEqual(["native"]);
     });
 
-    it("has no route when no classic route came back", async () => {
-      const quotes = {
-        routes: [lifiRoute],
-        unavailable: [{ source: "classic", reason: "no_route" }],
-      };
+    it("uses a LI.FI route ranked above the classic one", async () => {
+      const quotes = { routes: [lifiRoute, classicRoute], unavailable: [] };
       getSwapQuotes.mockResolvedValue(quotes);
 
       const result = await getSwapQuote({
@@ -184,7 +181,11 @@ describe("getSwapQuote", () => {
         publicKey: ACCOUNT,
       });
 
-      expect(result).toEqual({ route: null, quotes, key: expect.any(Object) });
+      expect(result.route).toEqual({
+        sourceAmount: "100",
+        destinationAmount: "18",
+        path: [],
+      });
     });
   });
 
@@ -210,9 +211,9 @@ describe("getSwapQuote", () => {
     expect(key.amount).toBe(sent);
   });
 
-  describe("when classic can't quote", () => {
+  describe("when no source quotes", () => {
     const quoteWith = (unavailable: { source: string; reason: string }[]) => {
-      getSwapQuotes.mockResolvedValue({ routes: [lifiRoute], unavailable });
+      getSwapQuotes.mockResolvedValue({ routes: [], unavailable });
       return getSwapQuote({
         mode: "send",
         amount: "100",
@@ -246,6 +247,25 @@ describe("getSwapQuote", () => {
 
       expect(result.route).toBeNull();
     });
+  });
+
+  it("uses the LI.FI route while classic is down, without reporting it", async () => {
+    getSwapQuotes.mockResolvedValue({
+      routes: [lifiRoute],
+      unavailable: [{ source: "classic", reason: "error" }],
+    });
+
+    const result = await getSwapQuote({
+      mode: "send",
+      amount: "100",
+      sourceAsset: "native",
+      destAsset: USDC,
+      networkDetails: MAINNET_NETWORK_DETAILS,
+      publicKey: ACCOUNT,
+    });
+
+    expect(result.route?.destinationAmount).toBe("18");
+    expect(captureException).not.toHaveBeenCalled();
   });
 
   describe("on a custom network", () => {

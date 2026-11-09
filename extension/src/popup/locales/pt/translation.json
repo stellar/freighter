@@ -1,4 +1,7 @@
 {
+  "No path found for swap.": "Nenhum caminho encontrado para a troca.",
+  "Swapping custom tokens is not supported yet.": "A troca de tokens personalizados ainda não é suportada.",
+  "We had an issue retrieving your transaction details. Please try again.": "Tivemos um problema ao obter os detalhes da sua transação. Tente novamente.",
   "{{appName}} disconnected": "{{appName}} desconectado",
   "{{code}} hidden": "{{code}} ocultado",
   "{{code}} unhidden": "{{code}} exibido",
