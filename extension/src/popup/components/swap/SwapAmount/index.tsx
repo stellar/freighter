@@ -615,9 +615,17 @@ export const SwapAmount = ({
         publicKey,
       }),
     );
+  const quotedRoute =
+    hasQuote && transactionData.swapQuotes
+      ? pickSwapRoute(transactionData.swapQuotes)
+      : undefined;
+  const resourceFee = quotedRoute?.resourceFee;
+  const displayFee = resourceFee
+    ? new BigNumber(fee).plus(resourceFee).toFixed()
+    : fee;
   const xlmPrice = data.tokenPrices?.native?.currentPrice;
   const feeUsd = xlmPrice
-    ? new BigNumber(fee).multipliedBy(xlmPrice)
+    ? new BigNumber(displayFee).multipliedBy(xlmPrice)
     : undefined;
   let feeFiat: string | undefined;
   if (feeUsd?.isFinite()) {
@@ -649,7 +657,7 @@ export const SwapAmount = ({
                 </span>
                 {/* The network fee is always denominated in XLM, regardless of
                     whether the amount is being entered in crypto or fiat. */}
-                <span>{`${fee} XLM`}</span>
+                <span data-testid="swap-amount-fee-display">{`${displayFee} XLM`}</span>
               </div>
               <div className="SwapAsset__settings-options">
                 <Button
@@ -916,7 +924,9 @@ export const SwapAmount = ({
                     className="SwapAsset__details-link"
                     data-testid="swap-details-link"
                   >
-                    <span>{t("{{fee}} XLM network fee", { fee })}</span>
+                    <span>
+                      {t("{{fee}} XLM network fee", { fee: displayFee })}
+                    </span>
                     <span aria-hidden="true">·</span>
                     <button
                       type="button"
@@ -1080,12 +1090,8 @@ export const SwapAmount = ({
       >
         {isDetailsOpen && hasQuote && srcAsset && dstAsset ? (
           <SwapDetailsSheet
-            route={
-              transactionData.swapQuotes
-                ? pickSwapRoute(transactionData.swapQuotes)
-                : null
-            }
-            fee={fee}
+            route={quotedRoute}
+            fee={displayFee}
             feeFiat={feeFiat}
             knownTokens={{
               [toBackendAsset(asset)]: {

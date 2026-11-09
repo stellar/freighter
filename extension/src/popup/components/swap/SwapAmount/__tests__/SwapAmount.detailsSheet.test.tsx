@@ -16,6 +16,16 @@ import * as Internal from "@shared/api/internal";
 import * as TokenList from "@shared/api/helpers/token-list";
 import { getSwapQuoteKey } from "popup/helpers/swapQuote";
 
+// Interpolates, so the fee inside "{{fee}} XLM network fee" is checkable.
+jest.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, opts?: Record<string, unknown>) =>
+      key.replace(/{{(\w+)}}/g, (_: string, name: string) =>
+        String(opts?.[name] ?? `{{${name}}}`),
+      ),
+  }),
+}));
+
 const USDC = "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
 
 const swapData = {
@@ -138,7 +148,7 @@ describe("SwapAmount details sheet", () => {
   it("opens Details from See details, then Route, then back", async () => {
     renderSwapAmount({});
     expect(screen.getByTestId("swap-details-link")).toHaveTextContent(
-      "{{fee}} XLM network fee",
+      "0.00002 XLM network fee",
     );
 
     await act(async () => {
@@ -193,6 +203,61 @@ describe("SwapAmount details sheet", () => {
       expect(screen.queryByTestId("swap-details-link")).toBeNull();
     },
   );
+
+  describe("fee display", () => {
+    const withRoute = (route: Record<string, unknown>) => ({
+      swapQuotes: {
+        ...swapQuotes,
+        routes: [{ ...swapQuotes.routes[0], ...route }],
+      },
+    });
+
+    it("adds a LI.FI route's resource fee to the inclusion fee", async () => {
+      renderSwapAmount(withRoute({ resourceFee: "0.0858459" }));
+      expect(screen.getByTestId("swap-amount-fee-display")).toHaveTextContent(
+        "0.0858659 XLM",
+      );
+      expect(screen.getByTestId("swap-details-link")).toHaveTextContent(
+        "0.0858659 XLM network fee",
+      );
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("swap-see-details"));
+      });
+      expect(screen.getByTestId("SwapDetails__fee")).toHaveTextContent(
+        "0.0858659 XLM ($0.03)",
+      );
+      expect(screen.getByTestId("SwapDetails")).toHaveTextContent(
+        "Fees description soroban",
+      );
+    });
+
+    it("shows the inclusion fee alone on a classic route", async () => {
+      renderSwapAmount(withRoute({ source: "classic" }));
+      expect(screen.getByTestId("swap-amount-fee-display")).toHaveTextContent(
+        "0.00002 XLM",
+      );
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("swap-see-details"));
+      });
+      expect(screen.getByTestId("SwapDetails__fee")).toHaveTextContent(
+        "0.00002 XLM (<$0.01)",
+      );
+      expect(screen.getByTestId("SwapDetails")).not.toHaveTextContent(
+        "Fees description soroban",
+      );
+    });
+
+    it("ignores the resource fee of a quote for other inputs", () => {
+      renderSwapAmount({
+        ...withRoute({ resourceFee: "0.0858459" }),
+        amount: "50",
+      });
+      expect(screen.queryByTestId("swap-details-link")).toBeNull();
+      expect(screen.getByTestId("swap-amount-fee-display")).toHaveTextContent(
+        "0.00002 XLM",
+      );
+    });
+  });
 
   it("shows no See details link without a quote", () => {
     renderSwapAmount({ destinationAmount: "0", swapQuotes: null });

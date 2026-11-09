@@ -262,6 +262,11 @@ export const SwapDetailsSheet = ({
             </span>
           </div>
         </div>
+        {route?.resourceFee ? (
+          <div className="SwapDetails__note">
+            {t("Fees description soroban")}
+          </div>
+        ) : null}
         <div className="SwapDetails__card">
           <div className="SwapDetails__row">
             <span className="SwapDetails__label">{t("Rate")}</span>
