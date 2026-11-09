@@ -12,6 +12,7 @@ import * as UseGetSwapAmountData from "popup/components/swap/SwapAmount/hooks/us
 import * as UseSimulateSwapData from "popup/components/swap/SwapAmount/hooks/useSimulateSwapData";
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
 import * as FetchBackendV2 from "@shared/api/helpers/fetchBackendV2";
+import { getSwapDerivedData } from "popup/components/swap/SwapAmount/helpers/getSwapDerivedData";
 
 const TOKEN_CONTRACT =
   "CBI7UCH5KGSVQRO5H4SUCZUTZABCITZLRHQQZTWL2TK4RZ72TAR6IHRV";
@@ -144,5 +145,52 @@ describe("SwapAmount with Soroban contract tokens", () => {
       sourceDecimals: 7,
       destDecimals: 6,
     });
+  });
+
+  it("adds no trustline into a contract token the account doesn't hold", () => {
+    renderSwapAmount({ destinationAsset: TOKEN });
+
+    expect(lastSimParams().destRequiresTrustline).toBe(false);
+  });
+});
+
+describe("getSwapDerivedData with a contract token sold", () => {
+  const derive = (xlm: string) =>
+    getSwapDerivedData({
+      data: {
+        type: AppDataType.RESOLVED,
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        icons: {},
+        userBalances: {
+          balances: [
+            { ...nativeBalance, total: new BigNumber(xlm) },
+            tokenBalance,
+          ],
+        },
+        tokenPrices: {},
+      } as any,
+      asset: TOKEN,
+      destinationAsset: USDC,
+      destinationAmount: "1",
+      destinationTokenDetails: null,
+      amount: "1",
+      amountUsd: "0",
+      fee: "0.00001",
+      networkDetails: MAINNET_NETWORK_DETAILS,
+      inputType: "crypto",
+      isLiveQuoteLoading: false,
+      isSwapUnavailable: false,
+      destRequiresTrustline: true,
+    });
+
+  it("does not offer it to swap for the XLM reserve: receive quotes are classic-only", () => {
+    const derived = derive("1");
+
+    expect(derived.sourceIsNonXlmClassic).toBe(false);
+    expect(derived.canSwapForReserve).toBe(false);
+  });
+
+  it("still needs XLM for the network fee", () => {
+    expect(derive("1").insufficientXlmForFees).toBe(true);
   });
 });

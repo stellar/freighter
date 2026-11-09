@@ -41,6 +41,7 @@ import { reRouteOnboarding } from "popup/helpers/route";
 import {
   CLASSIC_ASSET_DECIMALS,
   getAvailableBalance,
+  isContractId,
 } from "popup/helpers/soroban";
 import { getBalanceCanonicalKey } from "popup/helpers/balance";
 import { useBlockaidOverrideState } from "popup/helpers/blockaid";
@@ -166,8 +167,11 @@ export const SwapAmount = ({
     balances: heldBalances,
     picked: transactionData.destinationTokenDetails,
   });
+  // Only a classic destination needs a trustline; a contract token holds its
+  // own balances.
   const destRequiresTrustline =
     Boolean(destinationAsset) &&
+    !isContractId(dstAsset?.issuer) &&
     heldBalances.length > 0 &&
     !heldBalances.some((b) => getBalanceCanonicalKey(b) === destinationAsset);
 

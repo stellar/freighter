@@ -9,7 +9,7 @@ import {
 } from "popup/helpers/formatters";
 import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
 import { isNativeAssetId } from "@shared/helpers/assetIdentity";
-import { getAvailableBalance } from "popup/helpers/soroban";
+import { getAvailableBalance, isContractId } from "popup/helpers/soroban";
 import {
   findAssetBalance,
   getBalanceCanonicalKey,
@@ -139,11 +139,13 @@ export const getSwapDerivedData = ({
   // "Swap for 0.5 XLM" reserve-recovery affordance on the XlmReserveSheet.
   // The sell side is the current source when it's already a non-XLM
   // classic token; otherwise the largest held non-XLM classic balance.
-  const sourceIsNonXlmClassic = !!asset && !isNativeAssetId(asset);
+  const sourceIsNonXlm = !!asset && !isNativeAssetId(asset);
+  const sourceIsNonXlmClassic =
+    sourceIsNonXlm && !isContractId(getAssetFromCanonical(asset).issuer);
 
   // Source token Blockaid verdict (from its held balance), passed to the review
   // gate so a flagged sell token also warns. XLM is never scanned.
-  const sourceBalance = sourceIsNonXlmClassic
+  const sourceBalance = sourceIsNonXlm
     ? findAssetBalance(
         sendData.userBalances.balances,
         getAssetFromCanonical(asset),
@@ -198,8 +200,7 @@ export const getSwapDerivedData = ({
     recommendedFee: "0",
   });
   const insufficientXlmForFees =
-    sourceIsNonXlmClassic &&
-    new BigNumber(xlmSpendableForFees).lt(new BigNumber(fee));
+    sourceIsNonXlm && new BigNumber(xlmSpendableForFees).lt(new BigNumber(fee));
 
   const cta = getSwapCtaState({
     hasSource: !!asset,
