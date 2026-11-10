@@ -73,8 +73,8 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    width: pxToRem(20px);
-    height: pxToRem(20px);
+    width: pxToRem(24px);
+    height: pxToRem(24px);
     border-radius: 50%;
     object-fit: cover;
 
@@ -92,14 +92,15 @@
   &__venue-stack {
     display: inline-flex;
     align-items: center;
+    gap: pxToRem(4px);
 
-    .SwapDetails__venue-icon + .SwapDetails__venue-icon {
-      margin-left: pxToRem(-6px);
+    .SwapDetails__venue-icon {
+      width: pxToRem(32px);
+      height: pxToRem(32px);
     }
   }
 
   &__venue-extra {
-    margin-left: pxToRem(6px);
     color: var(--sds-clr-gray-11);
     font-size: pxToRem(12px);
   }
@@ -107,12 +108,10 @@
   &__token {
     display: inline-flex;
     align-items: center;
-    gap: pxToRem(8px);
+    gap: pxToRem(4px);
 
     .AccountAssets__asset--logo {
-      width: pxToRem(24px);
-      height: pxToRem(24px);
-      min-width: pxToRem(24px);
+      margin-right: 0;
     }
   }
 
@@ -147,7 +146,7 @@
   &__path-row {
     display: flex;
     align-items: center;
-    gap: pxToRem(12px);
+    gap: pxToRem(16px);
     width: 100%;
     padding: pxToRem(12px) pxToRem(16px);
     border: none;
@@ -192,12 +191,26 @@
   }
 
   &__hop-venue {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: pxToRem(6px);
-    margin-left: pxToRem(11px);
-    padding-left: pxToRem(20px);
-    border-left: 1px dashed var(--sds-clr-gray-06);
+    gap: pxToRem(4px);
+    min-height: pxToRem(32px);
+    margin-left: pxToRem(14px);
+    padding-left: pxToRem(6px);
+    border-left: 1px solid var(--sds-clr-gray-06);
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: pxToRem(-3px);
+      width: pxToRem(5px);
+      height: pxToRem(5px);
+      border-radius: 50%;
+      background-color: var(--sds-clr-gray-06);
+      transform: translateY(-50%);
+    }
     color: var(--sds-clr-gray-11);
     font-size: pxToRem(12px);
   }
