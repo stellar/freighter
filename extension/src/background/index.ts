@@ -5,7 +5,7 @@ import {
   SERVICE_TYPES,
 } from "@shared/constants/services";
 import { ExternalRequest, Response } from "@shared/api/types";
-import { buildStore } from "background/store";
+import { buildStore, flushSessionStore } from "background/store";
 
 import {
   popupMessageListener,
@@ -46,6 +46,10 @@ import {
   dataStorageAccess,
   browserLocalStorage,
 } from "./helpers/dataStorageAccess";
+import {
+  ACCOUNT_MUTATING_SERVICE_TYPES,
+  withAccountMutationLock,
+} from "./helpers/account-mutation-lock";
 import { IS_OPEN_SIDEBAR_BY_DEFAULT_ID } from "constants/localStorageTypes";
 import { ServiceMessageRequest } from "@shared/api/types/message-request";
 import {
@@ -147,47 +151,74 @@ export const initSidebarConnectionListener = () => {
 
 export const initExtensionMessageListener = () => {
   browser?.runtime?.onMessage?.addListener(
-    async (request: unknown, sender: browser.Runtime.MessageSender) => {
-      const sessionStore = await buildStore();
-      const localStore = dataStorageAccess(browserLocalStorage);
-      const localKeyStore = new BrowserStorageKeyStore();
-      localKeyStore.configure({
-        storage: browserLocalStorage as BrowserStorageConfigParams["storage"],
-      });
-      const keyManager = new KeyManager({
-        keyStore: localKeyStore,
-      });
-      keyManager.registerEncrypter(ScryptEncrypter);
-      // todo this is kinda ugly
-      const req = request as ExternalRequest | Response;
-      let res;
-
-      if (Object.values(SERVICE_TYPES).includes(req.type as SERVICE_TYPES)) {
-        res = await popupMessageListener(
-          req as ServiceMessageRequest,
-          sessionStore,
-          localStore,
-          keyManager,
-          sessionTimer,
-          sender,
-        );
-      }
+    (request: unknown, sender: browser.Runtime.MessageSender) => {
+      const type = (request as { type?: unknown } | null)?.type;
       if (
-        Object.values(EXTERNAL_SERVICE_TYPES).includes(
-          req.type as EXTERNAL_SERVICE_TYPES,
-        )
+        typeof type === "string" &&
+        ACCOUNT_MUTATING_SERVICE_TYPES.has(type)
       ) {
-        res = await freighterApiMessageListener(
-          req as ExternalRequest,
-          sender,
-          sessionStore,
-          localStore,
+        // The lock covers building the store too: a store loaded before the
+        // previous holder finished would flush its stale state over that
+        // holder's writes.
+        return withAccountMutationLock(() =>
+          handleExtensionMessage(request, sender, true),
         );
       }
-
-      return res;
+      return handleExtensionMessage(request, sender, false);
     },
   );
+};
+
+const handleExtensionMessage = async (
+  request: unknown,
+  sender: browser.Runtime.MessageSender,
+  flushBeforeRelease: boolean,
+) => {
+  const sessionStore = await buildStore();
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const localKeyStore = new BrowserStorageKeyStore();
+  localKeyStore.configure({
+    storage: browserLocalStorage as BrowserStorageConfigParams["storage"],
+  });
+  const keyManager = new KeyManager({
+    keyStore: localKeyStore,
+  });
+  keyManager.registerEncrypter(ScryptEncrypter);
+  // todo this is kinda ugly
+  const req = request as ExternalRequest | Response;
+  let res;
+
+  if (Object.values(SERVICE_TYPES).includes(req.type as SERVICE_TYPES)) {
+    res = await popupMessageListener(
+      req as ServiceMessageRequest,
+      sessionStore,
+      localStore,
+      keyManager,
+      sessionTimer,
+      sender,
+    );
+  }
+  if (
+    Object.values(EXTERNAL_SERVICE_TYPES).includes(
+      req.type as EXTERNAL_SERVICE_TYPES,
+    )
+  ) {
+    res = await freighterApiMessageListener(
+      req as ExternalRequest,
+      sender,
+      sessionStore,
+      localStore,
+    );
+  }
+
+  if (flushBeforeRelease) {
+    // The store's subscribe flush is fire-and-forget. Wait for the final
+    // state to land before the lock passes to the next holder, which
+    // loads the store from it.
+    await flushSessionStore(sessionStore);
+  }
+
+  return res;
 };
 
 export const initInstalledListener = () => {
@@ -231,12 +262,17 @@ export const initSidebarBehavior = async () => {
 
 export const initAlarmListener = () => {
   browser?.alarms?.onAlarm.addListener(async ({ name }: { name: string }) => {
-    const sessionStore = await buildStore();
-    const localStore = dataStorageAccess(browserLocalStorage);
-
-    if (name === SESSION_ALARM_NAME) {
-      await clearSession({ sessionStore, localStore });
-      await broadcastSessionState(SERVICE_TYPES.SESSION_LOCKED);
+    if (name !== SESSION_ALARM_NAME) {
+      return;
     }
+
+    // Locking mid-import must not be undone by the import's later flush.
+    await withAccountMutationLock(async () => {
+      const sessionStore = await buildStore();
+      const localStore = dataStorageAccess(browserLocalStorage);
+      await clearSession({ sessionStore, localStore });
+      await flushSessionStore(sessionStore);
+    });
+    await broadcastSessionState(SERVICE_TYPES.SESSION_LOCKED);
   });
 };

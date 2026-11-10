@@ -32,6 +32,7 @@ jest.mock("background/helpers/session", () => {
 
 jest.mock("background/store", () => ({
   buildStore: jest.fn().mockResolvedValue({}),
+  flushSessionStore: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock("background/helpers/dataStorageAccess", () => ({
@@ -67,7 +68,9 @@ describe("initAlarmListener", () => {
 
   it("swallows sendMessage errors when no UI is open to receive the broadcast", async () => {
     mockSendMessage.mockRejectedValueOnce(
-      new Error("Could not establish connection. Receiving end does not exist."),
+      new Error(
+        "Could not establish connection. Receiving end does not exist.",
+      ),
     );
 
     await expect(
