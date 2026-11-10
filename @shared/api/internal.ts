@@ -224,6 +224,7 @@ export const addAccount = async ({
     }));
   } catch (e) {
     console.error(e);
+    throw e;
   }
 
   if (error) {
@@ -295,6 +296,7 @@ export const addRecoveryPhraseSource = async ({
     });
   } catch (e) {
     console.error(e);
+    throw e;
   }
 
   const { error, ...result } = response;

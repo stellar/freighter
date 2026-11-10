@@ -70,6 +70,49 @@ describe("internalApi", () => {
     });
   });
 
+  describe("account creation wrappers surface failure", () => {
+    // A swallowed transport error used to resolve with empty accounts, so the
+    // thunk fulfilled and the view navigated home as if the account existed.
+    const CREATORS = [
+      [
+        "addAccount",
+        () =>
+          internalApi.addAccount({
+            activePublicKey: "G1",
+            password: "pw",
+            sourceId: "s1",
+          }),
+      ],
+      [
+        "addRecoveryPhraseSource",
+        () =>
+          internalApi.addRecoveryPhraseSource({
+            activePublicKey: "G1",
+            password: "pw",
+          }),
+      ],
+    ] as const;
+
+    it.each(CREATORS)(
+      "%s rejects when the background reports an error",
+      async (_name, call) => {
+        mockedSend.mockResolvedValue({ error: "Incorrect password" });
+
+        await expect(call()).rejects.toThrow("Incorrect password");
+      },
+    );
+
+    it.each(CREATORS)(
+      "%s rejects when the message transport throws",
+      async (_name, call) => {
+        jest.spyOn(console, "error").mockImplementation(() => {});
+        mockedSend.mockRejectedValue(new Error("Receiving end does not exist"));
+
+        await expect(call()).rejects.toThrow("Receiving end does not exist");
+      },
+    );
+  });
+
   describe("resetWallet", () => {
     // `{}` is the only answer that means "the wallet is erased". Every other
     // outcome must resolve `{ error }` instead, and none may reject.
