@@ -53,6 +53,19 @@ const STANDALONE_SECRET =
   "SDHOAMBNLGCE2MV5ZKIVZAQD3VCLGP53P3OBSBI6UN5L5XZI5TKHFQL4";
 const PASSWORD = "test";
 
+// `webextension-polyfill` is mocked to undefined globally. SHOW_BACKUP_PHRASE
+// answers only our own pages, so give the sender check a runtime whose id
+// matches the sender below.
+jest.mock("webextension-polyfill", () => ({
+  __esModule: true,
+  default: {
+    runtime: {
+      id: "fake-extension-id",
+      getURL: (path: string) => `chrome-extension://fake-extension-id${path}`,
+    },
+  },
+}));
+
 // The linker is fire-and-forget: a real pass outlives the test that started it
 // and writes the pin into the next test's storage. link-sources.test.ts covers
 // it; here only the trigger matters.

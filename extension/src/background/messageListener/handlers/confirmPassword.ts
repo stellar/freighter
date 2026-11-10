@@ -5,6 +5,7 @@ import { ConfirmPasswordMessage } from "@shared/api/types/message-request";
 import { getBipPath, getActiveAccountId } from "background/helpers/account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { getLinkConflicts } from "background/helpers/link-status";
+import { listSecretSources } from "background/helpers/secret-sources";
 import { APPLICATION_ID } from "constants/localStorageTypes";
 import { loginToAllAccounts } from "../helpers/login-all-accounts";
 import { SessionTimer } from "background/helpers/session";
@@ -62,5 +63,6 @@ export const confirmPassword = async ({
     // What earlier link passes stored. The pass this unlock started has not
     // answered yet; loadAccount picks its result up.
     linkConflicts: await getLinkConflicts({ localStore }),
+    secretSources: await listSecretSources({ localStore }),
   };
 };

@@ -28,6 +28,7 @@ import {
 } from "@shared/api/internal";
 import {
   Account,
+  SecretSource,
   AccountType,
   ActionStatus,
   BalanceToMigrate,
@@ -392,6 +393,7 @@ export const confirmPassword = createAsyncThunk<
     allAccounts: Account[];
     bipPath: string;
     linkConflicts: string[];
+    secretSources: SecretSource[];
   },
   string,
   { rejectValue: ErrorMessage }
@@ -404,6 +406,7 @@ export const confirmPassword = createAsyncThunk<
     allAccounts: [] as Account[],
     bipPath: "",
     linkConflicts: [] as string[],
+    secretSources: [] as SecretSource[],
   };
   try {
     res = await confirmPasswordService(phrase);
@@ -619,6 +622,8 @@ interface InitialState {
    * shown yet: the conflict UI is waiting on design.
    */
   linkConflicts: string[];
+  /** The wallet's phrases and imported keys, oldest first. */
+  secretSources: SecretSource[];
   error: string;
   accountStatus: ActionStatus;
   isAccountMismatch: boolean;
@@ -635,6 +640,7 @@ const initialState: InitialState = {
   bipPath: "",
   tokenIdList: [],
   linkConflicts: [],
+  secretSources: [],
   error: "",
   accountStatus: ActionStatus.IDLE,
   isAccountMismatch: false,
@@ -663,6 +669,7 @@ const authSlice = createSlice({
         bipPath,
         tokenIdList,
         linkConflicts,
+        secretSources,
       } = action.payload;
       state.hasPrivateKey = hasPrivateKey;
       state.publicKey = publicKey;
@@ -673,6 +680,7 @@ const authSlice = createSlice({
       state.bipPath = bipPath;
       state.tokenIdList = tokenIdList;
       state.linkConflicts = linkConflicts ?? [];
+      state.secretSources = secretSources ?? [];
     },
     saveAccountError(state, action) {
       const {
@@ -705,6 +713,7 @@ const authSlice = createSlice({
       state.bipPath = "";
       state.tokenIdList = [];
       state.linkConflicts = [];
+      state.secretSources = [];
     },
   },
   extraReducers: (builder) => {
@@ -916,6 +925,7 @@ const authSlice = createSlice({
         allAccounts,
         bipPath,
         linkConflicts,
+        secretSources,
       } = action.payload || {
         publicKey: "",
         hasPrivateKey: false,
@@ -923,6 +933,7 @@ const authSlice = createSlice({
         allAccounts: [""],
         bipPath: "",
         linkConflicts: [],
+        secretSources: [],
       };
       return {
         ...state,
@@ -933,6 +944,7 @@ const authSlice = createSlice({
         allAccounts,
         bipPath,
         linkConflicts: linkConflicts ?? [],
+        secretSources: secretSources ?? [],
         error: "",
       };
     });
@@ -1059,6 +1071,10 @@ export const bipPathSelector = createSelector(
 export const linkConflictsSelector = createSelector(
   authSelector,
   (auth: InitialState) => auth.linkConflicts,
+);
+export const secretSourcesSelector = createSelector(
+  authSelector,
+  (auth: InitialState) => auth.secretSources,
 );
 export const migratedAccountsSelector = createSelector(
   authSelector,

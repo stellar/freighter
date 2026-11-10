@@ -1,0 +1,130 @@
+@use "../../styles/utils.scss" as *;
+
+.AccountsRecovery {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(16px);
+
+  &__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: pxToRem(32px);
+    height: pxToRem(32px);
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+
+    svg {
+      width: pxToRem(24px);
+      height: pxToRem(24px);
+      stroke: var(--sds-clr-gray-12);
+    }
+  }
+
+  &__divider {
+    height: 1px;
+    background-color: var(--sds-clr-gray-06);
+  }
+
+  &__group {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(16px);
+
+    &__label {
+      display: flex;
+      align-items: center;
+      gap: pxToRem(6px);
+      font-size: pxToRem(14px);
+      line-height: pxToRem(20px);
+      font-weight: var(--font-weight-medium);
+      color: var(--sds-clr-gray-11);
+
+      svg {
+        width: pxToRem(14px);
+        height: pxToRem(14px);
+        stroke: var(--sds-clr-gray-11);
+      }
+    }
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(16px);
+    padding: pxToRem(4px) 0;
+
+    &__identicon {
+      position: relative;
+      flex-shrink: 0;
+      width: pxToRem(40px);
+      height: pxToRem(40px);
+    }
+
+    // Same badge the account switcher puts on the active account.
+    &__selected {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+      border-radius: 50%;
+      background-color: var(--sds-clr-navy-09);
+      color: var(--sds-clr-white);
+
+      svg {
+        width: pxToRem(10px);
+        height: pxToRem(10px);
+      }
+    }
+
+    &__details {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    &__name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: pxToRem(16px);
+      line-height: pxToRem(24px);
+      font-weight: var(--font-weight-semi-bold);
+      color: var(--sds-clr-gray-12);
+    }
+
+    &__balance {
+      min-height: pxToRem(20px);
+      font-size: pxToRem(14px);
+      line-height: pxToRem(20px);
+      font-weight: var(--font-weight-medium);
+      color: var(--sds-clr-gray-11);
+    }
+
+    &__edit {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      height: pxToRem(40px);
+      padding: pxToRem(8px) pxToRem(12px);
+      border: 1px solid var(--sds-clr-gray-06);
+      border-radius: pxToRem(100px);
+      background: none;
+      cursor: pointer;
+
+      svg {
+        width: pxToRem(16px);
+        height: pxToRem(16px);
+        stroke: var(--sds-clr-gray-12);
+      }
+    }
+  }
+}

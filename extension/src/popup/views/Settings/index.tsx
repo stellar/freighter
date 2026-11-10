@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@stellar/design-system";
 import browser from "webextension-polyfill";
@@ -13,6 +14,7 @@ import { navigateTo, openSidebar, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 
 import IconNetwork from "popup/assets/icon-settings-network.svg?react";
 import IconSecurity from "popup/assets/icon-settings-security.svg?react";
@@ -75,6 +77,40 @@ const SettingsAction = ({
   </div>
 );
 
+// Fixed seeds: the tile always shows the same two decorative orbs, however
+// many accounts the user has.
+const ACCOUNTS_CARD_ORB_SEEDS = ["accounts-orb-1", "accounts-orb-2"];
+
+/** The way into Accounts & recovery, with two decorative orbs. */
+const AccountsRecoveryCard = () => {
+  const { t } = useTranslation();
+
+  return (
+    <Link
+      to={ROUTES.accountsRecovery}
+      className="Settings__accounts"
+      data-testid="settings-accounts-recovery"
+    >
+      <div className="Settings__accounts__text">
+        <span className="Settings__accounts__title">
+          {t("Accounts & recovery")}
+        </span>
+        <span className="Settings__accounts__subtitle">
+          {t("Manage your accounts")}
+        </span>
+      </div>
+      <div className="Settings__accounts__avatars" aria-hidden="true">
+        {ACCOUNTS_CARD_ORB_SEEDS.map((seed) => (
+          <div key={seed} className="Settings__accounts__avatar">
+            <IdenticonImg publicKey={seed} />
+          </div>
+        ))}
+      </div>
+      <Icon.ChevronRight className="Settings__accounts__chevron" />
+    </Link>
+  );
+};
+
 export const Settings = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -101,6 +137,7 @@ export const Settings = () => {
     <>
       <SubviewHeader title={t("Settings")} customBackIcon={<Icon.X />} />
       <View.Content hasNoTopPadding>
+        <AccountsRecoveryCard />
         <SettingsGroup label={t("General")}>
           <div className="Settings__row">
             <ListNavLink

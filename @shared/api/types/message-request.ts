@@ -207,6 +207,18 @@ export interface RecoverAccountMessage extends BaseMessage {
 export interface ShowBackupPhraseMessage extends BaseMessage {
   type: SERVICE_TYPES.SHOW_BACKUP_PHRASE;
   password: string;
+  /**
+   * The phrase source to reveal. Without one, the wallet's default phrase
+   * (Settings → Security still reveals that one).
+   */
+  sourceId?: string;
+}
+
+export interface RevealSecretKeyMessage extends BaseMessage {
+  type: SERVICE_TYPES.REVEAL_SECRET_KEY;
+  password: string;
+  /** `Account.id` of the account whose secret key to reveal. */
+  accountId: string;
 }
 
 export interface ConfirmPasswordMessage extends BaseMessage {
@@ -562,6 +574,7 @@ export type ServiceMessageRequest =
   | ConfirmMigratedMnemonicPhraseMessage
   | RecoverAccountMessage
   | ShowBackupPhraseMessage
+  | RevealSecretKeyMessage
   | ConfirmPasswordMessage
   | GrantAccessMessage
   | RejectAccessMessage
