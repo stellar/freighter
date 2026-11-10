@@ -334,6 +334,10 @@ test.describe("BlockAid Scan - Malicious States", () => {
       .getByTestId("swap-sell-card")
       .getByTestId("send-amount-amount-input")
       .fill("10");
+    // Disabled until the quote for the entered amount lands.
+    await expect(page.getByTestId("swap-amount-btn-continue")).toBeEnabled({
+      timeout: 10000,
+    });
     await page.getByTestId("swap-amount-btn-continue").click({ force: true });
 
     // Should be on review pane with warning banner visible

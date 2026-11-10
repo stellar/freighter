@@ -219,6 +219,7 @@ describe("getSwapDerivedData with a contract token sold", () => {
       inputType: "crypto",
       isLiveQuoteLoading: false,
       isSwapUnavailable: false,
+      isQuoteForInputs: true,
       destRequiresTrustline: true,
     });
 

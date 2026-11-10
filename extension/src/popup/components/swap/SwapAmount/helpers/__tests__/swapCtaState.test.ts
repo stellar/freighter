@@ -9,6 +9,7 @@ const base: SwapCtaInputs = {
   insufficientXlmForFees: false,
   hasNoSwapPath: false,
   isSwapUnavailable: false,
+  isQuotePending: false,
 };
 
 describe("getSwapCtaState", () => {
@@ -92,6 +93,27 @@ describe("getSwapCtaState", () => {
       disabled: false,
       labelKey: "review",
     });
+  });
+
+  it("shows Review swap disabled and loading while the quote is pending", () => {
+    expect(getSwapCtaState({ ...base, isQuotePending: true })).toEqual({
+      disabled: true,
+      labelKey: "review",
+      isLoading: true,
+    });
+  });
+
+  it("prefers the balance and fee blockers over a pending quote", () => {
+    expect(
+      getSwapCtaState({ ...base, isAmountTooHigh: true, isQuotePending: true }),
+    ).toEqual({ disabled: true, labelKey: "insufficientBalance" });
+    expect(
+      getSwapCtaState({
+        ...base,
+        insufficientXlmForFees: true,
+        isQuotePending: true,
+      }),
+    ).toEqual({ disabled: true, labelKey: "insufficientXlmFees" });
   });
 
   it("prefers the source-balance error over the fee error", () => {

@@ -463,22 +463,24 @@ export const SwapAmount = ({
     state: swapAmountData.state,
   });
 
-  // The stored quote lags the inputs until the debounced re-quote lands.
+  // The stored quote lags the inputs until the debounced re-quote lands. The
+  // CTA's pending state reads this too, so hasQuote and "pending" agree.
+  const isQuoteForInputs = isSameSwapQuoteKey(
+    transactionData.swapQuoteKey,
+    getSwapQuoteKey({
+      mode: "send",
+      amount: amount || "0",
+      sourceAsset: asset,
+      destAsset: destinationAsset,
+      networkDetails,
+      publicKey,
+    }),
+  );
   const hasQuote =
     !!srcAsset &&
     !!dstAsset &&
     new BigNumber(destinationAmount || "0").gt(0) &&
-    isSameSwapQuoteKey(
-      transactionData.swapQuoteKey,
-      getSwapQuoteKey({
-        mode: "send",
-        amount: amount || "0",
-        sourceAsset: asset,
-        destAsset: destinationAsset,
-        networkDetails,
-        publicKey,
-      }),
-    );
+    isQuoteForInputs;
   const quotedRoute =
     hasQuote && transactionData.swapQuotes
       ? pickSwapRoute(transactionData.swapQuotes)
@@ -508,6 +510,7 @@ export const SwapAmount = ({
     bestNonXlmClassicCanonical,
     canSwapForReserve,
     isAmountTooHigh,
+    isQuotePending,
     cta,
   } = getSwapDerivedData({
     data,
@@ -524,6 +527,7 @@ export const SwapAmount = ({
     inputType,
     isLiveQuoteLoading,
     isSwapUnavailable,
+    isQuoteForInputs,
     destRequiresTrustline,
   });
 
@@ -692,7 +696,9 @@ export const SwapAmount = ({
               isFullWidth
               isRounded
               variant="secondary"
-              isLoading={simulationState.state === RequestState.LOADING}
+              isLoading={
+                simulationState.state === RequestState.LOADING || cta.isLoading
+              }
               disabled={
                 cta.disabled || (cta.labelKey === "enter" && isSellInputFocused)
               }
@@ -906,6 +912,7 @@ export const SwapAmount = ({
                       code: dstAsset ? dstAsset.code : "",
                     })}
                     isAmountTooHigh={false}
+                    isAmountLoading={isQuotePending}
                     isReadOnly
                     autoFocus={false}
                     cryptoDecimals={heldDestDecimals ?? CLASSIC_ASSET_DECIMALS}
