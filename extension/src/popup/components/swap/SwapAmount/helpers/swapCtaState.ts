@@ -19,6 +19,7 @@ export interface SwapCtaInputs {
   insufficientXlmForFees: boolean;
   hasNoSwapPath: boolean;
   isSwapUnavailable: boolean;
+  isQuotePending: boolean;
 }
 
 export const getSwapCtaState = ({
@@ -30,7 +31,12 @@ export const getSwapCtaState = ({
   insufficientXlmForFees,
   hasNoSwapPath,
   isSwapUnavailable,
-}: SwapCtaInputs): { disabled: boolean; labelKey: SwapCtaLabelKey } => {
+  isQuotePending,
+}: SwapCtaInputs): {
+  disabled: boolean;
+  labelKey: SwapCtaLabelKey;
+  isLoading?: boolean;
+} => {
   // Enabled so the user can tap it to open the picker for the missing side
   // (the screen prefers the sell token when both are missing). Other blocking
   // states stay disabled — there's nothing useful to do from them.
@@ -52,6 +58,9 @@ export const getSwapCtaState = ({
   }
   if (insufficientXlmForFees) {
     return { disabled: true, labelKey: "insufficientXlmFees" };
+  }
+  if (isQuotePending) {
+    return { disabled: true, labelKey: "review", isLoading: true };
   }
   if (hasNoSwapPath && isSwapUnavailable) {
     return { disabled: true, labelKey: "unavailable" };

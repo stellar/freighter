@@ -474,6 +474,7 @@ export const SwapAmount = ({
     bestNonXlmClassicCanonical,
     canSwapForReserve,
     isAmountTooHigh,
+    isQuotePending,
     cta,
   } = getSwapDerivedData({
     data,
@@ -489,6 +490,8 @@ export const SwapAmount = ({
     inputType,
     isLiveQuoteLoading,
     isSwapUnavailable,
+    publicKey,
+    swapQuoteKey: transactionData.swapQuoteKey,
     destRequiresTrustline,
   });
 
@@ -646,7 +649,9 @@ export const SwapAmount = ({
               isFullWidth
               isRounded
               variant="secondary"
-              isLoading={simulationState.state === RequestState.LOADING}
+              isLoading={
+                simulationState.state === RequestState.LOADING || cta.isLoading
+              }
               disabled={
                 cta.disabled || (cta.labelKey === "enter" && isSellInputFocused)
               }
@@ -860,6 +865,7 @@ export const SwapAmount = ({
                       code: dstAsset ? dstAsset.code : "",
                     })}
                     isAmountTooHigh={false}
+                    isAmountLoading={isQuotePending}
                     isReadOnly
                     autoFocus={false}
                     cryptoDecimals={heldDestDecimals ?? CLASSIC_ASSET_DECIMALS}

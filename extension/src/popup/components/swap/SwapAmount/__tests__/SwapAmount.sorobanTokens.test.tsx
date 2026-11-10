@@ -14,6 +14,7 @@ import * as UseSimulateSwapData from "popup/components/swap/SwapAmount/hooks/use
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
 import * as FetchBackendV2 from "@shared/api/helpers/fetchBackendV2";
 import { getSwapDerivedData } from "popup/components/swap/SwapAmount/helpers/getSwapDerivedData";
+import { getSwapQuoteKey } from "popup/helpers/swapQuote";
 
 const TOKEN_CONTRACT =
   "CBI7UCH5KGSVQRO5H4SUCZUTZABCITZLRHQQZTWL2TK4RZ72TAR6IHRV";
@@ -219,6 +220,15 @@ describe("getSwapDerivedData with a contract token sold", () => {
       inputType: "crypto",
       isLiveQuoteLoading: false,
       isSwapUnavailable: false,
+      publicKey: "G123",
+      swapQuoteKey: getSwapQuoteKey({
+        mode: "send",
+        amount: "1",
+        sourceAsset: TOKEN,
+        destAsset: USDC,
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        publicKey: "G123",
+      }),
       destRequiresTrustline: true,
     });
 
