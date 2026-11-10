@@ -275,34 +275,39 @@ export const sortBalancesByValue = (
     .map((x) => x.b);
 };
 
-export const getTotalUsd = (prices: ApiTokenPrices, balances: AssetType[]) => {
-  return Object.keys(prices).reduce((prev, curr) => {
-    const asset = getAssetFromCanonical(curr);
-    const priceBalance = getBalanceByAsset(asset, balances);
-    if (!priceBalance) {
-      return prev;
-    }
-    const currentAssetBalance = getTotalInWholeUnits(priceBalance);
-    const currentPrice = prices[curr] ? prices[curr].currentPrice : "0";
-    const currentUsdBalance = new BigNumber(currentPrice).multipliedBy(
-      currentAssetBalance,
-    );
-    return currentUsdBalance.plus(prev);
-  }, new BigNumber(0));
-};
-
 /**
- * True when at least one held balance has a price. Uses the same lookup as
- * {@link getTotalUsd}, so it counts exactly the prices that the total adds.
+ * Sums the USD value of the held balances, and reports whether any held
+ * balance has a price. One lookup gives both, so the label and the total
+ * always count the same prices.
  *
  * The price map can hold tokens the account does not hold, such as a swap
- * destination in the price cache. Those do not count.
+ * destination in the price cache. Those do not count. A token with a null or
+ * empty price adds nothing.
  */
-export const hasHeldPrice = (prices: ApiTokenPrices, balances: AssetType[]) =>
-  Object.keys(prices).some(
-    (canonical) =>
-      !!prices[canonical]?.currentPrice &&
-      !!getBalanceByAsset(getAssetFromCanonical(canonical), balances),
+export const getTotalUsd = (prices: ApiTokenPrices, balances: AssetType[]) =>
+  Object.keys(prices).reduce(
+    (acc, canonical) => {
+      const currentPrice = prices[canonical]?.currentPrice;
+      if (!currentPrice) {
+        return acc;
+      }
+      const balance = getBalanceByAsset(
+        getAssetFromCanonical(canonical),
+        balances,
+      );
+      if (!balance) {
+        return acc;
+      }
+      return {
+        totalUsd: acc.totalUsd.plus(
+          new BigNumber(currentPrice).multipliedBy(
+            getTotalInWholeUnits(balance),
+          ),
+        ),
+        hasPrices: true,
+      };
+    },
+    { totalUsd: new BigNumber(0), hasPrices: false },
   );
 
 /**
@@ -324,7 +329,7 @@ export const getTotalUsdLabel = ({
   hasPriceFeed: boolean;
   isFunded: boolean;
   /**
-   * At least one held balance has a price. See {@link hasHeldPrice}. Omit
+   * At least one held balance has a price. See {@link getTotalUsd}. Omit
    * where no prices were fetched.
    */
   hasPrices?: boolean;

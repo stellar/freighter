@@ -2,7 +2,7 @@ import BigNumber from "bignumber.js";
 
 import { AssetType } from "@shared/api/types/account-balance";
 import { ApiTokenPrices } from "@shared/api/types";
-import { getTotalUsdLabel, hasHeldPrice } from "popup/helpers/balance";
+import { getTotalUsd, getTotalUsdLabel } from "popup/helpers/balance";
 
 const label = (overrides: Partial<Parameters<typeof getTotalUsdLabel>[0]>) =>
   getTotalUsdLabel({
@@ -61,32 +61,36 @@ const HELD = [
   },
 ] as unknown as AssetType[];
 
-describe("hasHeldPrice", () => {
-  it("is true when a held balance has a price", () => {
-    const prices: ApiTokenPrices = {
-      native: { currentPrice: "0.5" },
-      [USDC]: null,
-    };
-    expect(hasHeldPrice(prices, HELD)).toBe(true);
+const usd = (prices: ApiTokenPrices) => {
+  const { totalUsd, hasPrices } = getTotalUsd(prices, HELD);
+  return { totalUsd: totalUsd.toString(), hasPrices };
+};
+
+describe("getTotalUsd", () => {
+  it("sums only the priced held balances", () => {
+    expect(usd({ native: { currentPrice: "0.5" }, [USDC]: null })).toEqual({
+      totalUsd: "50",
+      hasPrices: true,
+    });
   });
 
   // The backend can return a key per token with no price behind any of them.
-  it("is false when every price is null", () => {
-    expect(hasHeldPrice({ native: null, [USDC]: null }, HELD)).toBe(false);
+  it("reports no prices when every price is null", () => {
+    expect(usd({ native: null, [USDC]: null })).toEqual({
+      totalUsd: "0",
+      hasPrices: false,
+    });
   });
 
-  it("is false for an empty price map", () => {
-    expect(hasHeldPrice({}, HELD)).toBe(false);
+  it("reports no prices for an empty price map", () => {
+    expect(usd({})).toEqual({ totalUsd: "0", hasPrices: false });
   });
 
-  // The price cache can keep tokens the account does not hold. The total
-  // does not add them, so they must not count as a price either.
+  // The price cache can keep tokens the account does not hold. They add
+  // nothing to the total and do not count as a price.
   it("ignores a price for a token the account does not hold", () => {
-    const prices: ApiTokenPrices = {
-      native: null,
-      [USDC]: null,
-      [EURC]: { currentPrice: "1.1" },
-    };
-    expect(hasHeldPrice(prices, HELD)).toBe(false);
+    expect(
+      usd({ native: null, [USDC]: null, [EURC]: { currentPrice: "1.1" } }),
+    ).toEqual({ totalUsd: "0", hasPrices: false });
   });
 });
