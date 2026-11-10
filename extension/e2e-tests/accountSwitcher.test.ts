@@ -29,7 +29,7 @@ test("Groups the switcher by source and switches between a phrase account and an
   // Import a secret key, which becomes the active account.
   const imported = Keypair.random();
   await page.getByTestId("add-wallet").click();
-  await page.getByText("Import a Stellar secret key").click();
+  await page.getByTestId("add-wallet-import-secret-key").click();
   await page.locator("#privateKey-input").fill(imported.secret());
   await page.locator("#password-input").fill(WALLET_PASSWORD);
   await page.locator("#authorization-input").check({ force: true });

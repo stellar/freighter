@@ -1,0 +1,49 @@
+@use "../../../styles/utils.scss" as *;
+
+// Two columns of numbered words, 16px between columns and 12px between rows.
+.PhraseGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: pxToRem(16px);
+  row-gap: pxToRem(12px);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  // SDS prefixes every li with a dash (`.sds-theme-* li::before`); this
+  // selector outranks it.
+  @at-root ol#{&} li::before {
+    content: none;
+  }
+
+  &--hidden {
+    filter: blur(pxToRem(6px));
+    user-select: none;
+  }
+
+  &__word {
+    display: flex;
+    gap: pxToRem(8px);
+    min-width: 0;
+    padding: pxToRem(8px) pxToRem(12px);
+    border-radius: pxToRem(12px);
+    background-color: var(--sds-clr-gray-02);
+    font-size: pxToRem(16px);
+    line-height: pxToRem(24px);
+    font-weight: var(--font-weight-semi-bold);
+    color: var(--sds-clr-gray-12);
+
+    span:last-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  &__number {
+    flex-shrink: 0;
+    width: pxToRem(20px);
+    color: var(--sds-clr-gray-09);
+  }
+}

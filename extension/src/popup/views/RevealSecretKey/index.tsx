@@ -17,6 +17,7 @@ import { closeWindow, openTab } from "popup/helpers/navigate";
 import { emitScreenViewed } from "helpers/metrics";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { PhraseGrid } from "popup/components/mnemonicPhrase/PhraseGrid";
 import { View } from "popup/basics/layout/View";
 
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
@@ -54,25 +55,6 @@ const NeverShareBanner = ({
     </div>
     <div className="RevealSecretKey__banner__body">{children}</div>
   </div>
-);
-
-/**
- * The phrase as a numbered two-column grid. Copying is blocked, as in
- * MnemonicDisplay: the phrase never goes on the clipboard.
- */
-const PhraseGrid = ({ phrase }: { phrase: string }) => (
-  <ol
-    className="RevealSecretKey__phrase"
-    data-testid="reveal-recovery-phrase-value"
-    onCopy={(e) => e.preventDefault()}
-  >
-    {phrase.split(" ").map((word, i) => (
-      <li key={`${i}-${word}`} className="RevealSecretKey__phrase__word">
-        <span className="RevealSecretKey__phrase__number">{i + 1}</span>
-        <span>{word}</span>
-      </li>
-    ))}
-  </ol>
 );
 
 const RevealSecret = ({ kind }: { kind: SecretKind }) => {
@@ -268,7 +250,10 @@ const RevealSecret = ({ kind }: { kind: SecretKind }) => {
               {copy.revealedBannerBody}
             </NeverShareBanner>
             {isPhrase ? (
-              <PhraseGrid phrase={secret} />
+              <PhraseGrid
+                phrase={secret}
+                testId="reveal-recovery-phrase-value"
+              />
             ) : (
               <div
                 className="RevealSecretKey__key"

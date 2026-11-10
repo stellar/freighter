@@ -10,6 +10,10 @@
   border-radius: #{pxToRem(8px)};
   cursor: pointer;
 
+  &--static {
+    cursor: default;
+  }
+
   &__identicon {
     width: #{pxToRem(40px)};
     height: #{pxToRem(40px)};
