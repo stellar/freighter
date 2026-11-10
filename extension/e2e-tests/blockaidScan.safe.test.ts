@@ -251,11 +251,13 @@ test.describe("BlockAid Scan - Safe States (No Override)", () => {
       .getByTestId("swap-sell-card")
       .getByTestId("send-amount-amount-input")
       .fill("10");
+    // Disabled until the quote for the entered amount lands.
+    await expect(page.getByTestId("swap-amount-btn-continue")).toBeEnabled({
+      timeout: 10000,
+    });
     await page.getByTestId("swap-amount-btn-continue").click({ force: true });
 
-    await expect(
-      page.getByText("You are swapping").or(page.getByText("Review")),
-    ).toBeVisible({
+    await expect(page.getByText("You are swapping")).toBeVisible({
       timeout: 200000,
     });
 

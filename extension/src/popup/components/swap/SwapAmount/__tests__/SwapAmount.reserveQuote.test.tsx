@@ -63,6 +63,11 @@ const route = (fromAmount: string, toAmount: string, to: string) => ({
   fees: [],
 });
 
+const sendQuoteReply = {
+  status: 200,
+  body: { data: { routes: [route("5", "40", AQUA)], unavailable: [] } },
+};
+
 describe("SwapAmount swap-for-reserve quote", () => {
   let fetchBackendV2: jest.SpyInstance;
   let horizonReceive: jest.SpyInstance;
@@ -142,6 +147,9 @@ describe("SwapAmount swap-for-reserve quote", () => {
       </Wrapper>,
     );
 
+    await waitFor(() =>
+      expect(screen.getByTestId("swap-amount-btn-continue")).toBeEnabled(),
+    );
     await act(async () => {
       fireEvent.click(screen.getByTestId("swap-amount-btn-continue"));
     });
@@ -176,15 +184,19 @@ describe("SwapAmount swap-for-reserve quote", () => {
   });
 
   it("reports a classic outage instead of treating it as no route", async () => {
-    fetchBackendV2.mockImplementation(async () => ({
-      status: 200,
-      body: {
-        data: {
-          routes: [],
-          unavailable: [{ source: "classic", reason: "timeout" }],
-        },
-      },
-    }));
+    fetchBackendV2.mockImplementation(async ({ body }) =>
+      JSON.parse(body!).mode === "send"
+        ? sendQuoteReply
+        : {
+            status: 200,
+            body: {
+              data: {
+                routes: [],
+                unavailable: [{ source: "classic", reason: "timeout" }],
+              },
+            },
+          },
+    );
 
     await renderAndSwapForReserve();
 
@@ -199,10 +211,11 @@ describe("SwapAmount swap-for-reserve quote", () => {
   });
 
   it("does not report a rejected receive quote to Sentry again", async () => {
-    fetchBackendV2.mockImplementation(async () => ({
-      status: 400,
-      body: { error: "invalid amount" },
-    }));
+    fetchBackendV2.mockImplementation(async ({ body }) =>
+      JSON.parse(body!).mode === "send"
+        ? sendQuoteReply
+        : { status: 400, body: { error: "invalid amount" } },
+    );
 
     await renderAndSwapForReserve();
 
