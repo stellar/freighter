@@ -32,7 +32,6 @@ import { getSdk, isCustomNetwork } from "@shared/helpers/stellar";
 import { AssetIcons, ErrorMessage } from "@shared/api/types";
 import { allAccountsSelector } from "popup/ducks/accountServices";
 import { balancesSelector, tokenPricesSelector } from "popup/ducks/cache";
-import { tokenPricesV2Selector } from "popup/ducks/remoteConfig";
 import { getResultCodes } from "popup/helpers/parseTransaction";
 import {
   classifyAssetIdentity,
@@ -116,7 +115,6 @@ function useSubmitTxData({
   const allAccounts = useSelector(allAccountsSelector);
   const allBalancesCache = useSelector(balancesSelector);
   const allTokenPricesCache = useSelector(tokenPricesSelector);
-  const useTokenPricesV2 = useSelector(tokenPricesV2Selector);
   const { fetchData: fetchBalances } = useGetBalances({
     showHidden: false,
     includeIcons: false,
@@ -314,7 +312,6 @@ function useSubmitTxData({
                 : []),
             ],
             networkDetails,
-            useV2: useTokenPricesV2,
             cachedDisplayPrices,
           })
         : null;

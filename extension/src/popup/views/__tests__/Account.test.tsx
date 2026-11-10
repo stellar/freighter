@@ -445,7 +445,6 @@ describe("Account view", () => {
             },
             remoteConfig: {
               isInitialized: true,
-              use_token_prices_v2: true,
               use_balances_v2: true,
               use_token_price_history: true,
               maintenance_screen: { enabled: false, payload: undefined },
@@ -867,7 +866,6 @@ describe("Account view", () => {
           },
           remoteConfig: {
             isInitialized: false,
-            use_token_prices_v2: true,
             use_balances_v2: false,
             use_token_price_history: true,
             maintenance_banner: { enabled: false, payload: undefined },
@@ -889,7 +887,6 @@ describe("Account view", () => {
         type: fetchFeatureFlags.fulfilled.type,
         payload: {
           isInitialized: true,
-          use_token_prices_v2: true,
           use_balances_v2: true,
           use_token_price_history: true,
           maintenance_banner: { enabled: false, payload: undefined },

@@ -268,8 +268,7 @@ describe("internalApi", () => {
     const sentMessage = () => mockedSend.mock.calls[0][0];
 
     it("includes contract tokens (SYMBOL:CONTRACTID) in the v2 request", async () => {
-      // The Go backend prices SEP-41 tokens; only the legacy Node backend
-      // errors on them. Without this, a priced contract token would show a
+      // The Go backend prices SEP-41 tokens. Without this, a priced contract token would show a
       // live chart under a `--` header price (§4.1).
       mockSendOk();
 
@@ -280,7 +279,6 @@ describe("internalApi", () => {
           "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
         ],
         MAINNET_NETWORK_DETAILS,
-        true,
       );
 
       const body = JSON.parse(sentMessage().body as string);
@@ -292,57 +290,22 @@ describe("internalApi", () => {
     });
 
     it("excludes liquidity-pool IDs from the v2 request", async () => {
-      // LP shares are never priceable; the LP half of the old predicate is
-      // unconditional on both paths.
+      // LP shares are never priceable.
       mockSendOk();
 
       await internalApi.getTokenPrices(
         ["native", "abc123:lp"],
         MAINNET_NETWORK_DETAILS,
-        true,
       );
 
       const body = JSON.parse(sentMessage().body as string);
       expect(body.tokens).toEqual(["native"]);
     });
 
-    it("still filters custom tokens AND LP ids on the legacy (v1) path", async () => {
-      // The rollback path calls the old Node backend, which errors on custom
-      // tokens — the custom-token half of the predicate lives only here.
-      const fetchSpy = jest.spyOn(global, "fetch").mockResolvedValue({
-        ok: true,
-        json: jest.fn().mockResolvedValue({ data: {} }),
-      } as unknown as Response);
-
-      await internalApi.getTokenPrices(
-        [
-          "native",
-          "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
-          "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
-          "abc123:lp",
-        ],
-        MAINNET_NETWORK_DETAILS,
-        false,
-      );
-
-      expect(mockedSend).not.toHaveBeenCalled();
-      const requestBody = JSON.parse(
-        (fetchSpy.mock.calls[0][1] as RequestInit).body as string,
-      );
-      expect(requestBody.tokens).toEqual([
-        "native",
-        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
-      ]);
-    });
-
     it("targets the v2 chokepoint with the network query param", async () => {
       mockSendOk();
 
-      await internalApi.getTokenPrices(
-        ["native"],
-        TESTNET_NETWORK_DETAILS,
-        true,
-      );
+      await internalApi.getTokenPrices(["native"], TESTNET_NETWORK_DETAILS);
 
       const message = sentMessage();
       expect(message.type).toBe(SERVICE_TYPES.FETCH_BACKEND_V2);
@@ -356,16 +319,12 @@ describe("internalApi", () => {
 
       // Custom network stored as STANDALONE but sharing the pubnet passphrase
       // must still resolve to PUBLIC and hit the endpoint.
-      await internalApi.getTokenPrices(
-        ["native"],
-        {
-          ...MAINNET_NETWORK_DETAILS,
-          network: "STANDALONE",
-          networkName: "Custom Pubnet",
-          networkPassphrase: Networks.PUBLIC,
-        },
-        true,
-      );
+      await internalApi.getTokenPrices(["native"], {
+        ...MAINNET_NETWORK_DETAILS,
+        network: "STANDALONE",
+        networkName: "Custom Pubnet",
+        networkPassphrase: Networks.PUBLIC,
+      });
 
       expect(mockedSend).toHaveBeenCalled();
       expect(sentMessage().path).toContain("network=PUBLIC");
@@ -377,7 +336,6 @@ describe("internalApi", () => {
       const prices = await internalApi.getTokenPrices(
         ["native"],
         FUTURENET_NETWORK_DETAILS,
-        true,
       );
 
       expect(mockedSend).not.toHaveBeenCalled();
@@ -385,14 +343,12 @@ describe("internalApi", () => {
     });
 
     it("skips the request when every token is filtered out", async () => {
-      // Only LP shares are filtered on the v2 path now, so an all-LP input is
-      // the empty case.
+      // Only LP shares are filtered, so an all-LP input is the empty case.
       mockSendOk();
 
       const prices = await internalApi.getTokenPrices(
         ["abc123:lp", "def456:lp"],
         MAINNET_NETWORK_DETAILS,
-        true,
       );
 
       expect(mockedSend).not.toHaveBeenCalled();
@@ -408,7 +364,6 @@ describe("internalApi", () => {
       const result = await internalApi.getTokenPrices(
         ["native"],
         TESTNET_NETWORK_DETAILS,
-        true,
       );
 
       expect(result).toEqual(prices);
@@ -418,7 +373,7 @@ describe("internalApi", () => {
       mockedSend.mockResolvedValue({ status: 500, body: null });
 
       await expect(
-        internalApi.getTokenPrices(["native"], TESTNET_NETWORK_DETAILS, true),
+        internalApi.getTokenPrices(["native"], TESTNET_NETWORK_DETAILS),
       ).rejects.toThrow();
     });
 
@@ -428,101 +383,8 @@ describe("internalApi", () => {
       mockedSend.mockResolvedValue({ status: 200, body: {} });
 
       await expect(
-        internalApi.getTokenPrices(["native"], TESTNET_NETWORK_DETAILS, true),
+        internalApi.getTokenPrices(["native"], TESTNET_NETWORK_DETAILS),
       ).rejects.toThrow();
-    });
-  });
-
-  describe("getTokenPrices v1 endpoint (useV2 = false)", () => {
-    const mockFetchOk = () =>
-      jest.spyOn(global, "fetch").mockResolvedValue({
-        ok: true,
-        json: jest.fn().mockResolvedValue({ data: {} }),
-      } as unknown as Response);
-
-    it("targets the v1 endpoint without a network query param", async () => {
-      const fetchSpy = mockFetchOk();
-
-      await internalApi.getTokenPrices(
-        ["native"],
-        TESTNET_NETWORK_DETAILS,
-        false,
-      );
-
-      const requestUrl = fetchSpy.mock.calls[0][0] as string;
-      expect(requestUrl).toContain("/token-prices");
-      expect(requestUrl).not.toContain("network=");
-    });
-
-    it("still filters LP IDs and contract-ID issuers from the request", async () => {
-      const fetchSpy = mockFetchOk();
-
-      await internalApi.getTokenPrices(
-        [
-          "native",
-          "abc123:lp",
-          "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
-        ],
-        MAINNET_NETWORK_DETAILS,
-        false,
-      );
-
-      const requestInit = fetchSpy.mock.calls[0][1] as RequestInit;
-      const body = JSON.parse(requestInit.body as string);
-      expect(body.tokens).toEqual(["native"]);
-    });
-
-    it.each([
-      [
-        "a symbol containing a colon",
-        "A:B:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
-      ],
-      [
-        "a bare contract id",
-        "CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
-      ],
-    ])("filters a contract token given as %s", async (_label, token) => {
-      const fetchSpy = mockFetchOk();
-
-      await internalApi.getTokenPrices(
-        ["native", token],
-        MAINNET_NETWORK_DETAILS,
-        false,
-      );
-
-      const requestInit = fetchSpy.mock.calls[0][1] as RequestInit;
-      const body = JSON.parse(requestInit.body as string);
-      expect(body.tokens).toEqual(["native"]);
-    });
-
-    it("does NOT skip unsupported networks (unlike v2)", async () => {
-      const fetchSpy = mockFetchOk();
-
-      await internalApi.getTokenPrices(
-        ["native"],
-        FUTURENET_NETWORK_DETAILS,
-        false,
-      );
-
-      expect(fetchSpy).toHaveBeenCalled();
-    });
-
-    it("skips the request when every token is filtered out, like v2", async () => {
-      // `{ tokens: [] }` is a 400 on the legacy backend too; a lone Soroban
-      // swap destination must not surface as an error on every screen open.
-      const fetchSpy = mockFetchOk();
-
-      const result = await internalApi.getTokenPrices(
-        [
-          "abc123:lp",
-          "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
-        ],
-        MAINNET_NETWORK_DETAILS,
-        false,
-      );
-
-      expect(fetchSpy).not.toHaveBeenCalled();
-      expect(result).toEqual({});
     });
   });
 
