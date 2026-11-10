@@ -1,6 +1,6 @@
 @use "../../../styles/utils.scss" as *;
 
-.RenameWallet {
+.AccountNameForm {
   display: flex;
   flex-direction: column;
   gap: #{pxToRem(24px)};
@@ -24,5 +24,21 @@
   &__actions {
     display: flex;
     gap: #{pxToRem(8px)};
+  }
+}
+
+.AccountNameForm__identicon__placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: var(--sds-clr-lilac-03);
+  color: var(--sds-clr-lilac-09);
+
+  svg {
+    width: pxToRem(24px);
+    height: pxToRem(24px);
   }
 }

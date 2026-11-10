@@ -185,31 +185,43 @@ export const addAccount = async ({
   activePublicKey,
   password,
   sourceId,
+  accountName,
 }: {
   activePublicKey: string;
   password: string;
   /** The phrase source to derive from; see `AddAccountMessage`. */
   sourceId?: string;
+  /** The new account's name; see `AddAccountMessage`. */
+  accountName?: string;
 }): Promise<{
   publicKey: string;
   activeAccountId: string;
   allAccounts: Array<Account>;
   hasPrivateKey: boolean;
+  secretSources: SecretSource[];
 }> => {
   let error = "";
   let publicKey = "";
   let activeAccountId = "";
   let allAccounts = [] as Array<Account>;
   let hasPrivateKey = false;
+  let secretSources = [] as SecretSource[];
 
   try {
-    ({ allAccounts, error, publicKey, activeAccountId, hasPrivateKey } =
-      await sendMessageToBackground({
-        activePublicKey,
-        password,
-        sourceId,
-        type: SERVICE_TYPES.ADD_ACCOUNT,
-      }));
+    ({
+      allAccounts,
+      error,
+      publicKey,
+      activeAccountId,
+      hasPrivateKey,
+      secretSources,
+    } = await sendMessageToBackground({
+      activePublicKey,
+      password,
+      sourceId,
+      accountName,
+      type: SERVICE_TYPES.ADD_ACCOUNT,
+    }));
   } catch (e) {
     console.error(e);
   }
@@ -218,7 +230,79 @@ export const addAccount = async ({
     throw new Error(error);
   }
 
-  return { allAccounts, publicKey, activeAccountId, hasPrivateKey };
+  return {
+    allAccounts,
+    publicKey,
+    activeAccountId,
+    hasPrivateKey,
+    secretSources: secretSources || [],
+  };
+};
+
+/** Generates the phrase for a new source; see `GenerateRecoveryPhraseMessage`. */
+export const generateRecoveryPhrase = async (): Promise<{
+  mnemonicPhrase: string;
+}> => {
+  let response = { mnemonicPhrase: "" };
+
+  try {
+    response = await sendMessageToBackground({
+      activePublicKey: null,
+      type: SERVICE_TYPES.GENERATE_RECOVERY_PHRASE,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  if (!response?.mnemonicPhrase) {
+    throw new Error("Unable to generate a recovery phrase");
+  }
+
+  return response;
+};
+
+/** Stores the generated phrase; see `AddRecoveryPhraseSourceMessage`. */
+export const addRecoveryPhraseSource = async ({
+  activePublicKey,
+  password,
+  accountName,
+}: {
+  activePublicKey: string;
+  password: string;
+  accountName?: string;
+}): Promise<{
+  publicKey: string;
+  activeAccountId: string;
+  allAccounts: Array<Account>;
+  hasPrivateKey: boolean;
+  secretSources: SecretSource[];
+}> => {
+  let response = {
+    error: "",
+    publicKey: "",
+    activeAccountId: "",
+    allAccounts: [] as Array<Account>,
+    hasPrivateKey: false,
+    secretSources: [] as SecretSource[],
+  };
+
+  try {
+    response = await sendMessageToBackground({
+      activePublicKey,
+      password,
+      accountName,
+      type: SERVICE_TYPES.ADD_RECOVERY_PHRASE_SOURCE,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  const { error, ...result } = response;
+  if (error) {
+    throw new Error(error);
+  }
+
+  return result;
 };
 
 export const importAccount = async ({

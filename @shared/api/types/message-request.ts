@@ -122,6 +122,26 @@ export interface AddAccountMessage extends BaseMessage {
    * account's phrase is used, else the pinned source, else the first held.
    */
   sourceId?: string;
+  /** The new account's name. Absent or blank, the next default name. */
+  accountName?: string;
+}
+
+/**
+ * Generates a phrase for a new source and holds it in the session until
+ * `ADD_RECOVERY_PHRASE_SOURCE` stores it. Nothing is persisted.
+ */
+export interface GenerateRecoveryPhraseMessage extends BaseMessage {
+  type: SERVICE_TYPES.GENERATE_RECOVERY_PHRASE;
+}
+
+/**
+ * Stores the phrase from `GENERATE_RECOVERY_PHRASE` as a new phrase source and
+ * derives its first account. The phrase is never sent back by the popup.
+ */
+export interface AddRecoveryPhraseSourceMessage extends BaseMessage {
+  type: SERVICE_TYPES.ADD_RECOVERY_PHRASE_SOURCE;
+  password: string;
+  accountName?: string;
 }
 
 export interface ImportAccountMessage extends BaseMessage {
@@ -560,6 +580,8 @@ export type ServiceMessageRequest =
   | FundAccountMessage
   | CreateAccountMessage
   | AddAccountMessage
+  | GenerateRecoveryPhraseMessage
+  | AddRecoveryPhraseSourceMessage
   | ImportAccountMessage
   | ImportHardWareWalletMessage
   | MakeAccountActiveMessage

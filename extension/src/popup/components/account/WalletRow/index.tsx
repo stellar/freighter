@@ -14,7 +14,8 @@ interface WalletRowProps {
   accountValue?: string;
   isSelected: boolean;
   publicKey: string;
-  onClick: (publicKey: string) => unknown;
+  /** Absent, the row is a plain listing rather than a button. */
+  onClick?: (publicKey: string) => unknown;
 }
 
 export const WalletRow = ({
@@ -39,9 +40,9 @@ export const WalletRow = ({
     // account is otherwise conveyed only by the badge on its avatar, which
     // says nothing to a screen reader.
     <div
-      className="WalletRow"
-      onClick={() => onClick(publicKey)}
-      role="button"
+      className={`WalletRow${onClick ? "" : " WalletRow--static"}`}
+      onClick={onClick ? () => onClick(publicKey) : undefined}
+      role={onClick ? "button" : undefined}
       aria-current={isSelected ? true : undefined}
       data-testid="wallet-row-select"
     >
