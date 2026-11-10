@@ -74,6 +74,8 @@ export const CreateWallet = () => {
   const [isNaming, setIsNaming] = useState(false);
   const [accountName, setAccountName] = useState("");
   const [phrase, setPhrase] = useState("");
+  // Names this window's generation; see `AddRecoveryPhraseSourceMessage`.
+  const [pendingPhraseId, setPendingPhraseId] = useState("");
   const [isRevealed, setIsRevealed] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -82,6 +84,7 @@ export const CreateWallet = () => {
     return () => {
       // Drop the phrase from memory when the screen goes away.
       setPhrase("");
+      setPendingPhraseId("");
       dispatch(clearApiError());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -151,8 +154,10 @@ export const CreateWallet = () => {
 
     if (target?.kind === "newPhrase") {
       try {
-        const { mnemonicPhrase } = await generateRecoveryPhrase();
+        const { mnemonicPhrase, pendingPhraseId: id } =
+          await generateRecoveryPhrase();
         setPhrase(mnemonicPhrase);
+        setPendingPhraseId(id);
         setIsRevealed(false);
         setIsNaming(false);
         setStep("backup");
@@ -174,7 +179,9 @@ export const CreateWallet = () => {
 
     const res =
       target.kind === "newPhrase"
-        ? await dispatch(addRecoveryPhraseSource({ password, accountName }))
+        ? await dispatch(
+            addRecoveryPhraseSource({ password, accountName, pendingPhraseId }),
+          )
         : await dispatch(
             addAccount({
               password,
@@ -192,12 +199,14 @@ export const CreateWallet = () => {
         source: target.kind === "newPhrase" ? "new_phrase" : "existing_phrase",
       });
       setPhrase("");
+      setPendingPhraseId("");
       navigateTo(ROUTES.account, navigate);
     }
   };
 
   const backToSelect = () => {
     setPhrase("");
+    setPendingPhraseId("");
     setIsRevealed(false);
     dispatch(clearApiError());
     setStep("select");

@@ -26,6 +26,7 @@ import { KEY_ID } from "constants/localStorageTypes";
 import {
   allAccountsSelector,
   buildHasPrivateKeySelector,
+  pendingMnemonicPhraseIdSelector,
   pendingMnemonicPhraseSelector,
   publicKeySelector,
   setPendingMnemonicPhrase,
@@ -65,10 +66,16 @@ export const addRecoveryPhraseSource = async ({
   keyManager: KeyManager;
   sessionTimer: SessionTimer;
 }) => {
-  const { password, accountName } = request;
+  const { password, accountName, pendingPhraseId } = request;
   const mnemonicPhrase = pendingMnemonicPhraseSelector(sessionStore.getState());
 
-  if (!mnemonicPhrase) {
+  // Another window's generation replaces this one, so a mismatched id means
+  // the held phrase isn't the one this window showed.
+  if (
+    !mnemonicPhrase ||
+    !pendingPhraseId ||
+    pendingPhraseId !== pendingMnemonicPhraseIdSelector(sessionStore.getState())
+  ) {
     return { error: PENDING_PHRASE_MISSING_ERROR };
   }
 
@@ -154,7 +161,10 @@ export const addRecoveryPhraseSource = async ({
   }
 
   sessionStore.dispatch(
-    setPendingMnemonicPhrase({ pendingMnemonicPhrase: "" }),
+    setPendingMnemonicPhrase({
+      pendingMnemonicPhrase: "",
+      pendingMnemonicPhraseId: "",
+    }),
   );
 
   // The new phrase is a source of its own. Not awaited.
