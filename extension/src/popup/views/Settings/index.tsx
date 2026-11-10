@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@stellar/design-system";
@@ -9,7 +9,7 @@ import browser from "webextension-polyfill";
 import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
 import { View } from "popup/basics/layout/View";
 import { ROUTES } from "popup/constants/routes";
-import { allAccountsSelector, signOut } from "popup/ducks/accountServices";
+import { signOut } from "popup/ducks/accountServices";
 import { navigateTo, openSidebar, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { AppDispatch } from "popup/App";
@@ -77,10 +77,13 @@ const SettingsAction = ({
   </div>
 );
 
-/** The way into Accounts & recovery, with the first two accounts' avatars. */
+// Fixed seeds: the tile always shows the same two decorative orbs, however
+// many accounts the user has.
+const ACCOUNTS_CARD_ORB_SEEDS = ["accounts-orb-1", "accounts-orb-2"];
+
+/** The way into Accounts & recovery, with two decorative orbs. */
 const AccountsRecoveryCard = () => {
   const { t } = useTranslation();
-  const allAccounts = useSelector(allAccountsSelector);
 
   return (
     <Link
@@ -97,9 +100,9 @@ const AccountsRecoveryCard = () => {
         </span>
       </div>
       <div className="Settings__accounts__avatars" aria-hidden="true">
-        {allAccounts.slice(0, 2).map(({ publicKey }) => (
-          <div key={publicKey} className="Settings__accounts__avatar">
-            <IdenticonImg publicKey={publicKey} />
+        {ACCOUNTS_CARD_ORB_SEEDS.map((seed) => (
+          <div key={seed} className="Settings__accounts__avatar">
+            <IdenticonImg publicKey={seed} />
           </div>
         ))}
       </div>
