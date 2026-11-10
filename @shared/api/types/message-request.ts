@@ -128,7 +128,8 @@ export interface AddAccountMessage extends BaseMessage {
 
 /**
  * Generates a phrase for a new source and holds it in the session until
- * `ADD_RECOVERY_PHRASE_SOURCE` stores it. Nothing is persisted.
+ * `ADD_RECOVERY_PHRASE_SOURCE` stores it. Nothing is persisted. Answers with
+ * the phrase and a `pendingPhraseId` for that generation.
  */
 export interface GenerateRecoveryPhraseMessage extends BaseMessage {
   type: SERVICE_TYPES.GENERATE_RECOVERY_PHRASE;
@@ -142,6 +143,11 @@ export interface AddRecoveryPhraseSourceMessage extends BaseMessage {
   type: SERVICE_TYPES.ADD_RECOVERY_PHRASE_SOURCE;
   password: string;
   accountName?: string;
+  /**
+   * The id `GENERATE_RECOVERY_PHRASE` returned. Rejected if a later
+   * generation, from any window, has replaced the held phrase.
+   */
+  pendingPhraseId: string;
 }
 
 export interface ImportAccountMessage extends BaseMessage {

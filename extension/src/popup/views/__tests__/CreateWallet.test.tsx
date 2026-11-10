@@ -220,7 +220,7 @@ describe("CreateWallet", () => {
   it("generates a phrase, hides it until asked, then stores it", async () => {
     jest
       .spyOn(ApiInternal, "generateRecoveryPhrase")
-      .mockResolvedValue({ mnemonicPhrase: PHRASE });
+      .mockResolvedValue({ mnemonicPhrase: PHRASE, pendingPhraseId: "gen-1" });
     const spy = jest
       .spyOn(ApiInternal, "addRecoveryPhraseSource")
       .mockResolvedValue(
@@ -266,6 +266,7 @@ describe("CreateWallet", () => {
           password: "password",
           // "Account 2" is taken by the imported key.
           accountName: "Account 3",
+          pendingPhraseId: "gen-1",
         }),
       ),
     );

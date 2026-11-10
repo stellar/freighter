@@ -60,6 +60,7 @@ const initialState: InitialState = {
   allAccounts: [] as Account[],
   migratedMnemonicPhrase: "",
   pendingMnemonicPhrase: "",
+  pendingMnemonicPhraseId: "",
   isHardwareWalletLocked: false,
 };
 
@@ -72,6 +73,11 @@ interface UiData {
    * user confirms they saved it. Cleared once stored, and on lock or log out.
    */
   pendingMnemonicPhrase?: string;
+  /**
+   * Identifies the generation `pendingMnemonicPhrase` came from. Windows share
+   * the session, so confirming must name the generation the user saw.
+   */
+  pendingMnemonicPhraseId?: string;
 }
 
 interface AppData {
@@ -117,14 +123,21 @@ export const sessionSlice = createSlice({
     },
     setPendingMnemonicPhrase: (
       state,
-      action: { payload: { pendingMnemonicPhrase: string } },
+      action: {
+        payload: {
+          pendingMnemonicPhrase: string;
+          pendingMnemonicPhraseId: string;
+        };
+      },
     ) => ({
       ...state,
       pendingMnemonicPhrase: action.payload.pendingMnemonicPhrase,
+      pendingMnemonicPhraseId: action.payload.pendingMnemonicPhraseId,
     }),
     timeoutAccountAccess: (state) => ({
       ...state,
       pendingMnemonicPhrase: "",
+      pendingMnemonicPhraseId: "",
       hashKey: {
         key: "",
       },
@@ -209,6 +222,10 @@ export const migratedMnemonicPhraseSelector = createSelector(
 export const pendingMnemonicPhraseSelector = createSelector(
   sessionSelector,
   (session) => session.pendingMnemonicPhrase || "",
+);
+export const pendingMnemonicPhraseIdSelector = createSelector(
+  sessionSelector,
+  (session) => session.pendingMnemonicPhraseId || "",
 );
 export const allAccountsSelector = createSelector(
   sessionSelector,
