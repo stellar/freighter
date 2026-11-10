@@ -132,8 +132,8 @@ export const CreateWallet = () => {
   });
 
   const { allAccounts, accountValue, isFetchingTokenPrices } = state.data;
-  // A wallet with no phrase (a secret-key or hardware-only start) lists
-  // nothing here, and generating is the only way on.
+  // A wallet with no phrase (a secret-key start) lists nothing here, and
+  // generating is the only way on.
   const phraseGroups = groupAccountsBySource({
     accounts: allAccounts,
     sources: secretSources,

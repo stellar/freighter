@@ -18,6 +18,8 @@ import {
   MockBrowserAlarm,
 } from "background/messageListener/helpers/test-helpers";
 import { storeAccount } from "background/messageListener/helpers/store-account";
+import { storeHardwareWalletAccount } from "background/messageListener/helpers/store-hardware-wallet";
+import { WalletType } from "@shared/constants/hardwareWallet";
 import {
   addSecretSource,
   getSecretKeySourceId,
@@ -27,6 +29,7 @@ import {
   DERIVATION_INDICES_ID,
 } from "constants/localStorageTypes";
 import {
+  NO_SOFTWARE_KEYSTORE_ERROR,
   PENDING_PHRASE_MISSING_ERROR,
   PHRASE_ALREADY_HELD_ERROR,
 } from "../handlers/addRecoveryPhraseSource";
@@ -298,6 +301,23 @@ describe("adding a generated recovery phrase source", () => {
 
     expect(res.error).toBe(PENDING_PHRASE_MISSING_ERROR);
     expect(allAccounts()).toHaveLength(1);
+  });
+
+  it("refuses a wallet with no software keystore", async () => {
+    await storeHardwareWalletAccount({
+      publicKey: Keypair.random().publicKey(),
+      hardwareWalletType: WalletType.LEDGER,
+      bipPath: "44'/148'/0'",
+      sessionStore: mockSessionStore,
+      localStore: mockDataStorage,
+    });
+    await generate(PHRASE_1.mnemonic);
+
+    const res = await addPhraseSource();
+
+    expect(res.error).toBe(NO_SOFTWARE_KEYSTORE_ERROR);
+    expect(allAccounts()).toHaveLength(1);
+    expect(await mockDataStorage.getItem(DERIVATION_INDICES_ID)).toBeFalsy();
   });
 
   it("refuses when no phrase was generated", async () => {
