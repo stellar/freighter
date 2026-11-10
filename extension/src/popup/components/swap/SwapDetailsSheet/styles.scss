@@ -157,13 +157,15 @@
   }
 
   &__share {
-    min-width: pxToRem(44px);
-    padding: pxToRem(2px) pxToRem(8px);
+    min-width: pxToRem(48px);
+    padding: pxToRem(1px) pxToRem(8px);
+    border: 1px solid var(--sds-clr-navy-06);
     border-radius: pxToRem(100px);
-    background-color: var(--sds-clr-lilac-03);
-    color: var(--sds-clr-lilac-11);
-    font-size: pxToRem(12px);
-    font-weight: var(--sds-fw-medium);
+    background-color: var(--sds-clr-navy-04);
+    color: var(--sds-clr-navy-09);
+    font-size: pxToRem(14px);
+    line-height: pxToRem(20px);
+    font-weight: var(--sds-fw-semi-bold);
     text-align: center;
   }
 
