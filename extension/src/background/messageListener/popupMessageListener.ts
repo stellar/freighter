@@ -86,6 +86,8 @@ import { getTokenIds } from "./handlers/getTokenIds";
 import { removeTokenId } from "./handlers/removeTokenId";
 import { getMigratableAccounts } from "./handlers/getMigratableAccounts";
 import { getMigratedMnemonicPhrase } from "./handlers/getMigratedMnemonicPhrase";
+import { generateRecoveryPhrase } from "./handlers/generateRecoveryPhrase";
+import { addRecoveryPhraseSource } from "./handlers/addRecoveryPhraseSource";
 import { migrateAccounts } from "./handlers/migrateAccounts";
 import { addAssetsList } from "./handlers/addAssetsList";
 import { modifyAssetsList } from "./handlers/modifyAssetsList";
@@ -213,6 +215,18 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.ADD_ACCOUNT: {
       return addAccount({
+        request,
+        localStore,
+        sessionStore,
+        keyManager,
+        sessionTimer,
+      });
+    }
+    case SERVICE_TYPES.GENERATE_RECOVERY_PHRASE: {
+      return generateRecoveryPhrase({ sessionStore });
+    }
+    case SERVICE_TYPES.ADD_RECOVERY_PHRASE_SOURCE: {
+      return addRecoveryPhraseSource({
         request,
         localStore,
         sessionStore,

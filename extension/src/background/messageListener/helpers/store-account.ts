@@ -19,6 +19,10 @@ import { addAccountName, getKeyIdList } from "background/helpers/account";
 import { markDerivationIndexUsed } from "background/helpers/derivation-indices";
 import { setAccountProvenance } from "background/helpers/account-provenance";
 import { AccountType } from "@shared/api/types";
+import {
+  getNextDefaultAccountName,
+  normalizeAccountName,
+} from "@shared/helpers/accountName";
 
 interface KeyPair {
   publicKey: string;
@@ -31,6 +35,7 @@ export const storeAccount = async ({
   phraseSourceId,
   sourceId,
   derivationIndex,
+  accountName: requestedAccountName,
   password,
   keyPair,
   imported = false,
@@ -61,6 +66,8 @@ export const storeAccount = async ({
    * moment the keystore exists. Secret-key imports have none.
    */
   derivationIndex?: number;
+  /** The name the user chose. Absent or blank, the next default name. */
+  accountName?: string;
   password: string;
   keyPair: KeyPair;
   imported?: boolean;
@@ -82,7 +89,9 @@ export const storeAccount = async ({
   }
 
   const allAccounts = allAccountsSelector(sessionStore.getState());
-  const accountName = `Account ${allAccounts.length + 1}`;
+  const accountName =
+    normalizeAccountName(requestedAccountName) ||
+    getNextDefaultAccountName(allAccounts.map(({ name }) => name));
 
   let activeHashKey = await getActiveHashKeyCryptoKey({ sessionStore });
   if (activeHashKey === null && isSettingHashKey) {
