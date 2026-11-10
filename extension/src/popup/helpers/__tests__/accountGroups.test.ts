@@ -89,6 +89,22 @@ describe("groupAccountsBySource", () => {
     ]);
   });
 
+  it("keeps each group's key stable when accounts are reordered", () => {
+    const sources = [phrase("p1", 1, 1), key("k1", 1, 2)];
+    const accounts = [
+      account("a1", "p1"),
+      account("a2", "k1", { imported: true }),
+      account("hw:G1", undefined, {
+        hardwareWalletType: WalletType.LEDGER,
+        imported: true,
+      }),
+    ];
+    const keys = (list: Account[]) =>
+      groupAccountsBySource({ sources, accounts: list, t }).map((g) => g.key);
+
+    expect(keys([...accounts].reverse())).toEqual(keys(accounts));
+  });
+
   it("leaves out a source with no accounts", () => {
     const groups = groupAccountsBySource({
       sources: [phrase("p1", 1, 1), key("k1", 1, 2)],

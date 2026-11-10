@@ -1,3 +1,4 @@
+import { Page } from "@playwright/test";
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount, PASSWORD } from "./helpers/login";
 import {
@@ -548,24 +549,35 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
   await expect(page.getByTestId("add-wallet")).toBeInViewport({ ratio: 1 });
 });
 
-test("Renames wallets", async ({ page, extensionId, context }) => {
-  await loginToTestAccount({ page, extensionId, context });
+// Renaming lives in Edit account, reached from the switcher's settings gear
+// through Accounts & recovery. Opens it for the active account.
+const openEditActiveAccount = async (page: Page) => {
   await page.getByTestId("account-view-account-name").click();
   await expect(page.getByTestId("AccountSheet")).toBeVisible();
+  await page.getByTestId("account-sheet-settings").click();
+  await page.getByTestId("settings-accounts-recovery").click();
+  await page
+    .locator('[data-testid="accounts-recovery-row"][aria-current="true"]')
+    .getByTestId("accounts-recovery-edit")
+    .click();
+  await expect(page.getByTestId("edit-account")).toBeVisible();
+};
 
-  // Rename now acts on the active account via the header pencil button
-  // instead of the (removed) per-row ellipsis menu. This seed phrase has
-  // several accounts, but `loginToTestAccount` always leaves one of them
-  // active by default, so the header already targets an account without
-  // needing to select a row first.
-  await page.getByTestId("wallets-header-edit-name").click();
+test("Renames wallets", async ({ page, extensionId, context }) => {
+  await loginToTestAccount({ page, extensionId, context });
+  await openEditActiveAccount(page);
+
+  await page.getByTestId("edit-account-name").click();
   await page.getByTestId("rename-wallet-input").fill("New Wallet");
   await page.getByText("Set name").click();
 
-  // The new name now renders in two places at once (the active-account
-  // header, plus that account's own row among several in this seed's
-  // account list), so scope each check instead of asserting on the bare
-  // text or the full row list, either of which would be an ambiguous match.
+  await expect(page.getByTestId("edit-account-name")).toContainText(
+    "New Wallet",
+  );
+
+  // The switcher's header and the account's own row pick up the new name.
+  await page.goto(`chrome-extension://${extensionId}/index.html#/account`);
+  await page.getByTestId("account-view-account-name").click();
   await expect(page.getByTestId("wallets-header")).toContainText("New Wallet");
   await expect(
     page.getByTestId("wallet-row-select").filter({ hasText: "New Wallet" }),
@@ -578,9 +590,8 @@ test("Trims the wallet name and rejects blank ones", async ({
   context,
 }) => {
   await loginToTestAccount({ page, extensionId, context });
-  await page.getByTestId("account-view-account-name").click();
-  await expect(page.getByTestId("AccountSheet")).toBeVisible();
-  await page.getByTestId("wallets-header-edit-name").click();
+  await openEditActiveAccount(page);
+  await page.getByTestId("edit-account-name").click();
 
   const input = page.getByTestId("rename-wallet-input");
   const setName = page.getByText("Set name");
@@ -597,12 +608,10 @@ test("Trims the wallet name and rejects blank ones", async ({
   await expect(setName).toBeEnabled();
   await setName.click();
 
-  await expect(page.getByTestId("wallets-header")).toContainText(
-    "Padded Wallet",
-  );
+  // An exact match on the stored value, so leftover spaces would fail it.
   await expect(
-    page.getByTestId("wallet-row-select").filter({ hasText: "Padded Wallet" }),
-  ).toHaveCount(1);
+    page.getByTestId("edit-account-name").locator(".EditAccount__row__value"),
+  ).toHaveText("Padded Wallet", { useInnerText: true });
 });
 
 test("Closes the rename modal when the name is unchanged", async ({
@@ -611,9 +620,8 @@ test("Closes the rename modal when the name is unchanged", async ({
   context,
 }) => {
   await loginToTestAccount({ page, extensionId, context });
-  await page.getByTestId("account-view-account-name").click();
-  await expect(page.getByTestId("AccountSheet")).toBeVisible();
-  await page.getByTestId("wallets-header-edit-name").click();
+  await openEditActiveAccount(page);
+  await page.getByTestId("edit-account-name").click();
 
   // Submitting without editing is a no-op save, but it must still dismiss the
   // modal — otherwise the button reads as broken.

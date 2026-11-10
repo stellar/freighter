@@ -5,6 +5,8 @@ import { Icon, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { emitMetric } from "helpers/metrics";
 import { closeWindow, navigateTo, openTab } from "popup/helpers/navigate";
 import {
   getStellarExpertUrl,
@@ -196,11 +198,12 @@ export const EditAccount = () => {
               <Row
                 label={t("View on block explorer")}
                 trailingIcon={<Icon.LinkExternal01 />}
-                onClick={() =>
+                onClick={() => {
                   openTab(
                     `${getStellarExpertUrl(networkDetails)}/account/${publicKey}`,
-                  )
-                }
+                  );
+                  emitMetric(METRIC_NAMES.accountStellarExpertOpened);
+                }}
                 testId="edit-account-explorer"
               />
             </div>

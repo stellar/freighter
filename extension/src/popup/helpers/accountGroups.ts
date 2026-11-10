@@ -10,6 +10,7 @@ export enum AccountGroupKind {
 }
 
 export interface AccountGroup {
+  /** Stable across renders and sheet reopenings; keys collapsed state. */
   key: string;
   kind: AccountGroupKind;
   label: string;
