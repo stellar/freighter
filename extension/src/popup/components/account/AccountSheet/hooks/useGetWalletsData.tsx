@@ -12,6 +12,7 @@ import { isMainnet } from "helpers/stellar";
 import {
   getTotalUsd,
   getTotalUsdLabel,
+  hasHeldPrice,
   omitHiddenBalances,
 } from "popup/helpers/balance";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
@@ -140,7 +141,10 @@ function useGetWalletsData() {
               hasError: false,
               hasPriceFeed: isMainnetNetwork,
               isFunded: !!balances.isFunded,
-              tokenPrices: prices.tokenPrices,
+              hasPrices: hasHeldPrice(
+                prices.tokenPrices || {},
+                visibleBalances,
+              ),
               totalUsd: totalPriceUsd,
             }),
           };

@@ -292,6 +292,20 @@ export const getTotalUsd = (prices: ApiTokenPrices, balances: AssetType[]) => {
 };
 
 /**
+ * True when at least one held balance has a price. Uses the same lookup as
+ * {@link getTotalUsd}, so it counts exactly the prices that the total adds.
+ *
+ * The price map can hold tokens the account does not hold, such as a swap
+ * destination in the price cache. Those do not count.
+ */
+export const hasHeldPrice = (prices: ApiTokenPrices, balances: AssetType[]) =>
+  Object.keys(prices).some(
+    (canonical) =>
+      !!prices[canonical]?.currentPrice &&
+      !!getBalanceByAsset(getAssetFromCanonical(canonical), balances),
+  );
+
+/**
  * Picks what to show for an account's total USD value.
  *
  * Zero and "no value" are different answers. Zero is a fact when there is
@@ -301,7 +315,7 @@ export const getTotalUsdLabel = ({
   hasError,
   hasPriceFeed,
   isFunded,
-  tokenPrices,
+  hasPrices = false,
   totalUsd,
 }: {
   /** Account data failed to load. */
@@ -309,7 +323,11 @@ export const getTotalUsdLabel = ({
   /** Whether the network prices tokens at all. */
   hasPriceFeed: boolean;
   isFunded: boolean;
-  tokenPrices?: ApiTokenPrices | null;
+  /**
+   * At least one held balance has a price. See {@link hasHeldPrice}. Omit
+   * where no prices were fetched.
+   */
+  hasPrices?: boolean;
   /** Omit where no total was computed; the branches that ignore it win. */
   totalUsd?: BigNumber;
 }) => {
@@ -326,13 +344,9 @@ export const getTotalUsdLabel = ({
   }
 
   // A funded account on a network that prices tokens, yet nothing priced —
-  // the total exists but could not be read. The backend can answer with a
-  // key per token and a null price for each, so check the values, not the
-  // keys. One priced token is enough: the total is then a partial sum.
-  const hasAnyPrice =
-    !!tokenPrices &&
-    Object.values(tokenPrices).some((price) => !!price?.currentPrice);
-  if (!hasAnyPrice) {
+  // the total exists but could not be read. One priced token is enough: the
+  // total is then a partial sum.
+  if (!hasPrices) {
     return NO_FIAT_VALUE;
   }
 

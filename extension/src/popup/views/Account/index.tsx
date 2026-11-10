@@ -30,7 +30,11 @@ import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 
 import { isMainnet } from "helpers/stellar";
 import { newTabHref } from "helpers/urls";
-import { getTotalUsd, getTotalUsdLabel } from "popup/helpers/balance";
+import {
+  getTotalUsd,
+  getTotalUsdLabel,
+  hasHeldPrice,
+} from "popup/helpers/balance";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { ROUTES } from "popup/constants/routes";
 import { AppDataType } from "helpers/hooks/useGetAppData";
@@ -219,7 +223,7 @@ export const Account = () => {
     hasError,
     hasPriceFeed: isMainnet(networkDetails),
     isFunded,
-    tokenPrices,
+    hasPrices: hasHeldPrice(tokenPrices ?? {}, balances),
     totalUsd: totalBalanceUsd,
   });
 
