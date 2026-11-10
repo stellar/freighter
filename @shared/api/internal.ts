@@ -1094,6 +1094,54 @@ export const getTokenStats = async ({
   return data;
 };
 
+/** A page of StellarExpert's `/asset` list, as StellarExpert sends it. */
+export interface StellarExpertAssetPage<TRecord> {
+  _embedded: { records: TRecord[] };
+}
+
+/**
+ * StellarExpert's `/asset` list (a search, or a sorted list such as trending),
+ * fetched through freighter-backend-v2 so the call carries our API key. `query`
+ * takes StellarExpert's own parameters; the backend accepts `search`, `sort`,
+ * `order`, `limit`, `cursor` and `includeUninitialized`. Networks StellarExpert
+ * doesn't serve get an empty page without a request.
+ *
+ * As with token-prices, the request runs in the background, which `signal`
+ * can't reach: an abort only skips a request not yet sent and rejects an
+ * answer that arrives late.
+ */
+export const getStellarExpertAssets = async <TRecord>({
+  networkDetails,
+  query,
+  signal,
+}: {
+  networkDetails: NetworkDetails;
+  query: Record<string, string>;
+  signal?: AbortSignal;
+}): Promise<StellarExpertAssetPage<TRecord>> => {
+  if (!PASSPHRASE_TO_PRICE_NETWORK[networkDetails.networkPassphrase]) {
+    return { _embedded: { records: [] } };
+  }
+  if (signal?.aborted) {
+    throw new DOMException("asset search request aborted", "AbortError");
+  }
+
+  const page = await getBackendV2Json<StellarExpertAssetPage<TRecord>>({
+    networkDetails,
+    label: "asset search",
+    buildPath: (network) =>
+      `/assets/search?${new URLSearchParams({ network, ...query }).toString()}`,
+  });
+
+  if (signal?.aborted) {
+    throw new DOMException("asset search request aborted", "AbortError");
+  }
+  if (!Array.isArray(page._embedded?.records)) {
+    throw new Error("asset search: response has no records");
+  }
+  return page;
+};
+
 export const getDiscoverData = async (): Promise<DiscoverData> => {
   const { status, body } = await fetchBackendV2({
     method: "GET",

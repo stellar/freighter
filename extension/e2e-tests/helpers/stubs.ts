@@ -83,57 +83,68 @@ export const stubStellarAssetList = async (page: Page) => {
   });
 };
 
-export const stubAssetSearch = async (page: Page) => {
-  await page.route("**/asset?search**", async (route) => {
-    const json = {
-      _embedded: {
-        records: [
-          {
-            asset:
-              "USDC-GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
-            num_accounts: 1000,
-            num_trades: 5000,
-            num_liquidity_pools: 100,
-            bidding_liabilities: "1000000",
-            asking_liabilities: "2000000",
-          },
-        ],
-      },
-    };
-    await route.fulfill({ json });
+// StellarExpert's asset list (search, and the swap picker's Popular list) is
+// fetched through freighter-backend-v2's /assets/search from the background
+// service worker, so these routes must be stubbed on the BrowserContext;
+// page.route only sees the popup.
+export const ASSET_SEARCH_ROUTE = "**/assets/search?*search=*";
+export const TRENDING_ASSETS_ROUTE = "**/assets/search?*sort=volume7d*";
+export const TESTNET_TRENDING_ASSETS_ROUTE =
+  "**/assets/search?network=TESTNET&limit=50";
+
+/** The backend's answer: StellarExpert's body, unchanged, under `data`. */
+export const assetSearchResponse = (records: object[]) => ({
+  json: { data: { _embedded: { records } } },
+});
+
+export const stubAssetSearch = async (page: Page | BrowserContext) => {
+  const ctx = "context" in page ? page.context() : page;
+  await ctx.route(ASSET_SEARCH_ROUTE, async (route) => {
+    await route.fulfill(
+      assetSearchResponse([
+        {
+          asset:
+            "USDC-GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+          num_accounts: 1000,
+          num_trades: 5000,
+          num_liquidity_pools: 100,
+          bidding_liabilities: "1000000",
+          asking_liabilities: "2000000",
+        },
+      ]),
+    );
   });
 };
 
-export const stubAssetSearchWithContractId = async (page: Page) => {
-  await page.route("**/asset?search**", async (route) => {
-    const json = {
-      _embedded: {
-        records: [
-          {
-            asset:
-              "USDC-GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
-          },
-          {
-            asset: TEST_TOKEN_ADDRESS,
+export const stubAssetSearchWithContractId = async (
+  page: Page | BrowserContext,
+) => {
+  const ctx = "context" in page ? page.context() : page;
+  await ctx.route(ASSET_SEARCH_ROUTE, async (route) => {
+    await route.fulfill(
+      assetSearchResponse([
+        {
+          asset:
+            "USDC-GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+        },
+        {
+          asset: TEST_TOKEN_ADDRESS,
+          code: "E2E",
+          token_name: "E2E Token",
+          decimals: 3,
+          domain: "example.com",
+          tomlInfo: {
             code: "E2E",
-            token_name: "E2E Token",
-            decimals: 3,
-            domain: "example.com",
-            tomlInfo: {
-              code: "E2E",
-              // Use a different address than the token contract to match real
-              // Stellar Expert responses where tomlInfo.issuer is the token
-              // issuer, not the token contract itself.
-              issuer:
-                "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
-              name: "E2E Token",
-              image: "",
-            },
+            // Use a different address than the token contract to match real
+            // Stellar Expert responses where tomlInfo.issuer is the token
+            // issuer, not the token contract itself.
+            issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+            name: "E2E Token",
+            image: "",
           },
-        ],
-      },
-    };
-    await route.fulfill({ json });
+        },
+      ]),
+    );
   });
 };
 
@@ -3380,6 +3391,7 @@ export const stubAllExternalApis = async (
 
   // Feature flags
   await stubFeatureFlags(context);
+  await stubExperimentDefaults(context);
 
   // RPC health is fetched by the background service worker
   await stubRpcHealth(context);
@@ -3389,7 +3401,8 @@ export const stubAllExternalApis = async (
 
   // Stellar Asset List
   await stubStellarAssetList(page);
-  await stubAssetSearch(page);
+  // Asset search is fetched by the background service worker
+  await stubAssetSearch(context);
 
   // Token metadata
   await stubTokenDetails(page);
@@ -3567,6 +3580,17 @@ export const stubReportTransactionWarning = async (
 
 const AMPLITUDE_EXPERIMENT_VARDATA_ROUTE = "**/sdk/v2/vardata**";
 const MAINTENANCE_VARIANT_VALUE = "on";
+
+/**
+ * Answers the Experiment flag request with no variants, so every flag keeps
+ * its default and balances don't wait on a real Amplitude request. Specs that
+ * need a variant register a page route, which takes precedence over this one.
+ */
+export const stubExperimentDefaults = async (context: BrowserContext) => {
+  await context.route(AMPLITUDE_EXPERIMENT_VARDATA_ROUTE, async (route) => {
+    await route.fulfill({ json: {} });
+  });
+};
 
 const stubExperimentVariants = async (
   page: Page,

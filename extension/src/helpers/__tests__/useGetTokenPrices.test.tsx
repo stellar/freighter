@@ -4,7 +4,10 @@ import { Provider } from "react-redux";
 import { renderHook, act } from "@testing-library/react";
 import { useGetTokenPrices } from "../hooks/useGetTokenPrices";
 import { makeDummyStore } from "popup/__testHelpers__";
-import { reducer as remoteConfigReducer } from "popup/ducks/remoteConfig";
+import {
+  fetchFeatureFlags,
+  reducer as remoteConfigReducer,
+} from "popup/ducks/remoteConfig";
 
 // Flags settled, as in a running popup once `fetchFeatureFlags` has resolved.
 const SETTLED_REMOTE_CONFIG = {
@@ -80,6 +83,63 @@ describe("useGetTokenPrices", () => {
       },
     });
   });
+  it("waits for the remote config flags before choosing the prices endpoint", async () => {
+    const getTokenPricesSpy = jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockResolvedValue({});
+    const store = makeDummyStore({
+      remoteConfig: {
+        ...remoteConfigReducer(undefined, { type: "@@init" }),
+        isInitialized: false,
+      },
+      cache: { tokenPrices: {} },
+    });
+    const Wrapper =
+      (store: ReturnType<typeof makeDummyStore>) =>
+      ({ children }: { children: React.ReactNode }) => (
+        <Provider store={store}>{children}</Provider>
+      );
+    const { result } = renderHook(() => useGetTokenPrices(), {
+      wrapper: Wrapper(store),
+    });
+
+    let fetchPromise: Promise<unknown> = Promise.resolve();
+    await act(async () => {
+      fetchPromise = result.current.fetchData({
+        publicKey: "G123",
+        balances: [
+          {
+            token: { type: "native", code: "XLM" },
+            total: new BigNumber("50"),
+            available: new BigNumber("50"),
+            blockaidData: defaultBlockaidScanAssetResult,
+          },
+        ],
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      } as any);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(getTokenPricesSpy).not.toHaveBeenCalled();
+
+    await act(async () => {
+      store.dispatch({
+        type: fetchFeatureFlags.fulfilled.type,
+        payload: {
+          ...SETTLED_REMOTE_CONFIG,
+          use_token_prices_v2: false,
+        },
+      });
+      await fetchPromise;
+    });
+
+    expect(getTokenPricesSpy).toHaveBeenCalledTimes(1);
+    expect(getTokenPricesSpy).toHaveBeenCalledWith(
+      ["native"],
+      MAINNET_NETWORK_DETAILS,
+      false,
+    );
+  });
+
   it("should return token prices from API with expired cache", async () => {
     const getTokenPricesSpy = jest
       .spyOn(ApiInternal, "getTokenPrices")
