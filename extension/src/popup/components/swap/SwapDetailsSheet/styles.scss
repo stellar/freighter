@@ -100,6 +100,21 @@
     }
   }
 
+  // The Details sheet's Route row overlaps small icons; the Route sheet spaces
+  // large ones (Figma 2863-148281 vs 3405-175470).
+  &__row--button &__venue-stack {
+    gap: 0;
+
+    .SwapDetails__venue-icon {
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+    }
+
+    .SwapDetails__venue-icon + .SwapDetails__venue-icon {
+      margin-left: pxToRem(-4px);
+    }
+  }
+
   &__venue-extra {
     color: var(--sds-clr-gray-11);
     font-size: pxToRem(12px);
