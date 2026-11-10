@@ -42,6 +42,29 @@ describe("getTotalUsdLabel", () => {
     expect(label({ tokenPrices: {} as ApiTokenPrices })).toBe("--");
   });
 
+  // The backend can return a key per token with no price behind any of them.
+  it("returns the placeholder when every price is null", () => {
+    expect(
+      label({
+        tokenPrices: { "XLM:native": null, "USDC:GA5Z": null },
+        totalUsd: new BigNumber(0),
+      }),
+    ).toBe("--");
+  });
+
+  // One priced token is enough to show a total: the sum of what is priced.
+  it("returns the partial total when only some tokens are priced", () => {
+    expect(
+      label({
+        tokenPrices: {
+          "XLM:native": { currentPrice: "0.5" },
+          "USDC:GA5Z": null,
+        },
+        totalUsd: new BigNumber("1665.155"),
+      }),
+    ).toBe("$1,665.16");
+  });
+
   // A real zero on a priced network still reads as a total, not a gap.
   it("keeps a genuine zero total distinct from the placeholder", () => {
     expect(label({ totalUsd: new BigNumber(0) })).toBe("$0.00");

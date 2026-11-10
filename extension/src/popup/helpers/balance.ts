@@ -326,8 +326,13 @@ export const getTotalUsdLabel = ({
   }
 
   // A funded account on a network that prices tokens, yet nothing priced —
-  // the total exists but could not be read.
-  if (!tokenPrices || Object.keys(tokenPrices).length === 0) {
+  // the total exists but could not be read. The backend can answer with a
+  // key per token and a null price for each, so check the values, not the
+  // keys. One priced token is enough: the total is then a partial sum.
+  const hasAnyPrice =
+    !!tokenPrices &&
+    Object.values(tokenPrices).some((price) => !!price?.currentPrice);
+  if (!hasAnyPrice) {
     return NO_FIAT_VALUE;
   }
 
