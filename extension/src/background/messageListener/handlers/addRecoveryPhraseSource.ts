@@ -42,6 +42,8 @@ export const PENDING_PHRASE_MISSING_ERROR =
   "The new recovery phrase is no longer available. Start again.";
 export const PHRASE_ALREADY_HELD_ERROR =
   "This recovery phrase is already in your wallet";
+export const NO_SOFTWARE_KEYSTORE_ERROR =
+  "This wallet has no password to check against";
 
 /*
   Stores the phrase `generateRecoveryPhrase` is holding as a new phrase source
@@ -79,6 +81,17 @@ export const addRecoveryPhraseSource = async ({
     return { error: PENDING_PHRASE_MISSING_ERROR };
   }
 
+  const keyID = (await getIsHardwareWalletActive({ localStore }))
+    ? await getNonHwKeyID({ localStore })
+    : (await localStore.getItem(KEY_ID)) || "";
+
+  // Onboarding always writes a password-protected software keystore before a
+  // hardware account can be added, so this is unreachable today. Without
+  // one, every password would fail as if it were wrong.
+  if (!keyID) {
+    return { error: NO_SOFTWARE_KEYSTORE_ERROR };
+  }
+
   if ((await getActiveHashKeyCryptoKey({ sessionStore })) === null) {
     try {
       await loginToAllAccounts(
@@ -97,10 +110,6 @@ export const addRecoveryPhraseSource = async ({
       return { error: "Unable to login" };
     }
   }
-
-  const keyID = (await getIsHardwareWalletActive({ localStore }))
-    ? await getNonHwKeyID({ localStore })
-    : (await localStore.getItem(KEY_ID)) || "";
 
   try {
     await unlockKeystore({ keyID, password, keyManager });
