@@ -3,6 +3,8 @@ import { AssetType } from "@shared/api/types/account-balance";
 import { SwapRoute } from "@shared/api/types/backend-api";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 
+import StellarLogo from "popup/assets/stellar-logo.png";
+
 import {
   buildRouteView,
   formatShare,
@@ -152,7 +154,9 @@ describe("buildRouteView", () => {
     expect(view.paths).toHaveLength(1);
     expect(view.paths[0].poolCount).toBeNull();
     expect(view.paths[0].share).toBe("100%");
-    expect(view.providers).toEqual([{ name: "stellar-dex", icon: null }]);
+    expect(view.providers).toEqual([
+      { name: "Stellar DEX", icon: StellarLogo },
+    ]);
   });
 
   it("shows pools only on paths whose hops carry one", () => {
@@ -175,14 +179,37 @@ describe("buildRouteView", () => {
 
   it("gives a venue /protocols doesn't list no icon", () => {
     const view = buildRouteView({
-      route: classicRoute,
+      route: {
+        ...classicRoute,
+        paths: [
+          {
+            share: "1",
+            hops: [{ venue: "Mystery AMM", from: "XLM", to: USDC }],
+          },
+        ],
+      },
       tokenContext: emptyContext,
       protocols: PROTOCOLS,
     })!;
     expect(view.paths[0].venues[0]).toEqual({
-      name: "stellar-dex",
+      name: "Mystery AMM",
       icon: null,
     });
+  });
+
+  it("names stellar-dex Stellar DEX with the Stellar logo, once in Providers", () => {
+    const view = buildRouteView({
+      route: classicRoute,
+      tokenContext: emptyContext,
+      protocols: PROTOCOLS,
+    })!;
+    expect(view.paths[0].venues).toEqual([
+      { name: "Stellar DEX", icon: StellarLogo },
+      { name: "Stellar DEX", icon: StellarLogo },
+    ]);
+    expect(view.providers).toEqual([
+      { name: "Stellar DEX", icon: StellarLogo },
+    ]);
   });
 
   it("is null for a missing route or one with no paths", () => {

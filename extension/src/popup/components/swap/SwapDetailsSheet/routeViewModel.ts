@@ -9,6 +9,7 @@ import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 import { isNativeAssetPair } from "@shared/helpers/assetIdentity";
 import { truncateString } from "helpers/stellar";
 import { isContractId } from "popup/helpers/soroban";
+import StellarLogo from "popup/assets/stellar-logo.png";
 
 export const MAX_PATH_VENUE_ICONS = 3;
 
@@ -133,6 +134,10 @@ export const resolveVenue = (
   venue: string,
   protocols: ProtocolEntry[],
 ): RouteVenue => {
+  // Not in /protocols: it would show up in Discover.
+  if (venue === "stellar-dex") {
+    return { name: "Stellar DEX", icon: StellarLogo };
+  }
   const match = protocols.find(
     (p) => p.name.toLowerCase() === venue.toLowerCase(),
   );
