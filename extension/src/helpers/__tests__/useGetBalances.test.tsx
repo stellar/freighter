@@ -8,6 +8,10 @@ import {
 } from "../hooks/useGetBalances";
 import { getAccountBalances } from "@shared/api/internal";
 import { makeDummyStore, TEST_PUBLIC_KEY } from "popup/__testHelpers__";
+import {
+  fetchFeatureFlags,
+  reducer as remoteConfigReducer,
+} from "popup/ducks/remoteConfig";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
@@ -256,6 +260,54 @@ describe("useGetBalances (flag routing)", () => {
       true,
       false,
       false,
+    );
+  });
+
+  it("waits for the remote config flags before choosing the balances endpoint", async () => {
+    const store = makeDummyStore({
+      cache: { balanceData: {}, icons: {}, tokenLists: [] },
+      settings: { assetsLists: [] },
+      remoteConfig: {
+        ...remoteConfigReducer(undefined, { type: "@@init" }),
+        isInitialized: false,
+      },
+    });
+    const { result } = renderHook(
+      () => useGetBalances({ showHidden: false, includeIcons: false }),
+      { wrapper: Wrapper(store) },
+    );
+
+    let fetchPromise: Promise<unknown> = Promise.resolve();
+    await act(async () => {
+      fetchPromise = result.current.fetchData(
+        publicKey,
+        true,
+        TESTNET_NETWORK_DETAILS,
+        false,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(getAccountBalances).not.toHaveBeenCalled();
+
+    await act(async () => {
+      store.dispatch({
+        type: fetchFeatureFlags.fulfilled.type,
+        payload: {
+          ...remoteConfigReducer(undefined, { type: "@@init" }),
+          isInitialized: true,
+          use_balances_v2: true,
+        },
+      });
+      await fetchPromise;
+    });
+
+    expect(getAccountBalances).toHaveBeenCalledTimes(1);
+    expect(getAccountBalances).toHaveBeenCalledWith(
+      publicKey,
+      TESTNET_NETWORK_DETAILS,
+      true,
+      false,
+      true,
     );
   });
 

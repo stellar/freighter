@@ -79,6 +79,50 @@ describe("useGetTokenPrices", () => {
       },
     });
   });
+  it("fetches prices without waiting for the remote config flags", async () => {
+    // Only freighter-backend-v2 serves prices, so no flag picks the endpoint
+    // and the fetch must not wait for the flags to settle.
+    const getTokenPricesSpy = jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockResolvedValue({});
+    const store = makeDummyStore({
+      remoteConfig: {
+        ...remoteConfigReducer(undefined, { type: "@@init" }),
+        isInitialized: false,
+      },
+      cache: { tokenPrices: {} },
+    });
+    const Wrapper =
+      (store: ReturnType<typeof makeDummyStore>) =>
+      ({ children }: { children: React.ReactNode }) => (
+        <Provider store={store}>{children}</Provider>
+      );
+    const { result } = renderHook(() => useGetTokenPrices(), {
+      wrapper: Wrapper(store),
+    });
+
+    await act(async () => {
+      await result.current.fetchData({
+        publicKey: "G123",
+        balances: [
+          {
+            token: { type: "native", code: "XLM" },
+            total: new BigNumber("50"),
+            available: new BigNumber("50"),
+            blockaidData: defaultBlockaidScanAssetResult,
+          },
+        ],
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      } as any);
+    });
+
+    expect(getTokenPricesSpy).toHaveBeenCalledTimes(1);
+    expect(getTokenPricesSpy).toHaveBeenCalledWith(
+      ["native"],
+      MAINNET_NETWORK_DETAILS,
+    );
+  });
+
   it("should return token prices from API with expired cache", async () => {
     const getTokenPricesSpy = jest
       .spyOn(ApiInternal, "getTokenPrices")

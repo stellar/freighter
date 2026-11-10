@@ -2,6 +2,7 @@ import {
   createAsyncThunk,
   createSelector,
   createSlice,
+  Store,
 } from "@reduxjs/toolkit";
 import type { Variant } from "@amplitude/experiment-js-client";
 
@@ -256,3 +257,24 @@ export const isRemoteConfigInitializedSelector = createSelector(
   remoteConfigSelector,
   (rc) => rc.isInitialized,
 );
+
+/**
+ * Resolves once the Experiment flags have been fetched (or failed). Await it
+ * before reading a flag that picks a backend, since every popup, tab, and
+ * sidebar starts with the flags unloaded.
+ */
+export const waitForRemoteConfig = (
+  store: Store<{ remoteConfig: RemoteConfigState }>,
+): Promise<void> =>
+  new Promise((resolve) => {
+    if (isRemoteConfigInitializedSelector(store.getState())) {
+      resolve();
+      return;
+    }
+    const unsubscribe = store.subscribe(() => {
+      if (isRemoteConfigInitializedSelector(store.getState())) {
+        unsubscribe();
+        resolve();
+      }
+    });
+  });

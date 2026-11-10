@@ -1,9 +1,17 @@
-import { Experiment, ExperimentClient } from "@amplitude/experiment-js-client";
+import {
+  Experiment,
+  ExperimentClient,
+  ExperimentConfig,
+} from "@amplitude/experiment-js-client";
 
 import { AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY } from "constants/env";
 import { isDev } from "@shared/helpers/dev";
 
 const TEST_EXPERIMENT_DEPLOYMENT_KEY = "playwright-test-deployment-key";
+
+// Balance and price fetches wait on the flags, so a slow Amplitude host holds
+// the spinner for this long before falling back to the default flags.
+const CONFIG: ExperimentConfig = { fetchTimeoutMillis: 1500 };
 
 // Console log message constants
 const LOG_MESSAGES = {
@@ -48,8 +56,8 @@ export const initExperimentClient = (): void => {
 
   try {
     client = AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY
-      ? Experiment.initializeWithAmplitudeAnalytics(deploymentKey)
-      : Experiment.initialize(deploymentKey);
+      ? Experiment.initializeWithAmplitudeAnalytics(deploymentKey, CONFIG)
+      : Experiment.initialize(deploymentKey, CONFIG);
   } catch (e) {
     console.error(
       `${LOG_MESSAGES.EXPERIMENT_PREFIX} ${LOG_MESSAGES.INIT_FAILED}`,
