@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { Keypair } from "stellar-sdk";
 
 import { sessionSlice } from "background/ducks/session";
@@ -63,6 +64,11 @@ jest.mock("stellar-hd-wallet", () => {
   };
 });
 
+// jsdom's crypto has no randomUUID; the service worker's does.
+if (!global.crypto.randomUUID) {
+  Object.defineProperty(global.crypto, "randomUUID", { value: randomUUID });
+}
+
 const testAlarm = new MockBrowserAlarm(() => {});
 const send = (request: object) =>
   popupMessageListener(
@@ -83,16 +89,26 @@ const createWallet = () => {
   });
 };
 
-const generate = (mnemonic: string) => {
+// The id of the latest generation, which `addPhraseSource` sends by default.
+let lastPendingPhraseId = "";
+
+const generate = async (mnemonic: string) => {
   mockGenerated.push(mnemonic);
-  return send({ type: SERVICE_TYPES.GENERATE_RECOVERY_PHRASE });
+  const res = await send({ type: SERVICE_TYPES.GENERATE_RECOVERY_PHRASE });
+  lastPendingPhraseId = res.pendingPhraseId;
+  return res;
 };
 
-const addPhraseSource = (accountName?: string, password = PASSWORD) =>
+const addPhraseSource = (
+  accountName?: string,
+  password = PASSWORD,
+  pendingPhraseId = lastPendingPhraseId,
+) =>
   send({
     type: SERVICE_TYPES.ADD_RECOVERY_PHRASE_SOURCE,
     password,
     accountName,
+    pendingPhraseId,
   });
 
 /** A wallet whose only source is an imported secret key. */
@@ -125,6 +141,9 @@ const allAccounts = (): Account[] =>
 const pendingPhrase = () =>
   mockSessionStore.getState().session.pendingMnemonicPhrase;
 
+const pendingPhraseId = () =>
+  mockSessionStore.getState().session.pendingMnemonicPhraseId;
+
 describe("adding a generated recovery phrase source", () => {
   jest.setTimeout(60_000);
 
@@ -132,6 +151,7 @@ describe("adding a generated recovery phrase source", () => {
     await mockStorageApi.clear();
     mockSessionStore.dispatch(sessionSlice.actions.reset());
     mockGenerated.length = 0;
+    lastPendingPhraseId = "";
     global.fetch = jest.fn(() =>
       Promise.resolve({
         json: () => Promise.resolve({ account_id: "funded" }),
@@ -145,7 +165,10 @@ describe("adding a generated recovery phrase source", () => {
     const res = await generate(PHRASE_2.mnemonic);
 
     expect(res.mnemonicPhrase).toBe(PHRASE_2.mnemonic);
+    expect(res.pendingPhraseId).toEqual(expect.any(String));
+    expect(res.pendingPhraseId).not.toBe("");
     expect(pendingPhrase()).toBe(PHRASE_2.mnemonic);
+    expect(pendingPhraseId()).toBe(res.pendingPhraseId);
     expect(allAccounts()).toHaveLength(1);
     expect(await mockDataStorage.getItem(DERIVATION_INDICES_ID)).toEqual({
       [PHRASE_1.userId]: [0],
@@ -179,6 +202,7 @@ describe("adding a generated recovery phrase source", () => {
       applicationState,
     );
     expect(pendingPhrase()).toBe("");
+    expect(pendingPhraseId()).toBe("");
   });
 
   it("then adds the next account under the new phrase, not the first", async () => {
@@ -243,6 +267,36 @@ describe("adding a generated recovery phrase source", () => {
     const res = await addPhraseSource();
 
     expect(res.error).toBe(PHRASE_ALREADY_HELD_ERROR);
+    expect(allAccounts()).toHaveLength(1);
+  });
+
+  it("refuses a generation another window has replaced", async () => {
+    await createWallet();
+    // Window A shows PHRASE_2, then window B generates PHRASE_1 before A
+    // confirms. PHRASE_1 is already held, which doesn't matter: A must be
+    // refused before any phrase is checked.
+    const windowA = await generate(PHRASE_2.mnemonic);
+    const windowB = await generate(PHRASE_1.mnemonic);
+    expect(windowB.pendingPhraseId).not.toBe(windowA.pendingPhraseId);
+
+    const res = await addPhraseSource(
+      undefined,
+      PASSWORD,
+      windowA.pendingPhraseId,
+    );
+
+    expect(res.error).toBe(PENDING_PHRASE_MISSING_ERROR);
+    expect(allAccounts()).toHaveLength(1);
+    expect(pendingPhrase()).toBe(PHRASE_1.mnemonic);
+  });
+
+  it("refuses a confirmation without a generation id", async () => {
+    await createWallet();
+    await generate(PHRASE_2.mnemonic);
+
+    const res = await addPhraseSource(undefined, PASSWORD, "");
+
+    expect(res.error).toBe(PENDING_PHRASE_MISSING_ERROR);
     expect(allAccounts()).toHaveLength(1);
   });
 

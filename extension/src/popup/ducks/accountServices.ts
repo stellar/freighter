@@ -133,11 +133,14 @@ export const addAccount = createAsyncThunk<
  */
 export const addRecoveryPhraseSource = createAsyncThunk<
   AddedAccountPayload,
-  { password: string; accountName?: string },
+  { password: string; accountName?: string; pendingPhraseId: string },
   { rejectValue: ErrorMessage }
 >(
   "auth/addRecoveryPhraseSource",
-  async ({ password, accountName }, { getState, rejectWithValue }) => {
+  async (
+    { password, accountName, pendingPhraseId },
+    { getState, rejectWithValue },
+  ) => {
     const activePublicKey = publicKeySelector(getState() as AppState);
 
     try {
@@ -145,6 +148,7 @@ export const addRecoveryPhraseSource = createAsyncThunk<
         activePublicKey,
         password,
         accountName,
+        pendingPhraseId,
       });
     } catch (e) {
       const message = e instanceof Error ? e.message : JSON.stringify(e);

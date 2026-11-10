@@ -243,8 +243,9 @@ export const addAccount = async ({
 /** Generates the phrase for a new source; see `GenerateRecoveryPhraseMessage`. */
 export const generateRecoveryPhrase = async (): Promise<{
   mnemonicPhrase: string;
+  pendingPhraseId: string;
 }> => {
-  let response = { mnemonicPhrase: "" };
+  let response = { mnemonicPhrase: "", pendingPhraseId: "" };
 
   try {
     response = await sendMessageToBackground({
@@ -255,7 +256,7 @@ export const generateRecoveryPhrase = async (): Promise<{
     console.error(e);
   }
 
-  if (!response?.mnemonicPhrase) {
+  if (!response?.mnemonicPhrase || !response?.pendingPhraseId) {
     throw new Error("Unable to generate a recovery phrase");
   }
 
@@ -267,10 +268,12 @@ export const addRecoveryPhraseSource = async ({
   activePublicKey,
   password,
   accountName,
+  pendingPhraseId,
 }: {
   activePublicKey: string;
   password: string;
   accountName?: string;
+  pendingPhraseId: string;
 }): Promise<{
   publicKey: string;
   activeAccountId: string;
@@ -292,6 +295,7 @@ export const addRecoveryPhraseSource = async ({
       activePublicKey,
       password,
       accountName,
+      pendingPhraseId,
       type: SERVICE_TYPES.ADD_RECOVERY_PHRASE_SOURCE,
     });
   } catch (e) {
