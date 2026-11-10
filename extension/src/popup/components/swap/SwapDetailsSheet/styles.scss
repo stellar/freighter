@@ -112,6 +112,7 @@
     .AccountAssets__asset--logo {
       width: pxToRem(24px);
       height: pxToRem(24px);
+      min-width: pxToRem(24px);
     }
   }
 
