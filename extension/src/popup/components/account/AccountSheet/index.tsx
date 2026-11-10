@@ -12,11 +12,7 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import {
-  SheetHeader,
-  SheetHeaderAction,
-  SheetHeaderLayout,
-} from "popup/components/SheetHeader";
+import { SheetHeader, SheetHeaderAction } from "popup/components/SheetHeader";
 import { SheetLayout } from "popup/components/SheetLayout";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { showToast } from "popup/basics/shadcn/Toast";
@@ -39,13 +35,10 @@ import {
 } from "popup/helpers/accountGroups";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { WalletRow } from "popup/components/account/WalletRow";
-import { AddWallet } from "popup/components/account/AddWallet";
 
 import { useGetWalletsData } from "./hooks/useGetWalletsData";
 
 import "./styles.scss";
-
-type SheetBody = "list" | "add";
 
 /*
   Groups the user collapsed, kept for as long as the popup stays open so the
@@ -65,13 +58,7 @@ interface AccountSheetProps {
 /**
  * The account switcher sheet: the active account's identity, the wallets
  * grouped by what roots them, and Add wallet. Renaming and the explorer link
- * live in Edit account.
- *
- * Add wallet is a body state rather than an overlay. It used to be an
- * absolutely-positioned layer over the full-screen Wallets view, which cannot
- * work here -- SlideupModal is a containing block for fixed descendants and
- * measures its height from in-flow content only, so an overlay would be clipped
- * and would collapse the card.
+ * live in Edit account. Add wallet leaves the sheet for its own screen.
  */
 export const AccountSheet = ({
   isOpen,
@@ -81,7 +68,6 @@ export const AccountSheet = ({
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const [body, setBody] = useState<SheetBody>("list");
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(
     () => new Set(collapsedGroupKeys),
   );
@@ -98,8 +84,6 @@ export const AccountSheet = ({
     if (!isOpen) {
       return;
     }
-    // Always reopen on the list rather than inside Add wallet.
-    setBody("list");
     const getData = async () => {
       await fetchData(true);
     };
@@ -261,30 +245,6 @@ aria-controls={isExpanded ? listId : undefined}
   // Each body supplies its pinned header and footer; the list between them is
   // what scrolls, under the sheet's edge fades, like mobile's wallets sheet.
   const renderSheet = () => {
-    if (body === "add") {
-      return {
-        header: (
-          <SheetHeader
-            layout={SheetHeaderLayout.Centered}
-            title={t("Add wallet")}
-            leading={
-              <SheetHeaderAction
-                onClick={() => setBody("list")}
-                aria-label={t("Back")}
-                data-testid="account-sheet-add-back"
-              >
-                <Icon.ArrowLeft />
-              </SheetHeaderAction>
-            }
-            onClose={onClose}
-            closeTestId="AccountSheet__close"
-          />
-        ),
-        footer: undefined,
-        content: <AddWallet />,
-      };
-    }
-
     return {
       header: (
         <SheetHeader
@@ -309,7 +269,7 @@ aria-controls={isExpanded ? listId : undefined}
             variant="tertiary"
             iconPosition="left"
             icon={<Icon.Plus />}
-            onClick={() => setBody("add")}
+            onClick={() => navigateTo(ROUTES.addWallet, navigate)}
             data-testid="add-wallet"
           >
             {t("Add wallet")}

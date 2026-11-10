@@ -1,30 +1,34 @@
-@use "../../../styles/utils.scss" as *;
+@use "../../styles/utils.scss" as *;
 
+// Shared by the Add wallet and Create new wallet cards.
 .AddWallet {
   display: flex;
   flex-direction: column;
-  gap: pxToRem(24px);
+  gap: pxToRem(12px);
 
   &__row {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: pxToRem(12px);
+    width: 100%;
     background-color: var(--sds-clr-gray-03);
-    border-radius: pxToRem(12px);
+    border: none;
+    border-radius: pxToRem(16px);
     padding: pxToRem(16px);
+    text-align: left;
     text-decoration: none;
     cursor: pointer;
 
     &__icon {
       display: flex;
+      flex-shrink: 0;
       justify-content: center;
       align-items: center;
-      width: pxToRem(24px);
-      height: pxToRem(24px);
-      margin-bottom: pxToRem(12px);
+      width: pxToRem(32px);
+      height: pxToRem(32px);
       border-radius: 50%;
-      border: 1px solid var(--sds-clr-lilac-06);
-      background-color: var(--sds-clr-lilac-03);
-      color: var(--sds-clr-lilac-09);
+      background-color: var(--sds-clr-gray-04);
+      color: var(--sds-clr-gray-11);
 
       svg {
         width: pxToRem(16px);
@@ -32,15 +36,21 @@
       }
     }
 
+    &__text {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
     &__title {
       color: var(--sds-clr-gray-12);
       font-size: pxToRem(14px);
       line-height: pxToRem(20px);
-      font-weight: var(--font-weight-medium);
+      font-weight: var(--font-weight-semi-bold);
     }
 
     &__description {
-      margin-top: pxToRem(4px);
+      margin-top: pxToRem(2px);
       color: var(--sds-clr-gray-11);
       font-size: pxToRem(12px);
       line-height: pxToRem(18px);

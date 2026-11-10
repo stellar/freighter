@@ -1,6 +1,7 @@
 import { expect, test, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount, PASSWORD } from "./helpers/login";
 import { goToConnectedApps, switchNetwork } from "./helpers/network";
+import { addAccountToPhrase } from "./helpers/addWallet";
 
 test("View Allow List selector", async ({ page, extensionId, context }) => {
   test.slow();
@@ -62,11 +63,7 @@ test("View Allow List selector", async ({ page, extensionId, context }) => {
   await switchNetwork(page, "Testnet");
 
   await page.getByTestId("account-view-account-name").click();
-  await page.getByTestId("add-wallet").click();
-  await page.getByText("Create a new wallet").click();
-
-  await page.locator("#password-input").fill(PASSWORD);
-  await page.getByText("Create New Address").click();
+  await addAccountToPhrase({ page, password: PASSWORD });
 
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 10000,
