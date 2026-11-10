@@ -70,7 +70,6 @@ describe("useGetTokenPrices", () => {
     expect(getTokenPricesSpy).toHaveBeenCalledWith(
       ["native"],
       MAINNET_NETWORK_DETAILS,
-      true,
     );
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
     expect(result.current.state.data?.tokenPrices).toEqual({
@@ -136,7 +135,6 @@ describe("useGetTokenPrices", () => {
     expect(getTokenPricesSpy).toHaveBeenCalledWith(
       ["native"],
       MAINNET_NETWORK_DETAILS,
-      true,
     );
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
     expect(result.current.state.data?.tokenPrices).toEqual({
@@ -268,7 +266,6 @@ describe("useGetTokenPrices", () => {
     expect(getTokenPricesSpy).toHaveBeenCalledWith(
       ["native"],
       TESTNET_NETWORK_DETAILS,
-      true,
     );
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
     expect(result.current.state.data?.tokenPrices).toEqual({
@@ -345,11 +342,7 @@ describe("useGetTokenPrices", () => {
         useCache: true,
       } as any);
     });
-    expect(getTokenPricesSpy).toHaveBeenCalledWith(
-      ["native"],
-      customTestnet,
-      true,
-    );
+    expect(getTokenPricesSpy).toHaveBeenCalledWith(["native"], customTestnet);
     expect(result.current.state.data?.tokenPrices).toEqual({
       native: {
         currentPrice: "2",
@@ -452,7 +445,6 @@ describe("useGetTokenPrices", () => {
     expect(getTokenPricesSpy).toHaveBeenCalledWith(
       ["USDC:GUSD"],
       MAINNET_NETWORK_DETAILS,
-      true,
     );
     expect(result.current.state.data?.tokenPrices).toEqual({
       native: { currentPrice: "1", percentagePriceChange24h: ".5" },
@@ -506,13 +498,11 @@ describe("useGetTokenPrices", () => {
       1,
       ["native"],
       MAINNET_NETWORK_DETAILS,
-      true,
     );
     expect(getTokenPricesSpy).toHaveBeenNthCalledWith(
       2,
       ["USDC:GUSD"],
       MAINNET_NETWORK_DETAILS,
-      true,
     );
     expect(result.current.state.data?.tokenPrices).toEqual({
       native: { currentPrice: "1", percentagePriceChange24h: ".5" },
@@ -640,7 +630,6 @@ describe("useGetTokenPrices", () => {
       expect(getTokenPricesSpy).toHaveBeenCalledWith(
         [USDC],
         MAINNET_NETWORK_DETAILS,
-        true,
       );
       expect(result.current.state.data?.tokenPrices).toEqual({
         native: { currentPrice: "1", percentagePriceChange24h: ".5" },
