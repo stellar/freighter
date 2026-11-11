@@ -16,7 +16,7 @@
     width: 19.5rem;
     height: 3.5rem;
     border-radius: 0.5rem;
-    border: 1px solid var(--sds-clr-gray-01);
+    border: 1px solid var(--sds-clr-gray-06);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -37,4 +37,10 @@
   &__btn-continue {
     margin-top: auto;
   }
+}
+
+// Wallet logos are single-color white PNGs (drawn for the dark theme), so
+// they vanish on the light background. Invert them to black in light mode.
+.sds-theme-light .SelectHardwareWallet__option img {
+  filter: invert(1);
 }
