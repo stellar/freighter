@@ -18,11 +18,14 @@ import {
   getPhraseSourceId,
   getSecretSources,
   listSecretSources,
+  removeSecretSource,
 } from "background/helpers/secret-sources";
-import { getActiveAccountId } from "background/helpers/account";
+import { releaseDerivationIndex } from "background/helpers/derivation-indices";
+import { getActiveAccountId, getKeyIdList } from "background/helpers/account";
 import {
   allAccountsSelector,
   buildHasPrivateKeySelector,
+  logIn,
   publicKeySelector,
 } from "background/ducks/session";
 import { verifyAddPassword } from "../helpers/verify-add-password";
@@ -123,10 +126,16 @@ export const importRecoveryPhrase = async ({
   }
 
   const previousActiveId = await getActiveAccountId({ localStore });
+  // A copy: storeAccount pushes onto the list it reads.
+  const previousKeyIds: string[] = [...(await getKeyIdList({ localStore }))];
+  const previousState = sessionStore.getState();
+  const previousPublicKey = publicKeySelector(previousState);
+  const previousAccounts = allAccountsSelector(previousState);
 
   try {
-    // The source goes first, so a failure partway leaves a held source that
-    // a retry is refused against, never accounts with no source.
+    // The source goes first, so a failure after some accounts are stored
+    // leaves them under a labeled group, and a retry is refused as held. If
+    // no account was stored, the catch removes the source again.
     await addSecretSource({
       localStore,
       id: sourceId,
@@ -165,6 +174,33 @@ export const importRecoveryPhrase = async ({
     });
   } catch (e) {
     captureException(`Error importing recovery phrase: ${JSON.stringify(e)}`);
+
+    // An account is stored once its keystore id is in the list. If none
+    // made it, undo the registration so a retry starts clean instead of
+    // being refused as already held.
+    try {
+      const keyIds: string[] = await getKeyIdList({ localStore });
+      const storedAny = keyIds.some((id) => !previousKeyIds.includes(id));
+      if (!storedAny) {
+        await removeSecretSource({ localStore, id: sourceId });
+        for (const index of indices) {
+          await releaseDerivationIndex({ localStore, sourceId, index });
+        }
+        // storeAccount adds the account to the session before listing it.
+        await sessionStore.dispatch(
+          logIn({
+            publicKey: previousPublicKey,
+            allAccounts: previousAccounts,
+            localStore,
+          }) as any,
+        );
+      }
+    } catch (rollbackError) {
+      captureException(
+        `Error rolling back failed import: ${JSON.stringify(rollbackError)}`,
+      );
+    }
+
     // storeAccount moves the active account to each account it stores. Put
     // back the one the popup still shows.
     try {
