@@ -311,6 +311,51 @@ export const addRecoveryPhraseSource = async ({
   return result;
 };
 
+/** Imports a further recovery phrase; see `ImportRecoveryPhraseMessage`. */
+export const importRecoveryPhrase = async ({
+  activePublicKey,
+  password,
+  mnemonicPhrase,
+}: {
+  activePublicKey: string;
+  password: string;
+  mnemonicPhrase: string;
+}): Promise<{
+  publicKey: string;
+  activeAccountId: string;
+  allAccounts: Array<Account>;
+  hasPrivateKey: boolean;
+  secretSources: SecretSource[];
+}> => {
+  let response = {
+    error: "",
+    publicKey: "",
+    activeAccountId: "",
+    allAccounts: [] as Array<Account>,
+    hasPrivateKey: false,
+    secretSources: [] as SecretSource[],
+  };
+
+  try {
+    response = await sendMessageToBackground({
+      activePublicKey,
+      password,
+      mnemonicPhrase,
+      type: SERVICE_TYPES.IMPORT_RECOVERY_PHRASE,
+    });
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+
+  const { error, ...result } = response;
+  if (error) {
+    throw new Error(error);
+  }
+
+  return result;
+};
+
 export const importAccount = async ({
   password,
   privateKey,

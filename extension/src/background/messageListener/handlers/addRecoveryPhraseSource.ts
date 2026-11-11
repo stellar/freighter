@@ -8,21 +8,14 @@ import { SecretSourceType } from "@shared/api/types";
 import { ACCOUNT_ALREADY_EXISTS_ERROR } from "@shared/constants/errors";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { linkWalletSources } from "background/helpers/link-sources";
-import {
-  getActiveHashKeyCryptoKey,
-  SessionTimer,
-} from "background/helpers/session";
+import { SessionTimer } from "background/helpers/session";
 import {
   addSecretSource,
   getPhraseSourceId,
   getSecretSources,
   listSecretSources,
 } from "background/helpers/secret-sources";
-import {
-  getIsHardwareWalletActive,
-  getActiveAccountId,
-} from "background/helpers/account";
-import { KEY_ID } from "constants/localStorageTypes";
+import { getActiveAccountId } from "background/helpers/account";
 import {
   allAccountsSelector,
   buildHasPrivateKeySelector,
@@ -31,9 +24,10 @@ import {
   publicKeySelector,
   setPendingMnemonicPhrase,
 } from "background/ducks/session";
-import { loginToAllAccounts } from "../helpers/login-all-accounts";
-import { getNonHwKeyID } from "../helpers/get-non-hw-key-id";
-import { unlockKeystore } from "../helpers/unlock-keystore";
+import {
+  NO_SOFTWARE_KEYSTORE_ERROR,
+  verifyAddPassword,
+} from "../helpers/verify-add-password";
 import { storeAccount } from "../helpers/store-account";
 
 const { fromMnemonic } = StellarHDWallet;
@@ -42,8 +36,7 @@ export const PENDING_PHRASE_MISSING_ERROR =
   "The new recovery phrase is no longer available. Start again.";
 export const PHRASE_ALREADY_HELD_ERROR =
   "This recovery phrase is already in your wallet";
-export const NO_SOFTWARE_KEYSTORE_ERROR =
-  "This wallet has no password to check against";
+export { NO_SOFTWARE_KEYSTORE_ERROR };
 
 /*
   Stores the phrase `generateRecoveryPhrase` is holding as a new phrase source
@@ -81,41 +74,15 @@ export const addRecoveryPhraseSource = async ({
     return { error: PENDING_PHRASE_MISSING_ERROR };
   }
 
-  const keyID = (await getIsHardwareWalletActive({ localStore }))
-    ? await getNonHwKeyID({ localStore })
-    : (await localStore.getItem(KEY_ID)) || "";
-
-  // Onboarding always writes a password-protected software keystore before a
-  // hardware account can be added, so this is unreachable today. Without
-  // one, every password would fail as if it were wrong.
-  if (!keyID) {
-    return { error: NO_SOFTWARE_KEYSTORE_ERROR };
-  }
-
-  if ((await getActiveHashKeyCryptoKey({ sessionStore })) === null) {
-    try {
-      await loginToAllAccounts(
-        password,
-        localStore,
-        sessionStore,
-        keyManager,
-        sessionTimer,
-      );
-    } catch (e) {
-      captureException(
-        `Error logging in to all accounts in Add Recovery Phrase Source - ${JSON.stringify(
-          e,
-        )}`,
-      );
-      return { error: "Unable to login" };
-    }
-  }
-
-  try {
-    await unlockKeystore({ keyID, password, keyManager });
-  } catch (e) {
-    console.error(e);
-    return { error: "Incorrect password" };
+  const passwordError = await verifyAddPassword({
+    password,
+    localStore,
+    sessionStore,
+    keyManager,
+    sessionTimer,
+  });
+  if (passwordError) {
+    return { error: passwordError };
   }
 
   let sourceId: string;

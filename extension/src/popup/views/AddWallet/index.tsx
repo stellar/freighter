@@ -12,9 +12,9 @@ import { View } from "popup/basics/layout/View";
 import "./styles.scss";
 
 /**
- * The ways to add a wallet, opened from the account switcher. Importing a
- * further recovery phrase joins this list once it can be done without
- * replacing the wallet.
+ * The ways to add a wallet, opened from the account switcher: create, import
+ * a further recovery phrase, import a secret key, or connect a hardware
+ * wallet. None of them replaces the wallet.
  */
 export const AddWallet = () => {
   const { t } = useTranslation();
@@ -26,6 +26,13 @@ export const AddWallet = () => {
       description: t("Using an existing or new recovery phrase"),
       link: ROUTES.createWallet,
       testId: "add-wallet-create",
+    },
+    {
+      icon: <Icon.Passcode />,
+      title: t("Import Recovery Phrase"),
+      description: t("Import wallets using a recovery phrase."),
+      link: ROUTES.importRecoveryPhrase,
+      testId: "add-wallet-import-phrase",
     },
     {
       icon: <Icon.Key01 />,

@@ -14,6 +14,7 @@ export enum ROUTES {
   swap = "/swap",
   addWallet = "/add-wallet",
   createWallet = "/add-wallet/create",
+  importRecoveryPhrase = "/add-wallet/import-phrase",
   addToken = "/add-token",
   signTransaction = "/sign-transaction",
   reviewAuthorization = "/review-auth",

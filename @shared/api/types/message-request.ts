@@ -150,6 +150,17 @@ export interface AddRecoveryPhraseSourceMessage extends BaseMessage {
   pendingPhraseId: string;
 }
 
+/**
+ * Adds a recovery phrase the user typed as a new phrase source, with its
+ * index 0 and every funded index up to the discovery depth. Nothing already
+ * in the wallet changes.
+ */
+export interface ImportRecoveryPhraseMessage extends BaseMessage {
+  type: SERVICE_TYPES.IMPORT_RECOVERY_PHRASE;
+  password: string;
+  mnemonicPhrase: string;
+}
+
 export interface ImportAccountMessage extends BaseMessage {
   type: SERVICE_TYPES.IMPORT_ACCOUNT;
   password: string;
@@ -588,6 +599,7 @@ export type ServiceMessageRequest =
   | AddAccountMessage
   | GenerateRecoveryPhraseMessage
   | AddRecoveryPhraseSourceMessage
+  | ImportRecoveryPhraseMessage
   | ImportAccountMessage
   | ImportHardWareWalletMessage
   | MakeAccountActiveMessage

@@ -58,3 +58,25 @@ export const generateRecoveryPhraseSource = async ({
   await page.getByRole("button", { name: "Create", exact: true }).click();
   return words;
 };
+
+/**
+ * From an open account sheet: Add wallet, Import Recovery Phrase, enter the
+ * words, and confirm with the password. Discovery runs after the password, so
+ * callers should allow a generous wait for the account view.
+ */
+export const importRecoveryPhraseSource = async ({
+  page,
+  password,
+  words,
+}: {
+  page: Page;
+  password: string;
+  words: string[];
+}) => {
+  await page.getByTestId("add-wallet").click();
+  await page.getByTestId("add-wallet-import-phrase").click();
+  await page.getByTestId("import-phrase-input").fill(words.join(" "));
+  await page.getByTestId("import-phrase-submit").click();
+  await page.locator("#password-input").fill(password);
+  await page.getByRole("button", { name: "Import", exact: true }).click();
+};
