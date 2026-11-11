@@ -135,7 +135,6 @@ describe("SwapAmount details sheet", () => {
       fetchData: jest.fn().mockResolvedValue(undefined),
     } as any);
     jest.spyOn(UseSwapLiveQuote, "useSwapLiveQuote").mockReturnValue({
-      isSwapUnavailable: false,
       cancelLiveQuote: jest.fn(),
     } as any);
     jest.spyOn(Internal, "getDiscoverData").mockResolvedValue([]);

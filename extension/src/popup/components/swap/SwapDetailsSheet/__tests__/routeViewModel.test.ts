@@ -231,6 +231,14 @@ describe("buildRouteView", () => {
 });
 
 describe("resolveRouteToken", () => {
+  it("keeps a code that contains a colon whole", () => {
+    expect(resolveRouteToken(`MY:TOKEN:${KALE}`, emptyContext)).toMatchObject({
+      code: "MY:TOKEN",
+      issuer: KALE,
+      canonical: `MY:TOKEN:${KALE}`,
+    });
+  });
+
   it("names an unknown contract token by its shortened contract ID", () => {
     expect(resolveRouteToken(UNKNOWN_CONTRACT, emptyContext)).toEqual({
       code: "CADQ…P5KR",
