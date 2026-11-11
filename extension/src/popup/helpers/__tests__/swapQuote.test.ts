@@ -117,6 +117,55 @@ describe("getSwapQuote", () => {
       );
     });
 
+    it("sends a contract token whose symbol contains a colon as its contract ID", async () => {
+      getSwapQuotes.mockResolvedValue({ routes: [], unavailable: [] });
+
+      await getSwapQuote({
+        mode: "send",
+        amount: "1",
+        sourceAsset: `MY:TOKEN:${TOKEN_CONTRACT}`,
+        destAsset: "native",
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        publicKey: ACCOUNT,
+      });
+
+      expect(getSwapQuotes).toHaveBeenCalledWith(
+        expect.objectContaining({ fromAsset: TOKEN_CONTRACT, toAsset: "XLM" }),
+      );
+    });
+
+    it("keeps a hop asset whose symbol contains a colon as one canonical", async () => {
+      const hopAsset = `MY:TOKEN:${TOKEN_CONTRACT}`;
+      getSwapQuotes.mockResolvedValue({
+        routes: [
+          {
+            ...classicRoute,
+            paths: [
+              {
+                share: "1",
+                hops: [
+                  { venue: "stellar-dex", from: "XLM", to: hopAsset },
+                  { venue: "stellar-dex", from: hopAsset, to: USDC },
+                ],
+              },
+            ],
+          },
+        ],
+        unavailable: [],
+      });
+
+      const result = await getSwapQuote({
+        mode: "send",
+        amount: "100",
+        sourceAsset: "native",
+        destAsset: USDC,
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        publicKey: ACCOUNT,
+      });
+
+      expect(result.route?.path).toEqual([hopAsset]);
+    });
+
     it("uses the backend's best route and keeps the full response", async () => {
       const quotes = { routes: [classicRoute, lifiRoute], unavailable: [] };
       getSwapQuotes.mockResolvedValue(quotes);

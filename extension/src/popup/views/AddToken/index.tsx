@@ -24,7 +24,10 @@ import { newTabHref, parsedSearchParam, TokenToAdd } from "helpers/urls";
 
 import { AppState } from "popup/App";
 import { rejectToken, addToken } from "popup/ducks/access";
-import { balancesV2Selector } from "popup/ducks/remoteConfig";
+import {
+  balancesV2Selector,
+  waitForRemoteConfig,
+} from "popup/ducks/remoteConfig";
 import { isNonSSLEnabledSelector } from "popup/ducks/settings";
 import { useSetupAddTokenFlow } from "popup/helpers/useSetupAddTokenFlow";
 import {
@@ -396,6 +399,7 @@ export const AddToken = () => {
 
     const fetchClassicTrustline = async () => {
       try {
+        await waitForRemoteConfig(store);
         const accountBalances = await getAccountBalances(
           hydratedPublicKey,
           hydratedNetworkDetails,

@@ -14,7 +14,10 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import * as FetchBackendV2 from "@shared/api/helpers/fetchBackendV2";
 import { Wrapper, getTestStore } from "popup/__testHelpers__";
-import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
+import {
+  initialState as transactionSubmissionInitialState,
+  saveAsset,
+} from "popup/ducks/transactionSubmission";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
 import * as UseGetSwapAmountData from "popup/components/swap/SwapAmount/hooks/useGetSwapAmountData";
 import * as UseSimulateSwapData from "popup/components/swap/SwapAmount/hooks/useSimulateSwapData";
@@ -228,5 +231,45 @@ describe("SwapAmount swap-for-reserve quote", () => {
     expect(captureException).toHaveBeenCalledWith(
       expect.stringMatching(/^Swap-for-reserve prefill failed - .* - 400: /),
     );
+  });
+
+  it("drops the prefill when the sell token changes while the quote is in flight", async () => {
+    let resolveReceive: (v: unknown) => void = () => {};
+    fetchBackendV2.mockImplementation(async ({ body }) =>
+      JSON.parse(body!).mode === "send"
+        ? sendQuoteReply
+        : new Promise((resolve) => {
+            resolveReceive = resolve;
+          }),
+    );
+
+    await renderAndSwapForReserve();
+    await waitFor(() =>
+      expect(fetchBackendV2).toHaveBeenCalledWith(
+        expect.objectContaining({
+          body: expect.stringContaining('"mode":"receive"'),
+        }),
+      ),
+    );
+
+    // The user picks another sell token before the receive quote lands.
+    await act(async () => {
+      getTestStore()!.dispatch(saveAsset(AQUA));
+    });
+    await act(async () => {
+      resolveReceive({
+        status: 200,
+        body: {
+          data: {
+            routes: [route("3.25", "0.5102041", "XLM")],
+            unavailable: [],
+          },
+        },
+      });
+    });
+
+    expect(
+      getTestStore()!.getState().transactionSubmission.transactionData.amount,
+    ).toBe("5");
   });
 });

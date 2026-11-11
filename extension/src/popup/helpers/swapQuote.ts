@@ -15,6 +15,7 @@ import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import {
   getCanonicalFromAsset,
   isCustomNetwork,
+  splitCanonical,
 } from "@shared/helpers/stellar";
 import { cleanAmount } from "popup/helpers/formatters";
 import {
@@ -101,12 +102,12 @@ export const toBackendAsset = (canonical: string) => {
   if (isNativeAssetId(canonical)) {
     return "XLM";
   }
-  const issuer = canonical.split(":")[1];
-  return issuer && StrKey.isValidContract(issuer) ? issuer : canonical;
+  const { issuer } = splitCanonical(canonical);
+  return StrKey.isValidContract(issuer) ? issuer : canonical;
 };
 
 const fromBackendAsset = (asset: string) => {
-  const [code, issuer] = asset.split(":");
+  const { code, issuer } = splitCanonical(asset);
   return getCanonicalFromAsset(code, issuer);
 };
 
