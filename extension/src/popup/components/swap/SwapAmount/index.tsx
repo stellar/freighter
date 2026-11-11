@@ -345,6 +345,16 @@ export const SwapAmount = ({
   });
 
   const sellInputRef = useRef<HTMLInputElement>(null);
+  // A receive quote for the reserve prefill can take seconds; its answer is
+  // only applied to the inputs it was asked for.
+  const reserveQuoteInputsRef = useRef("");
+  reserveQuoteInputsRef.current = `${asset}|${publicKey}|${networkDetails.network}`;
+  useEffect(
+    () => () => {
+      reserveQuoteInputsRef.current = "";
+    },
+    [],
+  );
 
   // Live "You receive" quote as the user types (debounced path-only lookup).
   const { cancelLiveQuote } = useSwapLiveQuote({
@@ -482,6 +492,7 @@ export const SwapAmount = ({
       const reserveTarget = new BigNumber(BASE_RESERVE)
         .dividedBy(1 - slippageFraction)
         .toFixed(7);
+      const quotedFor = reserveQuoteInputsRef.current;
       const { route } = await getSwapQuote({
         mode: "receive",
         amount: reserveTarget,
@@ -490,6 +501,9 @@ export const SwapAmount = ({
         networkDetails,
         publicKey,
       });
+      if (reserveQuoteInputsRef.current !== quotedFor) {
+        return; // the sell token, account or network changed meanwhile
+      }
       if (route?.sourceAmount) {
         const sellSpendable = getAvailableBalance({
           assetCanonical: sellCanonical,
