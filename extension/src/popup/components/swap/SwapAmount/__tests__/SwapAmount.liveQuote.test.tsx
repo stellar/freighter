@@ -304,7 +304,7 @@ describe("SwapAmount live receive-amount quote", () => {
     expect(captureException).toHaveBeenCalledTimes(1);
   });
 
-  it("shows swaps as temporarily unavailable when classic errored and nothing quoted", async () => {
+  it("disables Review swap and reports once when classic errored and nothing quoted", async () => {
     fetchBackendV2.mockResolvedValue({
       status: 200,
       body: {
