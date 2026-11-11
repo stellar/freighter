@@ -147,6 +147,13 @@ describe("SwapAmount live receive-amount quote", () => {
     });
 
   const cta = () => screen.getByTestId("swap-amount-btn-continue");
+  // The no-quote branch is the only one that shows the Quote unavailable
+  // line; a disabled CTA alone could also be the pending or balance branch.
+  const expectQuoteUnavailable = () => {
+    expect(cta()).toHaveTextContent("Review swap");
+    expect(cta()).toBeDisabled();
+    expect(screen.getByTestId("swap-quote-unavailable")).toBeInTheDocument();
+  };
 
   it("runs a debounced send quote against the backend, not Horizon", async () => {
     renderSwapAmount({ amount: "5", destinationAsset: AQUA });
@@ -199,28 +206,27 @@ describe("SwapAmount live receive-amount quote", () => {
     expect(cta()).toHaveTextContent("Review swap");
   });
 
-  it("shows no quote when the response has no classic route", async () => {
+  it("disables Review swap when the response has no classic route", async () => {
     fetchBackendV2.mockResolvedValue(quotesReply([lifiRoute]));
     renderSwapAmount({ amount: "5", destinationAsset: AQUA });
 
     await settle();
 
     expect(fetchBackendV2).toHaveBeenCalled();
-    expect(cta()).toHaveTextContent("No quote available");
-    expect(cta()).toBeDisabled();
+    expectQuoteUnavailable();
   });
 
-  it("shows no quote on empty routes", async () => {
+  it("disables Review swap on empty routes", async () => {
     fetchBackendV2.mockResolvedValue(quotesReply([]));
     renderSwapAmount({ amount: "5", destinationAsset: AQUA });
 
     await settle();
 
     expect(fetchBackendV2).toHaveBeenCalled();
-    expect(cta()).toHaveTextContent("No quote available");
+    expectQuoteUnavailable();
   });
 
-  it("treats a 400 as no quote", async () => {
+  it("disables Review swap on a 400 without reporting it", async () => {
     fetchBackendV2.mockResolvedValue({
       status: 400,
       body: { error: "invalid amount" },
@@ -230,20 +236,19 @@ describe("SwapAmount live receive-amount quote", () => {
     await settle();
 
     expect(fetchBackendV2).toHaveBeenCalled();
-    expect(cta()).toHaveTextContent("No quote available");
+    expectQuoteUnavailable();
     expect(captureException).not.toHaveBeenCalled();
   });
 
   it.each([502, 503])(
-    "shows swaps as temporarily unavailable on a %s",
+    "disables Review swap on a %s and reports it",
     async (status) => {
       fetchBackendV2.mockResolvedValue({ status, body: { error: "x" } });
       renderSwapAmount({ amount: "5", destinationAsset: AQUA });
 
       await settle();
 
-      expect(cta()).toHaveTextContent("Swaps are temporarily unavailable");
-      expect(cta()).toBeDisabled();
+      expectQuoteUnavailable();
       expect(captureException).toHaveBeenCalledTimes(1);
     },
   );
@@ -276,21 +281,21 @@ describe("SwapAmount live receive-amount quote", () => {
       getTestStore()!.dispatch(saveAmount("9"));
     });
     await settle();
-    expect(cta()).toHaveTextContent("Swaps are temporarily unavailable");
+    expectQuoteUnavailable();
     expect(captureException).toHaveBeenCalledTimes(2);
   });
 
-  it("shows swaps as temporarily unavailable when the backend is unreachable", async () => {
+  it("disables Review swap when the backend is unreachable", async () => {
     fetchBackendV2.mockRejectedValue(new TypeError("Failed to fetch"));
     renderSwapAmount({ amount: "5", destinationAsset: AQUA });
 
     await settle();
 
-    expect(cta()).toHaveTextContent("Swaps are temporarily unavailable");
+    expectQuoteUnavailable();
     expect(captureException).toHaveBeenCalledTimes(1);
   });
 
-  it("shows swaps as temporarily unavailable when classic errored", async () => {
+  it("disables Review swap when classic errored", async () => {
     fetchBackendV2.mockResolvedValue({
       status: 200,
       body: {
@@ -304,7 +309,7 @@ describe("SwapAmount live receive-amount quote", () => {
 
     await settle();
 
-    expect(cta()).toHaveTextContent("Swaps are temporarily unavailable");
+    expectQuoteUnavailable();
     expect(captureException).toHaveBeenCalledTimes(1);
   });
 
@@ -337,14 +342,14 @@ describe("SwapAmount live receive-amount quote", () => {
     fetchBackendV2.mockResolvedValueOnce({ status: 503, body: {} });
     renderSwapAmount({ amount: "5", destinationAsset: AQUA });
     await settle();
-    expect(cta()).toHaveTextContent("Swaps are temporarily unavailable");
+    expectQuoteUnavailable();
 
     await act(async () => {
       getTestStore()!.dispatch(saveAmount("6"));
     });
     await settle();
 
-    expect(cta()).toHaveTextContent("Review swap");
+    expect(cta()).toBeEnabled();
   });
 
   describe("while the quote for the current inputs is pending", () => {
@@ -383,7 +388,6 @@ describe("SwapAmount live receive-amount quote", () => {
 
     it("shows loading when the stored quote is for other inputs, with no quote in flight", () => {
       jest.spyOn(UseSwapLiveQuote, "useSwapLiveQuote").mockReturnValue({
-        isSwapUnavailable: false,
         cancelLiveQuote: jest.fn(),
       });
       renderSwapAmount({

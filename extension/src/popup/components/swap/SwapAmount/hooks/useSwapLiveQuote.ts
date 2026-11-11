@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { debounce } from "lodash";
 import BigNumber from "bignumber.js";
 import { captureException } from "@sentry/browser";
@@ -41,8 +41,7 @@ interface UseSwapLiveQuoteParams {
  * the debounced callback stays stable and quote results don't re-trigger the
  * effect (which would loop).
  *
- * Returns isSwapUnavailable when the backend can't quote at all. All path
- * results flow through Redux (saveSwapBestPath), keyed by the inputs they
+ * All path results flow through Redux (saveSwapBestPath), keyed by the inputs they
  * answer; "still loading" is the stored key not matching the current inputs,
  * so a dropped or superseded response cannot leave the screen pending.
  */
@@ -57,8 +56,6 @@ export const useSwapLiveQuote = ({
   swapAmountData,
   dispatch,
 }: UseSwapLiveQuoteParams) => {
-  const [isSwapUnavailable, setIsSwapUnavailable] = useState(false);
-
   const liveQuoteReqRef = useRef(0);
   // Last failure reported to Sentry this mount. The quote re-fires per
   // debounced keystroke, so an outage is reported once until a quote
@@ -108,7 +105,6 @@ export const useSwapLiveQuote = ({
               return; // superseded by a newer quote, or frozen for review
             }
             lastReportedRef.current = null;
-            setIsSwapUnavailable(false);
             dispatch(
               saveSwapBestPath({
                 path: route?.path ?? [],
@@ -130,9 +126,6 @@ export const useSwapLiveQuote = ({
                 captureException(message);
               }
             }
-            setIsSwapUnavailable(
-              e instanceof SwapQuotesError && e.kind === "unavailable",
-            );
             // No path / bad input / network error: clear the stale amount.
             dispatch(
               saveSwapBestPath({
@@ -181,7 +174,6 @@ export const useSwapLiveQuote = ({
     } else {
       // Source amount cleared: cancel any pending/in-flight quote and reset the
       // received amount so the card shows 0 (skip the dispatch if already 0).
-      setIsSwapUnavailable(false);
       debouncedQuote.cancel();
       liveQuoteReqRef.current += 1;
       if (
@@ -202,5 +194,5 @@ export const useSwapLiveQuote = ({
     networkDetails.networkUrl,
   ]);
 
-  return { isSwapUnavailable, cancelLiveQuote };
+  return { cancelLiveQuote };
 };

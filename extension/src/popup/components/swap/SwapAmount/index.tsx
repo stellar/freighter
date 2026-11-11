@@ -347,7 +347,7 @@ export const SwapAmount = ({
   const sellInputRef = useRef<HTMLInputElement>(null);
 
   // Live "You receive" quote as the user types (debounced path-only lookup).
-  const { isSwapUnavailable, cancelLiveQuote } = useSwapLiveQuote({
+  const { cancelLiveQuote } = useSwapLiveQuote({
     amount,
     asset,
     destinationAsset,
@@ -434,14 +434,12 @@ export const SwapAmount = ({
     blockaidOverrideState,
     networkDetails,
     inputType,
-    isSwapUnavailable,
     publicKey,
     swapQuoteKey: transactionData.swapQuoteKey,
     destRequiresTrustline,
   });
 
-  const isQuoteUnavailable =
-    cta.labelKey === "noQuote" || cta.labelKey === "unavailable";
+  const isQuoteUnavailable = !!cta.isQuoteUnavailable;
   // Close the sheet once a quote arrives (set during render: cta is derived
   // below the early returns, where an effect can't go).
   if (isQuoteUnavailableOpen && !isQuoteUnavailable) {
@@ -533,8 +531,6 @@ export const SwapAmount = ({
     enter: t("Enter an amount"),
     insufficientBalance: t("Insufficient balance"),
     insufficientXlmFees: t("Not enough XLM for network fees"),
-    noQuote: t("No quote available"),
-    unavailable: t("Swaps are temporarily unavailable"),
     review: t("Review swap"),
   };
 
