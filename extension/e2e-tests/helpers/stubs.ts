@@ -3384,9 +3384,6 @@ export const stubAllExternalApis = async (
   // RPC health is fetched by the background service worker
   await stubRpcHealth(context);
 
-  // Subscription account
-  await stubSubscriptionAccount(context);
-
   // Stellar Asset List
   await stubStellarAssetList(page);
   // Asset search is fetched by the background service worker
