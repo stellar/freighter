@@ -84,7 +84,10 @@ interface SimulationParams {
   amount: string;
   allowedSlippage: string;
   path: string[];
-  transactionFee: string;
+  /** Per-op network recommendation; scaled by op count for a classic build. */
+  recommendedFee: string;
+  /** A user-set total, sent as typed. */
+  customFee?: string;
   transactionTimeout: number;
   memo?: string;
   // Derived from balances by the caller (a swap is a self path-payment, so the
@@ -257,7 +260,9 @@ const buildFromBackend = async ({
   key,
   allowedSlippage,
   destDecimals,
-  fee,
+  recommendedFee,
+  customFee,
+  destRequiresTrustline,
   timeout,
   onQuoteMoved,
 }: {
@@ -265,7 +270,9 @@ const buildFromBackend = async ({
   key: SwapQuoteKey;
   allowedSlippage: string;
   destDecimals: number;
-  fee: string;
+  recommendedFee: string;
+  customFee?: string;
+  destRequiresTrustline: boolean;
   timeout: number;
   onQuoteMoved: () => void;
 }) => {
@@ -274,6 +281,14 @@ const buildFromBackend = async ({
     throw new Error(ERROR_TO_DISPLAY.NO_QUOTE);
   }
   const minOut = getMinOut(allowedSlippage, route.toAmount, destDecimals);
+  // Only a classic build splits the fee across ops (changeTrust + path
+  // payment); a LI.FI build is one op that takes the whole fee.
+  const fee =
+    getSwapTotalFee({
+      recommendedFee,
+      customFee,
+      opCount: route.source === "classic" && destRequiresTrustline ? 2 : 1,
+    }) || stroopToXlm(BASE_FEE).toFixed();
   try {
     const { xdr } = await buildSwapTx({
       network: key.network,
@@ -296,6 +311,11 @@ const buildFromBackend = async ({
     if (e.kind === "quoteMoved") {
       onQuoteMoved();
       throw new Error(ERROR_TO_DISPLAY.QUOTE_EXPIRED);
+    }
+    if (e.kind === "badRequest") {
+      // The body is built from the extension's own state, so a 400 is a
+      // client bug worth seeing (the quotes path reports its 400s too).
+      captureException(e.message);
     }
     throw new Error(
       e.kind === "unavailable"
@@ -349,12 +369,12 @@ function useSimulateTxData({
   const fetchData = async ({
     amount,
     destinationRate,
-    transactionFee = simParams.transactionFee,
+    customFee = simParams.customFee,
     transactionTimeout = simParams.transactionTimeout,
   }: {
     amount: string;
     destinationRate?: string;
-    transactionFee?: string;
+    customFee?: string;
     transactionTimeout?: number;
   }) => {
     const requestId = ++requestIdRef.current;
@@ -393,7 +413,15 @@ function useSimulateTxData({
         throw new Error(ERROR_TO_DISPLAY.TOKEN_DETAILS_UNAVAILABLE);
       }
 
-      const baseFee = new BigNumber(transactionFee || stroopToXlm(BASE_FEE));
+      const { recommendedFee } = simParams;
+      // The local build is always classic.
+      const baseFee = new BigNumber(
+        getSwapTotalFee({
+          recommendedFee,
+          customFee,
+          opCount: simParams.destRequiresTrustline ? 2 : 1,
+        }) || stroopToXlm(BASE_FEE),
+      );
 
       // Reuse the quote the live "You receive" preview already surfaced (its
       // path + destination amount are in Redux) instead of re-fetching, so the
@@ -491,7 +519,9 @@ function useSimulateTxData({
             key: getSwapQuoteKey(quoteParams),
             allowedSlippage,
             destDecimals,
-            fee: baseFee.toFixed(),
+            recommendedFee,
+            customFee,
+            destRequiresTrustline: simParams.destRequiresTrustline,
             timeout: transactionTimeout,
             onQuoteMoved: () => {
               if (!isStale()) {
@@ -506,6 +536,7 @@ function useSimulateTxData({
           account: publicKey,
           sourceAsset: quoteParams.sourceAsset,
           destAsset: quoteParams.destAsset,
+          amount,
           minOut,
           sourceDecimals,
         });

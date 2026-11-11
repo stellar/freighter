@@ -122,7 +122,7 @@ const renderSimulate = (
           amount: "10",
           allowedSlippage: "1",
           path: [],
-          transactionFee: "0.00001",
+          recommendedFee: "0.00001",
           transactionTimeout: 180,
           destRequiresTrustline: false,
           sourceDecimals: 7,
