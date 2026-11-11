@@ -34,9 +34,8 @@ import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
 import { SwapSource } from "popup/constants/swap";
 import { DEFAULT_TX_TIMEOUT } from "popup/constants/transaction";
 
-import { encodeSep53Message, getCanonicalFromAsset } from "helpers/stellar";
+import { encodeSep53Message } from "helpers/stellar";
 import { INDEXER_URL } from "@shared/constants/mercury";
-import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
 import { isQuoteExpiredError } from "popup/helpers/quoteExpiry";
 import {
   soroswapGetBestPath,
@@ -392,35 +391,6 @@ export const getSoroswapTokens = createAsyncThunk<
 
   return tokenData.assets;
 });
-
-// returns the full record so can save the best path and its rate
-export const getBestPath = createAsyncThunk<
-  Horizon.ServerApi.PaymentPathRecord,
-  {
-    amount: string;
-    sourceAsset: string;
-    destAsset: string;
-    networkDetails: NetworkDetails;
-  },
-  { rejectValue: ErrorMessage }
->(
-  "getBestPath",
-  async ({ amount, sourceAsset, destAsset, networkDetails }, thunkApi) => {
-    try {
-      return await horizonGetBestPath({
-        amount,
-        sourceAsset,
-        destAsset,
-        networkDetails,
-      });
-    } catch (e) {
-      const message = e instanceof Error ? e.message : JSON.stringify(e);
-      return thunkApi.rejectWithValue({
-        errorMessage: message,
-      });
-    }
-  },
-);
 
 export const getBestSoroswapPath = createAsyncThunk<
   {
@@ -824,11 +794,6 @@ const transactionSubmissionSlice = createSlice({
         state.error = action.payload;
       },
     );
-    builder.addCase(getBestPath.rejected, (state) => {
-      state.transactionData.path = initialState.transactionData.path;
-      state.transactionData.destinationAmount =
-        initialState.transactionData.destinationAmount;
-    });
     builder.addCase(getBestSoroswapPath.rejected, (state) => {
       state.transactionData.path = initialState.transactionData.path;
       state.transactionData.destinationAmount =
@@ -841,27 +806,6 @@ const transactionSubmissionSlice = createSlice({
         ...state,
         soroswapTokens,
       };
-    });
-    builder.addCase(getBestPath.fulfilled, (state, action) => {
-      if (!action.payload) {
-        state.transactionData.path = [];
-        state.transactionData.destinationAmount = "";
-        return;
-      }
-
-      // store in canonical form for easier use
-      const path: string[] = [];
-      action.payload.path.forEach((p) => {
-        if (!p.asset_code && !p.asset_issuer) {
-          path.push(p.asset_type);
-        } else {
-          path.push(getCanonicalFromAsset(p.asset_code, p.asset_issuer));
-        }
-      });
-
-      state.transactionData.path = path;
-      state.transactionData.destinationAmount =
-        action.payload.destination_amount;
     });
     builder.addCase(getBestSoroswapPath.fulfilled, (state, action) => {
       if (!action.payload) {
