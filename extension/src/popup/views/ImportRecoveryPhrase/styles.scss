@@ -1,0 +1,11 @@
+@use "../../styles/utils.scss" as *;
+
+.ImportRecoveryPhrase {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(12px);
+
+  textarea {
+    resize: none;
+  }
+}

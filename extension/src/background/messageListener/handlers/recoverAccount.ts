@@ -23,7 +23,7 @@ import { storeAccount } from "../helpers/store-account";
 import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 import { captureException } from "@sentry/browser";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import { discoverFundedIndices } from "../helpers/discover-funded-indices";
 import { activatePublicKey } from "../helpers/activate-public-key";
 import {
   addSecretSource,
@@ -39,8 +39,6 @@ import { clearLinkStatus } from "background/helpers/link-status";
 import { linkWalletSources } from "background/helpers/link-sources";
 
 const { fromMnemonic } = StellarHDWallet;
-
-const FUNDED_LOOKUP_TIMEOUT_MS = 5_000;
 
 export const recoverAccount = async ({
   request,
@@ -150,43 +148,35 @@ export const recoverAccount = async ({
 
     // lets check first couple of accounts and pre-load them if funded on mainnet
 
-    for (let i = 1; i <= numOfPublicKeysToCheck; i += 1) {
+    const fundedIndices = await discoverFundedIndices({
+      wallet,
+      from: 1,
+      to: numOfPublicKeysToCheck,
+    });
+
+    for (const i of fundedIndices) {
       try {
-        const publicKey = wallet.getPublicKey(i);
-        const privateKey = wallet.getSecret(i);
+        const newKeyPair = {
+          publicKey: wallet.getPublicKey(i),
+          privateKey: wallet.getSecret(i),
+        };
 
-        // Bounded: this runs under the account-mutation lock, and a stalled
-        // lookup would hold off sign-out and auto-lock. A timeout lands in
-        // the catch below and the index is skipped as unfunded.
-        const resp = await fetch(
-          `${MAINNET_NETWORK_DETAILS.networkUrl}/accounts/${publicKey}`,
-          { signal: AbortSignal.timeout(FUNDED_LOOKUP_TIMEOUT_MS) },
-        );
-
-        const j = await resp.json();
-        if (j.account_id) {
-          const newKeyPair = {
-            publicKey,
-            privateKey,
-          };
-
-          // Not `imported`. These are derived from the recovery phrase we
-          // just took, at derivation indices 1..n — the same thing
-          // `addAccount` produces, which stores them unflagged. "Imported"
-          // is reserved for accounts brought in from a secret key, which
-          // the phrase cannot re-derive.
-          await storeAccount({
-            password,
-            keyPair: newKeyPair,
-            mnemonicPhrase: recoverMnemonic,
-            phraseSourceId,
-            sourceId: phraseSourceId,
-            derivationIndex: i,
-            sessionStore,
-            localStore,
-            keyManager,
-          });
-        }
+        // Not `imported`. These are derived from the recovery phrase we
+        // just took, at derivation indices 1..n — the same thing
+        // `addAccount` produces, which stores them unflagged. "Imported"
+        // is reserved for accounts brought in from a secret key, which
+        // the phrase cannot re-derive.
+        await storeAccount({
+          password,
+          keyPair: newKeyPair,
+          mnemonicPhrase: recoverMnemonic,
+          phraseSourceId,
+          sourceId: phraseSourceId,
+          derivationIndex: i,
+          sessionStore,
+          localStore,
+          keyManager,
+        });
       } catch (e) {
         captureException(
           `Error preloading account: ${JSON.stringify(e)} - ${i}`,

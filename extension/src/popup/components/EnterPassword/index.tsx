@@ -22,6 +22,8 @@ interface EnterPasswordProps {
   onCancel?: () => void;
   confirmButtonTitle?: string;
   cancelButtonTitle?: string;
+  /** Rewrites the auth error before it is shown, e.g. to localized copy. */
+  formatAuthError?: (error: string) => string;
 }
 
 export const EnterPassword = ({
@@ -32,6 +34,7 @@ export const EnterPassword = ({
   onCancel,
   confirmButtonTitle,
   cancelButtonTitle,
+  formatAuthError,
 }: EnterPasswordProps) => {
   const { t } = useTranslation();
   const titleLabel = title || t("Enter your password");
@@ -45,7 +48,11 @@ export const EnterPassword = ({
     password: "",
   };
 
-  const authError = useSelector(authErrorSelector);
+  const rawAuthError = useSelector(authErrorSelector);
+  const authError =
+    rawAuthError && formatAuthError
+      ? formatAuthError(rawAuthError)
+      : rawAuthError;
 
   const handleSubmit = async (values: FormValues) => {
     await onConfirm(values.password);

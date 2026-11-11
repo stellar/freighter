@@ -89,6 +89,7 @@ import { getMigratedMnemonicPhrase } from "./handlers/getMigratedMnemonicPhrase"
 import { generateRecoveryPhrase } from "./handlers/generateRecoveryPhrase";
 import { clearPendingRecoveryPhrase } from "./handlers/clearPendingRecoveryPhrase";
 import { addRecoveryPhraseSource } from "./handlers/addRecoveryPhraseSource";
+import { importRecoveryPhrase } from "./handlers/importRecoveryPhrase";
 import { migrateAccounts } from "./handlers/migrateAccounts";
 import { addAssetsList } from "./handlers/addAssetsList";
 import { modifyAssetsList } from "./handlers/modifyAssetsList";
@@ -115,6 +116,7 @@ import { getCachedSwapTopTokens } from "./handlers/getCachedSwapTopTokens";
 import { cacheSwapTopTokens } from "./handlers/cacheSwapTopTokens";
 
 const numOfPublicKeysToCheck = 5;
+const phraseImportDiscoveryDepth = 50;
 
 let sidebarWindowId: number | null = null;
 
@@ -270,6 +272,16 @@ export const popupMessageListener = (
         return { error: "Unauthorized" };
       }
       return clearPendingRecoveryPhrase({ request, sessionStore });
+    }
+    case SERVICE_TYPES.IMPORT_RECOVERY_PHRASE: {
+      return importRecoveryPhrase({
+        request,
+        localStore,
+        sessionStore,
+        keyManager,
+        sessionTimer,
+        discoveryDepth: phraseImportDiscoveryDepth,
+      });
     }
     case SERVICE_TYPES.IMPORT_ACCOUNT: {
       return importAccount({
