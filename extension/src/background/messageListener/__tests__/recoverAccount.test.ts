@@ -134,4 +134,33 @@ describe("Recover account message listener", () => {
       VECTOR.userId,
     );
   });
+  it("gives up on a stalled funded lookup and still recovers index 0", async () => {
+    // Every lookup stalls until its signal aborts; abort them at once instead
+    // of waiting out the real timeout.
+    jest
+      .spyOn(AbortSignal, "timeout")
+      .mockImplementation(() => AbortSignal.abort());
+    global.fetch = jest.fn(
+      (_url: string, init?: { signal?: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          if (init?.signal?.aborted) reject(init.signal.reason);
+          init?.signal?.addEventListener("abort", () =>
+            reject(init.signal?.reason),
+          );
+        }),
+    ) as unknown as typeof fetch;
+
+    const res = await recover();
+
+    expect((res as { error?: string }).error).toBeFalsy();
+    const { session } = mockSessionStore.getState();
+    expect(session.allAccounts?.map(({ publicKey }) => publicKey)).toEqual([
+      "pubKey0",
+    ]);
+    expect(
+      (global.fetch as jest.Mock).mock.calls.every(
+        ([, init]) => init?.signal instanceof AbortSignal,
+      ),
+    ).toBe(true);
+  });
 });
