@@ -16,13 +16,18 @@
     width: 19.5rem;
     height: 3.5rem;
     border-radius: 0.5rem;
-    border: 1px solid var(--sds-clr-gray-01);
+    border: 1px solid var(--sds-clr-gray-06);
     display: flex;
     align-items: center;
     justify-content: center;
+    color: var(--sds-clr-gray-12);
 
-    img {
-      width: 5rem;
+    // Whole-pixel box (the SVG's viewBox is exactly 3:1) so the logo lands
+    // on the pixel grid and opposite bracket strokes antialias identically.
+    // Fractional sizes made the bottom brackets look thinner than the top.
+    svg {
+      width: 5.25rem;
+      height: 1.75rem;
     }
   }
 
