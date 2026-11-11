@@ -1,4 +1,3 @@
-import { captureException } from "@sentry/browser";
 import BigNumber from "bignumber.js";
 import { Horizon } from "stellar-sdk";
 
@@ -207,9 +206,10 @@ export const getSwapQuote = async (
         u.source === "classic" && CLASSIC_OUTAGE_REASONS.includes(u.reason),
     );
     if (outage) {
-      const message = `Swap quotes: classic source ${outage.reason}`;
-      captureException(message);
-      throw new SwapQuotesError("unavailable", message);
+      throw new SwapQuotesError(
+        "unavailable",
+        `Swap quotes: classic source ${outage.reason}`,
+      );
     }
   }
   return { route: route ? routeFromBackend(route) : null, quotes, key };

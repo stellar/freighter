@@ -12,6 +12,7 @@ import BigNumber from "bignumber.js";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { Wrapper } from "popup/__testHelpers__";
+import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
 import * as UseGetSwapAmountData from "popup/components/swap/SwapAmount/hooks/useGetSwapAmountData";
 import * as UseSimulateSwapData from "popup/components/swap/SwapAmount/hooks/useSimulateSwapData";
@@ -315,7 +316,11 @@ describe("SwapAmount CTA gate", () => {
         state={
           {
             transactionSubmission: {
+              // The review sheet renders here, and it reads more of the slice
+              // than transactionData.
+              ...transactionSubmissionInitialState,
               transactionData: {
+                ...transactionSubmissionInitialState.transactionData,
                 asset: "native",
                 amount: "5",
                 destinationAsset:
@@ -342,7 +347,9 @@ describe("SwapAmount CTA gate", () => {
       </Wrapper>,
     );
     await waitForQuote();
-    fireEvent.click(screen.getByTestId("swap-amount-btn-continue"));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("swap-amount-btn-continue"));
+    });
     await waitFor(() => {
       expect(screen.queryByTestId("XlmReserveSheet")).not.toBeInTheDocument();
     });

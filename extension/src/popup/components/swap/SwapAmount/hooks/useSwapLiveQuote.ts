@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { debounce } from "lodash";
 import BigNumber from "bignumber.js";
+import { captureException } from "@sentry/browser";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { AppDispatch } from "popup/App";
@@ -40,9 +41,10 @@ interface UseSwapLiveQuoteParams {
  * the debounced callback stays stable and quote results don't re-trigger the
  * effect (which would loop).
  *
- * Returns isLiveQuoteLoading so the CTA can tell "still loading a quote" apart
- * from "no path exists", and isSwapUnavailable when the backend can't quote at
- * all. All path results flow through Redux (saveSwapBestPath).
+ * Returns isSwapUnavailable when the backend can't quote at all. All path
+ * results flow through Redux (saveSwapBestPath), keyed by the inputs they
+ * answer; "still loading" is the stored key not matching the current inputs,
+ * so a dropped or superseded response cannot leave the screen pending.
  */
 export const useSwapLiveQuote = ({
   amount,
@@ -55,10 +57,13 @@ export const useSwapLiveQuote = ({
   swapAmountData,
   dispatch,
 }: UseSwapLiveQuoteParams) => {
-  const [isLiveQuoteLoading, setIsLiveQuoteLoading] = useState(false);
   const [isSwapUnavailable, setIsSwapUnavailable] = useState(false);
 
   const liveQuoteReqRef = useRef(0);
+  // Last failure reported to Sentry this mount. The quote re-fires per
+  // debounced keystroke, so an outage is reported once until a quote
+  // succeeds, not once per keystroke.
+  const lastReportedRef = useRef<string | null>(null);
   const liveQuoteArgsRef = useRef({
     asset,
     destinationAsset,
@@ -102,9 +107,7 @@ export const useSwapLiveQuote = ({
             if (liveQuoteReqRef.current !== reqId || isReviewingRef.current) {
               return; // superseded by a newer quote, or frozen for review
             }
-            // Stop signalling "loading" so the CTA can distinguish a missing
-            // path from a pending one.
-            setIsLiveQuoteLoading(false);
+            lastReportedRef.current = null;
             setIsSwapUnavailable(false);
             dispatch(
               saveSwapBestPath({
@@ -118,7 +121,15 @@ export const useSwapLiveQuote = ({
             if (liveQuoteReqRef.current !== reqId || isReviewingRef.current) {
               return;
             }
-            setIsLiveQuoteLoading(false);
+            // A 400 here is the user's state (an unfunded account, an
+            // unsupported token); the review path reports those.
+            if (!(e instanceof SwapQuotesError && e.kind === "badRequest")) {
+              const message = e instanceof Error ? e.message : String(e);
+              if (message !== lastReportedRef.current) {
+                lastReportedRef.current = message;
+                captureException(message);
+              }
+            }
             setIsSwapUnavailable(
               e instanceof SwapQuotesError && e.kind === "unavailable",
             );
@@ -150,6 +161,12 @@ export const useSwapLiveQuote = ({
     [debouncedQuote],
   );
 
+  // The crypto amount is the source of truth in both display modes (the fiat
+  // input keeps it in sync), so quote it directly. Keyed on the cleaned value
+  // so Review committing "1,000" as "1000" is not a change and cannot re-arm
+  // a quote behind the review sheet.
+  const cryptoAmount = cleanAmount(amount || "0");
+
   useEffect(() => {
     if (
       swapAmountData.state !== RequestState.SUCCESS ||
@@ -158,17 +175,12 @@ export const useSwapLiveQuote = ({
     ) {
       return;
     }
-    // The crypto amount is the source of truth in both display modes (the fiat
-    // input keeps it in sync), so quote it directly.
-    const cryptoAmount = cleanAmount(amount || "0");
 
     if (new BigNumber(cryptoAmount || "0").isGreaterThan(0)) {
-      setIsLiveQuoteLoading(true);
       debouncedQuote(cryptoAmount);
     } else {
       // Source amount cleared: cancel any pending/in-flight quote and reset the
       // received amount so the card shows 0 (skip the dispatch if already 0).
-      setIsLiveQuoteLoading(false);
       setIsSwapUnavailable(false);
       debouncedQuote.cancel();
       liveQuoteReqRef.current += 1;
@@ -181,7 +193,7 @@ export const useSwapLiveQuote = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- debouncedQuote/dispatch are stable and destinationAmount is read via a ref, so quote results don't re-trigger this effect (which would loop)
   }, [
-    amount,
+    cryptoAmount,
     asset,
     destinationAsset,
     swapAmountData.state,
@@ -190,5 +202,5 @@ export const useSwapLiveQuote = ({
     networkDetails.networkUrl,
   ]);
 
-  return { isLiveQuoteLoading, isSwapUnavailable, cancelLiveQuote };
+  return { isSwapUnavailable, cancelLiveQuote };
 };

@@ -239,7 +239,7 @@ describe("SwapAmount swap-for-reserve quote", () => {
 
     await waitFor(() =>
       expect(captureException).toHaveBeenCalledWith(
-        "Swap quotes: classic source timeout",
+        "Swap-for-reserve prefill failed - Swap quotes: classic source timeout",
       ),
     );
     expect(
@@ -247,7 +247,7 @@ describe("SwapAmount swap-for-reserve quote", () => {
     ).toBe("5");
   });
 
-  it("does not report a rejected receive quote to Sentry again", async () => {
+  it("reports a rejected receive quote to Sentry once", async () => {
     fetchBackendV2.mockImplementation(async ({ body }) =>
       JSON.parse(body!).mode === "send"
         ? sendQuoteReply
@@ -261,6 +261,9 @@ describe("SwapAmount swap-for-reserve quote", () => {
         body: expect.stringContaining('"mode":"receive"'),
       }),
     );
-    expect(captureException).not.toHaveBeenCalled();
+    await waitFor(() => expect(captureException).toHaveBeenCalledTimes(1));
+    expect(captureException).toHaveBeenCalledWith(
+      expect.stringMatching(/^Swap-for-reserve prefill failed - .* - 400: /),
+    );
   });
 });

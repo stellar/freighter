@@ -90,7 +90,8 @@ import {
   pickSwapRoute,
   toBackendAsset,
 } from "popup/helpers/swapQuote";
-import { SwapQuotesError } from "@shared/api/helpers/getSwapQuotes";
+import { SheetHeader } from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
 import { XlmReserveSheet } from "popup/components/swap/XlmReserveSheet";
 import { SwapDetailsSheet } from "popup/components/swap/SwapDetailsSheet";
 import { useSwapLiveQuote } from "./hooks/useSwapLiveQuote";
@@ -270,6 +271,7 @@ export const SwapAmount = ({
   }, [isReviewingTx]);
   const [isXlmReserveOpen, setIsXlmReserveOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isQuoteUnavailableOpen, setIsQuoteUnavailableOpen] = useState(false);
   // Tracks focus on the sell input so the "Enter an amount" CTA can disable
   // itself while the input is focused. The extension has no virtual keyboard,
   // so once the input is focused the tap-to-focus affordance is redundant.
@@ -407,22 +409,20 @@ export const SwapAmount = ({
   const sellInputRef = useRef<HTMLInputElement>(null);
 
   // Live "You receive" quote as the user types (debounced path-only lookup).
-  // isLiveQuoteLoading lets the CTA tell "loading a quote" apart from "no path".
-  const { isLiveQuoteLoading, isSwapUnavailable, cancelLiveQuote } =
-    useSwapLiveQuote({
-      amount,
-      asset,
-      destinationAsset,
-      destinationAmount,
-      networkDetails,
-      publicKey,
-      isReviewingTx:
-        isReviewingTx ||
-        buildsInFlight > 0 ||
-        (isEditingSettings && isSettingsFromReview),
-      swapAmountData,
-      dispatch,
-    });
+  const { isSwapUnavailable, cancelLiveQuote } = useSwapLiveQuote({
+    amount,
+    asset,
+    destinationAsset,
+    destinationAmount,
+    networkDetails,
+    publicKey,
+    isReviewingTx:
+      isReviewingTx ||
+      buildsInFlight > 0 ||
+      (isEditingSettings && isSettingsFromReview),
+    swapAmountData,
+    dispatch,
+  });
 
   if (isLoading) {
     return <Loading />;
@@ -525,11 +525,18 @@ export const SwapAmount = ({
     blockaidOverrideState,
     networkDetails,
     inputType,
-    isLiveQuoteLoading,
     isSwapUnavailable,
     isQuoteForInputs,
     destRequiresTrustline,
   });
+
+  const isQuoteUnavailable =
+    cta.labelKey === "noQuote" || cta.labelKey === "unavailable";
+  // Close the sheet once a quote arrives (set during render: cta is derived
+  // below the early returns, where an effect can't go).
+  if (isQuoteUnavailableOpen && !isQuoteUnavailable) {
+    setIsQuoteUnavailableOpen(false);
+  }
 
   const handleSwapForReserve = async () => {
     const sellCanonical = sourceIsNonXlmClassic
@@ -607,12 +614,9 @@ export const SwapAmount = ({
       }
     } catch (e) {
       // No path / network error — leave the amount as-is for manual entry.
-      // getSwapQuotes already reported its own failures.
-      if (!(e instanceof SwapQuotesError)) {
-        captureException(
-          `Swap-for-reserve prefill failed - ${JSON.stringify(e)}`,
-        );
-      }
+      captureException(
+        `Swap-for-reserve prefill failed - ${e instanceof Error ? e.message : JSON.stringify(e)}`,
+      );
     }
   };
 
@@ -947,6 +951,18 @@ export const SwapAmount = ({
                     </button>
                   </div>
                 ) : null}
+                {isQuoteUnavailable ? (
+                  <div className="SwapAsset__details-link">
+                    <button
+                      type="button"
+                      data-testid="swap-quote-unavailable"
+                      onClick={() => setIsQuoteUnavailableOpen(true)}
+                    >
+                      {t("Quote unavailable")}
+                      <Icon.InfoCircle />
+                    </button>
+                  </div>
+                ) : null}
                 <div
                   className="SwapAsset__percentage-buttons"
                   data-testid="swap-percentage-buttons"
@@ -1125,6 +1141,29 @@ export const SwapAmount = ({
             networkDetails={networkDetails}
             onClose={() => setIsDetailsOpen(false)}
           />
+        ) : (
+          <></>
+        )}
+      </SlideupModal>
+      <SlideupModal
+        setIsModalOpen={() => setIsQuoteUnavailableOpen(false)}
+        isModalOpen={isQuoteUnavailableOpen}
+        ariaLabel={t("Quote unavailable")}
+      >
+        {isQuoteUnavailableOpen ? (
+          <SheetLayout data-testid="QuoteUnavailableSheet">
+            <SheetHeader
+              title={t("Quote unavailable")}
+              onClose={() => setIsQuoteUnavailableOpen(false)}
+              closeTestId="QuoteUnavailableSheet__close"
+              titleTestId="QuoteUnavailableSheet__title"
+            />
+            <div className="SwapAsset__quote-unavailable-body">
+              {t(
+                "We couldn't get a quote for this swap right now. Try a different amount or token pair, or try again later.",
+              )}
+            </div>
+          </SheetLayout>
         ) : (
           <></>
         )}
