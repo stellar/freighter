@@ -22,9 +22,12 @@
     justify-content: center;
     color: var(--sds-clr-gray-12);
 
+    // Whole-pixel box (the SVG's viewBox is exactly 3:1) so the logo lands
+    // on the pixel grid and opposite bracket strokes antialias identically.
+    // Fractional sizes made the bottom brackets look thinner than the top.
     svg {
-      width: 5rem;
-      height: auto;
+      width: 5.25rem;
+      height: 1.75rem;
     }
   }
 
