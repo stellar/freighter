@@ -184,7 +184,8 @@ export const SwapAmount = ({
       amount,
       allowedSlippage,
       path,
-      transactionFee: fee,
+      recommendedFee,
+      customFee: transactionFee,
       transactionTimeout,
       memo,
       destRequiresTrustline,
@@ -952,11 +953,7 @@ export const SwapAmount = ({
               await buildReview({
                 amount,
                 destinationRate: dstAssetPrice,
-                transactionFee: getSwapTotalFee({
-                  recommendedFee,
-                  customFee: fee,
-                  opCount: swapOpCount,
-                }),
+                customFee: fee,
                 transactionTimeout: timeout,
               });
               returnToReview();

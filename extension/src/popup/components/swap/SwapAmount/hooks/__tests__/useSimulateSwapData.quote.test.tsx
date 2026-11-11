@@ -64,6 +64,25 @@ const quotes = {
   unavailable: [],
 };
 
+const lifiFirst = {
+  ...quotes,
+  routes: [
+    {
+      source: "lifi",
+      fromAmount: "10",
+      toAmount: "2",
+      paths: [
+        {
+          share: "1",
+          hops: [{ venue: "Aquarius", from: "XLM", to: USDC, pool: "p" }],
+        },
+      ],
+      fees: [],
+    },
+    ...quotes.routes,
+  ],
+};
+
 const storedKey = {
   account: PUBLIC_KEY,
   network: "PUBLIC",
@@ -143,6 +162,7 @@ const renderSimulate = (
     destinationAmount: "",
     path: [],
   },
+  simParams: Partial<Parameters<typeof useSimulateTxData>[0]["simParams"]> = {},
 ) =>
   renderHook(
     () =>
@@ -155,9 +175,10 @@ const renderSimulate = (
           amount: "10",
           allowedSlippage: "1",
           path: [],
-          transactionFee: "0.00001",
+          recommendedFee: "0.00001",
           transactionTimeout: 180,
           destRequiresTrustline: false,
+          ...simParams,
         },
       }),
     {
@@ -253,24 +274,6 @@ describe("useSimulateTxData quote when no live quote exists", () => {
   });
 
   it("builds the backend's best route even when it is not classic", async () => {
-    const lifiFirst = {
-      ...quotes,
-      routes: [
-        {
-          source: "lifi",
-          fromAmount: "10",
-          toAmount: "2",
-          paths: [
-            {
-              share: "1",
-              hops: [{ venue: "Aquarius", from: "XLM", to: USDC, pool: "p" }],
-            },
-          ],
-          fees: [],
-        },
-        ...quotes.routes,
-      ],
-    };
     fetchBackendV2.mockImplementation(answer(lifiFirst));
     const { result } = renderSimulate();
 
@@ -281,6 +284,50 @@ describe("useSimulateTxData quote when no live quote exists", () => {
     expect(txRequest(fetchBackendV2)).toMatchObject({
       source: "lifi",
       minOut: "1.98",
+    });
+  });
+
+  describe("fee", () => {
+    // A new-trustline classic swap is two ops that split the fee; a LI.FI
+    // swap is one op that takes the whole fee as its inclusion fee.
+    it("scales the recommended fee by the op count for a classic route", async () => {
+      fetchBackendV2.mockImplementation(answer(quotes));
+      const { result } = renderSimulate(undefined, {
+        destRequiresTrustline: true,
+      });
+
+      await act(async () => {
+        await result.current.fetchData({ amount: "10" });
+      });
+
+      expect(txRequest(fetchBackendV2).fee).toBe("0.00002");
+    });
+
+    it("sends the per-op recommended fee for a LI.FI route needing a trustline", async () => {
+      fetchBackendV2.mockImplementation(answer(lifiFirst));
+      const { result } = renderSimulate(undefined, {
+        destRequiresTrustline: true,
+      });
+
+      await act(async () => {
+        await result.current.fetchData({ amount: "10" });
+      });
+
+      expect(txRequest(fetchBackendV2).fee).toBe("0.00001");
+    });
+
+    it("sends a user-set fee as typed whatever the route", async () => {
+      fetchBackendV2.mockImplementation(answer(lifiFirst));
+      const { result } = renderSimulate(undefined, {
+        destRequiresTrustline: true,
+        customFee: "0.0005",
+      });
+
+      await act(async () => {
+        await result.current.fetchData({ amount: "10" });
+      });
+
+      expect(txRequest(fetchBackendV2).fee).toBe("0.0005");
     });
   });
 
