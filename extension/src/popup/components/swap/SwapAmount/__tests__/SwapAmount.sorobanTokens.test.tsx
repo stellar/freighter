@@ -218,7 +218,6 @@ describe("getSwapDerivedData with a contract token sold", () => {
       fee: "0.00001",
       networkDetails: MAINNET_NETWORK_DETAILS,
       inputType: "crypto",
-      isLiveQuoteLoading: false,
       isSwapUnavailable: false,
       publicKey: "G123",
       swapQuoteKey: getSwapQuoteKey({

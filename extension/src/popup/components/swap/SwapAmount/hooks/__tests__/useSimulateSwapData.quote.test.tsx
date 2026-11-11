@@ -265,7 +265,10 @@ describe("useSimulateTxData quote when no live quote exists", () => {
       .spyOn(HorizonGetBestPath, "horizonGetBestPath")
       .mockRejectedValue(new Error("Horizon must not be called"));
   });
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => {
+    jest.restoreAllMocks();
+    jest.clearAllMocks();
+  });
 
   it("builds the path payment from the backend's classic route", async () => {
     fetchBackendV2.mockImplementation(answer(quotes));
@@ -614,6 +617,7 @@ describe("useSimulateTxData quote when no live quote exists", () => {
     expect(result.current.state.error).toBe(
       "Swaps are temporarily unavailable",
     );
+    expect(captureException).toHaveBeenCalledTimes(1);
   });
 
   it("shows the live CTA's no-quote message when the re-quote is a 400", async () => {
@@ -628,6 +632,8 @@ describe("useSimulateTxData quote when no live quote exists", () => {
     });
 
     expect(result.current.state.error).toBe("No quote available");
+    // The extension built this request, so a 400 is a client bug to see.
+    expect(captureException).toHaveBeenCalledTimes(1);
   });
 
   it("reports no path when the response has no route", async () => {

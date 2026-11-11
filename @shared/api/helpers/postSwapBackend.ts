@@ -8,6 +8,7 @@ import { redactErrorBody } from "./redactErrorBody";
  * unreachable backend, an unexpected status or an invalid 200 is "unavailable"
  * and reported to Sentry; statuses in `quietStatuses` map to their kind and are
  * not reported, since they describe the request rather than an outage.
+ * `report: false` leaves reporting to the caller.
  */
 export const postSwapBackend = async <T, K extends string>({
   path,
@@ -17,6 +18,7 @@ export const postSwapBackend = async <T, K extends string>({
   toError,
   unreachableMessage,
   failedMessage,
+  report = true,
 }: {
   path: string;
   body: unknown;
@@ -25,6 +27,7 @@ export const postSwapBackend = async <T, K extends string>({
   toError: (kind: K | "unavailable", message: string) => Error;
   unreachableMessage: string;
   failedMessage: string;
+  report?: boolean;
 }): Promise<T> => {
   let status: number;
   let responseBody: unknown;
@@ -36,7 +39,7 @@ export const postSwapBackend = async <T, K extends string>({
     }));
   } catch (e) {
     const message = `${unreachableMessage} - ${e instanceof Error ? e.message : String(e)}`;
-    captureException(message);
+    if (report) captureException(message);
     throw toError("unavailable", message);
   }
 
@@ -50,6 +53,6 @@ export const postSwapBackend = async <T, K extends string>({
   if (quietKind) {
     throw toError(quietKind, message);
   }
-  captureException(message);
+  if (report) captureException(message);
   throw toError("unavailable", message);
 };

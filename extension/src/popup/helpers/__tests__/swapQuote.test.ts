@@ -225,7 +225,7 @@ describe("getSwapQuote", () => {
     };
 
     it.each(["error", "timeout", "rate_limited"])(
-      "reports classic %s as swaps unavailable, to Sentry",
+      "reports classic %s as swaps unavailable, leaving Sentry to the caller",
       async (reason) => {
         const err = await quoteWith([{ source: "classic", reason }]).catch(
           (e) => e,
@@ -233,7 +233,7 @@ describe("getSwapQuote", () => {
 
         expect(err).toBeInstanceOf(GetSwapQuotes.SwapQuotesError);
         expect(err.kind).toBe("unavailable");
-        expect(captureException).toHaveBeenCalledTimes(1);
+        expect(captureException).not.toHaveBeenCalled();
       },
     );
 
