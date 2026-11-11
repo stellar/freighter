@@ -131,7 +131,7 @@ function useGetWalletsData() {
             networkDetails,
             useCache: true,
           });
-          const totalPriceUsd = getTotalUsd(
+          const { totalUsd, hasPrices } = getTotalUsd(
             prices.tokenPrices || {},
             visibleBalances,
           );
@@ -140,8 +140,8 @@ function useGetWalletsData() {
               hasError: false,
               hasPriceFeed: isMainnetNetwork,
               isFunded: !!balances.isFunded,
-              tokenPrices: prices.tokenPrices,
-              totalUsd: totalPriceUsd,
+              hasPrices,
+              totalUsd,
             }),
           };
         } catch (error) {

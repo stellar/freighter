@@ -194,7 +194,6 @@ describe("useGetBalances (flag routing)", () => {
       settings: { assetsLists: [] },
       remoteConfig: {
         isInitialized: true,
-        use_token_prices_v2: true,
         use_balances_v2: useBalancesV2,
         earn_deposit: false,
         maintenance_banner: { enabled: false, payload: undefined },

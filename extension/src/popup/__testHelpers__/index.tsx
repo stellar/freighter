@@ -74,7 +74,6 @@ export const Wrapper: React.FunctionComponent<any> = ({
     // Loaded so balance fetches don't wait forever; kill switches stay off.
     remoteConfig: {
       isInitialized: true,
-      use_token_prices_v2: true,
       use_balances_v2: false,
       use_token_price_history: false,
       earn_deposit: false,

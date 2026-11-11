@@ -28,7 +28,6 @@ const ON_VARIANT_VALUES = ["on", "true", "enabled", "yes"];
  * Add flag names here as new boolean flags are introduced.
  */
 const BOOLEAN_FLAGS = [
-  "use_token_prices_v2",
   "use_balances_v2",
   "earn_deposit",
   "use_token_price_history",
@@ -88,9 +87,6 @@ interface RemoteConfigState extends FeatureFlags {
 
 const initialState: RemoteConfigState = {
   isInitialized: false,
-  // Defaults to v2; Amplitude can flip it off to roll back to the v1
-  // token-prices endpoint without a release.
-  use_token_prices_v2: true,
   // Defaults to v1 while the balances-v2 work is still in progress; Amplitude
   // can flip it on to opt into the v2 account-balances endpoint without a
   // release.
@@ -244,21 +240,6 @@ export const maintenanceScreenSelector = createSelector(
       return { enabled: false as const, content: null };
     }
   },
-);
-
-/**
- * Returns whether the v2 token-prices endpoint should be used. Defaults to
- * true; Amplitude can flip the flag off to roll back to the v1 endpoint.
- */
-export const tokenPricesV2Selector = createSelector(
-  remoteConfigSelector,
-  // Deliberately NOT through `killSwitchSelector`. That factory gates whether
-  // a feature MOUNTS, which has no lasting effect; this flag picks the backend
-  // for a load whose result is cached. If it were read fail-closed, a
-  // pre-settle Account load would go to v1, which filters contract tokens, and
-  // the partial result would sit in the prices cache with nothing to retry it
-  // once the flags settled — Soroban assets stuck on "--" beside a v2 chart.
-  (rc) => rc.use_token_prices_v2,
 );
 
 /**

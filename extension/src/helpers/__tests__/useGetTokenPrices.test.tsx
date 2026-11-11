@@ -4,10 +4,7 @@ import { Provider } from "react-redux";
 import { renderHook, act } from "@testing-library/react";
 import { useGetTokenPrices } from "../hooks/useGetTokenPrices";
 import { makeDummyStore } from "popup/__testHelpers__";
-import {
-  fetchFeatureFlags,
-  reducer as remoteConfigReducer,
-} from "popup/ducks/remoteConfig";
+import { reducer as remoteConfigReducer } from "popup/ducks/remoteConfig";
 
 // Flags settled, as in a running popup once `fetchFeatureFlags` has resolved.
 const SETTLED_REMOTE_CONFIG = {
@@ -73,7 +70,6 @@ describe("useGetTokenPrices", () => {
     expect(getTokenPricesSpy).toHaveBeenCalledWith(
       ["native"],
       MAINNET_NETWORK_DETAILS,
-      true,
     );
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
     expect(result.current.state.data?.tokenPrices).toEqual({
@@ -83,7 +79,9 @@ describe("useGetTokenPrices", () => {
       },
     });
   });
-  it("waits for the remote config flags before choosing the prices endpoint", async () => {
+  it("fetches prices without waiting for the remote config flags", async () => {
+    // Only freighter-backend-v2 serves prices, so no flag picks the endpoint
+    // and the fetch must not wait for the flags to settle.
     const getTokenPricesSpy = jest
       .spyOn(ApiInternal, "getTokenPrices")
       .mockResolvedValue({});
@@ -103,9 +101,8 @@ describe("useGetTokenPrices", () => {
       wrapper: Wrapper(store),
     });
 
-    let fetchPromise: Promise<unknown> = Promise.resolve();
     await act(async () => {
-      fetchPromise = result.current.fetchData({
+      await result.current.fetchData({
         publicKey: "G123",
         balances: [
           {
@@ -117,26 +114,12 @@ describe("useGetTokenPrices", () => {
         ],
         networkDetails: MAINNET_NETWORK_DETAILS,
       } as any);
-      await new Promise((resolve) => setTimeout(resolve, 0));
-    });
-    expect(getTokenPricesSpy).not.toHaveBeenCalled();
-
-    await act(async () => {
-      store.dispatch({
-        type: fetchFeatureFlags.fulfilled.type,
-        payload: {
-          ...SETTLED_REMOTE_CONFIG,
-          use_token_prices_v2: false,
-        },
-      });
-      await fetchPromise;
     });
 
     expect(getTokenPricesSpy).toHaveBeenCalledTimes(1);
     expect(getTokenPricesSpy).toHaveBeenCalledWith(
       ["native"],
       MAINNET_NETWORK_DETAILS,
-      false,
     );
   });
 
@@ -196,7 +179,6 @@ describe("useGetTokenPrices", () => {
     expect(getTokenPricesSpy).toHaveBeenCalledWith(
       ["native"],
       MAINNET_NETWORK_DETAILS,
-      true,
     );
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
     expect(result.current.state.data?.tokenPrices).toEqual({
@@ -328,7 +310,6 @@ describe("useGetTokenPrices", () => {
     expect(getTokenPricesSpy).toHaveBeenCalledWith(
       ["native"],
       TESTNET_NETWORK_DETAILS,
-      true,
     );
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
     expect(result.current.state.data?.tokenPrices).toEqual({
@@ -405,11 +386,7 @@ describe("useGetTokenPrices", () => {
         useCache: true,
       } as any);
     });
-    expect(getTokenPricesSpy).toHaveBeenCalledWith(
-      ["native"],
-      customTestnet,
-      true,
-    );
+    expect(getTokenPricesSpy).toHaveBeenCalledWith(["native"], customTestnet);
     expect(result.current.state.data?.tokenPrices).toEqual({
       native: {
         currentPrice: "2",
@@ -512,7 +489,6 @@ describe("useGetTokenPrices", () => {
     expect(getTokenPricesSpy).toHaveBeenCalledWith(
       ["USDC:GUSD"],
       MAINNET_NETWORK_DETAILS,
-      true,
     );
     expect(result.current.state.data?.tokenPrices).toEqual({
       native: { currentPrice: "1", percentagePriceChange24h: ".5" },
@@ -566,13 +542,11 @@ describe("useGetTokenPrices", () => {
       1,
       ["native"],
       MAINNET_NETWORK_DETAILS,
-      true,
     );
     expect(getTokenPricesSpy).toHaveBeenNthCalledWith(
       2,
       ["USDC:GUSD"],
       MAINNET_NETWORK_DETAILS,
-      true,
     );
     expect(result.current.state.data?.tokenPrices).toEqual({
       native: { currentPrice: "1", percentagePriceChange24h: ".5" },
@@ -700,7 +674,6 @@ describe("useGetTokenPrices", () => {
       expect(getTokenPricesSpy).toHaveBeenCalledWith(
         [USDC],
         MAINNET_NETWORK_DETAILS,
-        true,
       );
       expect(result.current.state.data?.tokenPrices).toEqual({
         native: { currentPrice: "1", percentagePriceChange24h: ".5" },

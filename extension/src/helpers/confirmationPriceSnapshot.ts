@@ -2,8 +2,9 @@ import { getTokenPrices } from "@shared/api/internal";
 import { ApiTokenPrices } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 
+// Sent as `amount_usd_source` on volume events. Only the freighter-backend-v2
+// endpoint remains; the value is kept so existing dashboards keep matching.
 export enum PriceSource {
-  TOKEN_PRICES_V1 = "token_prices_v1",
   TOKEN_PRICES_V2 = "token_prices_v2",
 }
 
@@ -51,26 +52,21 @@ export interface ConfirmationSnapshotHandle {
  * between can have let it refresh. Either way it must be captured here, not
  * read later when `resolve()` is called.
  *
- * Cancellation is a real network abort on the v1 endpoint (a direct fetch).
- * The v2 endpoint runs in the background service worker across a message
- * boundary the AbortSignal cannot cross, so there cancellation is best-effort:
- * the request is skipped if already aborted, and a result that arrives after
+ * The request runs in the background service worker across a message
+ * boundary the AbortSignal cannot cross, so cancellation is best-effort: the
+ * request is skipped if already aborted, and a result that arrives after
  * abort is discarded even though the HTTP itself ran to completion.
  */
 export const startConfirmationPriceSnapshot = ({
   canonicalIds,
   networkDetails,
-  useV2,
   cachedDisplayPrices,
 }: {
   canonicalIds: string[];
   networkDetails: NetworkDetails;
-  useV2: boolean;
   cachedDisplayPrices: ApiTokenPrices | null;
 }): ConfirmationSnapshotHandle => {
-  const source: PriceSource = useV2
-    ? PriceSource.TOKEN_PRICES_V2
-    : PriceSource.TOKEN_PRICES_V1;
+  const source = PriceSource.TOKEN_PRICES_V2;
 
   const controller = new AbortController();
   let succeeded = false;
@@ -78,7 +74,7 @@ export const startConfirmationPriceSnapshot = ({
 
   // Never an unhandled rejection: a failed fetch degrades to cached_display
   // exactly like one that's merely still pending at resolve() time.
-  getTokenPrices(canonicalIds, networkDetails, useV2, controller.signal)
+  getTokenPrices(canonicalIds, networkDetails, controller.signal)
     .then((result) => {
       // A result landing after abort is discarded, never consulted.
       if (!controller.signal.aborted) {

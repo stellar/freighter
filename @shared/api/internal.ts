@@ -724,115 +724,72 @@ export const getAccountBalancesV2 = async ({
 export const getTokenPrices = async (
   tokens: string[],
   networkDetails: NetworkDetails,
-  // Required, not defaulted: callers must thread the `use_token_prices_v2`
-  // feature flag so Amplitude can roll back to the v1 endpoint without a
-  // release. A default silently opts new callers into v2 and defeats the
-  // kill switch.
-  useV2: boolean,
   // Cancels the request when the caller no longer needs the answer (e.g. the
-  // confirmation price snapshot's terminal-status deadline). A true network
-  // abort on the v1 path; the v2 request runs in the background service
-  // worker across a message boundary the signal cannot cross, so there it
-  // only skips a not-yet-sent request and rejects a no-longer-wanted result.
+  // confirmation price snapshot's terminal-status deadline). The request runs
+  // in the background service worker across a message boundary the signal
+  // cannot cross, so it only skips a not-yet-sent request and rejects a
+  // no-longer-wanted result.
   signal?: AbortSignal,
 ): Promise<ApiTokenPrices> => {
   // LP shares are never priceable (an LP id fails parsing at the batch
-  // endpoint), so they are stripped on both paths. Custom tokens are only
-  // stripped for the old Node backend; the Go backend prices SEP-41 tokens.
+  // endpoint), so they are stripped. The Go backend prices SEP-41 tokens, so
+  // custom tokens are sent.
   const nonLpTokens = tokens.filter((tokenId) => !tokenId.includes(":lp"));
 
-  // The v2 token-prices endpoint is a freighter-backend-v2 call, so it goes
+  // The token-prices endpoint is a freighter-backend-v2 call, so it goes
   // through the background chokepoint (callBackendV2), which attaches the
   // per-request JWT (#2879). token-prices is only ever fetched from an unlocked
   // wallet (a locked wallet shows the login screen), so this request always
-  // carries the JWT. The v1 path below is the legacy indexer, a direct fetch.
-  if (useV2) {
-    // The v2 token-prices endpoint only supports pubnet and testnet. Derive the
-    // price network from the passphrase rather than networkDetails.network so
-    // that custom networks sharing the pubnet/testnet passphrase (stored as
-    // STANDALONE) still resolve to the correct supported network. Anything else
-    // (Futurenet, custom passphrases) is skipped to avoid a guaranteed error and
-    // Sentry noise.
-    const priceNetwork =
-      PASSPHRASE_TO_PRICE_NETWORK[networkDetails.networkPassphrase];
-    if (!priceNetwork) {
-      return {};
-    }
-    // Nothing priceable left after filtering, so skip the request rather than
-    // POST an empty tokens array and risk a 4xx that surfaces as an error.
-    if (!nonLpTokens.length) {
-      return {};
-    }
-
-    if (signal?.aborted) {
-      throw new DOMException("token-prices request aborted", "AbortError");
-    }
-
-    // Query lives in the path so callBackendV2 signs the JWT's methodAndPath
-    // over the server's full request-target (path + query) — see #2879.
-    const { status, body } = await fetchBackendV2({
-      method: "POST",
-      path: `/token-prices?network=${priceNetwork}`,
-      body: JSON.stringify({ tokens: nonLpTokens }),
-    });
-
-    // The background request cannot be cancelled mid-flight (see `signal`
-    // param doc); reject a result nobody wants instead of returning it.
-    if (signal?.aborted) {
-      throw new DOMException("token-prices request aborted", "AbortError");
-    }
-
-    // Mirror getDiscoverData: a 200 without a `data` payload is still a
-    // failure — returning undefined would violate the Promise<ApiTokenPrices>
-    // contract (the caller's try/catch only handles throws, not bad returns).
-    const parsed = body as { data?: ApiTokenPrices };
-    if (status !== 200 || !parsed?.data) {
-      const _err = JSON.stringify(body);
-      captureException(
-        `Failed to fetch token prices - ${status}: ${redactErrorBody(body)}`,
-      );
-      throw new Error(_err);
-    }
-
-    return parsed.data;
-  }
-
-  // v1 (legacy) path — direct fetch to the v1 indexer, not a backend-v2 call.
-  // NOTE: the old Node backend does not accept custom tokens, so the
-  // custom-token half of the split predicate applies here only. Not
-  // `getAssetFromCanonical`: it throws on a bare contract id, which would
-  // fail the whole batch.
-  const legacyTokens = nonLpTokens.filter((tokenId) => {
-    const { issuer } = splitCanonical(tokenId);
-    return !isContractId(issuer || tokenId);
-  });
-  // Same empty-batch guard as the v2 path: `{ tokens: [] }` is a 400 here too.
-  if (!legacyTokens.length) {
+  // carries the JWT.
+  //
+  // The token-prices endpoint only supports pubnet and testnet. Derive the
+  // price network from the passphrase rather than networkDetails.network so
+  // that custom networks sharing the pubnet/testnet passphrase (stored as
+  // STANDALONE) still resolve to the correct supported network. Anything else
+  // (Futurenet, custom passphrases) is skipped to avoid a guaranteed error and
+  // Sentry noise.
+  const priceNetwork =
+    PASSPHRASE_TO_PRICE_NETWORK[networkDetails.networkPassphrase];
+  if (!priceNetwork) {
     return {};
   }
-  const url = new URL(`${INDEXER_URL}/token-prices`);
-  const options = {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    // The legacy backend rejects custom tokens, so this path sends the
-    // custom-filtered list; the v2 path above sends `nonLpTokens`.
-    body: JSON.stringify({ tokens: legacyTokens }),
-    signal,
-  };
-  const response = await fetch(url.href, options);
-  const parsedResponse = (await response.json()) as { data: ApiTokenPrices };
+  // Nothing priceable left after filtering, so skip the request rather than
+  // POST an empty tokens array and risk a 4xx that surfaces as an error.
+  if (!nonLpTokens.length) {
+    return {};
+  }
 
-  if (!response.ok) {
-    const _err = JSON.stringify(parsedResponse);
+  if (signal?.aborted) {
+    throw new DOMException("token-prices request aborted", "AbortError");
+  }
+
+  // Query lives in the path so callBackendV2 signs the JWT's methodAndPath
+  // over the server's full request-target (path + query) — see #2879.
+  const { status, body } = await fetchBackendV2({
+    method: "POST",
+    path: `/token-prices?network=${priceNetwork}`,
+    body: JSON.stringify({ tokens: nonLpTokens }),
+  });
+
+  // The background request cannot be cancelled mid-flight (see `signal`
+  // param doc); reject a result nobody wants instead of returning it.
+  if (signal?.aborted) {
+    throw new DOMException("token-prices request aborted", "AbortError");
+  }
+
+  // Mirror getDiscoverData: a 200 without a `data` payload is still a
+  // failure — returning undefined would violate the Promise<ApiTokenPrices>
+  // contract (the caller's try/catch only handles throws, not bad returns).
+  const parsed = body as { data?: ApiTokenPrices };
+  if (status !== 200 || !parsed?.data) {
+    const _err = JSON.stringify(body);
     captureException(
-      `Failed to fetch token prices - ${response.status}: ${response.statusText}`,
+      `Failed to fetch token prices - ${status}: ${redactErrorBody(body)}`,
     );
     throw new Error(_err);
   }
 
-  return parsedResponse.data;
+  return parsed.data;
 };
 
 /**
