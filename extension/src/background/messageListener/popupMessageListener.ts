@@ -324,7 +324,6 @@ export const popupMessageListener = (
       return changeNetwork({
         request,
         localStore,
-        sessionStore,
       });
     }
     case SERVICE_TYPES.LOAD_ACCOUNT: {
