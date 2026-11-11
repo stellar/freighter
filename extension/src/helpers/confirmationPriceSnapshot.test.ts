@@ -22,7 +22,6 @@ describe("startConfirmationPriceSnapshot", () => {
     const handle = startConfirmationPriceSnapshot({
       canonicalIds: ["native"],
       networkDetails: TESTNET_NETWORK_DETAILS,
-      useV2: true,
       cachedDisplayPrices: { native: { currentPrice: "0.1" } },
     });
 
@@ -46,7 +45,6 @@ describe("startConfirmationPriceSnapshot", () => {
     const handle = startConfirmationPriceSnapshot({
       canonicalIds: ["native", "USDC:ISSUER"],
       networkDetails: TESTNET_NETWORK_DETAILS,
-      useV2: true,
       cachedDisplayPrices: { native: { currentPrice: "0.1" } },
     });
 
@@ -68,14 +66,13 @@ describe("startConfirmationPriceSnapshot", () => {
     const handle = startConfirmationPriceSnapshot({
       canonicalIds: ["native"],
       networkDetails: TESTNET_NETWORK_DETAILS,
-      useV2: false,
       cachedDisplayPrices: { native: { currentPrice: "0.1" } },
     });
 
     expect(handle.resolve()).toEqual({
       pricesById: { native: { currentPrice: "0.1" } },
       freshness: PriceFreshness.CACHED_DISPLAY,
-      source: PriceSource.TOKEN_PRICES_V1,
+      source: PriceSource.TOKEN_PRICES_V2,
     });
   });
 
@@ -87,7 +84,6 @@ describe("startConfirmationPriceSnapshot", () => {
     const handle = startConfirmationPriceSnapshot({
       canonicalIds: ["native"],
       networkDetails: TESTNET_NETWORK_DETAILS,
-      useV2: true,
       cachedDisplayPrices: { native: { currentPrice: "0.1" } },
     });
 
@@ -111,7 +107,6 @@ describe("startConfirmationPriceSnapshot", () => {
     const handle = startConfirmationPriceSnapshot({
       canonicalIds: ["native"],
       networkDetails: TESTNET_NETWORK_DETAILS,
-      useV2: true,
       cachedDisplayPrices: null,
     });
 
@@ -128,7 +123,7 @@ describe("startConfirmationPriceSnapshot", () => {
     let capturedSignal: AbortSignal | undefined;
     jest
       .spyOn(ApiInternal, "getTokenPrices")
-      .mockImplementation((_tokens, _network, _useV2, signal) => {
+      .mockImplementation((_tokens, _network, signal) => {
         capturedSignal = signal;
         return new Promise(() => {});
       });
@@ -136,7 +131,6 @@ describe("startConfirmationPriceSnapshot", () => {
     const handle = startConfirmationPriceSnapshot({
       canonicalIds: ["native"],
       networkDetails: TESTNET_NETWORK_DETAILS,
-      useV2: false,
       cachedDisplayPrices: null,
     });
 
@@ -149,7 +143,7 @@ describe("startConfirmationPriceSnapshot", () => {
     let capturedSignal: AbortSignal | undefined;
     jest
       .spyOn(ApiInternal, "getTokenPrices")
-      .mockImplementation((_tokens, _network, _useV2, signal) => {
+      .mockImplementation((_tokens, _network, signal) => {
         capturedSignal = signal;
         return new Promise(() => {});
       });
@@ -157,7 +151,6 @@ describe("startConfirmationPriceSnapshot", () => {
     const handle = startConfirmationPriceSnapshot({
       canonicalIds: ["native"],
       networkDetails: TESTNET_NETWORK_DETAILS,
-      useV2: false,
       cachedDisplayPrices: null,
     });
 
@@ -180,7 +173,6 @@ describe("startConfirmationPriceSnapshot", () => {
     const handle = startConfirmationPriceSnapshot({
       canonicalIds: ["native"],
       networkDetails: TESTNET_NETWORK_DETAILS,
-      useV2: true,
       cachedDisplayPrices: { native: { currentPrice: "0.2" } },
     });
 

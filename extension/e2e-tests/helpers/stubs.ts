@@ -3433,6 +3433,7 @@ export const stubAllExternalApis = async (
 
   // Feature flags
   await stubFeatureFlags(context);
+  await stubExperimentDefaults(context);
 
   // RPC health is fetched by the background service worker
   await stubRpcHealth(context);
@@ -3623,6 +3624,17 @@ export const stubReportTransactionWarning = async (
 
 const AMPLITUDE_EXPERIMENT_VARDATA_ROUTE = "**/sdk/v2/vardata**";
 const MAINTENANCE_VARIANT_VALUE = "on";
+
+/**
+ * Answers the Experiment flag request with no variants, so every flag keeps
+ * its default and balances don't wait on a real Amplitude request. Specs that
+ * need a variant register a page route, which takes precedence over this one.
+ */
+export const stubExperimentDefaults = async (context: BrowserContext) => {
+  await context.route(AMPLITUDE_EXPERIMENT_VARDATA_ROUTE, async (route) => {
+    await route.fulfill({ json: {} });
+  });
+};
 
 const stubExperimentVariants = async (
   page: Page,

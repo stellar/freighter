@@ -21,7 +21,10 @@ import { AssetType } from "@shared/api/types/account-balance";
 import { settingsSelector } from "popup/ducks/settings";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 import { AppDispatch, AppState } from "popup/App";
-import { balancesV2Selector } from "popup/ducks/remoteConfig";
+import {
+  balancesV2Selector,
+  waitForRemoteConfig,
+} from "popup/ducks/remoteConfig";
 import {
   balancesSelector,
   iconsSelector,
@@ -106,15 +109,17 @@ function useGetBalances(options: {
       const accountBalances =
         useCache && isBalancesCacheValid
           ? cachedBalanceData
-          : await getAccountBalances(
-              publicKey,
-              networkDetails,
-              isMainnet,
-              shouldSkipScan,
-              // Read the flag from the store at call time (not a
-              // render-captured value) so a freshly resolved Amplitude flag
-              // isn't missed — mirrors useGetTokenPrices.
-              balancesV2Selector(store.getState()),
+          : await waitForRemoteConfig(store).then(() =>
+              getAccountBalances(
+                publicKey,
+                networkDetails,
+                isMainnet,
+                shouldSkipScan,
+                // Read the flag from the store at call time (not a
+                // render-captured value) so a freshly resolved Amplitude flag
+                // isn't missed — mirrors useGetTokenPrices.
+                balancesV2Selector(store.getState()),
+              ),
             );
 
       const { balances, unfilteredBalances } = await formatBalances({

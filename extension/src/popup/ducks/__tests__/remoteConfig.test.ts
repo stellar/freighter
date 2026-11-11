@@ -5,7 +5,6 @@ import {
   maintenanceBannerSelector,
   maintenanceScreenSelector,
   isRemoteConfigInitializedSelector,
-  tokenPricesV2Selector,
   balancesV2Selector,
   tokenPriceHistoryEnabledSelector,
   reducer,
@@ -73,11 +72,6 @@ describe("remoteConfig duck — initial state", () => {
   it("has isInitialized: false by default", () => {
     const store = makeStore();
     expect(getState(store).isInitialized).toBe(false);
-  });
-
-  it("defaults use_token_prices_v2 to true", () => {
-    const store = makeStore();
-    expect(getState(store).use_token_prices_v2).toBe(true);
   });
 
   it("defaults use_balances_v2 to false", () => {
@@ -375,33 +369,6 @@ describe("remoteConfig selectors", () => {
   it("isRemoteConfigInitializedSelector returns false initially", () => {
     const store = makeStore();
     expect(isRemoteConfigInitializedSelector(store.getState())).toBe(false);
-  });
-
-  it("tokenPricesV2Selector reads its default before the flags settle", () => {
-    // Unlike the chart kill switch, this one picks the backend for a cached
-    // load: failing closed would pin a v1 partial result for the session.
-    const store = makeStore();
-    expect(tokenPricesV2Selector(store.getState())).toBe(true);
-  });
-
-  it("tokenPricesV2Selector stays true when Amplitude omits the flag", async () => {
-    (getExperimentClient as jest.Mock).mockReturnValue(makeClient());
-
-    const store = makeStore();
-    await store.dispatch(fetchFeatureFlags());
-    expect(tokenPricesV2Selector(store.getState())).toBe(true);
-  });
-
-  it("tokenPricesV2Selector rolls back to false when variant is off", async () => {
-    (getExperimentClient as jest.Mock).mockReturnValue(
-      makeClient({
-        use_token_prices_v2: { value: "off" },
-      }),
-    );
-
-    const store = makeStore();
-    await store.dispatch(fetchFeatureFlags());
-    expect(tokenPricesV2Selector(store.getState())).toBe(false);
   });
 
   it("balancesV2Selector turns true when the variant is on", async () => {
