@@ -271,12 +271,21 @@ export const initAlarmListener = () => {
     }
 
     // Locking mid-import must not be undone by the import's later flush.
-    await withAccountMutationLock(async () => {
+    const cleared = await withAccountMutationLock(async () => {
+      // A fired alarm is gone, so a pending one means resetSession or
+      // startSession rearmed the timer while this one waited for the lock.
+      // The session it would clear has a new deadline.
+      if (await browser.alarms.get(SESSION_ALARM_NAME)) {
+        return false;
+      }
       const sessionStore = await buildStore();
       const localStore = dataStorageAccess(browserLocalStorage);
       await clearSession({ sessionStore, localStore });
       await flushSessionStore(sessionStore);
+      return true;
     });
-    await broadcastSessionState(SERVICE_TYPES.SESSION_LOCKED);
+    if (cleared) {
+      await broadcastSessionState(SERVICE_TYPES.SESSION_LOCKED);
+    }
   });
 };
