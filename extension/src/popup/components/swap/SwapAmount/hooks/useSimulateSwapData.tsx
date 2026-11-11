@@ -278,11 +278,12 @@ const buildFromBackend = async ({
   const minOut = getMinOut(allowedSlippage, route.toAmount);
   // Only a classic build splits the fee across ops (changeTrust + path
   // payment); a LI.FI build is one op that takes the whole fee.
-  const fee = getSwapTotalFee({
-    recommendedFee,
-    customFee,
-    opCount: route.source === "classic" && destRequiresTrustline ? 2 : 1,
-  });
+  const fee =
+    getSwapTotalFee({
+      recommendedFee,
+      customFee,
+      opCount: route.source === "classic" && destRequiresTrustline ? 2 : 1,
+    }) || stroopToXlm(BASE_FEE).toFixed();
   try {
     const { xdr } = await buildSwapTx({
       network: key.network,

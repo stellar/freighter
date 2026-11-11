@@ -316,6 +316,17 @@ describe("useSimulateTxData quote when no live quote exists", () => {
       expect(txRequest(fetchBackendV2).fee).toBe("0.00001");
     });
 
+    it("falls back to the base fee while the recommendation is unknown", async () => {
+      fetchBackendV2.mockImplementation(answer(quotes));
+      const { result } = renderSimulate(undefined, { recommendedFee: "" });
+
+      await act(async () => {
+        await result.current.fetchData({ amount: "10" });
+      });
+
+      expect(txRequest(fetchBackendV2).fee).toBe("0.00001");
+    });
+
     it("sends a user-set fee as typed whatever the route", async () => {
       fetchBackendV2.mockImplementation(answer(lifiFirst));
       const { result } = renderSimulate(undefined, {
