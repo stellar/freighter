@@ -33,12 +33,14 @@ const WalletOption = ({
     );
   };
 
+  const Logo = walletAssets[walletType].logo;
+
   return (
     <li
       className="SelectHardwareWallet__option"
       onClick={() => handleContinue(walletType)}
     >
-      <img src={walletAssets[walletType].logo} alt={`${walletType} logo`} />
+      <Logo role="img" aria-label={`${walletType} logo`} />
     </li>
   );
 };

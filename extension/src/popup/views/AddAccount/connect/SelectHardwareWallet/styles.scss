@@ -20,9 +20,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    color: var(--sds-clr-gray-12);
 
-    img {
+    svg {
       width: 5rem;
+      height: auto;
     }
   }
 
@@ -37,10 +39,4 @@
   &__btn-continue {
     margin-top: auto;
   }
-}
-
-// Wallet logos are single-color white PNGs (drawn for the dark theme), so
-// they vanish on the light background. Invert them to black in light mode.
-.sds-theme-light .SelectHardwareWallet__option img {
-  filter: invert(1);
 }
