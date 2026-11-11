@@ -472,6 +472,7 @@ function useSimulateTxData({
           account: publicKey,
           sourceAsset: quoteParams.sourceAsset,
           destAsset: quoteParams.destAsset,
+          amount,
           minOut,
         });
       } catch (e) {

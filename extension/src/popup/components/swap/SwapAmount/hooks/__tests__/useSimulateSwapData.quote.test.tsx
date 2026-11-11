@@ -285,13 +285,7 @@ describe("useSimulateTxData quote when no live quote exists", () => {
   });
 
   it("returns the review values decoded from the built transaction", async () => {
-    // A build that sells less than asked must show what it sells.
-    fetchBackendV2.mockImplementation(
-      answer(quotes, {
-        status: 200,
-        build: (req) => classicBuild({ ...req, amount: "9" }),
-      }),
-    );
+    fetchBackendV2.mockImplementation(answer(quotes));
     const { result } = renderSimulate();
 
     let payload: any;
@@ -300,11 +294,31 @@ describe("useSimulateTxData quote when no live quote exists", () => {
     });
 
     expect(payload.decoded).toEqual({
-      sendAmount: "9",
+      sendAmount: "10",
       minReceived: "1.485",
       fee: "0.00001",
       addsTrustline: false,
     });
+  });
+
+  it("refuses a build that sells a different amount than asked", async () => {
+    fetchBackendV2.mockImplementation(
+      answer(quotes, {
+        status: 200,
+        build: (req) => classicBuild({ ...req, amount: "9" }),
+      }),
+    );
+    const { result } = renderSimulate();
+
+    await act(async () => {
+      await result.current.fetchData({ amount: "10" });
+    });
+
+    expect(result.current.state.state).toBe("ERROR");
+    expect(
+      getTestStore()!.getState().transactionSubmission.transactionSimulation
+        .preparedTransaction,
+    ).toBeNull();
   });
 
   it("refuses a built transaction that pays another account", async () => {

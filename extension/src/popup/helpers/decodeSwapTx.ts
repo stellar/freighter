@@ -56,6 +56,7 @@ const decodeClassic = (
   account: string,
   from: Asset,
   to: Asset,
+  amount: string,
   minOut: string,
 ): DecodedSwapTx => {
   const ops = tx.operations;
@@ -83,6 +84,9 @@ const decodeClassic = (
       changeTrust.limit !== MAX_TRUSTLINE_LIMIT)
   ) {
     throw mismatch("trustline");
+  }
+  if (!new BigNumber(payment.sendAmount).eq(amount)) {
+    throw mismatch("amount");
   }
   atLeastMinOut(new BigNumber(payment.destMin), minOut);
   return {
@@ -126,6 +130,7 @@ const decodeSoroban = (
   account: string,
   from: Asset,
   to: Asset,
+  amount: string,
   networkPassphrase: string,
 ): DecodedSwapTx => {
   const op = tx.operations[0] as Operation.InvokeHostFunction;
@@ -165,7 +170,7 @@ const decodeSoroban = (
         throw mismatch(name);
       }
     });
-  if (!sent.gt(0)) {
+  if (!sent.gt(0) || !sent.shiftedBy(-CLASSIC_DECIMALS).eq(amount)) {
     throw mismatch("amount");
   }
 
@@ -195,6 +200,7 @@ export const decodeSwapTx = ({
   account,
   sourceAsset,
   destAsset,
+  amount,
   minOut,
 }: {
   transactionXdr: string;
@@ -202,6 +208,8 @@ export const decodeSwapTx = ({
   account: string;
   sourceAsset: string;
   destAsset: string;
+  /** The amount sent to `/swap/tx`; the transaction must sell exactly it. */
+  amount: string;
   /** The floor the build was asked for; a lower classic minimum is refused. */
   minOut: string;
 }): DecodedSwapTx => {
@@ -222,7 +230,7 @@ export const decodeSwapTx = ({
     tx.operations.length === 1 &&
     tx.operations[0].type === "invokeHostFunction"
   ) {
-    return decodeSoroban(tx, account, from, to, networkPassphrase);
+    return decodeSoroban(tx, account, from, to, amount, networkPassphrase);
   }
-  return decodeClassic(tx, account, from, to, minOut);
+  return decodeClassic(tx, account, from, to, amount, minOut);
 };
