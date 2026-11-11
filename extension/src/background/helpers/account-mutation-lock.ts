@@ -10,6 +10,10 @@ import { SERVICE_TYPES } from "@shared/constants/services";
 
   Read-only messages stay off the lock so an import's Scrypt doesn't stall
   them.
+
+  Sign-out and the auto-lock alarm wait on this lock too, so a holder must
+  not await a network call without a timeout. Best-effort requests should
+  run detached and write only to storage.local.
 */
 export const ACCOUNT_MUTATING_SERVICE_TYPES: ReadonlySet<string> = new Set([
   SERVICE_TYPES.CREATE_ACCOUNT,

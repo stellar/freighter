@@ -66,14 +66,6 @@ export const stubRpcHealth = async (context: BrowserContext) => {
   });
 };
 
-export const stubSubscriptionAccount = async (context: BrowserContext) => {
-  await context.route("*/**/subscription/account", async (route) => {
-    await route.fulfill({
-      json: { data: {}, error: null },
-    });
-  });
-};
-
 export const stubStellarAssetList = async (page: Page) => {
   await page.route("*/**/testnet/asset-list/**", async (route) => {
     await route.fulfill({ json: STELLAR_EXPERT_ASSET_LIST_JSON });
