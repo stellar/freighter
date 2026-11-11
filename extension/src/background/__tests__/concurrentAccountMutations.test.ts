@@ -124,6 +124,10 @@ const { initExtensionMessageListener } = require("background/index");
 const { getAccountNameList } = require("background/helpers/account");
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { dataStorageAccess } = require("background/helpers/dataStorageAccess");
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const popupListenerModule = require("background/messageListener/popupMessageListener");
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { updateAccountName } = require("background/ducks/session");
 
 const send = (request: object) =>
   mockMessageListener(request, { id: "fake-extension-id" });
@@ -368,5 +372,41 @@ describe("concurrent account-mutating messages", () => {
     ]);
 
     expect(order).toEqual(["load", "import"]);
+  });
+  it("flushes a holder's session before release even when its handler throws", async () => {
+    mockSession.latency.ms = 50;
+    const [first] = allAccounts();
+    const key = Keypair.random();
+    const active = activeKey();
+    // A handler that dispatches and then fails, as confirmPassword can when a
+    // storage read after its unlock dispatch rejects.
+    jest
+      .spyOn(popupListenerModule, "popupMessageListener")
+      .mockImplementationOnce(async (_request: unknown, sessionStore: any) => {
+        sessionStore.dispatch(
+          updateAccountName({ id: first.id, updatedAccountName: "Renamed" }),
+        );
+        throw new Error("boom");
+      });
+
+    const [failed, imported] = await Promise.allSettled([
+      send({
+        type: SERVICE_TYPES.UPDATE_ACCOUNT_NAME,
+        activePublicKey: active,
+        id: first.id,
+        accountName: "Renamed",
+      }),
+      importKey(key.secret(), active),
+    ]);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    expect(failed.status).toBe("rejected");
+    expect(imported.status).toBe("fulfilled");
+    expect(allAccounts().find(({ id }) => id === first.id)?.name).toBe(
+      "Renamed",
+    );
+    expect(
+      allAccounts().find(({ publicKey }) => publicKey === key.publicKey()),
+    ).toBeDefined();
   });
 });
