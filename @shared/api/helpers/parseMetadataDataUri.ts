@@ -10,22 +10,30 @@ const JSON_DATA_URI_HEADER = /^data:application\/json((?:;[^;,]*)*),/i;
  */
 export const isMetadataDataUri = (uri: string) => /^data:/i.test(uri);
 
-const decodeBase64 = (payload: string) => {
-  const binary = atob(payload.trim());
-  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
-  return new TextDecoder("utf-8").decode(bytes);
-};
-
-/*
- * Data URI payloads should be percent-encoded, but on-chain generators often
- * emit the JSON raw (and inline SVG such as `width='100%'` makes the raw form
- * undecodable). Decode when we can, otherwise use the payload as written.
- */
+// Payloads are not always valid percent-encoding, so fall back to the payload
+// as written when decoding fails.
 const decodePercentEncoded = (payload: string) => {
   try {
     return decodeURIComponent(payload);
   } catch {
     return payload;
+  }
+};
+
+// Percent-decode before base64-decoding, as browsers do.
+const decodeBase64 = (payload: string) => {
+  const binary = atob(decodePercentEncoded(payload).trim());
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return new TextDecoder("utf-8").decode(bytes);
+};
+
+// Raw JSON can contain percent escapes that decoding would corrupt, so parse
+// the payload as written first and only decode it if that fails.
+const parseJson = (text: string): unknown => {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return JSON.parse(decodePercentEncoded(text));
   }
 };
 
@@ -54,11 +62,9 @@ export const parseMetadataDataUri = <T>(uri: string): T => {
   }
 
   const payload = uri.slice(header[0].length);
-  const text = /;base64$/i.test(header[1])
-    ? decodeBase64(payload)
-    : decodePercentEncoded(payload);
-
-  const parsed: unknown = JSON.parse(text);
+  const parsed = parseJson(
+    /;base64$/i.test(header[1]) ? decodeBase64(payload) : payload,
+  );
   if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
     throw new Error("parseMetadataDataUri: document is not a JSON object");
   }

@@ -51,6 +51,28 @@ describe("parseMetadataDataUri", () => {
     expect(parseMetadataDataUri(uri)).toEqual(doc);
   });
 
+  it("parses a base64 payload whose characters are percent-encoded", () => {
+    const doc = { name: "AB" };
+    const encoded = encodeURIComponent(toBase64(JSON.stringify(doc)));
+    expect(encoded).toContain("%3D");
+
+    expect(
+      parseMetadataDataUri(`data:application/json;base64,${encoded}`),
+    ).toEqual(doc);
+  });
+
+  it("keeps percent escapes inside a raw JSON payload as written", () => {
+    const doc = {
+      name: "X",
+      image: `data:image/svg+xml,${encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg"></svg>`,
+      )}`,
+    };
+    const uri = `data:application/json,${JSON.stringify(doc)}`;
+
+    expect(parseMetadataDataUri(uri)).toEqual(doc);
+  });
+
   it("accepts media type parameters and mixed casing", () => {
     const uri = `data:Application/JSON;charset=utf-8;base64,${toBase64(
       JSON.stringify(metadata),
