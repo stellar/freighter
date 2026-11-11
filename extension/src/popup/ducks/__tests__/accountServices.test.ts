@@ -9,6 +9,7 @@ import {
   hardwareWalletTypeSelector,
   lockAccount,
   makeAccountActive,
+  signOut,
 } from "../accountServices";
 
 const makeStore = () =>
@@ -133,5 +134,34 @@ describe("active account with a shared address", () => {
     expect(hardwareWalletTypeSelector(store.getState())).toBe(
       WalletType.LEDGER,
     );
+  });
+});
+
+describe("signOut", () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it("rejects when the background refuses the sign-out", async () => {
+    const store = makeStore();
+    jest.spyOn(ApiInternal, "signOut").mockResolvedValue({
+      error: "Public key does not match active public key",
+    } as any);
+
+    const action = await (store.dispatch as any)(signOut());
+
+    expect(action.type).toBe(signOut.rejected.type);
+    expect(store.getState().auth.publicKey).toBe("GBTEST");
+  });
+
+  it("clears the session when the background signs out", async () => {
+    const store = makeStore();
+    jest.spyOn(ApiInternal, "signOut").mockResolvedValue({
+      publicKey: "",
+      applicationState: "MNEMONIC_PHRASE_CONFIRMED",
+    } as any);
+
+    const action = await (store.dispatch as any)(signOut());
+
+    expect(action.type).toBe(signOut.fulfilled.type);
+    expect(store.getState().auth.publicKey).toBe("");
   });
 });
