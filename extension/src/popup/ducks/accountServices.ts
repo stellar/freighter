@@ -10,6 +10,7 @@ import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
   addAccount as addAccountService,
   addRecoveryPhraseSource as addRecoveryPhraseSourceService,
+  importRecoveryPhrase as importRecoveryPhraseService,
   importAccount as importAccountService,
   importHardwareWallet as importHardwareWalletService,
   makeAccountActive as makeAccountActiveService,
@@ -153,6 +154,31 @@ export const addRecoveryPhraseSource = createAsyncThunk<
     } catch (e) {
       const message = e instanceof Error ? e.message : JSON.stringify(e);
       console.error("Failed when adding a recovery phrase: ", message);
+      return rejectWithValue({
+        errorMessage: message,
+      });
+    }
+  },
+);
+
+export const importRecoveryPhrase = createAsyncThunk<
+  AddedAccountPayload,
+  { password: string; mnemonicPhrase: string },
+  { rejectValue: ErrorMessage }
+>(
+  "auth/importRecoveryPhrase",
+  async ({ password, mnemonicPhrase }, { getState, rejectWithValue }) => {
+    const activePublicKey = publicKeySelector(getState() as AppState);
+
+    try {
+      return await importRecoveryPhraseService({
+        activePublicKey,
+        password,
+        mnemonicPhrase,
+      });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      console.error("Failed when importing a recovery phrase: ", message);
       return rejectWithValue({
         errorMessage: message,
       });
@@ -815,6 +841,8 @@ const authSlice = createSlice({
     builder.addCase(addAccount.rejected, onAccountAddFailed);
     builder.addCase(addRecoveryPhraseSource.fulfilled, onAccountAdded);
     builder.addCase(addRecoveryPhraseSource.rejected, onAccountAddFailed);
+    builder.addCase(importRecoveryPhrase.fulfilled, onAccountAdded);
+    builder.addCase(importRecoveryPhrase.rejected, onAccountAddFailed);
     builder.addCase(importAccount.fulfilled, (state, action) => {
       const { publicKey, allAccounts, hasPrivateKey } = action.payload || {
         publicKey: "",

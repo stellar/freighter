@@ -45,6 +45,10 @@ const SCREEN_BY_ROUTE: Partial<Record<ROUTES, ScreenDef>> = {
   [ROUTES.accountHistory]: { screen_name: "account_history", flow: "history" },
   [ROUTES.addWallet]: { screen_name: "add_wallet", flow: "onboarding" },
   [ROUTES.createWallet]: { screen_name: "create_wallet", flow: "onboarding" },
+  [ROUTES.importRecoveryPhrase]: {
+    screen_name: "import_recovery_phrase",
+    flow: "onboarding",
+  },
   [ROUTES.importAccount]: { screen_name: "import_account", flow: "onboarding" },
   [ROUTES.connectWallet]: { screen_name: "connect_wallet", flow: "onboarding" },
   [ROUTES.connectWalletPlugin]: {

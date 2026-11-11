@@ -1,3 +1,4 @@
+import { generateMnemonic } from "bip39";
 import { Keypair } from "stellar-sdk";
 
 import { test, expect } from "./test-fixtures";
@@ -5,6 +6,7 @@ import { loginToTestAccount } from "./helpers/login";
 import {
   addAccountToPhrase,
   generateRecoveryPhraseSource,
+  importRecoveryPhraseSource,
 } from "./helpers/addWallet";
 
 // loginToTestAccount sets this password on the wallet it imports.
@@ -122,4 +124,81 @@ test("Generates a recovery phrase while an imported key is active", async ({
   await expect(
     group(page, "Recovery phrase 2").getByTestId("wallet-row-select"),
   ).toHaveAttribute("aria-current", "true");
+});
+
+test("Imports a second recovery phrase without changing the first", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  await loginToTestAccount({ page, extensionId, context });
+
+  await openSheet(page);
+  // With one phrase the sheet may not label the group, so record every row.
+  await expect(page.getByTestId("wallet-row-select").first()).toBeVisible();
+  const firstBefore = await page
+    .getByTestId("wallet-row-select")
+    .allTextContents();
+  expect(firstBefore.length).toBeGreaterThan(0);
+  const firstRows = group(page, "Recovery phrase 1").getByTestId(
+    "wallet-row-select",
+  );
+
+  await importRecoveryPhraseSource({
+    page,
+    password: WALLET_PASSWORD,
+    words: generateMnemonic().split(" "),
+  });
+
+  // Discovery looks up ~49 addresses on mainnet before the view returns.
+  await openSheet(page);
+  await expect(page.getByTestId("account-sheet-group-toggle")).toHaveText([
+    "Recovery phrase 1",
+    "Recovery phrase 2",
+  ]);
+  await expect(firstRows).toHaveText(firstBefore);
+  await expect(
+    group(page, "Recovery phrase 2").getByTestId("wallet-row-select"),
+  ).toHaveCount(1);
+});
+
+test("Refuses a recovery phrase the wallet already holds", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  await loginToTestAccount({ page, extensionId, context });
+
+  const words = generateMnemonic().split(" ");
+  await openSheet(page);
+  await importRecoveryPhraseSource({
+    page,
+    password: WALLET_PASSWORD,
+    words,
+  });
+
+  await openSheet(page);
+  await expect(page.getByTestId("account-sheet-group-toggle")).toHaveText([
+    "Recovery phrase 1",
+    "Recovery phrase 2",
+  ]);
+  await importRecoveryPhraseSource({
+    page,
+    password: WALLET_PASSWORD,
+    words,
+  });
+  await expect(
+    page.getByText("This recovery phrase is already in your wallet"),
+  ).toBeVisible({ timeout: 30000 });
+
+  // Back out of the phrase screen and the chooser to the account view.
+  await page.goBack();
+  await page.goBack();
+  await openSheet(page);
+  await expect(page.getByTestId("account-sheet-group-toggle")).toHaveText([
+    "Recovery phrase 1",
+    "Recovery phrase 2",
+  ]);
 });
