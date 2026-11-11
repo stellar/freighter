@@ -101,7 +101,6 @@ const renderSwapAmount = (transactionData: Record<string, unknown>) =>
     </Wrapper>,
   );
 
-
 const builtTx = (req: any) =>
   new TransactionBuilder(new Account(req.account, "1"), {
     fee: "100",

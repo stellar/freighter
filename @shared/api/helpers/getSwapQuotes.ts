@@ -33,8 +33,11 @@ export const getSwapQuotes = ({
     body: { account, mode, fromAsset, toAsset, amount },
     isValid: (data): data is SwapQuotesResponse =>
       Array.isArray((data as SwapQuotesResponse | undefined)?.routes),
-    // A 400 is the input (e.g. an unfunded account), not an outage.
+    // A 400 is the request (bad input, an unfunded account), not an outage.
     quietStatuses: { 400: "badRequest" as const },
+    // Callers decide: the live quote re-fires per keystroke and dedupes its
+    // own reports.
+    report: false,
     toError: (kind, message) => new SwapQuotesError(kind, message),
     unreachableMessage: "Failed to reach swap quotes",
     failedMessage: "Failed to fetch swap quotes",

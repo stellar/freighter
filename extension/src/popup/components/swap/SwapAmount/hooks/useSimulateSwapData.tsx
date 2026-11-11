@@ -399,6 +399,9 @@ function useSimulateTxData({
           result = await getSwapQuote(quoteParams);
         } catch (e) {
           if (e instanceof SwapQuotesError) {
+            // Reported per Review press, 400 included: the request was built
+            // from the extension's own state, so a rejection is worth seeing.
+            captureException(e.message);
             throw new Error(
               e.kind === "unavailable"
                 ? ERROR_TO_DISPLAY.SWAPS_UNAVAILABLE

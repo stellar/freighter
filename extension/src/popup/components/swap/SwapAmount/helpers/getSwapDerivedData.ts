@@ -57,7 +57,6 @@ interface GetSwapDerivedDataParams {
   blockaidOverrideState?: string | null;
   networkDetails: NetworkDetails;
   inputType: InputType;
-  isLiveQuoteLoading: boolean;
   isSwapUnavailable: boolean;
   publicKey: string;
   /** Key of the quote behind destinationAmount. */
@@ -88,7 +87,6 @@ export const getSwapDerivedData = ({
   blockaidOverrideState,
   networkDetails,
   inputType,
-  isLiveQuoteLoading,
   isSwapUnavailable,
   publicKey,
   swapQuoteKey,
@@ -194,24 +192,24 @@ export const getSwapDerivedData = ({
       ? new BigNumber(cleanAmount(amount)).gt(0)
       : new BigNumber(cleanAmount(amountUsd)).gt(0);
 
-  // The key check covers the render before the live-quote effect sets
-  // isLiveQuoteLoading; a failed quote also stores its key, so it settles.
+  // Pending means the stored quote is not for these inputs. A failed quote
+  // also stores its key, so it settles; a dropped or superseded response
+  // stores nothing, so it stays pending until the newer one lands.
   const isQuotePending =
     !!asset &&
     !!destinationAsset &&
     new BigNumber(cleanAmount(amount)).gt(0) &&
-    (isLiveQuoteLoading ||
-      !isSameSwapQuoteKey(
-        swapQuoteKey,
-        getSwapQuoteKey({
-          mode: "send",
-          amount,
-          sourceAsset: asset,
-          destAsset: destinationAsset,
-          networkDetails,
-          publicKey,
-        }),
-      ));
+    !isSameSwapQuoteKey(
+      swapQuoteKey,
+      getSwapQuoteKey({
+        mode: "send",
+        amount,
+        sourceAsset: asset,
+        destAsset: destinationAsset,
+        networkDetails,
+        publicKey,
+      }),
+    );
 
   const hasNoSwapPath =
     swapAmountPositive &&
