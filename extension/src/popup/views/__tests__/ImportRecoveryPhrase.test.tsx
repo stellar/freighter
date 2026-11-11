@@ -5,7 +5,14 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import * as ApiInternal from "@shared/api/internal";
 import { Account, SecretSource, SecretSourceType } from "@shared/api/types";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { ACCOUNT_ALREADY_EXISTS_ERROR } from "@shared/constants/errors";
+import {
+  ACCOUNT_ALREADY_EXISTS_ERROR,
+  IMPORT_PHRASE_FAILED_ERROR,
+  INCORRECT_PASSWORD_ERROR,
+  NO_SOFTWARE_KEYSTORE_ERROR,
+  PHRASE_ALREADY_HELD_ERROR,
+  UNABLE_TO_LOGIN_ERROR,
+} from "@shared/constants/errors";
 import { ROUTES } from "popup/constants/routes";
 
 import { ImportRecoveryPhrase } from "../ImportRecoveryPhrase";
@@ -149,20 +156,39 @@ describe("ImportRecoveryPhrase", () => {
     );
   });
 
-  it('shows "This recovery phrase is already in your wallet" on the password step when refused', async () => {
+  it('shows "This recovery phrase is already in your wallet." on the password step when refused', async () => {
     jest
       .spyOn(ApiInternal, "importRecoveryPhrase")
-      .mockRejectedValue(
-        new Error("This recovery phrase is already in your wallet"),
-      );
+      .mockRejectedValue(new Error(PHRASE_ALREADY_HELD_ERROR));
     renderView();
     await toPasswordStep();
     await submitPassword();
 
     expect(
-      await screen.findByText("This recovery phrase is already in your wallet"),
+      await screen.findByText(
+        "This recovery phrase is already in your wallet.",
+      ),
     ).toBeInTheDocument();
     expect(screen.queryByTestId("location")).toBeNull();
+  });
+
+  it.each([
+    [IMPORT_PHRASE_FAILED_ERROR, "Error adding recovery phrase"],
+    [
+      NO_SOFTWARE_KEYSTORE_ERROR,
+      "This wallet has no password to check against",
+    ],
+    [INCORRECT_PASSWORD_ERROR, "Incorrect password"],
+    [UNABLE_TO_LOGIN_ERROR, "Unable to login"],
+  ])("shows the translated text for %s", async (wireError, shown) => {
+    jest
+      .spyOn(ApiInternal, "importRecoveryPhrase")
+      .mockRejectedValue(new Error(wireError));
+    renderView();
+    await toPasswordStep();
+    await submitPassword();
+
+    expect(await screen.findByText(shown)).toBeInTheDocument();
   });
 
   it('shows "This account is already in your wallet." for ACCOUNT_ALREADY_EXISTS_ERROR', async () => {

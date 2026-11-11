@@ -8,7 +8,14 @@ import {
   isValidImportMnemonic,
   normalizeMnemonic,
 } from "@shared/api/helpers/mnemonic";
-import { ACCOUNT_ALREADY_EXISTS_ERROR } from "@shared/constants/errors";
+import {
+  ACCOUNT_ALREADY_EXISTS_ERROR,
+  IMPORT_PHRASE_FAILED_ERROR,
+  INCORRECT_PASSWORD_ERROR,
+  NO_SOFTWARE_KEYSTORE_ERROR,
+  PHRASE_ALREADY_HELD_ERROR,
+  UNABLE_TO_LOGIN_ERROR,
+} from "@shared/constants/errors";
 import { emitMetric } from "helpers/metrics";
 
 import { AppDispatch } from "popup/App";
@@ -60,10 +67,26 @@ export const ImportRecoveryPhrase = () => {
     [],
   );
 
-  const formatAuthError = (error: string) =>
-    error === ACCOUNT_ALREADY_EXISTS_ERROR
-      ? t("This account is already in your wallet.")
-      : error;
+  // The background answers with fixed English strings; show each one this
+  // screen can get in the user's language.
+  const formatAuthError = (error: string) => {
+    switch (error) {
+      case ACCOUNT_ALREADY_EXISTS_ERROR:
+        return t("This account is already in your wallet.");
+      case PHRASE_ALREADY_HELD_ERROR:
+        return t("This recovery phrase is already in your wallet.");
+      case IMPORT_PHRASE_FAILED_ERROR:
+        return t("Error adding recovery phrase");
+      case NO_SOFTWARE_KEYSTORE_ERROR:
+        return t("This wallet has no password to check against");
+      case INCORRECT_PASSWORD_ERROR:
+        return t("Incorrect password");
+      case UNABLE_TO_LOGIN_ERROR:
+        return t("Unable to login");
+      default:
+        return error;
+    }
+  };
 
   // There's no Paste button: extension pages can't read the clipboard
   // without the clipboardRead permission. A keyboard paste lands in the
