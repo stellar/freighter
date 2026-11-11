@@ -507,7 +507,9 @@ export const signOut = createAsyncThunk<
     console.error(e);
   }
 
-  if (res?.publicKey) {
+  // A refusal carries `error` and no `publicKey`; treating it as success
+  // would show the lock screen while the background stays unlocked.
+  if (res?.publicKey || (res && "error" in res)) {
     return rejectWithValue({
       errorMessage: i18n.t("Unable to sign out"),
     });
