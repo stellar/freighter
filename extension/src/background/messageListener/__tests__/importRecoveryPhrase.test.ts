@@ -1,4 +1,5 @@
-import { sessionSlice } from "background/ducks/session";
+import { logIn, sessionSlice } from "background/ducks/session";
+import { markDerivationIndexUsed } from "background/helpers/derivation-indices";
 import { popupMessageListener } from "background/messageListener/popupMessageListener";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
@@ -382,6 +383,86 @@ describe("importing an additional recovery phrase", () => {
 
     const retry = await importPhrase(PHRASE_2.mnemonic);
     expect(retry.error).toBe(PHRASE_ALREADY_HELD_ERROR);
+  });
+
+  it("rolls back when the first storeAccount fails before writing, and a retry imports", async () => {
+    fund(3);
+    mockStoreAccount.mockImplementationOnce(() =>
+      Promise.reject(new Error("disk full")),
+    );
+    const writes = await snapshotWrites();
+    const accountsBefore = allAccounts();
+
+    const res = await importPhrase(PHRASE_2.mnemonic);
+
+    expect(res.error).toBe(IMPORT_PHRASE_FAILED_ERROR);
+    expect(
+      (await getSecretSources({ localStore: mockDataStorage }))[
+        PHRASE_2.userId
+      ],
+    ).toBeUndefined();
+    expect((await indicesOf(PHRASE_2.userId)) ?? []).toEqual([]);
+    expect(await snapshotWrites()).toEqual(writes);
+    expect(allAccounts()).toEqual(accountsBefore);
+
+    const retry = await importPhrase(PHRASE_2.mnemonic);
+    expect(retry.error).toBeUndefined();
+    expect(
+      (retry.secretSources as SecretSource[]).find(
+        ({ id }) => id === PHRASE_2.userId,
+      )?.label,
+    ).toBe("Seed Phrase 2");
+    expect(newAccounts().map(({ publicKey }) => publicKey)).toEqual([
+      wallet2.getPublicKey(0),
+      wallet2.getPublicKey(3),
+    ]);
+  });
+
+  it("rolls back the session when the first store fails after joining it", async () => {
+    // Fails the way storeAccount would after its session dispatch and index
+    // mark, but before the keystore id reaches the list.
+    mockStoreAccount.mockImplementationOnce(async (args) => {
+      await markDerivationIndexUsed({
+        localStore: args.localStore,
+        sourceId: PHRASE_2.userId,
+        index: 0,
+      });
+      await args.sessionStore.dispatch(
+        logIn({
+          publicKey: args.keyPair.publicKey,
+          allAccounts: [
+            ...allAccounts(),
+            {
+              id: "phantom",
+              sourceId: PHRASE_2.userId,
+              publicKey: args.keyPair.publicKey,
+              name: "Account 3",
+              imported: false,
+            },
+          ],
+          localStore: args.localStore,
+        }) as any,
+      );
+      throw new Error("disk full");
+    });
+    const accountsBefore = allAccounts();
+    const publicKeyBefore = mockSessionStore.getState().session.publicKey;
+
+    const res = await importPhrase(PHRASE_2.mnemonic);
+
+    expect(res.error).toBe(IMPORT_PHRASE_FAILED_ERROR);
+    expect(allAccounts()).toEqual(accountsBefore);
+    expect(mockSessionStore.getState().session.publicKey).toBe(publicKeyBefore);
+    expect((await indicesOf(PHRASE_2.userId)) ?? []).toEqual([]);
+    expect(
+      (await getSecretSources({ localStore: mockDataStorage }))[
+        PHRASE_2.userId
+      ],
+    ).toBeUndefined();
+
+    const retry = await importPhrase(PHRASE_2.mnemonic);
+    expect(retry.error).toBeUndefined();
+    expect(newAccounts()).toHaveLength(1);
   });
 
   it("refuses with PHRASE_ALREADY_HELD_ERROR when the phrase is registered while discovery runs", async () => {
