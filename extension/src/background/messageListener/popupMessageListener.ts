@@ -150,6 +150,26 @@ startQueueCleanup({
   authEntryQueue,
 });
 
+/*
+  Messages that skip the active-key mismatch check. None of them act on the
+  active key: signing out is safe whichever account is active, and the rest
+  target an explicit account id, source or new key. Account-changing messages
+  run one at a time, so one queued behind an import or switch from another
+  surface sees the new active key, and refusing it would only drop the
+  request (a refused sign-out leaves the wallet unlocked).
+*/
+const ACTIVE_KEY_INDEPENDENT_SERVICE_TYPES: ReadonlySet<SERVICE_TYPES> =
+  new Set([
+    SERVICE_TYPES.GET_IS_ACCOUNT_MISMATCH,
+    SERVICE_TYPES.SIGN_OUT,
+    SERVICE_TYPES.UPDATE_ACCOUNT_NAME,
+    SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE,
+    SERVICE_TYPES.ADD_ACCOUNT,
+    SERVICE_TYPES.IMPORT_ACCOUNT,
+    SERVICE_TYPES.IMPORT_HARDWARE_WALLET,
+    SERVICE_TYPES.ADD_RECOVERY_PHRASE_SOURCE,
+  ]);
+
 export const popupMessageListener = (
   request: ServiceMessageRequest,
   sessionStore: Store,
@@ -195,7 +215,7 @@ export const popupMessageListener = (
   if (
     request.activePublicKey &&
     request.activePublicKey !== publicKey &&
-    request.type !== SERVICE_TYPES.GET_IS_ACCOUNT_MISMATCH
+    !ACTIVE_KEY_INDEPENDENT_SERVICE_TYPES.has(request.type)
   ) {
     return { error: "Public key does not match active public key" };
   }
@@ -287,7 +307,6 @@ export const popupMessageListener = (
       return changeNetwork({
         request,
         localStore,
-        sessionStore,
       });
     }
     case SERVICE_TYPES.LOAD_ACCOUNT: {

@@ -7,7 +7,7 @@ import {
 import { Account, ErrorMessage } from "@shared/api/types";
 import {
   getIsHardwareWalletActive,
-  subscribeAccount as internalSubscribeAccount,
+  setLastUsedAccount,
 } from "background/helpers/account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { TEMPORARY_STORE_ID } from "constants/localStorageTypes";
@@ -18,7 +18,7 @@ export const logIn = createAsyncThunk<
   { rejectValue: ErrorMessage }
 >("logIn", async ({ publicKey, allAccounts, localStore }, thunkApi) => {
   try {
-    await internalSubscribeAccount({ publicKey, localStore });
+    await setLastUsedAccount({ publicKey, localStore });
     return {
       publicKey,
       allAccounts,
@@ -35,7 +35,7 @@ export const setActivePublicKey = createAsyncThunk<
   { rejectValue: ErrorMessage }
 >("setActivePublicKey", async ({ publicKey, localStore }, thunkApi) => {
   try {
-    await internalSubscribeAccount({ publicKey, localStore });
+    await setLastUsedAccount({ publicKey, localStore });
     return {
       publicKey,
       privateKey: "",

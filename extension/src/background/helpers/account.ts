@@ -7,7 +7,6 @@ import {
   NETWORK_ID,
   NETWORKS_LIST_ID,
   IS_EXPERIMENTAL_MODE_ID,
-  HAS_ACCOUNT_SUBSCRIPTION,
   ASSETS_LISTS_ID,
   IS_HASH_SIGNING_ENABLED_ID,
   IS_NON_SSL_ENABLED_ID,
@@ -465,56 +464,15 @@ export const getFeatureFlags = async () => {
   return featureFlags;
 };
 
-export const subscribeAccount = async ({
+// Shown as the identicon on the login screen.
+export const setLastUsedAccount = async ({
   publicKey,
   localStore,
 }: {
   publicKey: string;
   localStore: DataStorageAccess;
 }) => {
-  // update last used account so we can use it to properly
-  // display the identicon component on login screen
   await localStore.setItem(LAST_USED_ACCOUNT, publicKey);
-
-  // if pub key already has a subscription setup, skip this
-  const keyId = await localStore.getItem(KEY_ID);
-  const hasAccountSubByKeyId =
-    (await localStore.getItem(HAS_ACCOUNT_SUBSCRIPTION)) || {};
-  if (!keyId || hasAccountSubByKeyId[keyId]) {
-    return { publicKey };
-  }
-
-  try {
-    const networkDetails = await getNetworkDetails({ localStore });
-
-    const options = {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        pub_key: publicKey,
-        network: networkDetails.network,
-      }),
-    };
-
-    const res = await fetch(`${INDEXER_URL}/subscription/account`, options);
-    const subsByKeyId = {
-      ...hasAccountSubByKeyId,
-      [keyId]: true,
-    };
-
-    if (res.ok) {
-      await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, subsByKeyId);
-    } else {
-      const resJson = (await res.json()) as string;
-      throw new Error(resJson);
-    }
-  } catch (e) {
-    console.error(e);
-  }
-
-  return { publicKey };
 };
 
 export const subscribeTokenBalance = async ({

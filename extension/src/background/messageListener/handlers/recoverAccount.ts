@@ -40,6 +40,8 @@ import { linkWalletSources } from "background/helpers/link-sources";
 
 const { fromMnemonic } = StellarHDWallet;
 
+const FUNDED_LOOKUP_TIMEOUT_MS = 5_000;
+
 export const recoverAccount = async ({
   request,
   localStore,
@@ -153,8 +155,12 @@ export const recoverAccount = async ({
         const publicKey = wallet.getPublicKey(i);
         const privateKey = wallet.getSecret(i);
 
+        // Bounded: this runs under the account-mutation lock, and a stalled
+        // lookup would hold off sign-out and auto-lock. A timeout lands in
+        // the catch below and the index is skipped as unfunded.
         const resp = await fetch(
           `${MAINNET_NETWORK_DETAILS.networkUrl}/accounts/${publicKey}`,
+          { signal: AbortSignal.timeout(FUNDED_LOOKUP_TIMEOUT_MS) },
         );
 
         const j = await resp.json();
