@@ -96,6 +96,17 @@ const decodeClassic = (
 const contractFnName = (fn: xdr.InvokeContractArgs) =>
   fn.functionName.toString();
 
+// The SEP-41/SAC calls an account authorizes for itself, besides a transfer
+// of the sold token and a trust on the bought one. Anything else the account
+// authorizes (the aggregator's own calls) is source-specific and left to the
+// backend.
+const UNEXPECTED_TOKEN_CALLS = [
+  "approve",
+  "burn",
+  "transfer_from",
+  "burn_from",
+];
+
 const contractCalls = (
   invocation: xdr.SorobanAuthorizedInvocation,
 ): xdr.InvokeContractArgs[] => {
@@ -145,8 +156,13 @@ const decodeSoroban = (
           throw mismatch("transfer");
         }
         sent = sent.plus(amount.toString());
-      } else if (contract === toContract && name === "trust") {
+      } else if (name === "trust") {
+        if (contract !== toContract) {
+          throw mismatch("trustline");
+        }
         addsTrustline = true;
+      } else if (UNEXPECTED_TOKEN_CALLS.includes(name)) {
+        throw mismatch(name);
       }
     });
   if (!sent.gt(0)) {

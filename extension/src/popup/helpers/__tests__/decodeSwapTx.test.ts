@@ -173,6 +173,56 @@ describe("decodeSwapTx", () => {
     ).toThrow(/transfer/);
   });
 
+  // Adds a call the account authorizes to the LI.FI fixture's auth tree.
+  const lifiWithAuthorizedCall = (
+    contract: string,
+    functionName: string,
+    args: xdr.ScVal[],
+  ) => {
+    const env = xdr.TransactionEnvelope.fromXDR(
+      lifi.withTrust.xdr,
+      "base64",
+    ) as any;
+    env.v1.tx.operations[0].body.invokeHostFunctionOp.auth[0].rootInvocation.subInvocations.push(
+      new xdr.SorobanAuthorizedInvocation({
+        function:
+          xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeContractFn(
+            new xdr.InvokeContractArgs({
+              contractAddress: new Address(contract).toScAddress(),
+              functionName,
+              args: [new Address(lifi.withTrust.account).toScVal(), ...args],
+            }),
+          ),
+        subInvocations: [],
+      }),
+    );
+    return env.toXDR("base64");
+  };
+
+  it("refuses an allowance the account would grant alongside the swap", () => {
+    const xdrString = lifiWithAuthorizedCall(
+      usdc.contractId(Networks.PUBLIC),
+      "approve",
+      [
+        new Address(OTHER).toScVal(),
+        i128(BigInt("170141183460469231731687303715884105727")),
+        nativeToScVal(1000000, { type: "u32" }),
+      ],
+    );
+
+    expect(() =>
+      decode(xdrString, lifi.withTrust.account, "1.8340983"),
+    ).toThrow(/approve/);
+  });
+
+  it("refuses a trustline for an asset other than the one bought", () => {
+    const xdrString = lifiWithAuthorizedCall(OTHER_CONTRACT, "trust", []);
+
+    expect(() =>
+      decode(xdrString, lifi.withTrust.account, "1.8340983"),
+    ).toThrow(/trustline/);
+  });
+
   describe("minimum received", () => {
     it("refuses a classic destMin below the minOut sent", () => {
       expect(() => decode(classicTx(), ACCOUNT, "1.7150001")).toThrow(
