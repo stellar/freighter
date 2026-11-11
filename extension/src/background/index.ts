@@ -188,34 +188,38 @@ const handleExtensionMessage = async (
   const req = request as ExternalRequest | Response;
   let res;
 
-  if (Object.values(SERVICE_TYPES).includes(req.type as SERVICE_TYPES)) {
-    res = await popupMessageListener(
-      req as ServiceMessageRequest,
-      sessionStore,
-      localStore,
-      keyManager,
-      sessionTimer,
-      sender,
-    );
-  }
-  if (
-    Object.values(EXTERNAL_SERVICE_TYPES).includes(
-      req.type as EXTERNAL_SERVICE_TYPES,
-    )
-  ) {
-    res = await freighterApiMessageListener(
-      req as ExternalRequest,
-      sender,
-      sessionStore,
-      localStore,
-    );
-  }
-
-  if (flushBeforeRelease) {
-    // The store's subscribe flush is fire-and-forget. Wait for the final
-    // state to land before the lock passes to the next holder, which
-    // loads the store from it.
-    await flushSessionStore(sessionStore);
+  try {
+    if (Object.values(SERVICE_TYPES).includes(req.type as SERVICE_TYPES)) {
+      res = await popupMessageListener(
+        req as ServiceMessageRequest,
+        sessionStore,
+        localStore,
+        keyManager,
+        sessionTimer,
+        sender,
+      );
+    }
+    if (
+      Object.values(EXTERNAL_SERVICE_TYPES).includes(
+        req.type as EXTERNAL_SERVICE_TYPES,
+      )
+    ) {
+      res = await freighterApiMessageListener(
+        req as ExternalRequest,
+        sender,
+        sessionStore,
+        localStore,
+      );
+    }
+  } finally {
+    if (flushBeforeRelease) {
+      // The store's subscribe flush is fire-and-forget. Wait for the final
+      // state to land before the lock passes to the next holder, which
+      // loads the store from it. Also on a throw: a handler can dispatch
+      // before it fails. flushSessionStore swallows its own errors, so the
+      // handler's error still reaches the caller.
+      await flushSessionStore(sessionStore);
+    }
   }
 
   return res;
