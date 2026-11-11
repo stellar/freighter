@@ -113,6 +113,10 @@
     .SwapDetails__venue-icon + .SwapDetails__venue-icon {
       margin-left: pxToRem(-4px);
     }
+
+    .SwapDetails__venue-extra {
+      margin-left: pxToRem(6px);
+    }
   }
 
   &__venue-extra {
