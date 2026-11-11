@@ -440,6 +440,14 @@ export const SwapAmount = ({
     destRequiresTrustline,
   });
 
+  const isQuoteUnavailable =
+    cta.labelKey === "noQuote" || cta.labelKey === "unavailable";
+  // Close the sheet once a quote arrives (set during render: cta is derived
+  // below the early returns, where an effect can't go).
+  if (isQuoteUnavailableOpen && !isQuoteUnavailable) {
+    setIsQuoteUnavailableOpen(false);
+  }
+
   const handleSwapForReserve = async () => {
     const sellCanonical = sourceIsNonXlmClassic
       ? asset
@@ -815,8 +823,7 @@ export const SwapAmount = ({
                     }}
                   />
                 </div>
-                {cta.labelKey === "noQuote" ||
-                cta.labelKey === "unavailable" ? (
+                {isQuoteUnavailable ? (
                   <div className="SwapAsset__details-link">
                     <button
                       type="button"

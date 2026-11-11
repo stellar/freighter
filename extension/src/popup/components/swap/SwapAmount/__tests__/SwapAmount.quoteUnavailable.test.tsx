@@ -1,12 +1,21 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import BigNumber from "bignumber.js";
 
 import { RequestState } from "constants/request";
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { AppDataType } from "helpers/hooks/useGetAppData";
-import { Wrapper } from "popup/__testHelpers__";
-import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
+import { getTestStore, Wrapper } from "popup/__testHelpers__";
+import {
+  initialState as transactionSubmissionInitialState,
+  saveSwapBestPath,
+} from "popup/ducks/transactionSubmission";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
 import * as UseGetSwapAmountData from "popup/components/swap/SwapAmount/hooks/useGetSwapAmountData";
 import * as UseSimulateSwapData from "popup/components/swap/SwapAmount/hooks/useSimulateSwapData";
@@ -195,6 +204,26 @@ describe("SwapAmount quote unavailable line", () => {
       screen.getByTestId("QuoteUnavailableSheet__title"),
     ).toHaveTextContent("Quote unavailable");
     fireEvent.click(screen.getByTestId("QuoteUnavailableSheet__close"));
+    await waitFor(() => expect(screen.queryByText(BODY)).toBeNull());
+  });
+
+  it("closes the sheet when a quote arrives", async () => {
+    renderSwapAmount(noQuote);
+    fireEvent.click(screen.getByTestId("swap-quote-unavailable"));
+    expect(screen.getByText(BODY)).toBeInTheDocument();
+
+    act(() => {
+      getTestStore()!.dispatch(
+        saveSwapBestPath({
+          path: [],
+          destinationAmount: "1.85",
+          quotes: swapQuotes as any,
+          key: quoteKey("5"),
+        }),
+      );
+    });
+
+    expect(screen.queryByTestId("swap-quote-unavailable")).toBeNull();
     await waitFor(() => expect(screen.queryByText(BODY)).toBeNull());
   });
 });
