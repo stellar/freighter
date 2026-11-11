@@ -244,11 +244,41 @@ describe("SwapAmount live receive-amount quote", () => {
 
       expect(cta()).toHaveTextContent("Swaps are temporarily unavailable");
       expect(cta()).toBeDisabled();
-      // One event per debounced keystroke would flood Sentry during an
-      // outage; the review path reports when the user acts.
-      expect(captureException).not.toHaveBeenCalled();
+      expect(captureException).toHaveBeenCalledTimes(1);
     },
   );
+
+  it("reports an outage once per screen, not once per keystroke", async () => {
+    fetchBackendV2.mockResolvedValue({ status: 503, body: { error: "x" } });
+    renderSwapAmount({ amount: "5", destinationAsset: AQUA });
+    await settle();
+    expect(captureException).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      getTestStore()!.dispatch(saveAmount("6"));
+    });
+    await settle();
+    await act(async () => {
+      getTestStore()!.dispatch(saveAmount("7"));
+    });
+    await settle();
+    expect(fetchBackendV2).toHaveBeenCalledTimes(3);
+    expect(captureException).toHaveBeenCalledTimes(1);
+
+    // A recovery re-arms the report, so a second outage is seen.
+    fetchBackendV2.mockResolvedValueOnce(quotesReply([classicRoute]));
+    await act(async () => {
+      getTestStore()!.dispatch(saveAmount("8"));
+    });
+    await settle();
+    expect(cta()).toBeEnabled();
+    await act(async () => {
+      getTestStore()!.dispatch(saveAmount("9"));
+    });
+    await settle();
+    expect(cta()).toHaveTextContent("Swaps are temporarily unavailable");
+    expect(captureException).toHaveBeenCalledTimes(2);
+  });
 
   it("shows swaps as temporarily unavailable when the backend is unreachable", async () => {
     fetchBackendV2.mockRejectedValue(new TypeError("Failed to fetch"));
@@ -257,7 +287,7 @@ describe("SwapAmount live receive-amount quote", () => {
     await settle();
 
     expect(cta()).toHaveTextContent("Swaps are temporarily unavailable");
-    expect(captureException).not.toHaveBeenCalled();
+    expect(captureException).toHaveBeenCalledTimes(1);
   });
 
   it("shows swaps as temporarily unavailable when classic errored", async () => {
@@ -275,7 +305,7 @@ describe("SwapAmount live receive-amount quote", () => {
     await settle();
 
     expect(cta()).toHaveTextContent("Swaps are temporarily unavailable");
-    expect(captureException).not.toHaveBeenCalled();
+    expect(captureException).toHaveBeenCalledTimes(1);
   });
 
   it("drops a quote that lands after the screen unmounts", async () => {
@@ -421,10 +451,10 @@ describe("SwapAmount live receive-amount quote", () => {
   });
 
   it("re-enables Review swap after the review is cancelled", async () => {
-    // Review commits the cleaned amount ("1,000" -> "1000") to Redux, which
-    // re-arms the live quote; its result lands while the review is open and
-    // is dropped as frozen. The CTA must settle on the stored quote, which is
-    // for the same inputs, rather than stay pending.
+    // Review commits the cleaned amount ("1,000" -> "1000") to Redux. That
+    // must not re-quote (the stored quote is for the same inputs), and the
+    // CTA must settle on the stored quote after a cancel rather than stay
+    // pending.
     jest.spyOn(UseGetSwapAmountData, "useGetSwapAmountData").mockReturnValue({
       state: {
         state: RequestState.SUCCESS,
@@ -469,6 +499,7 @@ describe("SwapAmount live receive-amount quote", () => {
       fireEvent.click(within(review).getByText("Cancel"));
     });
 
+    expect(fetchBackendV2).toHaveBeenCalledTimes(1);
     expect(cta()).toHaveTextContent("Review swap");
     expect(cta()).toBeEnabled();
     expect(cta().querySelector(".Loader")).toBeNull();

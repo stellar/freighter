@@ -47,10 +47,10 @@ export const getSwapQuotes = async ({
     return data;
   }
 
-  // Not reported to Sentry here: the live quote re-fires per keystroke, so
-  // the user-initiated callers (review, reserve prefill) report instead.
+  // Not reported to Sentry here: callers decide, since the live quote
+  // re-fires per keystroke and dedupes its own reports.
   const message = `Failed to fetch swap quotes - ${status}: ${redactErrorBody(body)}`;
-  // A 400 is the input (e.g. an unfunded account), not an outage.
+  // A 400 is the request (bad input, an unfunded account), not an outage.
   if (status === 400) {
     throw new SwapQuotesError("badRequest", message);
   }

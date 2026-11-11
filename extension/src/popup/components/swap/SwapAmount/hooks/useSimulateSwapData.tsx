@@ -305,10 +305,8 @@ function useSimulateTxData({
           result = await getSwapQuote(quoteParams);
         } catch (e) {
           if (e instanceof SwapQuotesError) {
-            // Reported here, not in the quote helpers, so an outage costs one
-            // event per Review press rather than one per keystroke. A 400 is
-            // included: the extension built the request, so it is a client
-            // bug, not user input.
+            // Reported per Review press, 400 included: the request was built
+            // from the extension's own state, so a rejection is worth seeing.
             captureException(e.message);
             throw new Error(
               e.kind === "unavailable"

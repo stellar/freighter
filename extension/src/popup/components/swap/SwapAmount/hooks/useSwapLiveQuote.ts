@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { debounce } from "lodash";
 import BigNumber from "bignumber.js";
+import { captureException } from "@sentry/browser";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { AppDispatch } from "popup/App";
@@ -59,6 +60,10 @@ export const useSwapLiveQuote = ({
   const [isSwapUnavailable, setIsSwapUnavailable] = useState(false);
 
   const liveQuoteReqRef = useRef(0);
+  // Last failure reported to Sentry this mount. The quote re-fires per
+  // debounced keystroke, so an outage is reported once until a quote
+  // succeeds, not once per keystroke.
+  const lastReportedRef = useRef<string | null>(null);
   const liveQuoteArgsRef = useRef({
     asset,
     destinationAsset,
@@ -102,6 +107,7 @@ export const useSwapLiveQuote = ({
             if (liveQuoteReqRef.current !== reqId || isReviewingRef.current) {
               return; // superseded by a newer quote, or frozen for review
             }
+            lastReportedRef.current = null;
             setIsSwapUnavailable(false);
             dispatch(
               saveSwapBestPath({
@@ -114,6 +120,15 @@ export const useSwapLiveQuote = ({
           } catch (e) {
             if (liveQuoteReqRef.current !== reqId || isReviewingRef.current) {
               return;
+            }
+            // A 400 here is the user's state (an unfunded account, an
+            // unsupported token); the review path reports those.
+            if (!(e instanceof SwapQuotesError && e.kind === "badRequest")) {
+              const message = e instanceof Error ? e.message : String(e);
+              if (message !== lastReportedRef.current) {
+                lastReportedRef.current = message;
+                captureException(message);
+              }
             }
             setIsSwapUnavailable(
               e instanceof SwapQuotesError && e.kind === "unavailable",
@@ -146,6 +161,12 @@ export const useSwapLiveQuote = ({
     [debouncedQuote],
   );
 
+  // The crypto amount is the source of truth in both display modes (the fiat
+  // input keeps it in sync), so quote it directly. Keyed on the cleaned value
+  // so Review committing "1,000" as "1000" is not a change and cannot re-arm
+  // a quote behind the review sheet.
+  const cryptoAmount = cleanAmount(amount || "0");
+
   useEffect(() => {
     if (
       swapAmountData.state !== RequestState.SUCCESS ||
@@ -154,9 +175,6 @@ export const useSwapLiveQuote = ({
     ) {
       return;
     }
-    // The crypto amount is the source of truth in both display modes (the fiat
-    // input keeps it in sync), so quote it directly.
-    const cryptoAmount = cleanAmount(amount || "0");
 
     if (new BigNumber(cryptoAmount || "0").isGreaterThan(0)) {
       debouncedQuote(cryptoAmount);
@@ -175,7 +193,7 @@ export const useSwapLiveQuote = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- debouncedQuote/dispatch are stable and destinationAmount is read via a ref, so quote results don't re-trigger this effect (which would loop)
   }, [
-    amount,
+    cryptoAmount,
     asset,
     destinationAsset,
     swapAmountData.state,
