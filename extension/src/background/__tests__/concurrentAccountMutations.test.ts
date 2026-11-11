@@ -157,15 +157,26 @@ const generateSecondPhrase = async () => {
   });
 };
 
-const importKey = (secret: string) =>
+// The popup sends the key it last saw as active. Callers read it before
+// starting concurrent sends, so a message queued behind an import or switch
+// carries the stale key, as it would from a second surface.
+const activeKey = (): string => session().publicKey;
+
+const importKey = (secret: string, activePublicKey: string) =>
   send({
     type: SERVICE_TYPES.IMPORT_ACCOUNT,
+    activePublicKey,
     password: PASSWORD,
     privateKey: secret,
   });
 
-const addAccount = (sourceId: string) =>
-  send({ type: SERVICE_TYPES.ADD_ACCOUNT, password: PASSWORD, sourceId });
+const addAccount = (sourceId: string, activePublicKey: string) =>
+  send({
+    type: SERVICE_TYPES.ADD_ACCOUNT,
+    activePublicKey,
+    password: PASSWORD,
+    sourceId,
+  });
 
 describe("concurrent account-mutating messages", () => {
   jest.setTimeout(120_000);
@@ -189,10 +200,11 @@ describe("concurrent account-mutating messages", () => {
 
   it("keeps both of two concurrent secret-key imports", async () => {
     const [a, b] = [Keypair.random(), Keypair.random()];
+    const active = activeKey();
 
     const results = await Promise.all([
-      importKey(a.secret()),
-      importKey(b.secret()),
+      importKey(a.secret(), active),
+      importKey(b.secret(), active),
     ]);
 
     expect(results.map((r) => r.error)).toEqual([undefined, undefined]);
@@ -225,8 +237,12 @@ describe("concurrent account-mutating messages", () => {
   it("hands the next holder the previous holder's session when writes are slow", async () => {
     mockSession.latency.ms = 50;
     const [a, b] = [Keypair.random(), Keypair.random()];
+    const active = activeKey();
 
-    await Promise.all([importKey(a.secret()), importKey(b.secret())]);
+    await Promise.all([
+      importKey(a.secret(), active),
+      importKey(b.secret(), active),
+    ]);
     await new Promise((resolve) => setTimeout(resolve, 200));
 
     expect(allAccounts().map(({ publicKey }) => publicKey)).toEqual(
@@ -235,9 +251,10 @@ describe("concurrent account-mutating messages", () => {
   });
 
   it("gives two concurrent adds on one phrase distinct indices", async () => {
+    const active = activeKey();
     const results = await Promise.all([
-      addAccount(PHRASE_1.userId),
-      addAccount(PHRASE_1.userId),
+      addAccount(PHRASE_1.userId, active),
+      addAccount(PHRASE_1.userId, active),
     ]);
 
     expect(results.map((r) => r.publicKey).sort()).toEqual(
@@ -249,11 +266,14 @@ describe("concurrent account-mutating messages", () => {
 
   it("keeps both phrases' marks for concurrent adds on different phrases", async () => {
     await generateSecondPhrase();
+    const active = activeKey();
 
-    await Promise.all([
-      addAccount(PHRASE_1.userId),
-      addAccount(PHRASE_2.userId),
+    const results = await Promise.all([
+      addAccount(PHRASE_1.userId, active),
+      addAccount(PHRASE_2.userId, active),
     ]);
+
+    expect(results.map((r) => r.error)).toEqual([undefined, undefined]);
 
     expect(local(DERIVATION_INDICES_ID)).toEqual({
       [PHRASE_1.userId]: [0, 1],
@@ -266,8 +286,14 @@ describe("concurrent account-mutating messages", () => {
 
   it("gives a concurrent add and import distinct names and provenance", async () => {
     const key = Keypair.random();
+    const active = activeKey();
 
-    await Promise.all([addAccount(PHRASE_1.userId), importKey(key.secret())]);
+    const results = await Promise.all([
+      addAccount(PHRASE_1.userId, active),
+      importKey(key.secret(), active),
+    ]);
+
+    expect(results.map((r) => r.error)).toEqual([undefined, undefined]);
 
     expect(allAccounts()).toHaveLength(3);
     expect(new Set(allAccounts().map(({ name }) => name)).size).toBe(3);
@@ -280,15 +306,19 @@ describe("concurrent account-mutating messages", () => {
   it("keeps a rename made while an import is in flight", async () => {
     const [first] = allAccounts();
     const key = Keypair.random();
+    const active = activeKey();
 
-    await Promise.all([
-      importKey(key.secret()),
+    const results = await Promise.all([
+      importKey(key.secret(), active),
       send({
         type: SERVICE_TYPES.UPDATE_ACCOUNT_NAME,
+        activePublicKey: active,
         id: first.id,
         accountName: "Renamed",
       }),
     ]);
+
+    expect(results.map((r) => r.error)).toEqual([undefined, undefined]);
 
     expect(allAccounts().find(({ id }) => id === first.id)?.name).toBe(
       "Renamed",
@@ -300,12 +330,32 @@ describe("concurrent account-mutating messages", () => {
 
   it("stays locked when a sign-out lands during an import", async () => {
     const key = Keypair.random();
+    const active = activeKey();
 
-    const importing = importKey(key.secret());
-    const signingOut = send({ type: SERVICE_TYPES.SIGN_OUT });
-    await Promise.all([importing, signingOut]);
+    const importing = importKey(key.secret(), active);
+    const signingOut = send({
+      type: SERVICE_TYPES.SIGN_OUT,
+      activePublicKey: active,
+    });
+    const [, signOutResult] = await Promise.all([importing, signingOut]);
 
+    expect(signOutResult.error).toBeUndefined();
     expect(session().publicKey).toBeFalsy();
+  });
+
+  it("still refuses a signing request carrying the key an import replaced", async () => {
+    const stale = activeKey();
+    const key = Keypair.random();
+
+    await importKey(key.secret(), stale);
+    expect(activeKey()).toBe(key.publicKey());
+
+    const result = await send({
+      type: SERVICE_TYPES.SIGN_TRANSACTION,
+      activePublicKey: stale,
+    });
+
+    expect(result.error).toBe("Public key does not match active public key");
   });
 
   it("answers a read-only message without waiting for an in-flight import", async () => {
@@ -313,7 +363,7 @@ describe("concurrent account-mutating messages", () => {
     const key = Keypair.random();
 
     await Promise.all([
-      importKey(key.secret()).then(() => order.push("import")),
+      importKey(key.secret(), activeKey()).then(() => order.push("import")),
       send({ type: SERVICE_TYPES.LOAD_ACCOUNT }).then(() => order.push("load")),
     ]);
 
