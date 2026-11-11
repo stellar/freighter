@@ -1,7 +1,8 @@
-import { useReducer, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import BigNumber from "bignumber.js";
+import { useEffect, useReducer, useRef, useState } from "react";
 import { captureException } from "@sentry/browser";
+import { useDispatch, useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
+import BigNumber from "bignumber.js";
 import {
   Asset,
   BASE_FEE,
@@ -20,10 +21,11 @@ import {
 } from "helpers/stellar";
 import { computeDestMinWithSlippage } from "helpers/transaction";
 import { buildChangeTrustOperation } from "popup/helpers/getManageAssetXDR";
-import { getSdk } from "@shared/helpers/stellar";
+import { getSdk, isCustomNetwork } from "@shared/helpers/stellar";
 
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import {
+  clearSwapQuoteKey,
   saveSimulation,
   saveSwapBestPath,
   transactionDataSelector,
@@ -31,11 +33,17 @@ import {
 import { useScanTx } from "popup/helpers/blockaid";
 import { BlockAidScanTxResult, ErrorMessage } from "@shared/api/types";
 import { SwapQuotesError } from "@shared/api/helpers/getSwapQuotes";
+import { buildSwapTx, SwapTxError } from "@shared/api/helpers/buildSwapTx";
+import { SwapQuotesResponse } from "@shared/api/types/backend-api";
 import {
   getSwapQuote,
   getSwapQuoteKey,
   isSameSwapQuoteKey,
+  pickSwapRoute,
+  SwapQuoteKey,
+  toBackendAsset,
 } from "popup/helpers/swapQuote";
+import { decodeSwapTx, DecodedSwapTx } from "popup/helpers/decodeSwapTx";
 import { isQuoteExpiredError } from "popup/helpers/quoteExpiry";
 import { isContractId } from "popup/helpers/soroban";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
@@ -47,6 +55,7 @@ export const ERROR_TO_DISPLAY = {
   CUSTOM_TOKEN_NOT_SUPPORTED: "Swapping custom tokens is not supported yet.",
   SWAPS_UNAVAILABLE: "Swaps are temporarily unavailable",
   NO_QUOTE: "No quote available",
+  QUOTE_EXPIRED: "Quote has expired, please try again to get a new quote",
 };
 
 const UNKNOWN_ERROR_DISPLAY =
@@ -80,7 +89,10 @@ interface SimulationParams {
   amount: string;
   allowedSlippage: string;
   path: string[];
-  transactionFee: string;
+  /** Per-op network recommendation; scaled by op count for a classic build. */
+  recommendedFee: string;
+  /** A user-set total, sent as typed. */
+  customFee?: string;
   transactionTimeout: number;
   memo?: string;
   // Derived from balances by the caller (a swap is a self path-payment, so the
@@ -95,6 +107,11 @@ export interface SimulateTxData {
   dstAmountPriceUsd: string;
   scanResult?: BlockAidScanTxResult | null;
   destMin?: string;
+  /** What review shows, read from transactionXdr. */
+  decoded?: DecodedSwapTx;
+  // FeesPane's Soroban breakdown, in XLM.
+  inclusionFee?: string;
+  resourceFee?: string;
 }
 
 export const MIN_PER_OP_FEE = 100; // network minimum, stroops
@@ -226,6 +243,83 @@ export const getBuiltTx = async (
   return transaction;
 };
 
+// Exact decimal arithmetic, rounded down: computeDestMinWithSlippage's float
+// multiplier can miss the exact floor by a stroop.
+export const getMinOut = (allowedSlippage: string, toAmount: string) =>
+  new BigNumber(toAmount)
+    .times(new BigNumber(100).minus(allowedSlippage))
+    .div(100)
+    .decimalPlaces(7, BigNumber.ROUND_DOWN)
+    .toFixed();
+
+const buildFromBackend = async ({
+  quotes,
+  key,
+  allowedSlippage,
+  recommendedFee,
+  customFee,
+  destRequiresTrustline,
+  timeout,
+  onQuoteMoved,
+}: {
+  quotes: SwapQuotesResponse | null;
+  key: SwapQuoteKey;
+  allowedSlippage: string;
+  recommendedFee: string;
+  customFee?: string;
+  destRequiresTrustline: boolean;
+  timeout: number;
+  onQuoteMoved: () => void;
+}) => {
+  const route = quotes ? pickSwapRoute(quotes) : undefined;
+  if (!route) {
+    throw new Error(ERROR_TO_DISPLAY.NO_QUOTE);
+  }
+  const minOut = getMinOut(allowedSlippage, route.toAmount);
+  // Only a classic build splits the fee across ops (changeTrust + path
+  // payment); a LI.FI build is one op that takes the whole fee.
+  const fee =
+    getSwapTotalFee({
+      recommendedFee,
+      customFee,
+      opCount: route.source === "classic" && destRequiresTrustline ? 2 : 1,
+    }) || stroopToXlm(BASE_FEE).toFixed();
+  try {
+    const { xdr } = await buildSwapTx({
+      network: key.network,
+      account: key.account,
+      source: route.source,
+      fromAsset: toBackendAsset(key.sourceAsset),
+      toAsset: toBackendAsset(key.destAsset),
+      amount: key.amount,
+      minOut,
+      fee,
+      slippage: allowedSlippage,
+      timeout,
+      paths: route.paths,
+    });
+    return { xdr, minOut };
+  } catch (e) {
+    if (!(e instanceof SwapTxError)) {
+      throw e;
+    }
+    if (e.kind === "quoteMoved") {
+      onQuoteMoved();
+      throw new Error(ERROR_TO_DISPLAY.QUOTE_EXPIRED);
+    }
+    if (e.kind === "badRequest") {
+      // The body is built from the extension's own state, so a 400 is a
+      // client bug worth seeing (the quotes path reports its 400s too).
+      captureException(e.message);
+    }
+    throw new Error(
+      e.kind === "unavailable"
+        ? ERROR_TO_DISPLAY.SWAPS_UNAVAILABLE
+        : UNKNOWN_ERROR_DISPLAY,
+    );
+  }
+};
+
 function useSimulateTxData({
   publicKey,
   networkDetails,
@@ -243,6 +337,7 @@ function useSimulateTxData({
     swapQuoteKey: storedSwapQuoteKey,
   } = useSelector(transactionDataSelector);
   const reduxDispatch = useDispatch<AppDispatch>();
+  const { t } = useTranslation();
 
   const { scanTx } = useScanTx();
   const [state, dispatch] = useReducer(
@@ -251,25 +346,52 @@ function useSimulateTxData({
   );
   // Separate from reducer state so the view retains the expired-quote flag
   // across re-fetches. Set on Horizon op_under_dest_min / op_too_few_offers
-  // errors; consumed by the quote-expired metric + Notification in SwapAmount.
+  // errors and the backend's 409 quote_moved; consumed by the quote-expired
+  // metric + Notification in SwapAmount.
   const [isQuoteExpired, setIsQuoteExpired] = useState(false);
+  // Only the newest fetchData may store its result: an older build landing
+  // late would otherwise be reviewed and signed.
+  const requestIdRef = useRef(0);
+  useEffect(
+    () => () => {
+      requestIdRef.current += 1;
+    },
+    [],
+  );
 
+  // The settings sheet passes the values it just saved: simParams still
+  // holds the previous render's.
   const fetchData = async ({
     amount,
     destinationRate,
+    customFee = simParams.customFee,
+    transactionTimeout = simParams.transactionTimeout,
   }: {
     amount: string;
     destinationRate?: string;
+    customFee?: string;
+    transactionTimeout?: number;
   }) => {
+    const requestId = ++requestIdRef.current;
+    const isStale = () => requestId !== requestIdRef.current;
     dispatch({ type: "FETCH_DATA_START" });
+    // Nothing may submit an XDR this review has not decoded.
+    reduxDispatch(
+      saveSimulation({ response: null, preparedTransaction: null }),
+    );
     setIsQuoteExpired(false);
     try {
       const payload = { transactionXdr: "" } as SimulateTxData;
-      const { allowedSlippage, sourceAsset, destAsset, transactionTimeout } =
-        simParams;
+      const { allowedSlippage, sourceAsset, destAsset } = simParams;
 
+      const { recommendedFee } = simParams;
+      // The local build is always classic.
       const baseFee = new BigNumber(
-        simParams.transactionFee || stroopToXlm(BASE_FEE),
+        getSwapTotalFee({
+          recommendedFee,
+          customFee,
+          opCount: simParams.destRequiresTrustline ? 2 : 1,
+        }) || stroopToXlm(BASE_FEE),
       );
 
       // Reuse the quote the live "You receive" preview already surfaced (its
@@ -334,25 +456,72 @@ function useSimulateTxData({
           ),
         );
       }
-      const transaction = await getBuiltTx(
-        publicKey,
-        {
-          sourceAsset,
-          destAsset,
+      // Custom networks keep the local build: the backend can't reach them.
+      const { xdr, minOut } = isCustomNetwork(networkDetails)
+        ? {
+            xdr: (
+              await getBuiltTx(
+                publicKey,
+                {
+                  sourceAsset,
+                  destAsset,
+                  amount,
+                  destinationAmount,
+                  allowedSlippage,
+                  path,
+                  requiresTrustline: simParams.destRequiresTrustline,
+                },
+                baseFee.toString(),
+                transactionTimeout,
+                networkDetails,
+                memo,
+              )
+            )
+              .build()
+              .toXdr(),
+            minOut: getMinOut(allowedSlippage, destinationAmount),
+          }
+        : await buildFromBackend({
+            quotes,
+            key: getSwapQuoteKey(quoteParams),
+            allowedSlippage,
+            recommendedFee,
+            customFee,
+            destRequiresTrustline: simParams.destRequiresTrustline,
+            timeout: transactionTimeout,
+            onQuoteMoved: () => {
+              if (!isStale()) {
+                reduxDispatch(clearSwapQuoteKey());
+              }
+            },
+          });
+      try {
+        payload.decoded = decodeSwapTx({
+          transactionXdr: xdr,
+          networkPassphrase: networkDetails.networkPassphrase,
+          account: publicKey,
+          sourceAsset: quoteParams.sourceAsset,
+          destAsset: quoteParams.destAsset,
           amount,
-          destinationAmount,
-          allowedSlippage,
-          path,
-          requiresTrustline: simParams.destRequiresTrustline,
-        },
-        baseFee.toString(),
-        transactionTimeout,
-        networkDetails,
-        memo,
-      );
-      const xdr = transaction.build().toXdr();
+          minOut,
+        });
+      } catch (e) {
+        if (!isStale()) {
+          captureException(e);
+        }
+        throw e;
+      }
+      if (payload.decoded.resourceFee) {
+        payload.resourceFee = payload.decoded.resourceFee;
+        payload.inclusionFee = new BigNumber(payload.decoded.fee)
+          .minus(payload.decoded.resourceFee)
+          .toFixed();
+      }
       payload.transactionXdr = xdr;
       payload.scanResult = await scanTx(xdr, scanUrlstub, networkDetails);
+      if (isStale()) {
+        return payload;
+      }
       reduxDispatch(
         saveSimulation({
           preparedTransaction: xdr,
@@ -370,10 +539,18 @@ function useSimulateTxData({
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
+      if (isStale()) {
+        return error;
+      }
       const { sourceAsset, destAsset } = simParams;
-      const payload = getSwapErrorMessage(error, sourceAsset, destAsset);
+      // Every message is a key in the locale files.
+      const payload = t(getSwapErrorMessage(error, sourceAsset, destAsset));
 
-      setIsQuoteExpired(isQuoteExpiredError(error as ErrorMessage | undefined));
+      setIsQuoteExpired(
+        (error instanceof Error &&
+          error.message === ERROR_TO_DISPLAY.QUOTE_EXPIRED) ||
+          isQuoteExpiredError(error as ErrorMessage | undefined),
+      );
       dispatch({ type: "FETCH_DATA_ERROR", payload });
       return error;
     }

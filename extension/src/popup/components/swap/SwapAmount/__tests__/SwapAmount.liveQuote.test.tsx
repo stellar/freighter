@@ -18,6 +18,8 @@ import * as UseSwapLiveQuote from "popup/components/swap/SwapAmount/hooks/useSwa
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
 import * as FetchBackendV2 from "@shared/api/helpers/fetchBackendV2";
 import * as HorizonGetBestPath from "popup/helpers/horizonGetBestPath";
+import * as XlmReserve from "popup/helpers/xlmReserve";
+import * as Blockaid from "popup/helpers/blockaid";
 
 jest.mock("@sentry/browser", () => ({
   ...jest.requireActual("@sentry/browser"),
@@ -178,14 +180,14 @@ describe("SwapAmount live receive-amount quote", () => {
     expect(horizonGetBestPath).not.toHaveBeenCalled();
   });
 
-  it("stores the classic route's amount and path, and the full response", async () => {
+  it("stores the best route's amount and path, and the full response", async () => {
     renderSwapAmount({ amount: "5", destinationAsset: AQUA });
 
     await settle();
 
     const { transactionData } =
       getTestStore()!.getState().transactionSubmission;
-    expect(transactionData.destinationAmount).toBe("42");
+    expect(transactionData.destinationAmount).toBe("50");
     expect(transactionData.path).toEqual([USDC]);
     expect(transactionData.swapQuotes).toEqual({
       routes: [lifiRoute, classicRoute],
@@ -201,19 +203,26 @@ describe("SwapAmount live receive-amount quote", () => {
       amount: "5",
     });
     expect(
-      within(screen.getByTestId("swap-receive-card")).getByDisplayValue("42"),
+      within(screen.getByTestId("swap-receive-card")).getByDisplayValue("50"),
     ).toBeInTheDocument();
     expect(cta()).toHaveTextContent("Review swap");
   });
 
-  it("disables Review swap when the response has no classic route", async () => {
-    fetchBackendV2.mockResolvedValue(quotesReply([lifiRoute]));
+  it("offers review when LI.FI is the only source that quotes", async () => {
+    fetchBackendV2.mockResolvedValue({
+      status: 200,
+      body: {
+        data: {
+          routes: [lifiRoute],
+          unavailable: [{ source: "classic", reason: "timeout" }],
+        },
+      },
+    });
     renderSwapAmount({ amount: "5", destinationAsset: AQUA });
 
     await settle();
 
-    expect(fetchBackendV2).toHaveBeenCalled();
-    expectQuoteUnavailable();
+    expect(cta()).toHaveTextContent("Review swap");
   });
 
   it("disables Review swap on empty routes", async () => {
@@ -295,12 +304,12 @@ describe("SwapAmount live receive-amount quote", () => {
     expect(captureException).toHaveBeenCalledTimes(1);
   });
 
-  it("disables Review swap when classic errored", async () => {
+  it("disables Review swap and reports once when classic errored and nothing quoted", async () => {
     fetchBackendV2.mockResolvedValue({
       status: 200,
       body: {
         data: {
-          routes: [lifiRoute],
+          routes: [],
           unavailable: [{ source: "classic", reason: "timeout" }],
         },
       },
@@ -452,6 +461,107 @@ describe("SwapAmount live receive-amount quote", () => {
     });
 
     expect(fetchSimulation).not.toHaveBeenCalled();
+  });
+
+  describe("while the review is being built", () => {
+    const storedDestinationAmount = () =>
+      getTestStore()!.getState().transactionSubmission.transactionData
+        .destinationAmount;
+
+    it("ignores amount edits made while the review is being built", async () => {
+      jest.spyOn(UseSimulateSwapData, "useSimulateTxData").mockReturnValue({
+        state: { state: RequestState.IDLE, data: null, error: null },
+        isQuoteExpired: false,
+        fetchData: jest.fn(() => new Promise(() => {})),
+      } as any);
+      renderSwapAmount({ amount: "5", destinationAsset: AQUA });
+      await settle();
+      expect(storedDestinationAmount()).toBe("50");
+
+      await act(async () => {
+        fireEvent.click(cta());
+      });
+      fetchBackendV2.mockResolvedValue(quotesReply([classicRoute]));
+      await act(async () => {
+        getTestStore()!.dispatch(saveAmount("6"));
+      });
+      await settle();
+
+      expect(storedDestinationAmount()).toBe("50");
+    });
+
+    it("stays frozen until the newest of two overlapping builds finishes", async () => {
+      jest
+        .spyOn(XlmReserve, "shouldShowXlmReservePreflight")
+        .mockReturnValue(true);
+      let finishFirst: () => void = () => {};
+      const fetchData = jest
+        .fn()
+        .mockImplementationOnce(
+          () =>
+            new Promise<void>((r) => {
+              finishFirst = r;
+            }),
+        )
+        .mockImplementation(() => new Promise(() => {}));
+      jest.spyOn(UseSimulateSwapData, "useSimulateTxData").mockReturnValue({
+        state: { state: RequestState.IDLE, data: null, error: null },
+        isQuoteExpired: false,
+        fetchData,
+      } as any);
+      renderSwapAmount({ amount: "5", destinationAsset: AQUA });
+      await settle();
+
+      await act(async () => {
+        fireEvent.click(cta());
+      });
+      await act(async () => {
+        fireEvent.click(cta());
+      });
+      await act(async () => {
+        finishFirst();
+      });
+      fetchBackendV2.mockResolvedValue(quotesReply([classicRoute]));
+      await act(async () => {
+        getTestStore()!.dispatch(saveAmount("6"));
+      });
+      await settle();
+
+      expect(fetchData).toHaveBeenCalledTimes(2);
+      expect(storedDestinationAmount()).toBe("50");
+    });
+
+    it("stays frozen while settings are open from the review", async () => {
+      jest
+        .spyOn(Blockaid, "useShouldTreatTxAsUnableToScan")
+        .mockReturnValue(() => false);
+      jest.spyOn(UseSimulateSwapData, "useSimulateTxData").mockReturnValue({
+        state: {
+          state: RequestState.SUCCESS,
+          data: { transactionXdr: "AAAA", dstAmountPriceUsd: "0" },
+          error: null,
+        },
+        isQuoteExpired: false,
+        fetchData: jest.fn().mockResolvedValue(undefined),
+      } as any);
+      renderSwapAmount({ amount: "5", destinationAsset: AQUA });
+      await settle();
+
+      await act(async () => {
+        fireEvent.click(cta());
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("review-tx-settings-btn"));
+      });
+      expect(screen.getByLabelText("Timeout (seconds)")).toBeInTheDocument();
+      fetchBackendV2.mockResolvedValue(quotesReply([classicRoute]));
+      await act(async () => {
+        getTestStore()!.dispatch(saveAmount("6"));
+      });
+      await settle();
+
+      expect(storedDestinationAmount()).toBe("50");
+    });
   });
 
   it("re-enables Review swap after the review is cancelled", async () => {

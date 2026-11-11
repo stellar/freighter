@@ -14,6 +14,7 @@ interface ActionButtonsProps {
   onCancel: () => void;
   onConfirmTx: () => void;
   isSubmitDisabled: boolean;
+  canConfirm: boolean;
 }
 
 export const ActionButtons: React.FC<ActionButtonsProps> = ({
@@ -27,6 +28,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
   onCancel,
   onConfirmTx,
   isSubmitDisabled,
+  canConfirm,
 }) => {
   const { t } = useTranslation();
   // Only the side-by-side layouts carry the gear, as on mobile.
@@ -72,6 +74,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
             isMalicious ? "error" : "default"
           }`}
           data-testid="SubmitAction"
+          disabled={!canConfirm}
           onClick={(e) => {
             e.preventDefault();
             onConfirmTx();
@@ -146,6 +149,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
             isMalicious ? "error" : "default"
           }`}
           data-testid="SubmitAction"
+          disabled={!canConfirm}
           onClick={(e) => {
             e.preventDefault();
             onConfirmTx();

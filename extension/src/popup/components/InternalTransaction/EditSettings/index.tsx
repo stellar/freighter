@@ -2,14 +2,22 @@ import React, { useRef } from "react";
 import { Button, Icon, Input } from "@stellar/design-system";
 import { Field, FieldProps, Formik, Form } from "formik";
 import { useTranslation } from "react-i18next";
+import BigNumber from "bignumber.js";
+import { BASE_FEE } from "stellar-sdk";
 
-import { DEFAULT_TX_TIMEOUT } from "popup/constants/transaction";
+import {
+  DEFAULT_TX_TIMEOUT,
+  MAX_TX_TIMEOUT,
+} from "popup/constants/transaction";
 
 import { CongestionIndicator } from "../CongestionIndicator";
 import { SheetHeader, SheetHeaderLayout } from "popup/components/SheetHeader";
 import { SheetLayout } from "popup/components/SheetLayout";
 
 import "./styles.scss";
+
+// The network minimum per operation (100 stroops); the message names it.
+const MIN_FEE_XLM = new BigNumber(BASE_FEE).shiftedBy(-7);
 
 export interface EditSettingsFormValue {
   fee: string;
@@ -58,6 +66,14 @@ export const EditSettings = ({
 
     if (!values.fee.trim()) {
       errors.fee = t("Fee is required");
+    } else if (!new BigNumber(values.fee).gte(MIN_FEE_XLM)) {
+      errors.fee = t("Fee must be at least 0.00001 XLM");
+    }
+    // The swap backend rejects 0, and a 0 timeout never expires.
+    if (!(Number(values.timeout) >= 1)) {
+      errors.timeout = t("Timeout must be greater than 0");
+    } else if (Number(values.timeout) > MAX_TX_TIMEOUT) {
+      errors.timeout = t("Timeout must be at most 86400 seconds");
     }
 
     return errors;

@@ -189,7 +189,11 @@ export const ReviewTx = ({
   const [isOnDetailsPane, setIsOnDetailsPane] = useState(false);
 
   // Disable button while validating or if memo is missing
-  const isSubmitDisabled = isRequiredMemoMissing || isValidatingMemo;
+  // A review opened or returned to while a newer build is loading has no XDR.
+  const canConfirm =
+    simulationState.state === RequestState.SUCCESS && !!transactionXdr;
+  const isSubmitDisabled =
+    isRequiredMemoMissing || isValidatingMemo || !canConfirm;
 
   const asset = getAssetFromCanonical(srcAsset);
   const dest = dstAsset ? getAssetFromCanonical(dstAsset.canonical) : null;
@@ -416,6 +420,9 @@ export const ReviewTx = ({
   }
 
   const onConfirmTx = () => {
+    if (!canConfirm) {
+      return;
+    }
     if (isHardwareWallet) {
       dispatch(
         startHwSign({
@@ -628,7 +635,9 @@ export const ReviewTx = ({
     <FeesPane
       fee={fee}
       simulationState={simulationState}
-      isSoroban={isSorobanSend}
+      isSoroban={
+        isSorobanSend || (isSwap && !!simulationState.data?.resourceFee)
+      }
       onClose={() => setIsOnFeesPane(false)}
     />
   );
@@ -716,6 +725,7 @@ export const ReviewTx = ({
               onCancel={onCancel}
               onConfirmTx={onConfirmTx}
               isSubmitDisabled={isSubmitDisabled}
+              canConfirm={canConfirm}
             />
           </div>
         ) : undefined

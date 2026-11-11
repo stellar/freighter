@@ -190,3 +190,23 @@ export interface SwapQuotesResponse {
   routes: SwapRoute[];
   unavailable: SwapUnavailable[];
 }
+
+// `POST /swap/tx`. `fee` is the user's network fee setting in XLM; classic
+// builds split it across the operations, LI.FI builds add the resource fee.
+export interface SwapTxRequest {
+  account: string;
+  source: string;
+  fromAsset: string;
+  toAsset: string;
+  amount: string;
+  minOut: string;
+  fee: string;
+  slippage: string;
+  timeout: number;
+  paths?: SwapPath[];
+}
+
+export interface SwapTxResponse {
+  xdr: string;
+  addsTrustline: boolean;
+}
