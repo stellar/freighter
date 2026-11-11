@@ -40,9 +40,10 @@ interface UseSwapLiveQuoteParams {
  * the debounced callback stays stable and quote results don't re-trigger the
  * effect (which would loop).
  *
- * Returns isLiveQuoteLoading so the CTA can tell "still loading a quote" apart
- * from "no path exists", and isSwapUnavailable when the backend can't quote at
- * all. All path results flow through Redux (saveSwapBestPath).
+ * Returns isSwapUnavailable when the backend can't quote at all. All path
+ * results flow through Redux (saveSwapBestPath), keyed by the inputs they
+ * answer; "still loading" is the stored key not matching the current inputs,
+ * so a dropped or superseded response cannot leave the screen pending.
  */
 export const useSwapLiveQuote = ({
   amount,
@@ -55,7 +56,6 @@ export const useSwapLiveQuote = ({
   swapAmountData,
   dispatch,
 }: UseSwapLiveQuoteParams) => {
-  const [isLiveQuoteLoading, setIsLiveQuoteLoading] = useState(false);
   const [isSwapUnavailable, setIsSwapUnavailable] = useState(false);
 
   const liveQuoteReqRef = useRef(0);
@@ -102,9 +102,6 @@ export const useSwapLiveQuote = ({
             if (liveQuoteReqRef.current !== reqId || isReviewingRef.current) {
               return; // superseded by a newer quote, or frozen for review
             }
-            // Stop signalling "loading" so the CTA can distinguish a missing
-            // path from a pending one.
-            setIsLiveQuoteLoading(false);
             setIsSwapUnavailable(false);
             dispatch(
               saveSwapBestPath({
@@ -118,7 +115,6 @@ export const useSwapLiveQuote = ({
             if (liveQuoteReqRef.current !== reqId || isReviewingRef.current) {
               return;
             }
-            setIsLiveQuoteLoading(false);
             setIsSwapUnavailable(
               e instanceof SwapQuotesError && e.kind === "unavailable",
             );
@@ -163,12 +159,10 @@ export const useSwapLiveQuote = ({
     const cryptoAmount = cleanAmount(amount || "0");
 
     if (new BigNumber(cryptoAmount || "0").isGreaterThan(0)) {
-      setIsLiveQuoteLoading(true);
       debouncedQuote(cryptoAmount);
     } else {
       // Source amount cleared: cancel any pending/in-flight quote and reset the
       // received amount so the card shows 0 (skip the dispatch if already 0).
-      setIsLiveQuoteLoading(false);
       setIsSwapUnavailable(false);
       debouncedQuote.cancel();
       liveQuoteReqRef.current += 1;
@@ -190,5 +184,5 @@ export const useSwapLiveQuote = ({
     networkDetails.networkUrl,
   ]);
 
-  return { isLiveQuoteLoading, isSwapUnavailable, cancelLiveQuote };
+  return { isSwapUnavailable, cancelLiveQuote };
 };

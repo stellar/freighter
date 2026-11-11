@@ -338,9 +338,8 @@ describe("SwapAmount live receive-amount quote", () => {
       expectQuoteLoading();
     });
 
-    it("shows loading when the stored quote is for other inputs, before the live-quote flag flips", () => {
+    it("shows loading when the stored quote is for other inputs, with no quote in flight", () => {
       jest.spyOn(UseSwapLiveQuote, "useSwapLiveQuote").mockReturnValue({
-        isLiveQuoteLoading: false,
         isSwapUnavailable: false,
         cancelLiveQuote: jest.fn(),
       });
@@ -406,6 +405,65 @@ describe("SwapAmount live receive-amount quote", () => {
     });
 
     expect(fetchSimulation).not.toHaveBeenCalled();
+  });
+
+  it("re-enables Review swap after the review is cancelled", async () => {
+    // Review commits the cleaned amount ("1,000" -> "1000") to Redux, which
+    // re-arms the live quote; its result lands while the review is open and
+    // is dropped as frozen. The CTA must settle on the stored quote, which is
+    // for the same inputs, rather than stay pending.
+    jest.spyOn(UseGetSwapAmountData, "useGetSwapAmountData").mockReturnValue({
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          ...swapData,
+          userBalances: {
+            balances: [
+              {
+                ...nativeBalance,
+                total: new BigNumber("5000"),
+                available: new BigNumber("5000"),
+              },
+            ],
+          },
+        },
+        error: null,
+      },
+      fetchData: jest.fn().mockResolvedValue(undefined),
+    } as any);
+    jest.spyOn(UseSimulateSwapData, "useSimulateTxData").mockReturnValue({
+      state: {
+        state: RequestState.SUCCESS,
+        data: { transactionXdr: "AAAA", scanResult: null },
+        error: null,
+      },
+      isQuoteExpired: false,
+      fetchData: jest.fn().mockResolvedValue(undefined),
+    } as any);
+    renderSwapAmount({ amount: "1,000", destinationAsset: AQUA });
+    await settle();
+    expect(cta()).toBeEnabled();
+
+    await act(async () => {
+      fireEvent.click(cta());
+    });
+    const review = screen.getByRole("dialog", { name: "Review swap" });
+    expect(within(review).getByText("Cancel")).toBeInTheDocument();
+    // Let any re-armed live quote fire and resolve while the review is open.
+    await settle();
+
+    await act(async () => {
+      fireEvent.click(within(review).getByText("Cancel"));
+    });
+
+    expect(cta()).toHaveTextContent("Review swap");
+    expect(cta()).toBeEnabled();
+    expect(cta().querySelector(".Loader")).toBeNull();
+    expect(
+      within(screen.getByTestId("swap-receive-card")).queryByTestId(
+        "amount-card-amount-loading",
+      ),
+    ).toBeNull();
   });
 
   it("quotes a percentage of a tiny balance as a plain decimal", async () => {

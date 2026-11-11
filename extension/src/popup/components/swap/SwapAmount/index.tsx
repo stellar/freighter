@@ -345,19 +345,17 @@ export const SwapAmount = ({
   const sellInputRef = useRef<HTMLInputElement>(null);
 
   // Live "You receive" quote as the user types (debounced path-only lookup).
-  // isLiveQuoteLoading lets the CTA tell "loading a quote" apart from "no path".
-  const { isLiveQuoteLoading, isSwapUnavailable, cancelLiveQuote } =
-    useSwapLiveQuote({
-      amount,
-      asset,
-      destinationAsset,
-      destinationAmount,
-      networkDetails,
-      publicKey,
-      isReviewingTx,
-      swapAmountData,
-      dispatch,
-    });
+  const { isSwapUnavailable, cancelLiveQuote } = useSwapLiveQuote({
+    amount,
+    asset,
+    destinationAsset,
+    destinationAmount,
+    networkDetails,
+    publicKey,
+    isReviewingTx,
+    swapAmountData,
+    dispatch,
+  });
 
   if (isLoading) {
     return <Loading />;
@@ -434,7 +432,6 @@ export const SwapAmount = ({
     blockaidOverrideState,
     networkDetails,
     inputType,
-    isLiveQuoteLoading,
     isSwapUnavailable,
     publicKey,
     swapQuoteKey: transactionData.swapQuoteKey,
