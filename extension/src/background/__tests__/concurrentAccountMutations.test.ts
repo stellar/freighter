@@ -61,6 +61,9 @@ const makeArea = () => {
 const mockLocal = makeArea();
 const mockSession = makeArea();
 let mockMessageListener: (request: unknown, sender: unknown) => Promise<any>;
+// Pending alarms by name. A one-shot alarm is removed when it fires.
+const mockAlarms = new Set<string>();
+let mockAlarmListener: (alarm: { name: string }) => Promise<void>;
 
 jest.mock("webextension-polyfill", () => ({
   __esModule: true,
@@ -84,9 +87,18 @@ jest.mock("webextension-polyfill", () => ({
       },
     },
     alarms: {
-      create: jest.fn().mockResolvedValue(undefined),
-      clear: jest.fn().mockResolvedValue(true),
-      onAlarm: { addListener: jest.fn() },
+      create: jest.fn(async (name: string) => {
+        mockAlarms.add(name);
+      }),
+      get: jest.fn(async (name: string) =>
+        mockAlarms.has(name) ? { name, scheduledTime: 0 } : undefined,
+      ),
+      clear: jest.fn(async (name: string) => mockAlarms.delete(name)),
+      onAlarm: {
+        addListener: (fn: typeof mockAlarmListener) => {
+          mockAlarmListener = fn;
+        },
+      },
     },
   },
 }));
@@ -119,7 +131,12 @@ if (!global.crypto.randomUUID) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { initExtensionMessageListener } = require("background/index");
+const {
+  initExtensionMessageListener,
+  initAlarmListener,
+} = require("background/index");
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { SESSION_ALARM_NAME } = require("background/helpers/session");
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { getAccountNameList } = require("background/helpers/account");
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -187,6 +204,7 @@ describe("concurrent account-mutating messages", () => {
 
   beforeAll(() => {
     initExtensionMessageListener();
+    initAlarmListener();
   });
 
   beforeEach(async () => {
@@ -194,6 +212,7 @@ describe("concurrent account-mutating messages", () => {
     await mockLocal.clear();
     await mockSession.clear();
     mockGenerated.length = 0;
+    mockAlarms.clear();
     global.fetch = jest.fn(() =>
       Promise.resolve({
         json: () => Promise.resolve({ account_id: "funded" }),
@@ -408,5 +427,22 @@ describe("concurrent account-mutating messages", () => {
     expect(
       allAccounts().find(({ publicKey }) => publicKey === key.publicKey()),
     ).toBeDefined();
+  });
+  it("skips a queued auto-lock when activity rearms the timer", async () => {
+    const key = Keypair.random();
+    const active = activeKey();
+
+    const importing = importKey(key.secret(), active);
+    // The idle alarm fires while the import holds the lock: it's removed,
+    // and its callback queues behind the import.
+    mockAlarms.delete(SESSION_ALARM_NAME);
+    const autoLock = mockAlarmListener({ name: SESSION_ALARM_NAME });
+    // Activity rearms the timer before the callback gets the lock.
+    const activity = send({ type: SERVICE_TYPES.USER_ACTIVITY });
+    await Promise.all([importing, autoLock, activity]);
+
+    // The idle lock clears the hash key; publicKey survives it.
+    expect(session().hashKey?.key).toBeTruthy();
+    expect(local(TEMPORARY_STORE_ID)).toBeDefined();
   });
 });
