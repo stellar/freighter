@@ -56,7 +56,6 @@ interface GetSwapDerivedDataParams {
   blockaidOverrideState?: string | null;
   networkDetails: NetworkDetails;
   inputType: InputType;
-  isSwapUnavailable: boolean;
   publicKey: string;
   /** Key of the quote behind destinationAmount. */
   swapQuoteKey: SwapQuoteKey | null;
@@ -85,7 +84,6 @@ export const getSwapDerivedData = ({
   blockaidOverrideState,
   networkDetails,
   inputType,
-  isSwapUnavailable,
   publicKey,
   swapQuoteKey,
   destRequiresTrustline,
@@ -238,7 +236,6 @@ export const getSwapDerivedData = ({
     isAmountTooHigh,
     insufficientXlmForFees,
     hasNoSwapPath,
-    isSwapUnavailable,
     isQuotePending,
   });
 

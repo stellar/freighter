@@ -6,8 +6,6 @@ export type SwapCtaLabelKey =
   | "enter"
   | "insufficientBalance"
   | "insufficientXlmFees"
-  | "noQuote"
-  | "unavailable"
   | "review";
 
 export interface SwapCtaInputs {
@@ -18,7 +16,6 @@ export interface SwapCtaInputs {
   isAmountTooHigh: boolean;
   insufficientXlmForFees: boolean;
   hasNoSwapPath: boolean;
-  isSwapUnavailable: boolean;
   isQuotePending: boolean;
 }
 
@@ -30,12 +27,12 @@ export const getSwapCtaState = ({
   isAmountTooHigh,
   insufficientXlmForFees,
   hasNoSwapPath,
-  isSwapUnavailable,
   isQuotePending,
 }: SwapCtaInputs): {
   disabled: boolean;
   labelKey: SwapCtaLabelKey;
   isLoading?: boolean;
+  isQuoteUnavailable?: boolean;
 } => {
   // Enabled so the user can tap it to open the picker for the missing side
   // (the screen prefers the sell token when both are missing). Other blocking
@@ -62,11 +59,10 @@ export const getSwapCtaState = ({
   if (isQuotePending) {
     return { disabled: true, labelKey: "review", isLoading: true };
   }
-  if (hasNoSwapPath && isSwapUnavailable) {
-    return { disabled: true, labelKey: "unavailable" };
-  }
+  // The label stays "Review swap" (design): the Quote unavailable line and
+  // sheet explain why it's disabled.
   if (hasNoSwapPath) {
-    return { disabled: true, labelKey: "noQuote" };
+    return { disabled: true, labelKey: "review", isQuoteUnavailable: true };
   }
   return { disabled: false, labelKey: "review" };
 };

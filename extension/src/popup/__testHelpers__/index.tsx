@@ -69,6 +69,14 @@ export const Wrapper: React.FunctionComponent<any> = ({
       applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
     },
     transactionSubmission: transactionSubmissionInitialState,
+    // Loaded so balance fetches don't wait forever; kill switches stay off.
+    remoteConfig: {
+      isInitialized: true,
+      use_balances_v2: false,
+      use_token_price_history: false,
+      maintenance_banner: { enabled: false, payload: undefined },
+      maintenance_screen: { enabled: false, payload: undefined },
+    },
     ...state,
   });
   testStore = store;

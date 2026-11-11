@@ -46,7 +46,9 @@ import {
   TEST_CANONICAL,
   TEST_PUBLIC_KEY,
   TEST_USDC_CANONICAL,
+  getTestStore,
 } from "../../__testHelpers__";
+import { fetchFeatureFlags } from "popup/ducks/remoteConfig";
 import { Account } from "../Account";
 import { ROUTES } from "popup/constants/routes";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
@@ -443,7 +445,6 @@ describe("Account view", () => {
             },
             remoteConfig: {
               isInitialized: true,
-              use_token_prices_v2: true,
               use_balances_v2: true,
               use_token_price_history: true,
               maintenance_screen: { enabled: false, payload: undefined },
@@ -841,6 +842,61 @@ describe("Account view", () => {
       ).toBeDefined();
       expect(screen.getAllByText("USDC")).toBeDefined();
       expect(screen.queryByTestId("ScamAssetIcon")).toBeNull();
+    });
+  });
+
+  it("does not fetch balances until the remote config flags have settled", async () => {
+    const balancesSpy = jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockBalances));
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+          remoteConfig: {
+            isInitialized: false,
+            use_balances_v2: false,
+            use_token_price_history: true,
+            maintenance_banner: { enabled: false, payload: undefined },
+            maintenance_screen: { enabled: false, payload: undefined },
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(balancesSpy).not.toHaveBeenCalled();
+
+    await act(async () => {
+      getTestStore()?.dispatch({
+        type: fetchFeatureFlags.fulfilled.type,
+        payload: {
+          isInitialized: true,
+          use_balances_v2: true,
+          use_token_price_history: true,
+          maintenance_banner: { enabled: false, payload: undefined },
+          maintenance_screen: { enabled: false, payload: undefined },
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(balancesSpy).toHaveBeenCalled();
     });
   });
 
@@ -1603,7 +1659,7 @@ describe("Account view", () => {
 
     // Fast-forward 30 seconds
     jest.advanceTimersByTime(30000);
-    expect(getAccountBalancesSpy).toHaveBeenCalledTimes(3);
+    await waitFor(() => expect(getAccountBalancesSpy).toHaveBeenCalledTimes(3));
   });
 
   // An unfunded account holds nothing, so zero is its real total even on a

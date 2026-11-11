@@ -8,7 +8,6 @@ const base: SwapCtaInputs = {
   isAmountTooHigh: false,
   insufficientXlmForFees: false,
   hasNoSwapPath: false,
-  isSwapUnavailable: false,
   isQuotePending: false,
 };
 
@@ -68,23 +67,11 @@ describe("getSwapCtaState", () => {
     });
   });
 
-  it("flags no quote available when the path is empty", () => {
+  it("keeps Review swap, disabled, when there is no quote (the Quote unavailable line explains)", () => {
     expect(getSwapCtaState({ ...base, hasNoSwapPath: true })).toEqual({
       disabled: true,
-      labelKey: "noQuote",
-    });
-  });
-
-  it("flags swaps unavailable when the quote failed for lack of a backend", () => {
-    expect(
-      getSwapCtaState({
-        ...base,
-        hasNoSwapPath: true,
-        isSwapUnavailable: true,
-      }),
-    ).toEqual({
-      disabled: true,
-      labelKey: "unavailable",
+      labelKey: "review",
+      isQuoteUnavailable: true,
     });
   });
 

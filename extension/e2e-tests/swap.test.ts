@@ -404,7 +404,7 @@ test("flagged destination surfaces blockaid malicious warning at review", async 
     );
     // Stub a swap path so the simulation succeeds and reaches the review
     // screen (where the transaction scan runs). Without this the swap dies at
-    // "No path found for swap" and never reaches the banner.
+    // "No quote available" and never reaches the banner.
     await stubSwapQuotes(context, { toAmount: "0.95" });
     // Stub scan-tx to return Malicious (stubScanTxMalicious matches "**/scan-tx**")
     await stubScanTxMalicious(page);

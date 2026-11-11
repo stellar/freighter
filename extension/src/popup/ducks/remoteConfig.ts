@@ -2,6 +2,7 @@ import {
   createAsyncThunk,
   createSelector,
   createSlice,
+  Store,
 } from "@reduxjs/toolkit";
 import type { Variant } from "@amplitude/experiment-js-client";
 
@@ -26,11 +27,7 @@ const ON_VARIANT_VALUES = ["on", "true", "enabled", "yes"];
  * Boolean flags — variant value is checked against ON_VARIANT_VALUES.
  * Add flag names here as new boolean flags are introduced.
  */
-const BOOLEAN_FLAGS = [
-  "use_token_prices_v2",
-  "use_balances_v2",
-  "use_token_price_history",
-] as const;
+const BOOLEAN_FLAGS = ["use_balances_v2", "use_token_price_history"] as const;
 
 /**
  * Version flags — variant value is parsed from underscore format (1_2_3 → 1.2.3).
@@ -86,9 +83,6 @@ interface RemoteConfigState extends FeatureFlags {
 
 const initialState: RemoteConfigState = {
   isInitialized: false,
-  // Defaults to v2; Amplitude can flip it off to roll back to the v1
-  // token-prices endpoint without a release.
-  use_token_prices_v2: true,
   // Defaults to v1 while the balances-v2 work is still in progress; Amplitude
   // can flip it on to opt into the v2 account-balances endpoint without a
   // release.
@@ -242,21 +236,6 @@ export const maintenanceScreenSelector = createSelector(
 );
 
 /**
- * Returns whether the v2 token-prices endpoint should be used. Defaults to
- * true; Amplitude can flip the flag off to roll back to the v1 endpoint.
- */
-export const tokenPricesV2Selector = createSelector(
-  remoteConfigSelector,
-  // Deliberately NOT through `killSwitchSelector`. That factory gates whether
-  // a feature MOUNTS, which has no lasting effect; this flag picks the backend
-  // for a load whose result is cached. If it were read fail-closed, a
-  // pre-settle Account load would go to v1, which filters contract tokens, and
-  // the partial result would sit in the prices cache with nothing to retry it
-  // once the flags settled — Soroban assets stuck on "--" beside a v2 chart.
-  (rc) => rc.use_token_prices_v2,
-);
-
-/**
  * Returns whether the v2 account-balances endpoint should be used. Defaults
  * to false while the balances-v2 work is in progress; Amplitude can flip the
  * flag on to opt into the v2 endpoint.
@@ -278,3 +257,24 @@ export const isRemoteConfigInitializedSelector = createSelector(
   remoteConfigSelector,
   (rc) => rc.isInitialized,
 );
+
+/**
+ * Resolves once the Experiment flags have been fetched (or failed). Await it
+ * before reading a flag that picks a backend, since every popup, tab, and
+ * sidebar starts with the flags unloaded.
+ */
+export const waitForRemoteConfig = (
+  store: Store<{ remoteConfig: RemoteConfigState }>,
+): Promise<void> =>
+  new Promise((resolve) => {
+    if (isRemoteConfigInitializedSelector(store.getState())) {
+      resolve();
+      return;
+    }
+    const unsubscribe = store.subscribe(() => {
+      if (isRemoteConfigInitializedSelector(store.getState())) {
+        unsubscribe();
+        resolve();
+      }
+    });
+  });
