@@ -2,6 +2,11 @@ import { Store } from "redux";
 import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 import { captureException } from "@sentry/browser";
 
+import {
+  INCORRECT_PASSWORD_ERROR,
+  NO_SOFTWARE_KEYSTORE_ERROR,
+  UNABLE_TO_LOGIN_ERROR,
+} from "@shared/constants/errors";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import {
   getActiveHashKeyCryptoKey,
@@ -13,8 +18,7 @@ import { loginToAllAccounts } from "./login-all-accounts";
 import { getNonHwKeyID } from "./get-non-hw-key-id";
 import { unlockKeystore } from "./unlock-keystore";
 
-export const NO_SOFTWARE_KEYSTORE_ERROR =
-  "This wallet has no password to check against";
+export { NO_SOFTWARE_KEYSTORE_ERROR };
 
 /*
   Checks a password against the active software keystore, for handlers that
@@ -60,7 +64,7 @@ export const verifyAddPassword = async ({
           e,
         )}`,
       );
-      return "Unable to login";
+      return UNABLE_TO_LOGIN_ERROR;
     }
   }
 
@@ -68,7 +72,7 @@ export const verifyAddPassword = async ({
     await unlockKeystore({ keyID, password, keyManager });
   } catch (e) {
     console.error(e);
-    return "Incorrect password";
+    return INCORRECT_PASSWORD_ERROR;
   }
 
   return null;

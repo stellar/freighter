@@ -5,7 +5,12 @@ import { captureException } from "@sentry/browser";
 
 import { AddRecoveryPhraseSourceMessage } from "@shared/api/types/message-request";
 import { SecretSourceType } from "@shared/api/types";
-import { ACCOUNT_ALREADY_EXISTS_ERROR } from "@shared/constants/errors";
+import {
+  ACCOUNT_ALREADY_EXISTS_ERROR,
+  IMPORT_PHRASE_FAILED_ERROR,
+  NO_SOFTWARE_KEYSTORE_ERROR,
+  PHRASE_ALREADY_HELD_ERROR,
+} from "@shared/constants/errors";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { linkWalletSources } from "background/helpers/link-sources";
 import { SessionTimer } from "background/helpers/session";
@@ -24,19 +29,14 @@ import {
   publicKeySelector,
   setPendingMnemonicPhrase,
 } from "background/ducks/session";
-import {
-  NO_SOFTWARE_KEYSTORE_ERROR,
-  verifyAddPassword,
-} from "../helpers/verify-add-password";
+import { verifyAddPassword } from "../helpers/verify-add-password";
 import { storeAccount } from "../helpers/store-account";
 
 const { fromMnemonic } = StellarHDWallet;
 
 export const PENDING_PHRASE_MISSING_ERROR =
   "The new recovery phrase is no longer available. Start again.";
-export const PHRASE_ALREADY_HELD_ERROR =
-  "This recovery phrase is already in your wallet";
-export { NO_SOFTWARE_KEYSTORE_ERROR };
+export { NO_SOFTWARE_KEYSTORE_ERROR, PHRASE_ALREADY_HELD_ERROR };
 
 /*
   Stores the phrase `generateRecoveryPhrase` is holding as a new phrase source
@@ -97,7 +97,7 @@ export const addRecoveryPhraseSource = async ({
     };
   } catch (e) {
     captureException(`Error deriving new phrase source: ${JSON.stringify(e)}`);
-    return { error: "Error adding recovery phrase" };
+    return { error: IMPORT_PHRASE_FAILED_ERROR };
   }
 
   // A generated phrase colliding is not a real case, but the checks are what
@@ -133,7 +133,7 @@ export const addRecoveryPhraseSource = async ({
     });
   } catch (e) {
     captureException(`Error adding recovery phrase: ${JSON.stringify(e)}`);
-    return { error: "Error adding recovery phrase" };
+    return { error: IMPORT_PHRASE_FAILED_ERROR };
   }
 
   sessionStore.dispatch(

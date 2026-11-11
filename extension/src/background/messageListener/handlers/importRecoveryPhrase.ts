@@ -5,7 +5,11 @@ import { captureException } from "@sentry/browser";
 
 import { ImportRecoveryPhraseMessage } from "@shared/api/types/message-request";
 import { SecretSourceType } from "@shared/api/types";
-import { ACCOUNT_ALREADY_EXISTS_ERROR } from "@shared/constants/errors";
+import {
+  ACCOUNT_ALREADY_EXISTS_ERROR,
+  IMPORT_PHRASE_FAILED_ERROR,
+  PHRASE_ALREADY_HELD_ERROR,
+} from "@shared/constants/errors";
 import {
   isValidImportMnemonic,
   normalizeMnemonic,
@@ -32,11 +36,10 @@ import { verifyAddPassword } from "../helpers/verify-add-password";
 import { discoverFundedIndices } from "../helpers/discover-funded-indices";
 import { storeAccount } from "../helpers/store-account";
 import { activatePublicKey } from "../helpers/activate-public-key";
-import { PHRASE_ALREADY_HELD_ERROR } from "./addRecoveryPhraseSource";
 
 const { fromMnemonic } = StellarHDWallet;
 
-export const IMPORT_PHRASE_FAILED_ERROR = "Error adding recovery phrase";
+export { IMPORT_PHRASE_FAILED_ERROR };
 
 /*
   Adds a recovery phrase the user typed to a live wallet as a new phrase
