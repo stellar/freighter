@@ -102,16 +102,17 @@ describe("getSwapQuotes", () => {
     const err = await getSwapQuotes(request).catch((e) => e);
     expect(err).toBeInstanceOf(SwapQuotesError);
     expect(err.kind).toBe("unavailable");
-    expect(captureException).toHaveBeenCalledTimes(1);
   });
 
-  it("reports a 5xx to Sentry but not a 400", async () => {
+  it("never reports to Sentry itself; the user-initiated callers do", async () => {
     mockedFetch.mockResolvedValueOnce({ status: 503, body: {} });
     await getSwapQuotes(request).catch(() => undefined);
     mockedFetch.mockResolvedValueOnce({ status: 400, body: {} });
     await getSwapQuotes(request).catch(() => undefined);
+    mockedFetch.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    await getSwapQuotes(request).catch(() => undefined);
 
-    expect(captureException).toHaveBeenCalledTimes(1);
+    expect(captureException).not.toHaveBeenCalled();
   });
 
   it("rejects a 200 without a routes list as swaps unavailable", async () => {

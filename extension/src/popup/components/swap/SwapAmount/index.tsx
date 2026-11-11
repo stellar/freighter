@@ -74,7 +74,6 @@ import { AmountCard } from "popup/components/amount/AmountCard";
 import { PercentageButtons } from "popup/components/amount/PercentageButtons";
 import { shouldShowXlmReservePreflight } from "popup/helpers/xlmReserve";
 import { getSwapQuote } from "popup/helpers/swapQuote";
-import { SwapQuotesError } from "@shared/api/helpers/getSwapQuotes";
 import { XlmReserveSheet } from "popup/components/swap/XlmReserveSheet";
 import { useSwapLiveQuote } from "./hooks/useSwapLiveQuote";
 import { EditSlippage } from "./EditSlippage";
@@ -512,12 +511,9 @@ export const SwapAmount = ({
       }
     } catch (e) {
       // No path / network error — leave the amount as-is for manual entry.
-      // getSwapQuotes already reported its own failures.
-      if (!(e instanceof SwapQuotesError)) {
-        captureException(
-          `Swap-for-reserve prefill failed - ${JSON.stringify(e)}`,
-        );
-      }
+      captureException(
+        `Swap-for-reserve prefill failed - ${e instanceof Error ? e.message : JSON.stringify(e)}`,
+      );
     }
   };
 

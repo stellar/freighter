@@ -1,6 +1,7 @@
 import React from "react";
 import { render, act, screen, within, fireEvent } from "@testing-library/react";
 import BigNumber from "bignumber.js";
+import { captureException } from "@sentry/browser";
 
 import { RequestState } from "constants/request";
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
@@ -17,6 +18,11 @@ import * as UseSwapLiveQuote from "popup/components/swap/SwapAmount/hooks/useSwa
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
 import * as FetchBackendV2 from "@shared/api/helpers/fetchBackendV2";
 import * as HorizonGetBestPath from "popup/helpers/horizonGetBestPath";
+
+jest.mock("@sentry/browser", () => ({
+  ...jest.requireActual("@sentry/browser"),
+  captureException: jest.fn(),
+}));
 
 const nativeBalance = {
   token: { type: "native", code: "XLM" },
@@ -132,6 +138,7 @@ describe("SwapAmount live receive-amount quote", () => {
     jest.runOnlyPendingTimers();
     jest.useRealTimers();
     jest.restoreAllMocks();
+    jest.clearAllMocks();
   });
 
   const settle = () =>
@@ -224,6 +231,7 @@ describe("SwapAmount live receive-amount quote", () => {
 
     expect(fetchBackendV2).toHaveBeenCalled();
     expect(cta()).toHaveTextContent("No quote available");
+    expect(captureException).not.toHaveBeenCalled();
   });
 
   it.each([502, 503])(
@@ -236,6 +244,9 @@ describe("SwapAmount live receive-amount quote", () => {
 
       expect(cta()).toHaveTextContent("Swaps are temporarily unavailable");
       expect(cta()).toBeDisabled();
+      // One event per debounced keystroke would flood Sentry during an
+      // outage; the review path reports when the user acts.
+      expect(captureException).not.toHaveBeenCalled();
     },
   );
 
@@ -246,6 +257,7 @@ describe("SwapAmount live receive-amount quote", () => {
     await settle();
 
     expect(cta()).toHaveTextContent("Swaps are temporarily unavailable");
+    expect(captureException).not.toHaveBeenCalled();
   });
 
   it("shows swaps as temporarily unavailable when classic errored", async () => {
@@ -263,6 +275,7 @@ describe("SwapAmount live receive-amount quote", () => {
     await settle();
 
     expect(cta()).toHaveTextContent("Swaps are temporarily unavailable");
+    expect(captureException).not.toHaveBeenCalled();
   });
 
   it("drops a quote that lands after the screen unmounts", async () => {

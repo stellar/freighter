@@ -1,5 +1,3 @@
-import { captureException } from "@sentry/browser";
-
 import { SwapQuoteMode, SwapQuotesResponse } from "../types/backend-api";
 import { fetchBackendV2 } from "./fetchBackendV2";
 import { redactErrorBody } from "./redactErrorBody";
@@ -41,7 +39,6 @@ export const getSwapQuotes = async ({
     }));
   } catch (e) {
     const message = `Failed to reach swap quotes - ${e instanceof Error ? e.message : String(e)}`;
-    captureException(message);
     throw new SwapQuotesError("unavailable", message);
   }
 
@@ -50,11 +47,12 @@ export const getSwapQuotes = async ({
     return data;
   }
 
+  // Not reported to Sentry here: the live quote re-fires per keystroke, so
+  // the user-initiated callers (review, reserve prefill) report instead.
   const message = `Failed to fetch swap quotes - ${status}: ${redactErrorBody(body)}`;
   // A 400 is the input (e.g. an unfunded account), not an outage.
   if (status === 400) {
     throw new SwapQuotesError("badRequest", message);
   }
-  captureException(message);
   throw new SwapQuotesError("unavailable", message);
 };

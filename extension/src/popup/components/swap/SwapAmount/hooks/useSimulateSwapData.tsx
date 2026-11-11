@@ -1,6 +1,7 @@
 import { useReducer, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
+import { captureException } from "@sentry/browser";
 import {
   Asset,
   BASE_FEE,
@@ -304,6 +305,11 @@ function useSimulateTxData({
           result = await getSwapQuote(quoteParams);
         } catch (e) {
           if (e instanceof SwapQuotesError) {
+            // Reported here, not in the quote helpers, so an outage costs one
+            // event per Review press rather than one per keystroke. A 400 is
+            // included: the extension built the request, so it is a client
+            // bug, not user input.
+            captureException(e.message);
             throw new Error(
               e.kind === "unavailable"
                 ? ERROR_TO_DISPLAY.SWAPS_UNAVAILABLE

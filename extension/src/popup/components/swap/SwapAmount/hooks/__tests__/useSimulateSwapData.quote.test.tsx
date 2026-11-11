@@ -1,6 +1,7 @@
 import React from "react";
 import { act, renderHook } from "@testing-library/react";
 import { Asset, TransactionBuilder } from "stellar-sdk";
+import { captureException } from "@sentry/browser";
 
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import * as FetchBackendV2 from "@shared/api/helpers/fetchBackendV2";
@@ -11,6 +12,10 @@ import * as HorizonGetBestPath from "popup/helpers/horizonGetBestPath";
 
 import { useSimulateTxData } from "../useSimulateSwapData";
 
+jest.mock("@sentry/browser", () => ({
+  ...jest.requireActual("@sentry/browser"),
+  captureException: jest.fn(),
+}));
 jest.mock("@shared/api/helpers/stellarSdkServer", () => ({
   stellarSdkServer: () => ({
     loadAccount: async (pk: string) => {
@@ -121,7 +126,10 @@ describe("useSimulateTxData quote when no live quote exists", () => {
       .spyOn(HorizonGetBestPath, "horizonGetBestPath")
       .mockRejectedValue(new Error("Horizon must not be called"));
   });
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => {
+    jest.restoreAllMocks();
+    jest.clearAllMocks();
+  });
 
   it("builds the path payment from the backend's classic route", async () => {
     fetchBackendV2.mockResolvedValue({ status: 200, body: { data: quotes } });
@@ -163,6 +171,7 @@ describe("useSimulateTxData quote when no live quote exists", () => {
     expect(result.current.state.error).toBe(
       "Swaps are temporarily unavailable",
     );
+    expect(captureException).toHaveBeenCalledTimes(1);
   });
 
   it("shows the live CTA's no-quote message when the re-quote is a 400", async () => {
@@ -177,6 +186,8 @@ describe("useSimulateTxData quote when no live quote exists", () => {
     });
 
     expect(result.current.state.error).toBe("No quote available");
+    // The extension built this request, so a 400 is a client bug to see.
+    expect(captureException).toHaveBeenCalledTimes(1);
   });
 
   it("reports no path when the response has no classic route", async () => {
