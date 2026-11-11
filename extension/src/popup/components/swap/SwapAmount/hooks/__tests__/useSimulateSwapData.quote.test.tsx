@@ -595,6 +595,34 @@ describe("useSimulateTxData quote when no live quote exists", () => {
     },
   );
 
+  it("reports a 400 from the build, which only our own request can cause", async () => {
+    (captureException as jest.Mock).mockClear();
+    fetchBackendV2.mockImplementation(answer(quotes, { status: 400 }));
+    const { result } = renderSimulate();
+
+    await act(async () => {
+      await result.current.fetchData({ amount: "10" });
+    });
+
+    expect(result.current.state.state).toBe("ERROR");
+    expect(captureException).toHaveBeenCalledTimes(1);
+    expect(String((captureException as jest.Mock).mock.calls[0][0])).toMatch(
+      /swap tx - 400/,
+    );
+  });
+
+  it("does not report a 409 quote_moved from the build", async () => {
+    (captureException as jest.Mock).mockClear();
+    fetchBackendV2.mockImplementation(answer(quotes, { status: 409 }));
+    const { result } = renderSimulate();
+
+    await act(async () => {
+      await result.current.fetchData({ amount: "10" });
+    });
+
+    expect(captureException).not.toHaveBeenCalled();
+  });
+
   it("reports swaps unavailable when the backend can't quote", async () => {
     fetchBackendV2.mockResolvedValue({ status: 503, body: {} });
     const { result } = renderSimulate();

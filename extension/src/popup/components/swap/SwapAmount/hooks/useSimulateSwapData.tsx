@@ -306,6 +306,11 @@ const buildFromBackend = async ({
       onQuoteMoved();
       throw new Error(ERROR_TO_DISPLAY.QUOTE_EXPIRED);
     }
+    if (e.kind === "badRequest") {
+      // The body is built from the extension's own state, so a 400 is a
+      // client bug worth seeing (the quotes path reports its 400s too).
+      captureException(e.message);
+    }
     throw new Error(
       e.kind === "unavailable"
         ? ERROR_TO_DISPLAY.SWAPS_UNAVAILABLE
