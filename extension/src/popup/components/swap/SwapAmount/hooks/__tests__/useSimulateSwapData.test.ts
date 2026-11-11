@@ -147,8 +147,8 @@ describe("getBuiltTx", () => {
 
 describe("getSwapErrorMessage", () => {
   it("returns a known error message", () => {
-    expect(getSwapErrorMessage(new Error(ERROR_TO_DISPLAY.NO_PATH_FOUND))).toBe(
-      ERROR_TO_DISPLAY.NO_PATH_FOUND,
+    expect(getSwapErrorMessage(new Error(ERROR_TO_DISPLAY.NO_QUOTE))).toBe(
+      ERROR_TO_DISPLAY.NO_QUOTE,
     );
   });
 
@@ -160,8 +160,8 @@ describe("getSwapErrorMessage", () => {
   });
 
   it("returns known error message for string errors", () => {
-    const result = getSwapErrorMessage(ERROR_TO_DISPLAY.NO_PATH_FOUND);
-    expect(result).toBe(ERROR_TO_DISPLAY.NO_PATH_FOUND);
+    const result = getSwapErrorMessage(ERROR_TO_DISPLAY.NO_QUOTE);
+    expect(result).toBe(ERROR_TO_DISPLAY.NO_QUOTE);
   });
 
   it("returns unknown error for unrecognized string", () => {

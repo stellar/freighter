@@ -636,7 +636,7 @@ describe("useSimulateTxData quote when no live quote exists", () => {
     expect(captureException).toHaveBeenCalledTimes(1);
   });
 
-  it("reports no path when the response has no route", async () => {
+  it("shows the same no-quote message as a 400 when the response has no route", async () => {
     fetchBackendV2.mockResolvedValue({
       status: 200,
       body: { data: { routes: [], unavailable: [] } },
@@ -648,7 +648,7 @@ describe("useSimulateTxData quote when no live quote exists", () => {
     });
 
     expect(fetchBackendV2).toHaveBeenCalled();
-    expect(result.current.state.error).toBe("No path found for swap.");
+    expect(result.current.state.error).toBe("No quote available");
   });
 
   describe("Soroban contract tokens", () => {

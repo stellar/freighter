@@ -131,7 +131,6 @@ const BODY =
 
 const mockLiveQuote = (state: Record<string, boolean>) =>
   jest.spyOn(UseSwapLiveQuote, "useSwapLiveQuote").mockReturnValue({
-    isSwapUnavailable: false,
     cancelLiveQuote: jest.fn(),
     ...state,
   } as any);
@@ -160,23 +159,14 @@ describe("SwapAmount quote unavailable line", () => {
 
   const noQuote = { destinationAmount: "0", swapQuotes: null };
 
-  it("shows for the no-quote CTA state", () => {
+  it("shows for the no-quote CTA state, with Review swap disabled", () => {
     renderSwapAmount(noQuote);
-    expect(screen.getByTestId("swap-amount-btn-continue")).toHaveTextContent(
-      "No quote available",
-    );
+    const cta = screen.getByTestId("swap-amount-btn-continue");
+    expect(cta).toHaveTextContent("Review swap");
+    expect(cta).toBeDisabled();
     expect(screen.getByTestId("swap-quote-unavailable")).toHaveTextContent(
       "Quote unavailable",
     );
-  });
-
-  it("shows for the swaps-unavailable CTA state", () => {
-    mockLiveQuote({ isSwapUnavailable: true });
-    renderSwapAmount(noQuote);
-    expect(screen.getByTestId("swap-amount-btn-continue")).toHaveTextContent(
-      "Swaps are temporarily unavailable",
-    );
-    expect(screen.getByTestId("swap-quote-unavailable")).toBeInTheDocument();
   });
 
   it("is hidden while a quote is loading", () => {

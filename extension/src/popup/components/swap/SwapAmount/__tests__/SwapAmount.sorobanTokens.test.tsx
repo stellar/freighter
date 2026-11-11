@@ -217,7 +217,6 @@ describe("getSwapDerivedData with a contract token sold", () => {
       fee: "0.00001",
       networkDetails: MAINNET_NETWORK_DETAILS,
       inputType: "crypto",
-      isSwapUnavailable: false,
       isQuoteForInputs: true,
       destRequiresTrustline: true,
     });

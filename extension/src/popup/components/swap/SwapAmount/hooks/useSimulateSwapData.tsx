@@ -55,7 +55,6 @@ import { AppDispatch } from "popup/App";
 const scanUrlstub = "internal";
 
 export const ERROR_TO_DISPLAY = {
-  NO_PATH_FOUND: "No path found for swap.",
   SWAPS_UNAVAILABLE: "Swaps are temporarily unavailable",
   NO_QUOTE: "No quote available",
   TOKEN_DETAILS_UNAVAILABLE:
@@ -272,7 +271,7 @@ const buildFromBackend = async ({
 }) => {
   const route = quotes ? pickSwapRoute(quotes) : undefined;
   if (!route) {
-    throw new Error(ERROR_TO_DISPLAY.NO_PATH_FOUND);
+    throw new Error(ERROR_TO_DISPLAY.NO_QUOTE);
   }
   const minOut = getMinOut(allowedSlippage, route.toAmount, destDecimals);
   try {
@@ -441,7 +440,7 @@ function useSimulateTxData({
         }
 
         if (!result.route) {
-          throw new Error(ERROR_TO_DISPLAY.NO_PATH_FOUND);
+          throw new Error(ERROR_TO_DISPLAY.NO_QUOTE);
         }
 
         destinationAmount = result.route.destinationAmount;

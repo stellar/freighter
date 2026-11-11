@@ -51,7 +51,6 @@ interface GetSwapDerivedDataParams {
   blockaidOverrideState?: string | null;
   networkDetails: NetworkDetails;
   inputType: InputType;
-  isSwapUnavailable: boolean;
   /** The stored quote's key matches the current inputs. */
   isQuoteForInputs: boolean;
   // Balances-derived "this swap adds a trustline", checked against the
@@ -79,7 +78,6 @@ export const getSwapDerivedData = ({
   blockaidOverrideState,
   networkDetails,
   inputType,
-  isSwapUnavailable,
   isQuoteForInputs,
   destRequiresTrustline,
 }: GetSwapDerivedDataParams) => {
@@ -221,7 +219,6 @@ export const getSwapDerivedData = ({
     isAmountTooHigh,
     insufficientXlmForFees,
     hasNoSwapPath,
-    isSwapUnavailable,
     isQuotePending,
   });
 

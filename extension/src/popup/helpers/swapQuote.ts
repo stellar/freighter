@@ -126,7 +126,7 @@ export const getHeldTokenDecimals = (
 };
 
 const fromBackendAsset = (asset: string) => {
-  const [code, issuer] = asset.split(":");
+  const { code, issuer } = splitCanonical(asset);
   return getCanonicalFromAsset(code, issuer);
 };
 
