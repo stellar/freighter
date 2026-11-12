@@ -142,6 +142,20 @@ describe("SwapDetailsSheet", () => {
     expect(screen.queryByTestId("SwapRoute")).toBeNull();
   });
 
+  it("keeps each path open until its own row is tapped again", async () => {
+    await renderSheet(lifiRoute);
+    fireEvent.click(screen.getByTestId("SwapDetails__route"));
+
+    fireEvent.click(screen.getByTestId("SwapRoute__path-0"));
+    fireEvent.click(screen.getByTestId("SwapRoute__path-1"));
+    expect(screen.getByTestId("SwapRoute__hops-0")).toBeInTheDocument();
+    expect(screen.getByTestId("SwapRoute__hops-1")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("SwapRoute__path-0"));
+    expect(screen.queryByTestId("SwapRoute__hops-0")).toBeNull();
+    expect(screen.getByTestId("SwapRoute__hops-1")).toBeInTheDocument();
+  });
+
   it("closes from the Route pane", async () => {
     const onClose = jest.fn();
     await renderSheet(lifiRoute, onClose);

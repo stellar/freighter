@@ -83,7 +83,16 @@ const VenueStack = ({ venues }: { venues: RouteVenue[] }) => {
 
 const RoutePane = ({ view }: { view: RouteView }) => {
   const { t } = useTranslation();
-  const [expanded, setExpanded] = useState<number | null>(null);
+  // Paths open independently, as on mobile, so two can be compared.
+  const [expanded, setExpanded] = useState<Set<number>>(() => new Set());
+  const togglePath = (i: number) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(i)) {
+        next.add(i);
+      }
+      return next;
+    });
   const pathCount = view.paths.length;
 
   return (
@@ -105,7 +114,7 @@ const RoutePane = ({ view }: { view: RouteView }) => {
           </div>
         </div>
         {view.paths.map((path, i) => {
-          const isOpen = expanded === i;
+          const isOpen = expanded.has(i);
           return (
             <div className="SwapDetails__path" key={i}>
               <button
@@ -113,7 +122,7 @@ const RoutePane = ({ view }: { view: RouteView }) => {
                 className="SwapDetails__path-row"
                 data-testid={`SwapRoute__path-${i}`}
                 aria-expanded={isOpen}
-                onClick={() => setExpanded(isOpen ? null : i)}
+                onClick={() => togglePath(i)}
               >
                 {path.share ? (
                   <span className="SwapDetails__share">{path.share}</span>
