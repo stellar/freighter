@@ -1,16 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { Formik, Form } from "formik";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { Formik } from "formik";
 import { object as YupObject } from "yup";
 import {
-  Card,
-  Input,
-  Icon,
   Button,
-  Text,
-  Toggle,
+  Card,
+  Heading,
+  Icon,
   Notification,
+  Text,
+  Textarea,
 } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -21,148 +21,116 @@ import {
   initialValues,
   FormValues,
 } from "popup/components/accountCreator/PasswordForm";
-import {
-  Onboarding,
-  OnboardingError,
-  OnboardingModal,
-} from "popup/components/Onboarding";
+import { Onboarding, OnboardingError } from "popup/components/Onboarding";
+import { BackButton } from "popup/basics/buttons/BackButton";
 import { View } from "popup/basics/layout/View";
 
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
+import { parseImportSecret } from "popup/helpers/parseImportSecret";
 import {
   password as passwordValidator,
   confirmPassword as confirmPasswordValidator,
   termsOfUse as termsofUseValidator,
 } from "popup/helpers/validators";
-import { authErrorSelector, recoverAccount } from "popup/ducks/accountServices";
+import {
+  clearApiError,
+  recoverAccount,
+  recoverAccountFromSecretKey,
+} from "popup/ducks/accountServices";
 
 import "./styles.scss";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
 import { useRecoverAccountData } from "./hooks/useGetRecoverAccountData";
+import { ImportStatus } from "./ImportStatus";
 
-interface PhraseInputProps {
-  phraseInput: string;
-  index: number;
-  handleMnemonicInputChange: (value: string, index: number) => void;
-  isTextShowing: boolean;
-  isLongPhrase: boolean;
-  handlePaste: (e: React.ClipboardEvent<HTMLInputElement>) => void;
-  pastedValue?: string;
-}
+// How long "Your wallet is ready!" stays up before the success route.
+export const READY_SCREEN_MS = 1500;
 
-const PhraseInput = ({
-  phraseInput,
-  index,
-  handleMnemonicInputChange,
-  isTextShowing,
-  isLongPhrase,
-  handlePaste,
-  pastedValue = "",
-}: PhraseInputProps) => {
-  const [inputValue, setInputValue] = useState(pastedValue);
+// Background errors that mean the value itself was rejected.
+const INVALID_INPUT_ERRORS = ["Invalid mnemonic phrase", "Invalid secret key"];
 
-  useEffect(() => {
-    setInputValue("");
-  }, [isLongPhrase]);
+const RecoverAccountSchema = YupObject().shape({
+  password: passwordValidator,
+  confirmPassword: confirmPasswordValidator,
+  termsOfUse: termsofUseValidator,
+});
 
-  useEffect(() => {
-    setInputValue(pastedValue);
-  }, [pastedValue]);
+/*
+  Onboarding import: one text box that takes a recovery phrase or a secret
+  key, then a password, then "importing" and "ready" before the success route.
 
-  return (
-    <div key={phraseInput} className="RecoverAccount__phrase-input">
-      <div className="RecoverAccount__phrase-input__number">
-        {(index + 1).toString().padStart(2, "0")}
-      </div>
-      <Input
-        fieldSize="md"
-        autoComplete="off"
-        id={phraseInput}
-        name={phraseInput}
-        onChange={(e) => {
-          handleMnemonicInputChange(e.target.value, index);
-          setInputValue(e.target.value);
-        }}
-        onPaste={handlePaste}
-        type={isTextShowing ? "text" : "password"}
-        value={inputValue}
-      />
-    </div>
-  );
-};
+  input / password: the password step is its own history entry, so the
+  password form's Back button (navigate(-1)) returns to the text box with the
+  value still in component state. Only Next opens that step; the history
+  state alone does not.
+  importing / ready: full-screen status while the background stores the
+  account.
 
-const SHORT_PHRASE = 12;
-const LONG_PHRASE = 24;
-
-const buildMnemonicPhrase = (mnemonicPhraseArr: string[]) =>
-  mnemonicPhraseArr.join(" ").trim();
+  The value is dropped from state once the import succeeds.
+*/
+type Step = "input" | "password" | "importing" | "ready";
+type ImportPhase = "form" | "importing" | "ready";
 
 export const RecoverAccount = () => {
   const { t } = useTranslation();
-
-  const authError = useSelector(authErrorSelector);
   const navigate = useNavigate();
-  const RecoverAccountSchema = YupObject().shape({
-    password: passwordValidator,
-    confirmPassword: confirmPasswordValidator,
-    termsOfUse: termsofUseValidator,
-  });
-
+  const location = useLocation();
   const dispatch: AppDispatch = useDispatch();
-  const [isLongPhrase, setIsLongPhrase] = useState(false);
-  const [isTextShowing, setIsTextShowing] = useState(false);
-  const [phraseInputs, setPhraseInputs] = useState([] as string[]);
-  const [mnemonicPhraseArr, setMnemonicPhraseArr] = useState([] as string[]);
-  const [password, setPassword] = useState("");
-  const [pastedValues, setPastedValues] = useState<string[]>([]);
-  const [passwordFormValues, setPasswordFormValues] =
-    useState<FormValues>(initialValues);
+
+  const [secretInput, setSecretInput] = useState("");
+  const [inputError, setInputError] = useState("");
+  const [isInputVisible, setIsInputVisible] = useState(false);
+  const [phase, setPhase] = useState<ImportPhase>("form");
+  // Enter in the password form, or a second click before it unmounts,
+  // would otherwise start a second import.
+  const isImporting = useRef(false);
+  const readyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
   const { state, fetchData } = useRecoverAccountData();
 
-  const handleConfirm = (values: FormValues) => {
-    setPassword(values.password);
-    setPasswordFormValues(values);
-  };
+  // Set by Next once the value parses; reset whenever it is edited. History
+  // state alone (it survives a reload under HashRouter) never opens the
+  // password step.
+  const [hasConfirmedInput, setHasConfirmedInput] = useState(false);
+  const isPasswordEntry =
+    (location.state as { step?: string } | null)?.step === "password";
+  // Read by the failure path, which can run after browser Back has already
+  // left the password entry.
+  const isPasswordEntryRef = useRef(isPasswordEntry);
+  isPasswordEntryRef.current = isPasswordEntry;
 
-  const publicKeyRef = useRef(
-    state.state === RequestState.SUCCESS && state.data.account.publicKey,
-  );
-
-  useEffect(() => {
-    if (
-      state.state === RequestState.SUCCESS &&
-      state.data.account.publicKey &&
-      state.data.account.publicKey !== publicKeyRef.current
-    ) {
-      navigateTo(ROUTES.recoverAccountSuccess, navigate);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigate, publicKeyRef, state.state]);
+  let step: Step =
+    isPasswordEntry && hasConfirmedInput && secretInput ? "password" : "input";
+  if (phase !== "form") {
+    step = phase;
+  }
 
   useEffect(() => {
-    const phraseInputsArr: string[] = [];
-    const PHRASE_LENGTH = isLongPhrase ? LONG_PHRASE : SHORT_PHRASE;
-
-    for (let i = 1; i <= PHRASE_LENGTH; i++) {
-      phraseInputsArr.push(`MnemonicPhrase-${i}`);
+    // A reload keeps { step: "password" } on the entry; drop it so the
+    // input step owns this entry again.
+    if (isPasswordEntry) {
+      navigate(location.pathname, { replace: true, state: null });
     }
-    setPhraseInputs(phraseInputsArr);
-
-    if (PHRASE_LENGTH === SHORT_PHRASE) {
-      // when going back to 12 words, clear all the fields
-      setMnemonicPhraseArr([]);
-    }
-  }, [isLongPhrase]);
-
-  useEffect(() => {
-    const getData = async () => {
-      await fetchData();
+    fetchData().catch(() => {
+      // The hook keeps the error state; it's rendered below.
+    });
+    return () => {
+      clearTimeout(readyTimer.current);
+      dispatch(clearApiError());
     };
-    getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  if (step === "importing") {
+    return <ImportStatus text={t("Importing your wallet…")} />;
+  }
+
+  if (step === "ready") {
+    return <ImportStatus text={t("Your wallet is ready!")} />;
+  }
 
   if (
     state.state === RequestState.IDLE ||
@@ -193,155 +161,202 @@ export const RecoverAccount = () => {
   const isOverwritingAccount =
     applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
 
-  const handleMnemonicInputChange = (value: string, i: number) => {
-    const arr = [...mnemonicPhraseArr];
-    arr[i] = value;
-
-    setMnemonicPhraseArr(arr);
+  // Background and thunk failures arrive as English strings; anything
+  // unrecognized (or empty) falls back to the generic import error.
+  const formatImportError = (error: string) => {
+    if (INVALID_INPUT_ERRORS.includes(error)) {
+      return t("Enter a valid recovery phrase or secret key");
+    }
+    if (error === "The phrase you entered is incorrect") {
+      return t("The phrase you entered is incorrect");
+    }
+    return t("Error importing account");
   };
 
-  const handleSubmit = async () => {
-    await dispatch(
-      recoverAccount({
-        password,
-        mnemonicPhrase: buildMnemonicPhrase(mnemonicPhraseArr),
-        isOverwritingAccount,
-      }),
-    );
-    await fetchData();
-  };
-
-  const handlePaste = async (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const pastedData = e.clipboardData.getData("text/plain");
-    const pastedWords = pastedData.split(" ");
-
-    if (pastedWords.length) {
-      e.preventDefault();
-      setPastedValues(pastedWords);
-      setMnemonicPhraseArr(pastedWords);
+  // There's no Paste button: extension pages can't read the clipboard
+  // without the clipboardRead permission. A keyboard paste lands in the
+  // textarea natively; afterwards the clipboard is cleared.
+  const handleKeyboardPaste = async () => {
+    try {
       await navigator.clipboard.writeText("");
+    } catch (e) {
+      // Nothing to do if the clipboard can't be written.
     }
   };
 
-  return (
-    <React.Fragment>
+  const handleNext = () => {
+    if (parseImportSecret(secretInput).type === "invalid") {
+      setInputError(t("Enter a valid recovery phrase or secret key"));
+      return;
+    }
+    setInputError("");
+    setHasConfirmedInput(true);
+    // PasswordForm shows the stored auth error on its fields.
+    dispatch(clearApiError());
+    navigate(location.pathname, { state: { step: "password" } });
+  };
+
+  // Back to the text box with an error. Only pop history when the current
+  // entry is the password one this view pushed; otherwise popping would
+  // leave the import route.
+  const returnToInput = (error: string) => {
+    setInputError(error);
+    setHasConfirmedInput(false);
+    setPhase("form");
+    if (isPasswordEntryRef.current) {
+      navigate(-1);
+    }
+  };
+
+  const handleImport = async (values: FormValues) => {
+    if (isImporting.current) {
+      return;
+    }
+    const parsed = parseImportSecret(secretInput);
+    if (parsed.type === "invalid") {
+      returnToInput(t("Enter a valid recovery phrase or secret key"));
+      return;
+    }
+    isImporting.current = true;
+    setPhase("importing");
+
+    try {
+      const res =
+        parsed.type === "phrase"
+          ? await dispatch(
+              recoverAccount({
+                password: values.password,
+                mnemonicPhrase: parsed.mnemonic,
+                isOverwritingAccount,
+              }),
+            )
+          : await dispatch(
+              recoverAccountFromSecretKey({
+                password: values.password,
+                secretKey: parsed.secretKey,
+                isOverwritingAccount,
+              }),
+            );
+
+      if (
+        recoverAccount.fulfilled.match(res) ||
+        recoverAccountFromSecretKey.fulfilled.match(res)
+      ) {
+        setSecretInput("");
+        try {
+          await fetchData();
+        } catch (e) {
+          // The account is stored; the next screen loads its own data.
+        }
+        setPhase("ready");
+        readyTimer.current = setTimeout(() => {
+          navigateTo(ROUTES.recoverAccountSuccess, navigate);
+        }, READY_SCREEN_MS);
+        return;
+      }
+
+      returnToInput(formatImportError(res.payload?.errorMessage || ""));
+    } finally {
+      isImporting.current = false;
+    }
+  };
+
+  if (step === "password") {
+    return (
       <View.Content alignment="center" hasNoTopPadding hasNoBottomPadding>
         <Formik
-          initialValues={passwordFormValues}
+          initialValues={initialValues}
           validationSchema={RecoverAccountSchema}
-          onSubmit={handleSubmit}
+          onSubmit={handleImport}
         >
           {({ dirty, touched, isSubmitting, isValid, errors, values }) => (
-            <>
-              {password ? (
-                <div className="RecoverAccount">
-                  <Form>
-                    <Onboarding layout="half">
-                      <OnboardingModal
-                        data-testid="confirm-mnemonic-phrase"
-                        headerText={t("Import wallet from recovery phrase")}
-                        bodyText={
-                          <>
-                            <Text as="p" size="md">
-                              {t(
-                                "Enter your mnemonic phrase to restore your wallet.",
-                              )}
-                              <br />
-                              {t(
-                                "You can also paste the phrase in the first box.",
-                              )}
-                            </Text>
-                          </>
-                        }
-                      >
-                        <Card variant="primary">
-                          <div className="RecoverAccount__mnemonic-wrapper">
-                            <div className="RecoverAccount__mnemonic-input">
-                              {phraseInputs.map((phraseInput, i) => (
-                                <PhraseInput
-                                  key={phraseInput}
-                                  phraseInput={phraseInput}
-                                  handleMnemonicInputChange={
-                                    handleMnemonicInputChange
-                                  }
-                                  isTextShowing={isTextShowing}
-                                  isLongPhrase={isLongPhrase}
-                                  index={i}
-                                  handlePaste={handlePaste}
-                                  pastedValue={pastedValues[i]}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        </Card>
-                        <div className="RecoverAccount__mnemonic-footer">
-                          <div className="RecoverAccount__mnemonic-footer__row">
-                            <div className="RecoverAccount__phrase-toggle">
-                              <div>{SHORT_PHRASE} word</div>
-                              <Toggle
-                                fieldSize="md"
-                                checked={isLongPhrase}
-                                id="RecoverAccount__toggle"
-                                onChange={() => setIsLongPhrase(!isLongPhrase)}
-                              />
-                              <div>{LONG_PHRASE} word</div>
-                            </div>
-                            <div className="RecoverAccount__mnemonic__text-toggle">
-                              <Button
-                                variant="tertiary"
-                                onClick={() => setIsTextShowing(!isTextShowing)}
-                                size="sm"
-                                type="button"
-                              >
-                                <span> {isTextShowing ? "Hide" : "Show"}</span>
-                                {isTextShowing ? <Icon.EyeOff /> : <Icon.Eye />}
-                              </Button>
-                            </div>
-                          </div>
-
-                          <div className="RecoverAccount__import">
-                            <Button
-                              variant="secondary"
-                              size="lg"
-                              type="submit"
-                              isFullWidth
-                              disabled={
-                                !(
-                                  isValid &&
-                                  buildMnemonicPhrase(mnemonicPhraseArr).length
-                                )
-                              }
-                              isLoading={isSubmitting}
-                            >
-                              {t("Import")}
-                            </Button>
-                          </div>
-                        </div>
-                      </OnboardingModal>
-                      <OnboardingError
-                        errorString={
-                          authError ? t("Invalid mnemonic phrase") : ""
-                        }
-                      />
-                    </Onboarding>
-                  </Form>
-                </div>
-              ) : (
-                <PasswordForm
-                  isValid={isValid}
-                  dirty={dirty}
-                  isSubmitting={isSubmitting}
-                  errors={errors}
-                  touched={touched}
-                  values={values}
-                  handleSubmit={handleConfirm}
-                  isShowingOverwriteWarning={isOverwritingAccount}
-                />
-              )}
-            </>
+            <PasswordForm
+              isValid={isValid}
+              dirty={dirty}
+              isSubmitting={isSubmitting}
+              errors={errors}
+              touched={touched}
+              values={values}
+              isShowingOverwriteWarning={isOverwritingAccount}
+            />
           )}
         </Formik>
       </View.Content>
-    </React.Fragment>
+    );
+  }
+
+  return (
+    <View.Content alignment="center" hasNoTopPadding hasNoBottomPadding>
+      <div className="RecoverAccount">
+        <Onboarding layout="half">
+          <Card variant="secondary">
+            <div className="RecoverAccount__body">
+              <BackButton
+                customBackAction={() => {
+                  setSecretInput("");
+                  navigateTo(ROUTES.welcome, navigate);
+                }}
+              />
+              <div className="RecoverAccount__titles">
+                <Heading as="h2" size="xs" weight="semi-bold">
+                  {t("Import Wallet")}
+                </Heading>
+                <Text as="p" size="md">
+                  {t(
+                    "Import your wallet using a recovery phrase or secret key",
+                  )}
+                </Text>
+              </div>
+              <div className="RecoverAccount__field">
+                <Textarea
+                  fieldSize="md"
+                  id="import-secret"
+                  data-testid="import-secret-input"
+                  className={
+                    isInputVisible ? "" : "RecoverAccount__input--masked"
+                  }
+                  placeholder={t("Enter your recovery phrase or secret key")}
+                  rows={5}
+                  value={secretInput}
+                  isError={Boolean(inputError)}
+                  autoComplete="off"
+                  spellCheck={false}
+                  onChange={(e) => {
+                    setSecretInput(e.target.value);
+                    setInputError("");
+                    setHasConfirmedInput(false);
+                  }}
+                  onPaste={handleKeyboardPaste}
+                />
+                <div className="RecoverAccount__visibility">
+                  <Button
+                    variant="tertiary"
+                    size="sm"
+                    type="button"
+                    data-testid="import-secret-visibility"
+                    aria-label={isInputVisible ? t("Hide") : t("Show")}
+                    aria-pressed={isInputVisible}
+                    onClick={() => setIsInputVisible(!isInputVisible)}
+                    icon={isInputVisible ? <Icon.EyeOff /> : <Icon.Eye />}
+                  />
+                </div>
+              </div>
+              <Button
+                size="lg"
+                variant="secondary"
+                isFullWidth
+                type="button"
+                data-testid="import-secret-next"
+                disabled={secretInput.trim() === ""}
+                onClick={handleNext}
+              >
+                {t("Next")}
+              </Button>
+            </div>
+          </Card>
+          <OnboardingError errorString={inputError} />
+        </Onboarding>
+      </div>
+    </View.Content>
   );
 };

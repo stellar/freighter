@@ -8,6 +8,7 @@ import {
   confirmPassword,
   confirmMnemonicPhrase,
   recoverAccount,
+  recoverAccountFromSecretKey,
 } from "popup/ducks/accountServices";
 import { AppState } from "popup/App";
 
@@ -60,3 +61,20 @@ registerHandler<AppState>(recoverAccount.rejected, (_state, action) => {
     reason_code: scrubStrKeys(errorMessage) ?? errorMessage,
   });
 });
+
+registerHandler<AppState>(recoverAccountFromSecretKey.fulfilled, () => {
+  emitMetric(METRIC_NAMES.accountRecoveryCompleted, {
+    recovery_method: "secret_key",
+  });
+});
+registerHandler<AppState>(
+  recoverAccountFromSecretKey.rejected,
+  (_state, action) => {
+    const { errorMessage } = action.payload;
+
+    emitMetric(METRIC_NAMES.accountRecoveryFailed, {
+      recovery_method: "secret_key",
+      reason_code: scrubStrKeys(errorMessage) ?? errorMessage,
+    });
+  },
+);

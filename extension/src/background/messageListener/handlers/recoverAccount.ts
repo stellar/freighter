@@ -4,39 +4,21 @@ import StellarHDWallet from "stellar-hd-wallet";
 import { RecoverAccountMessage } from "@shared/api/types/message-request";
 import { removePreviousAccount } from "../helpers/remove-previous-account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import {
-  allAccountsSelector,
-  buildHasPrivateKeySelector,
-  publicKeySelector,
-  reset,
-} from "background/ducks/session";
-import { getKeyIdList, getActiveAccountId } from "background/helpers/account";
-import {
-  ACCOUNT_NAME_LIST_ID,
-  APPLICATION_ID,
-  REBRAND_ANNOUNCEMENT_STATUS_ID,
-  KEY_ID_LIST,
-} from "constants/localStorageTypes";
-import { REBRAND_ANNOUNCEMENT_STATUS } from "constants/rebrandAnnouncement";
-import { clearSession, SessionTimer } from "background/helpers/session";
+import { SessionTimer } from "background/helpers/session";
 import { storeAccount } from "../helpers/store-account";
 import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 import { captureException } from "@sentry/browser";
-import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { discoverFundedIndices } from "../helpers/discover-funded-indices";
-import { activatePublicKey } from "../helpers/activate-public-key";
 import {
   addSecretSource,
-  clearPinnedSourceId,
-  clearSecretSources,
   getPhraseSourceId,
 } from "background/helpers/secret-sources";
 import { SecretSourceType } from "@shared/api/types";
-import { clearDerivationIndices } from "background/helpers/derivation-indices";
-import { clearAccountProvenance } from "background/helpers/account-provenance";
-import { clearPendingAttribution } from "background/helpers/pre-v2-migration";
-import { clearLinkStatus } from "background/helpers/link-status";
-import { linkWalletSources } from "background/helpers/link-sources";
+import {
+  buildRecoveryResponse,
+  clearWalletForRecovery,
+  finishRecovery,
+} from "../helpers/recovery-lifecycle";
 
 const { fromMnemonic } = StellarHDWallet;
 
@@ -58,7 +40,6 @@ export const recoverAccount = async ({
   const { password, recoverMnemonic, isOverwritingAccount } = request;
   let wallet;
   let phraseSourceId = "";
-  let applicationState;
   let error = "";
 
   if (isOverwritingAccount) {
@@ -80,42 +61,7 @@ export const recoverAccount = async ({
       privateKey: wallet.getSecret(0),
     };
 
-    // resets accounts list
-    sessionStore.dispatch(reset());
-
-    const keyIdList = await getKeyIdList({ localStore });
-
-    if (keyIdList.length) {
-      /* Clear any existing account data while maintaining app settings */
-
-      for (let i = 0; i < keyIdList.length; i += 1) {
-        await localStore.remove(`stellarkeys:${keyIdList[i]}`);
-      }
-
-      await localStore.setItem(KEY_ID_LIST, []);
-      await localStore.remove(ACCOUNT_NAME_LIST_ID);
-      await clearSecretSources({ localStore });
-      await clearPinnedSourceId({ localStore });
-    }
-
-    // A recovery always starts the wallet afresh, so every phrase's index
-    // set, every account's provenance, any accounts the pre-V2 migration
-    // left pending and every source's link status go with it, whether or not
-    // the list above had anything in it; the recovered phrase rebuilds its
-    // own below.
-    await clearDerivationIndices({ localStore });
-    await clearAccountProvenance({ localStore });
-    await clearPendingAttribution({ localStore });
-    await clearLinkStatus({ localStore });
-
-    // Recovery is onboarding (also the "forgot password" path), which must
-    // not be followed by the one-time rebrand announcement.
-    await localStore.setItem(
-      REBRAND_ANNOUNCEMENT_STATUS_ID,
-      REBRAND_ANNOUNCEMENT_STATUS.SEEN,
-    );
-
-    await clearSession({ localStore, sessionStore });
+    await clearWalletForRecovery({ localStore, sessionStore });
 
     try {
       await storeAccount({
@@ -138,13 +84,6 @@ export const recoverAccount = async ({
     } catch (e) {
       captureException(`Error recovering account: ${JSON.stringify(e)}`);
     }
-
-    // if we don't have an application state, assign them one
-    applicationState =
-      (await localStore.getItem(APPLICATION_ID)) ||
-      APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
-
-    await localStore.setItem(APPLICATION_ID, applicationState);
 
     // lets check first couple of accounts and pre-load them if funded on mainnet
 
@@ -186,30 +125,13 @@ export const recoverAccount = async ({
     }
 
     // let's make the first public key the active one
-    await activatePublicKey({
+    await finishRecovery({
       publicKey: wallet.getPublicKey(0),
-      sessionStore,
       localStore,
+      sessionStore,
+      sessionTimer,
     });
-
-    // start the timer now that we have active private key
-    await sessionTimer.startSession();
-
-    // Link the recovered phrase and the accounts preloaded above. This runs
-    // on every recover rather than keying off the application-state write,
-    // which a re-import repeats; the stored link status keeps it idempotent.
-    void linkWalletSources({ sessionStore, localStore });
   }
 
-  const currentState = sessionStore.getState();
-  const hasPrivateKeySelector = buildHasPrivateKeySelector(localStore);
-
-  return {
-    allAccounts: allAccountsSelector(currentState),
-    publicKey: publicKeySelector(currentState),
-    activeAccountId: await getActiveAccountId({ localStore }),
-    applicationState: (await localStore.getItem(APPLICATION_ID)) || "",
-    hasPrivateKey: await hasPrivateKeySelector(currentState),
-    error,
-  };
+  return buildRecoveryResponse({ localStore, sessionStore, error });
 };

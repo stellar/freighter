@@ -610,6 +610,43 @@ export const recoverAccount = async ({
   return { allAccounts, publicKey, activeAccountId, hasPrivateKey, error };
 };
 
+export const recoverAccountFromSecretKey = async ({
+  password,
+  secretKey,
+  isOverwritingAccount = false,
+}: {
+  password: string;
+  secretKey: string;
+  isOverwritingAccount: boolean;
+}): Promise<{
+  publicKey: string;
+  activeAccountId: string;
+  allAccounts: Array<Account>;
+  hasPrivateKey: boolean;
+  error: string;
+}> => {
+  let publicKey = "";
+  let activeAccountId = "";
+  let allAccounts = [] as Array<Account>;
+  let hasPrivateKey = false;
+  let error = "";
+
+  try {
+    ({ allAccounts, publicKey, activeAccountId, hasPrivateKey, error } =
+      await sendMessageToBackground({
+        activePublicKey: null,
+        password,
+        secretKey,
+        isOverwritingAccount,
+        type: SERVICE_TYPES.RECOVER_ACCOUNT_FROM_SECRET_KEY,
+      }));
+  } catch (e) {
+    console.error("Failed to recover account from secret key");
+  }
+
+  return { allAccounts, publicKey, activeAccountId, hasPrivateKey, error };
+};
+
 export const confirmPassword = async (
   password: string,
 ): Promise<{
