@@ -44,8 +44,7 @@ describe("SwapRateRow", () => {
     ).toBeInTheDocument();
   });
 
-  // The shared "Rate" key is "Taxa" (fee) in pt; this row is swap-only.
-  it("labels the row with the swap rate key, not the shared Rate", () => {
+  it("labels the row with the swap rate key", () => {
     renderRow({});
     expect(screen.getByText("Swap details rate")).toBeInTheDocument();
   });

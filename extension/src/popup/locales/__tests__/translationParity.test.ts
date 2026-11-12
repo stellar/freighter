@@ -36,8 +36,7 @@ describe("swap i18n parity", () => {
     });
   });
 
-  // The shared "Rate" key reads "Taxa" (fee) in pt, which sat next to the
-  // network fee row in the Details sheet.
+  // "Taxa" would read as a second fee next to the network fee row.
   it("labels the Details sheet's rate as a quote rate, not a fee", () => {
     expect(en).toHaveProperty(["Swap details rate"], "Rate");
     expect(pt).toHaveProperty(["Swap details rate"], "Cotação");
