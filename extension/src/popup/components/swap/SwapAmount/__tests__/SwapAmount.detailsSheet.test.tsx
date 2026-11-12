@@ -300,6 +300,33 @@ describe("SwapAmount details sheet", () => {
       expect(savedAmount()).toBe("98.4141341");
     });
 
+    describe("before the quote for the current amount lands", () => {
+      const lastQuoted = (destAsset: string) => ({
+        // The stored quote is for another amount, so it isn't current.
+        amount: "50",
+        swapQuotes: null,
+        swapQuoteKey: null,
+        swapLastQuotedFee: {
+          key: quoteKey("5", destAsset),
+          resourceFee: "0.0858459",
+        },
+      });
+
+      it("Max holds back the pair's last quoted resource fee", () => {
+        withBalances([xlm("100")]);
+        renderSwapAmount(lastQuoted(USDC));
+        clickMax();
+        expect(savedAmount()).toBe("98.4141341");
+      });
+
+      it("Max ignores a resource fee quoted for another pair", () => {
+        withBalances([xlm("100")]);
+        renderSwapAmount(lastQuoted(AQUA));
+        clickMax();
+        expect(savedAmount()).toBe("98.49998");
+      });
+    });
+
     it("Max on an XLM source holds back the inclusion fee alone on a classic route", () => {
       withBalances([xlm("100")]);
       renderSwapAmount({ swapQuotes: quotes({ source: "classic" }) });

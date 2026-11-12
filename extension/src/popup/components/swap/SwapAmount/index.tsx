@@ -86,6 +86,7 @@ import {
   getHeldTokenDecimals,
   getSwapQuote,
   getSwapQuoteKey,
+  isSameSwapPair,
   isSameSwapQuoteKey,
   pickSwapRoute,
   toBackendAsset,
@@ -480,16 +481,17 @@ export const SwapAmount = ({
 
   // The stored quote lags the inputs until the debounced re-quote lands. The
   // CTA's pending state reads this too, so hasQuote and "pending" agree.
+  const inputsKey = getSwapQuoteKey({
+    mode: "send",
+    amount: amount || "0",
+    sourceAsset: asset,
+    destAsset: destinationAsset,
+    networkDetails,
+    publicKey,
+  });
   const isQuoteForInputs = isSameSwapQuoteKey(
     transactionData.swapQuoteKey,
-    getSwapQuoteKey({
-      mode: "send",
-      amount: amount || "0",
-      sourceAsset: asset,
-      destAsset: destinationAsset,
-      networkDetails,
-      publicKey,
-    }),
+    inputsKey,
   );
   const hasQuote =
     !!srcAsset &&
@@ -504,6 +506,17 @@ export const SwapAmount = ({
   const displayFee = resourceFee
     ? new BigNumber(fee).plus(resourceFee).toFixed()
     : fee;
+  // Until this amount's quote lands, spendable (and so Max) holds back the
+  // pair's last quoted resource fee: it barely moves with the amount, and
+  // without it Max overshoots once the quote arrives.
+  const { swapLastQuotedFee } = transactionData;
+  const lastResourceFee =
+    !hasQuote && isSameSwapPair(swapLastQuotedFee?.key, inputsKey)
+      ? swapLastQuotedFee?.resourceFee
+      : null;
+  const balanceFee = lastResourceFee
+    ? new BigNumber(fee).plus(lastResourceFee).toFixed()
+    : displayFee;
 
   // All balance/price/fee/security/CTA derivation. Plain function (not a hook):
   // it runs below the early returns, where a hook would violate rules-of-hooks.
@@ -536,7 +549,7 @@ export const SwapAmount = ({
     amount: formik.values.amount,
     amountUsd: formik.values.amountUsd,
     // Max and the XLM fee check hold back what the swap will pay.
-    fee: displayFee,
+    fee: balanceFee,
     blockaidOverrideState,
     networkDetails,
     inputType,
