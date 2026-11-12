@@ -11,7 +11,7 @@
   "{{date}} at {{time}}": "{{date}} às {{time}}",
   "{{domain}} is not currently connected to Freighter": "{{domain}} não está atualmente conectado ao Freighter",
   "{{domain}} is not currently connected to Varial": "{{domain}} não está atualmente conectado ao Varial",
-  "{{fee}} XLM network fee": "Taxa de rede de {{fee}} XLM",
+  "{{fee}} network fee": "Taxa de rede de {{fee}}",
   "* All Stellar accounts must maintain a minimum balance of lumens.": "* Todas as contas Stellar devem manter um saldo mínimo de lumens.",
   "0.5 XLM required": "0,5 XLM necessários",
   "1 path": "1 caminho",

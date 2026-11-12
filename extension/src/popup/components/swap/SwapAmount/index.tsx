@@ -665,6 +665,12 @@ export const SwapAmount = ({
   const feeUsd = xlmPrice
     ? new BigNumber(displayFee).multipliedBy(xlmPrice)
     : undefined;
+  // A cent or more reads in dollars, as on mobile; below that "$0.00" says
+  // nothing, so the line keeps XLM.
+  const feeLineText =
+    feeUsd?.isFinite() && feeUsd.gte(0.01)
+      ? `$${formatAmount(roundUsdValue(feeUsd.toString()))}`
+      : `${displayFee} XLM`;
   let feeFiat: string | undefined;
   if (feeUsd?.isFinite()) {
     feeFiat = feeUsd.lt(0.01)
@@ -971,7 +977,7 @@ export const SwapAmount = ({
                     data-testid="swap-details-link"
                   >
                     <span>
-                      {t("{{fee}} XLM network fee", { fee: displayFee })}
+                      {t("{{fee}} network fee", { fee: feeLineText })}
                     </span>
                     <span aria-hidden="true">·</span>
                     <button

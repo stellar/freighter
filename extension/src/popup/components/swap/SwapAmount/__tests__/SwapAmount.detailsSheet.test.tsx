@@ -16,7 +16,7 @@ import * as Internal from "@shared/api/internal";
 import * as TokenList from "@shared/api/helpers/token-list";
 import { getSwapQuoteKey } from "popup/helpers/swapQuote";
 
-// Interpolates, so the fee inside "{{fee}} XLM network fee" is checkable.
+// Interpolates, so the fee inside "{{fee}} network fee" is checkable.
 jest.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (key: string, opts?: Record<string, unknown>) =>
@@ -215,8 +215,9 @@ describe("SwapAmount details sheet", () => {
       expect(screen.getByTestId("swap-amount-fee-display")).toHaveTextContent(
         "0.0858659 XLM",
       );
+      // $0.0258 at $0.30 per XLM: a cent or more reads in dollars.
       expect(screen.getByTestId("swap-details-link")).toHaveTextContent(
-        "0.0858659 XLM network fee",
+        "$0.03 network fee",
       );
       await act(async () => {
         fireEvent.click(screen.getByTestId("swap-see-details"));
