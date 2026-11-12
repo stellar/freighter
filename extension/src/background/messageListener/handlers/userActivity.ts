@@ -1,11 +1,9 @@
 import { Store } from "redux";
 
-import { getIsHardwareWalletActive } from "background/helpers/account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { SessionTimer } from "background/helpers/session";
 import {
-  hashKeySelector,
-  isHardwareWalletLockedSelector,
+  buildHasPrivateKeySelector,
   SessionState,
 } from "background/ducks/session";
 
@@ -28,8 +26,9 @@ import {
  * the idle alarm. A ping that arrives on a locked wallet is dropped:
  * there is no live session to extend.
  *
- * Unlocked = either a hot-wallet session (`hashKey` is set) or an
- * active hardware-wallet session that has not been idle-locked.
+ * "Unlocked" uses the same `buildHasPrivateKeySelector` rule as
+ * `loadAccount` and `saveSettings`, so the idle alarm and the popup
+ * never disagree about whether the wallet is unlocked.
  */
 export const userActivity = async ({
   sessionTimer,
@@ -40,13 +39,12 @@ export const userActivity = async ({
   sessionStore: Store;
   localStore: DataStorageAccess;
 }) => {
-  const state = sessionStore.getState() as SessionState;
-  const hashKey = hashKeySelector(state);
-  const hotUnlocked = !!hashKey?.key;
-  const isHwActive = await getIsHardwareWalletActive({ localStore });
-  const hwUnlocked = isHwActive && !isHardwareWalletLockedSelector(state);
+  const hasPrivateKeySelector = buildHasPrivateKeySelector(localStore);
+  const isUnlocked = await hasPrivateKeySelector(
+    sessionStore.getState() as SessionState,
+  );
 
-  if (!hotUnlocked && !hwUnlocked) {
+  if (!isUnlocked) {
     return { ok: false };
   }
 
