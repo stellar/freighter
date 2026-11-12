@@ -54,7 +54,11 @@ import {
   MemoRequiredLabel,
 } from "popup/components/WarningMessages";
 import { BlockaidBanner } from "popup/components/BlockaidBanner";
-import { SecurityLevel, mergeSecurityLevels } from "popup/constants/blockaid";
+import {
+  BlockaidWarning,
+  SecurityLevel,
+  mergeSecurityLevels,
+} from "popup/constants/blockaid";
 import {
   useShouldTreatTxAsUnableToScan,
   useIsTxSuspicious,
@@ -357,6 +361,22 @@ export const SignTransaction = () => {
   ]);
   const blockaidBannerEntity = txSecurityLevel ? "transaction" : "site";
 
+  // The details sheet only receives the transaction scan, so carry the site
+  // verdict into it. Otherwise a reverting tx from a malicious site would open
+  // a "Likely to fail" sheet that never mentions the site risk the banner
+  // reported.
+  const isSiteFlagged = isSiteMalicious || isSiteSuspicious;
+  const blockaidSheetSiteWarnings: BlockaidWarning[] = isSiteFlagged
+    ? [
+        {
+          description: isSiteMalicious
+            ? t("This site was flagged as malicious")
+            : t("This site was flagged as suspicious"),
+          isError: isSiteMalicious,
+        },
+      ]
+    : [];
+
   if (_networkPassphrase !== networkPassphrase) {
     return (
       <WarningMessage
@@ -562,6 +582,8 @@ export const SignTransaction = () => {
             {isOnBlockaidSheet ? (
               <BlockAidScanExpanded
                 scanResult={scanResult}
+                extraWarnings={blockaidSheetSiteWarnings}
+                extraSeverityLevel={isSiteFlagged ? siteSecurityLevel : null}
                 onClose={() => setIsOnBlockaidSheet(false)}
               />
             ) : (
