@@ -10,7 +10,7 @@ import {
 import { SwapRoute } from "@shared/api/types/backend-api";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { Wrapper } from "popup/__testHelpers__";
-import { SwapDetailsSheet } from "../index";
+import { SwapDetailsSheet, VenueIcon } from "../index";
 
 jest.mock("@shared/api/internal", () => ({
   getDiscoverData: jest.fn(),
@@ -175,5 +175,21 @@ describe("SwapDetailsSheet", () => {
     await renderSheet(null);
     expect(screen.getByTestId("SwapDetails__rate")).toBeInTheDocument();
     expect(screen.queryByTestId("SwapDetails__route")).toBeNull();
+  });
+});
+
+describe("VenueIcon", () => {
+  it("falls back to the generic icon when the venue's image fails to load", () => {
+    render(
+      <VenueIcon
+        venue={{ name: "Aquarius", icon: "https://icons.test/gone.png" }}
+      />,
+    );
+    fireEvent.error(screen.getByTestId("SwapDetails__venue-icon"));
+
+    expect(
+      screen.getByTestId("SwapDetails__venue-icon-generic"),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("SwapDetails__venue-icon")).toBeNull();
   });
 });

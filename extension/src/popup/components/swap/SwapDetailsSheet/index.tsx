@@ -30,13 +30,16 @@ enum Pane {
   Route = "route",
 }
 
-export const VenueIcon = ({ venue }: { venue: RouteVenue }) =>
-  venue.icon ? (
+export const VenueIcon = ({ venue }: { venue: RouteVenue }) => {
+  // /protocols icon URLs go stale; a failed load falls back like a missing one.
+  const [failed, setFailed] = useState(false);
+  return venue.icon && !failed ? (
     <img
       className="SwapDetails__venue-icon"
       src={venue.icon}
       alt={venue.name}
       data-testid="SwapDetails__venue-icon"
+      onError={() => setFailed(true)}
     />
   ) : (
     <span
@@ -47,6 +50,7 @@ export const VenueIcon = ({ venue }: { venue: RouteVenue }) =>
       <Icon.Route />
     </span>
   );
+};
 
 const TokenLabel = ({ token }: { token: RouteToken }) => (
   <span className="SwapDetails__token">
