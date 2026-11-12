@@ -6,6 +6,7 @@ import { AssetIcons } from "@shared/api/types";
 import { AssetType } from "@shared/api/types/account-balance";
 import { SwapRoute } from "@shared/api/types/backend-api";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { getNativeContractId } from "@shared/helpers/assetIdentity";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import {
   SheetHeader,
@@ -222,6 +223,7 @@ export const SwapDetailsSheet = ({
       icons: { ...cachedIcons, ...icons },
       balances,
       tokenLists,
+      nativeContractId: getNativeContractId(networkDetails.networkPassphrase),
     },
   });
 

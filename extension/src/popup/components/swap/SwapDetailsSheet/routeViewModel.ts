@@ -53,6 +53,8 @@ export interface RouteTokenContext {
   icons: AssetIcons;
   balances: AssetType[];
   tokenLists: AssetListResponse[];
+  /** XLM's SAC on this network: a LI.FI hop names XLM by it. */
+  nativeContractId?: string;
 }
 
 export const formatShare = (share: string): string | null => {
@@ -94,10 +96,13 @@ const findListedContract = (
 
 export const resolveRouteToken = (
   assetId: string,
-  { known, icons, balances, tokenLists }: RouteTokenContext,
+  { known, icons, balances, tokenLists, nativeContractId }: RouteTokenContext,
 ): RouteToken => {
   if (known[assetId]) {
     return known[assetId];
+  }
+  if (assetId === nativeContractId) {
+    return { code: "XLM", issuer: "", canonical: "native", icon: null };
   }
   const { code, issuer } = splitCanonical(assetId);
   if (isNativeAssetPair(code, issuer)) {

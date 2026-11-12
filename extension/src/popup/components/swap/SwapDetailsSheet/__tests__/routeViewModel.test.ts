@@ -1,3 +1,5 @@
+import { Asset, Networks } from "stellar-sdk";
+
 import { ProtocolEntry } from "@shared/api/types";
 import { AssetType } from "@shared/api/types/account-balance";
 import { SwapRoute } from "@shared/api/types/backend-api";
@@ -279,6 +281,16 @@ describe("buildRouteView", () => {
 });
 
 describe("resolveRouteToken", () => {
+  it("names XLM's own contract XLM", () => {
+    const xlmContract = Asset.native().contractId(Networks.PUBLIC);
+    expect(
+      resolveRouteToken(xlmContract, {
+        ...emptyContext,
+        nativeContractId: xlmContract,
+      }),
+    ).toEqual({ code: "XLM", issuer: "", canonical: "native", icon: null });
+  });
+
   it("keeps a code that contains a colon whole", () => {
     expect(resolveRouteToken(`MY:TOKEN:${KALE}`, emptyContext)).toMatchObject({
       code: "MY:TOKEN",
