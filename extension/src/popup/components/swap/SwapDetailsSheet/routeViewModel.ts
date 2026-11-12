@@ -28,8 +28,8 @@ export interface RouteVenue {
 }
 
 export interface RoutePathView {
-  /** "32%". */
-  share: string;
+  /** "32%"; null for a share that isn't positive (no pill). */
+  share: string | null;
   /** One per hop, in order. */
   venues: RouteVenue[];
   /** hops + 1 tokens; venues[i] sits between tokens[i] and tokens[i + 1]. */
@@ -55,10 +55,10 @@ export interface RouteTokenContext {
   tokenLists: AssetListResponse[];
 }
 
-export const formatShare = (share: string) => {
+export const formatShare = (share: string): string | null => {
   const pct = new BigNumber(share).multipliedBy(100);
   if (!pct.isFinite() || pct.lte(0)) {
-    return "0%";
+    return null;
   }
   if (pct.lt(1)) {
     return "<1%";

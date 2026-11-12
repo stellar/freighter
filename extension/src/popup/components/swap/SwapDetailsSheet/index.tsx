@@ -115,7 +115,9 @@ const RoutePane = ({ view }: { view: RouteView }) => {
                 aria-expanded={isOpen}
                 onClick={() => setExpanded(isOpen ? null : i)}
               >
-                <span className="SwapDetails__share">{path.share}</span>
+                {path.share ? (
+                  <span className="SwapDetails__share">{path.share}</span>
+                ) : null}
                 <VenueStack venues={path.venues} />
                 <span className="SwapDetails__path-end">
                   {path.poolCount !== null ? (

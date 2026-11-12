@@ -90,8 +90,10 @@ describe("formatShare", () => {
     ["1", "100%"],
     ["0.125", "13%"],
     ["0.004", "<1%"],
-    ["0", "0%"],
-    ["junk", "0%"],
+    // No pill for a share that isn't a positive number, as on mobile.
+    ["0", null],
+    ["-0.1", null],
+    ["junk", null],
   ])("formats %s as %s", (share, expected) => {
     expect(formatShare(share)).toBe(expected);
   });
