@@ -303,16 +303,24 @@ export const buildSwapSections = ({
     };
   }
 
-  // Dedupe by identity; a held token belongs to Your tokens only, under
-  // whichever code the search knows it by.
+  const heldSearchKeys = new Set(
+    yourTokens.map((r) => swapIdentityKey(r.canonical)),
+  );
+
+  // Dedupe by identity against the held rows the term matched. A held
+  // contract searched by a code its balance doesn't carry is only reachable
+  // through its search row, which lists flagged as held.
   const dedupe = (assets: ManageAssetCurrency[]): SwapTokenRecord[] => {
     const seen = new Set<string>();
     return assets
-      .map((a) => currencyToRecord(a, false))
+      .map((a) => {
+        const { canonical } = currencyToRecord(a, false);
+        return currencyToRecord(a, heldKeys.has(swapIdentityKey(canonical)));
+      })
       .filter(isDiscoverable)
       .filter((r) => {
         const key = swapIdentityKey(r.canonical);
-        if (heldKeys.has(key) || seen.has(key)) {
+        if (heldSearchKeys.has(key) || seen.has(key)) {
           return false;
         }
         seen.add(key);

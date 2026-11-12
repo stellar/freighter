@@ -197,7 +197,9 @@ describe("buildSwapSections — a contract token is one identity", () => {
     domain: null,
   };
 
-  it("dedupes a search row for a held contract, whatever code it carries", () => {
+  it("lists a held contract searched by another code, as held", () => {
+    // The held row's symbol doesn't match the term, so the search row is the
+    // only way to the token; it is kept and flagged held by its contract.
     const result = buildSwapSections({
       searchTerm: "abc",
       balances: [heldSoroban],
@@ -206,6 +208,22 @@ describe("buildSwapSections — a contract token is one identity", () => {
       unverifiedAssets: [],
     });
 
+    expect(result.sections.yourTokens).toEqual([]);
+    expect(result.sections.verified).toEqual([
+      expect.objectContaining({ code: "ABC", isHeld: true }),
+    ]);
+  });
+
+  it("dedupes a search row against the held row that matches the term", () => {
+    const result = buildSwapSections({
+      searchTerm: "sym",
+      balances: [heldSoroban],
+      networkDetails: MAINNET,
+      verifiedAssets: [{ ...searchRow, code: "SYM" }, searchRow],
+      unverifiedAssets: [],
+    });
+
+    expect(result.sections.yourTokens.map((r) => r.code)).toEqual(["SYM"]);
     expect(result.sections.verified).toEqual([]);
   });
 
