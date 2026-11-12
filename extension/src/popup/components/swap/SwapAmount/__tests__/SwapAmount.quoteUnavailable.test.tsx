@@ -25,7 +25,7 @@ import * as Internal from "@shared/api/internal";
 import * as TokenList from "@shared/api/helpers/token-list";
 import { getSwapQuoteKey } from "popup/helpers/swapQuote";
 
-// Interpolates, so the fee inside "{{fee}} XLM network fee" is checkable.
+// Interpolates, so the fee inside "{{fee}} network fee" is checkable.
 jest.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (key: string, opts?: Record<string, unknown>) =>

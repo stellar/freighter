@@ -24,11 +24,6 @@ import {
   pickBestNonXlmClassicCanonical,
 } from "popup/helpers/xlmReserve";
 import { InputType } from "helpers/transaction";
-import {
-  getSwapQuoteKey,
-  isSameSwapQuoteKey,
-  SwapQuoteKey,
-} from "popup/helpers/swapQuote";
 import { getSwapCtaState } from "./swapCtaState";
 import { ResolvedSwapAmountData } from "../hooks/useGetSwapAmountData";
 
@@ -54,12 +49,13 @@ interface GetSwapDerivedDataParams {
   /** formik.values.amountUsd */
   amountUsd: string;
   fee: string;
+  /** The fee XLM must cover; `fee` can include a held-back resource fee. */
+  feesGateFee?: string;
   blockaidOverrideState?: string | null;
   networkDetails: NetworkDetails;
   inputType: InputType;
-  publicKey: string;
-  /** Key of the quote behind destinationAmount. */
-  swapQuoteKey: SwapQuoteKey | null;
+  /** The stored quote's key matches the current inputs. */
+  isQuoteForInputs: boolean;
   // Balances-derived "this swap adds a trustline", checked against the
   // UNFILTERED balances (a hidden held asset needs no new trustline). Drives
   // the reserve math; distinct from destinationIsNonHeld below, which is a
@@ -82,11 +78,11 @@ export const getSwapDerivedData = ({
   amount,
   amountUsd,
   fee,
+  feesGateFee = fee,
   blockaidOverrideState,
   networkDetails,
   inputType,
-  publicKey,
-  swapQuoteKey,
+  isQuoteForInputs,
   destRequiresTrustline,
 }: GetSwapDerivedDataParams) => {
   const sendData = data;
@@ -200,17 +196,7 @@ export const getSwapDerivedData = ({
     !!asset &&
     !!destinationAsset &&
     new BigNumber(cleanAmount(amount)).gt(0) &&
-    !isSameSwapQuoteKey(
-      swapQuoteKey,
-      getSwapQuoteKey({
-        mode: "send",
-        amount,
-        sourceAsset: asset,
-        destAsset: destinationAsset,
-        networkDetails,
-        publicKey,
-      }),
-    );
+    !isQuoteForInputs;
 
   const hasNoSwapPath =
     swapAmountPositive &&
@@ -226,7 +212,8 @@ export const getSwapDerivedData = ({
     recommendedFee: "0",
   });
   const insufficientXlmForFees =
-    sourceIsNonXlm && new BigNumber(xlmSpendableForFees).lt(new BigNumber(fee));
+    sourceIsNonXlm &&
+    new BigNumber(xlmSpendableForFees).lt(new BigNumber(feesGateFee));
 
   const cta = getSwapCtaState({
     hasSource: !!asset,

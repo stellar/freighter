@@ -92,6 +92,12 @@ export const isSameSwapQuoteKey = (
   a.destAsset === b.destAsset &&
   new BigNumber(a.amount).isEqualTo(b.amount);
 
+/** Same account, network and asset pair, whatever the amount. */
+export const isSameSwapPair = (
+  a: SwapQuoteKey | null | undefined,
+  b: SwapQuoteKey,
+) => !!a && isSameSwapQuoteKey({ ...a, amount: b.amount }, b);
+
 // Classic reasons that mean the source is down rather than that the pair has
 // no route.
 const CLASSIC_OUTAGE_REASONS = ["error", "timeout", "rate_limited"];

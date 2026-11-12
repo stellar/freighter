@@ -14,7 +14,6 @@ import * as UseSimulateSwapData from "popup/components/swap/SwapAmount/hooks/use
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
 import * as FetchBackendV2 from "@shared/api/helpers/fetchBackendV2";
 import { getSwapDerivedData } from "popup/components/swap/SwapAmount/helpers/getSwapDerivedData";
-import { getSwapQuoteKey } from "popup/helpers/swapQuote";
 
 const TOKEN_CONTRACT =
   "CBI7UCH5KGSVQRO5H4SUCZUTZABCITZLRHQQZTWL2TK4RZ72TAR6IHRV";
@@ -223,8 +222,7 @@ describe("getSwapDerivedData destination identity", () => {
       fee: "0.00001",
       networkDetails: MAINNET_NETWORK_DETAILS,
       inputType: "crypto",
-      publicKey: "G123",
-      swapQuoteKey: null,
+      isQuoteForInputs: false,
       destRequiresTrustline: false,
     });
 
@@ -256,15 +254,7 @@ describe("getSwapDerivedData with a contract token sold", () => {
       fee: "0.00001",
       networkDetails: MAINNET_NETWORK_DETAILS,
       inputType: "crypto",
-      publicKey: "G123",
-      swapQuoteKey: getSwapQuoteKey({
-        mode: "send",
-        amount: "1",
-        sourceAsset: TOKEN,
-        destAsset: USDC,
-        networkDetails: MAINNET_NETWORK_DETAILS,
-        publicKey: "G123",
-      }),
+      isQuoteForInputs: true,
       destRequiresTrustline: true,
     });
 
@@ -277,5 +267,38 @@ describe("getSwapDerivedData with a contract token sold", () => {
 
   it("still needs XLM for the network fee", () => {
     expect(derive("1").insufficientXlmForFees).toBe(true);
+  });
+
+  it("checks XLM for fees against the current quote's fee, not a held-back one", () => {
+    // 1.1 XLM over a 1 XLM minimum leaves 0.1: enough for the 0.00001
+    // inclusion fee, not for the 0.5 a previous quote's resource fee adds.
+    const derived = getSwapDerivedData({
+      data: {
+        type: AppDataType.RESOLVED,
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        icons: {},
+        userBalances: {
+          balances: [
+            { ...nativeBalance, total: new BigNumber("1.1") },
+            tokenBalance,
+          ],
+        },
+        tokenPrices: {},
+      } as any,
+      asset: TOKEN,
+      destinationAsset: USDC,
+      destinationAmount: "1",
+      destinationTokenDetails: null,
+      amount: "1",
+      amountUsd: "0",
+      fee: "0.50001",
+      feesGateFee: "0.00001",
+      networkDetails: MAINNET_NETWORK_DETAILS,
+      inputType: "crypto",
+      isQuoteForInputs: false,
+      destRequiresTrustline: false,
+    });
+
+    expect(derived.insufficientXlmForFees).toBe(false);
   });
 });
