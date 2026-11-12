@@ -5,6 +5,7 @@
   "{{date}} at {{time}}": "{{date}} at {{time}}",
   "{{domain}} is not currently connected to Freighter": "{{domain}} is not currently connected to Freighter",
   "{{domain}} is not currently connected to Varial": "{{domain}} is not currently connected to Varial",
+  "{{walletType}} logo": "{{walletType}} logo",
   "* All Stellar accounts must maintain a minimum balance of lumens.": "* All Stellar accounts must maintain a minimum balance of lumens.",
   "0.5 XLM required": "0.5 XLM required",
   "1:1 backed, unified liquidity": "1:1 backed, unified liquidity",
