@@ -666,17 +666,12 @@ export const SwapAmount = ({
     ? new BigNumber(displayFee).multipliedBy(xlmPrice)
     : undefined;
   // A cent or more reads in dollars, as on mobile; below that "$0.00" says
-  // nothing, so the line keeps XLM.
-  const feeLineText =
+  // nothing, so the line keeps XLM and the Details row drops its dollar part.
+  const feeFiat =
     feeUsd?.isFinite() && feeUsd.gte(0.01)
       ? `$${formatAmount(roundUsdValue(feeUsd.toString()))}`
-      : `${displayFee} XLM`;
-  let feeFiat: string | undefined;
-  if (feeUsd?.isFinite()) {
-    feeFiat = feeUsd.lt(0.01)
-      ? "<$0.01"
-      : `$${formatAmount(roundUsdValue(feeUsd.toString()))}`;
-  }
+      : undefined;
+  const feeLineText = feeFiat ?? `${displayFee} XLM`;
 
   const availableBalanceText = srcAsset
     ? `${displayTotal} ${srcAsset.code} ${t("available")}`

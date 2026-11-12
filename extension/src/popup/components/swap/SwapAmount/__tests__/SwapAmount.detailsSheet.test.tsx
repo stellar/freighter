@@ -153,7 +153,7 @@ describe("SwapAmount details sheet", () => {
       fireEvent.click(screen.getByTestId("swap-see-details"));
     });
     expect(screen.getByTestId("SwapDetails__fee")).toHaveTextContent(
-      "0.00002 XLM (<$0.01)",
+      /^0\.00002 XLM$/,
     );
     expect(screen.getByTestId("SwapDetails__rate")).toHaveTextContent(
       "1 XLM ≈ 0.37 USDC",
@@ -238,8 +238,9 @@ describe("SwapAmount details sheet", () => {
       await act(async () => {
         fireEvent.click(screen.getByTestId("swap-see-details"));
       });
+      // Under a cent the dollar part says nothing, as on mobile.
       expect(screen.getByTestId("SwapDetails__fee")).toHaveTextContent(
-        "0.00002 XLM (<$0.01)",
+        /^0\.00002 XLM$/,
       );
       expect(screen.getByTestId("SwapDetails")).not.toHaveTextContent(
         "Fees description soroban",

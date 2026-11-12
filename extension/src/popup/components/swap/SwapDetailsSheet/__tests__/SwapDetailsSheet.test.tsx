@@ -60,7 +60,7 @@ const renderSheet = async (
       <SwapDetailsSheet
         route={route}
         fee="0.00001"
-        feeFiat="<$0.01"
+        feeFiat="$0.03"
         knownTokens={knownTokens}
         srcCode="XLM"
         dstCode="USDC"
@@ -98,7 +98,7 @@ describe("SwapDetailsSheet", () => {
     await renderSheet(lifiRoute);
 
     expect(screen.getByTestId("SwapDetails__fee")).toHaveTextContent(
-      "0.00001 XLM (<$0.01)",
+      "0.00001 XLM ($0.03)",
     );
     expect(screen.getByTestId("SwapDetails__rate")).toHaveTextContent(
       "1 XLM ≈ 0.37 USDC",
