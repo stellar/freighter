@@ -174,6 +174,7 @@ describe("SwapDetailsSheet", () => {
   it("hides the Route row without a route", async () => {
     await renderSheet(null);
     expect(screen.getByTestId("SwapDetails__rate")).toBeInTheDocument();
+    expect(screen.getByText("Swap details rate")).toBeInTheDocument();
     expect(screen.queryByTestId("SwapDetails__route")).toBeNull();
   });
 });

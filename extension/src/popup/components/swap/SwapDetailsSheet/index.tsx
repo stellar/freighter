@@ -273,7 +273,7 @@ export const SwapDetailsSheet = ({
         ) : null}
         <div className="SwapDetails__card">
           <div className="SwapDetails__row">
-            <span className="SwapDetails__label">{t("Rate")}</span>
+            <span className="SwapDetails__label">{t("Swap details rate")}</span>
             <span
               className="SwapDetails__value"
               data-testid="SwapDetails__rate"
