@@ -9,6 +9,7 @@ import {
   buildRouteView,
   formatShare,
   resolveRouteToken,
+  resolveVenue,
   RouteTokenContext,
 } from "../routeViewModel";
 
@@ -214,6 +215,13 @@ describe("buildRouteView", () => {
     expect(view.paths[0].venues[0]).toEqual({
       name: "Mystery AMM",
       icon: null,
+    });
+  });
+
+  it("names stellar-dex in any casing Stellar DEX, as mobile does", () => {
+    expect(resolveVenue(" Stellar-DEX ", PROTOCOLS)).toEqual({
+      name: "Stellar DEX",
+      icon: StellarLogo,
     });
   });
 

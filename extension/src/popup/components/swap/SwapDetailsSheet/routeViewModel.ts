@@ -138,7 +138,7 @@ export const resolveVenue = (
   protocols: ProtocolEntry[],
 ): RouteVenue => {
   // Not in /protocols: it would show up in Discover.
-  if (venue === "stellar-dex") {
+  if (venue.trim().toLowerCase() === "stellar-dex") {
     return { name: "Stellar DEX", icon: StellarLogo };
   }
   const match = protocols.find(
