@@ -4,7 +4,6 @@ import pt from "popup/locales/pt/translation.json";
 const swapKeys = [
   "Quote has expired, please try again to get a new quote",
   "Token discovery is temporarily unavailable. You can still swap between tokens you already hold.",
-  "Soroban contract tokens aren't supported for swaps yet. Try searching for a Classic token instead.",
   "No tokens match {{term}}",
   "Select a token",
   "You sell",

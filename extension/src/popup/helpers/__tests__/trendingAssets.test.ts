@@ -27,7 +27,13 @@ const TESTNET: NetworkDetails = {
 } as NetworkDetails;
 
 const respondWithRecords = (
-  records: { asset: string; volume7d: number; domain?: string }[],
+  records: {
+    asset: string;
+    volume7d: number;
+    domain?: string;
+    code?: string;
+    decimals?: number;
+  }[],
 ) =>
   mockedSend.mockResolvedValue({
     status: 200,
@@ -84,6 +90,40 @@ describe("fetchTrendingAssets", () => {
 
     expect(result.map((r) => r.code)).toEqual(["BIG"]);
     expect(result[0].issuer).toBe("GBIG");
+  });
+
+  it("keeps Soroban contract tokens, by contract ID and with their decimals", async () => {
+    const contract = "CBI7UCH5KGSVQRO5H4SUCZUTZABCITZLRHQQZTWL2TK4RZ72TAR6IHRV";
+    respondWithRecords([
+      {
+        asset: contract,
+        code: "TKN",
+        decimals: 6,
+        volume7d: MIN_TRENDING_VOLUME7D + 5,
+      },
+    ]);
+
+    const result = await fetchTrendingAssets({ networkDetails: MAINNET });
+
+    expect(result).toEqual([
+      expect.objectContaining({
+        code: "TKN",
+        issuer: contract,
+        contract,
+        decimals: 6,
+      }),
+    ]);
+  });
+
+  it("names a contract token with no code by its shortened contract ID", async () => {
+    const contract = "CBI7UCH5KGSVQRO5H4SUCZUTZABCITZLRHQQZTWL2TK4RZ72TAR6IHRV";
+    respondWithRecords([
+      { asset: contract, decimals: 7, volume7d: MIN_TRENDING_VOLUME7D + 5 },
+    ]);
+
+    const [token] = await fetchTrendingAssets({ networkDetails: MAINNET });
+
+    expect(token.code).toBe("CBI7…IHRV");
   });
 
   it("keeps every testnet record regardless of volume (floor is a no-op)", async () => {

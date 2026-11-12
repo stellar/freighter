@@ -1062,7 +1062,7 @@ describe("AssetDetail", () => {
       expect(screen.getByTestId("asset-detail-swap-button")).toBeVisible();
     });
 
-    it("should not show swap button for Soroban asset", async () => {
+    it("shows the swap button for a Soroban asset", async () => {
       const contractId =
         "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4";
       const props = {
@@ -1104,7 +1104,7 @@ describe("AssetDetail", () => {
       );
 
       await waitFor(() => screen.getByTestId("AssetDetail"));
-      expect(screen.queryByTestId("asset-detail-swap-button")).toBeNull();
+      expect(screen.getByTestId("asset-detail-swap-button")).toBeVisible();
       expect(screen.getByTestId("asset-detail-send-button")).toBeVisible();
     });
 

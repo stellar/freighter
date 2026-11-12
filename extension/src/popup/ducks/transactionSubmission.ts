@@ -457,8 +457,8 @@ export interface DestinationTokenDetails {
   tokenCode: string;
   // true when the user has no trustline for this destination yet.
   requiresTrustline: boolean;
-  // 7 for classic assets.
-  decimals: number;
+  // 7 for classic assets; unset when the picked row didn't say.
+  decimals?: number;
   // omitted for native XLM.
   issuer?: string;
   // from the pick-time Blockaid bulk scan.

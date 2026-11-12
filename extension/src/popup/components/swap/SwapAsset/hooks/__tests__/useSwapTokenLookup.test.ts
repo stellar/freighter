@@ -16,6 +16,7 @@ const heldAqua = {
   token: { code: "AQUA", issuer: { key: "GBNZ" } },
   total: "100",
 } as any;
+const CONTRACT = "CAZXEHTSQATVQVWDPWWDTFSY6CM764JD4MZ6HUVPO3QKS64QEEP4KJH7";
 const heldXlm = { token: { type: "native", code: "XLM" }, total: "50" } as any;
 
 describe("buildSwapSections — idle (no search term)", () => {
@@ -69,19 +70,55 @@ describe("buildSwapSections — idle (no search term)", () => {
     expect(result.sections.yourTokens[0].image).toBe("https://icons/aqua.png");
   });
 
-  it("excludes held Soroban (contract) tokens — Classic assets only", () => {
+  it("lists a held Soroban contract token by its contract ID, at its decimals", () => {
     const heldSoroban = {
-      token: { code: "SRBN", issuer: { key: "GSRBN" } },
-      contractId: "CAZXEHTSQATVQVWDPWWDTFSY6CM764JD4MZ6HUVPO3QKS64QEEP4KJH7",
-      total: "5",
-      decimals: 7,
+      token: { code: "SRBN", issuer: { key: CONTRACT } },
+      contractId: CONTRACT,
+      total: "1500000000000000000",
+      decimals: 18,
     } as any;
     const result = buildSwapSections({
       searchTerm: "",
       balances: [heldAqua, heldSoroban],
       networkDetails: MAINNET,
     });
-    expect(result.sections.yourTokens.map((r) => r.code)).toEqual(["AQUA"]);
+    expect(result.sections.yourTokens.map((r) => r.code)).toEqual([
+      "AQUA",
+      "SRBN",
+    ]);
+    expect(result.sections.yourTokens[1]).toMatchObject({
+      issuer: CONTRACT,
+      canonical: `SRBN:${CONTRACT}`,
+      isContract: true,
+      requiresTrustline: false,
+      decimals: 18,
+      tokenAmount: "1.5",
+    });
+  });
+
+  it("keeps Popular Soroban contract tokens the verified lists vouch for", () => {
+    const result = buildSwapSections({
+      searchTerm: "",
+      balances: [],
+      networkDetails: MAINNET,
+      popular: [
+        {
+          code: "TKN",
+          issuer: CONTRACT,
+          contract: CONTRACT,
+          domain: null,
+          volume7d: 9,
+          decimals: 6,
+        },
+      ],
+      verifiedAssets: [{ code: "TKN", issuer: CONTRACT, domain: null }],
+    });
+    expect(result.sections.popular[0]).toMatchObject({
+      code: "TKN",
+      isContract: true,
+      requiresTrustline: false,
+      decimals: 6,
+    });
   });
 
   it("sorts Your tokens by descending fiat value", () => {
@@ -108,11 +145,6 @@ describe("buildSwapSections — search term", () => {
       searchTerm: "usd",
       balances: [heldAqua],
       networkDetails: MAINNET,
-      searchResults: [
-        { code: "USDC", issuer: "GUSD", domain: null },
-        { code: "USDC", issuer: "GUSD", domain: null }, // duplicate -> deduped
-        { code: "USDT", issuer: "GUSDT", domain: null },
-      ],
       verifiedAssets: [{ code: "USDC", issuer: "GUSD", domain: null }],
       unverifiedAssets: [{ code: "USDT", issuer: "GUSDT", domain: null }],
     });
@@ -122,26 +154,140 @@ describe("buildSwapSections — search term", () => {
     expect(result.sections.unverified.map((r) => r.code)).toEqual(["USDT"]);
   });
 
-  it("drops Soroban contract results and sets hadSorobanMatches", () => {
+  it("keeps Soroban contract results, with no trustline to add", () => {
+    const wrap = {
+      code: "WRAP",
+      issuer: CONTRACT,
+      contract: CONTRACT,
+      domain: null,
+      decimals: 18,
+    };
     const result = buildSwapSections({
       searchTerm: "CAZX",
       balances: [],
       networkDetails: MAINNET,
-      searchResults: [
-        {
-          code: "WRAP",
-          issuer: "CAZXEHTSQATVQVWDPWWDTFSY6CM764JD4MZ6HUVPO3QKS64QEEP4KJH7",
-          contract: "CAZXEHTSQATVQVWDPWWDTFSY6CM764JD4MZ6HUVPO3QKS64QEEP4KJH7",
-          domain: null,
-        },
-      ],
       verifiedAssets: [],
+      unverifiedAssets: [wrap],
+    });
+
+    expect(result.sections.unverified).toEqual([
+      expect.objectContaining({
+        code: "WRAP",
+        canonical: `WRAP:${CONTRACT}`,
+        isContract: true,
+        requiresTrustline: false,
+        decimals: 18,
+      }),
+    ]);
+  });
+});
+
+describe("buildSwapSections — a contract token is one identity", () => {
+  // Held: the on-chain symbol; search: stellar.expert's code. Same contract.
+  const heldSoroban = {
+    token: { code: "SYM", issuer: { key: CONTRACT } },
+    contractId: CONTRACT,
+    total: "1000000",
+    decimals: 6,
+  } as any;
+  const searchRow = {
+    code: "ABC",
+    issuer: CONTRACT,
+    contract: CONTRACT,
+    domain: null,
+  };
+
+  it("lists a held contract searched by another code, as held", () => {
+    // The held row's symbol doesn't match the term, so the search row is the
+    // only way to the token; it is kept and flagged held by its contract.
+    const result = buildSwapSections({
+      searchTerm: "abc",
+      balances: [heldSoroban],
+      networkDetails: MAINNET,
+      verifiedAssets: [searchRow],
       unverifiedAssets: [],
     });
 
+    expect(result.sections.yourTokens).toEqual([]);
+    expect(result.sections.verified).toEqual([
+      expect.objectContaining({ code: "ABC", isHeld: true }),
+    ]);
+  });
+
+  it("dedupes a search row against the held row that matches the term", () => {
+    const result = buildSwapSections({
+      searchTerm: "sym",
+      balances: [heldSoroban],
+      networkDetails: MAINNET,
+      verifiedAssets: [{ ...searchRow, code: "SYM" }, searchRow],
+      unverifiedAssets: [],
+    });
+
+    expect(result.sections.yourTokens.map((r) => r.code)).toEqual(["SYM"]);
     expect(result.sections.verified).toEqual([]);
-    expect(result.sections.unverified).toEqual([]);
-    expect(result.hadSorobanMatches).toBe(true);
+  });
+
+  it("keeps a Popular row for a held contract out, whatever code it carries", () => {
+    const result = buildSwapSections({
+      searchTerm: "",
+      balances: [heldSoroban],
+      networkDetails: MAINNET,
+      popular: [{ ...searchRow, volume7d: 9 }],
+      verifiedAssets: [searchRow],
+    });
+
+    expect(result.sections.popular).toEqual([]);
+  });
+
+  it("hides a contract token by its contract, whatever code the row carries", () => {
+    const result = buildSwapSections({
+      searchTerm: "abc",
+      balances: [],
+      networkDetails: MAINNET,
+      verifiedAssets: [searchRow],
+      unverifiedAssets: [],
+    });
+
+    expect(
+      omitHiddenFromSections(result, { [`SYM:${CONTRACT}`]: "hidden" }).sections
+        .verified,
+    ).toEqual([]);
+  });
+});
+
+describe("buildSwapSections — off mainnet", () => {
+  const TESTNET = {
+    network: "TESTNET",
+    networkPassphrase: "Test SDF Network ; September 2015",
+  } as NetworkDetails;
+  const wrap = { code: "WRAP", issuer: CONTRACT, domain: null, decimals: 7 };
+  const heldWrap = {
+    token: { code: "WRAP", issuer: { key: CONTRACT } },
+    contractId: CONTRACT,
+    total: "10000000",
+    decimals: 7,
+  } as any;
+
+  it("leaves unheld contract tokens out of search and Popular, keeping held ones", () => {
+    const search = buildSwapSections({
+      searchTerm: "wrap",
+      balances: [heldWrap],
+      networkDetails: TESTNET,
+      verifiedAssets: [{ code: "USDC", issuer: "GUSD", domain: null }],
+      unverifiedAssets: [{ ...wrap, code: "WRAP2" }],
+    });
+    const idle = buildSwapSections({
+      searchTerm: "",
+      balances: [],
+      networkDetails: TESTNET,
+      popular: [{ ...wrap, contract: CONTRACT, volume7d: 0 }],
+      verifiedAssets: [wrap],
+    });
+
+    expect(search.sections.yourTokens.map((r) => r.code)).toEqual(["WRAP"]);
+    expect(search.sections.verified.map((r) => r.code)).toEqual(["USDC"]);
+    expect(search.sections.unverified).toEqual([]);
+    expect(idle.sections.popular).toEqual([]);
   });
 });
 
@@ -177,7 +323,6 @@ describe("omitHiddenFromSections", () => {
       searchTerm: "u",
       balances: [heldXlm],
       networkDetails: MAINNET,
-      searchResults: [],
       verifiedAssets: [{ code: "USDC", issuer: "GUSD", domain: null }],
       unverifiedAssets: [{ code: "USDT", issuer: "GUSD", domain: null }],
     });
@@ -198,7 +343,6 @@ describe("omitHiddenFromSections", () => {
       searchTerm: "u",
       balances: [heldXlm],
       networkDetails: MAINNET,
-      searchResults: [],
       verifiedAssets: [{ code: "USDC", issuer: "GUSD", domain: null }],
       unverifiedAssets: [],
     });

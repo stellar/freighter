@@ -42,6 +42,8 @@ export interface TrendingAsset {
   domain: string | null;
   icon?: string;
   volume7d: number;
+  /** Soroban contract tokens only. */
+  decimals?: number;
 }
 
 export interface AllowList {

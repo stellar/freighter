@@ -114,7 +114,9 @@ describe("SwapAmount swap-for-reserve quote", () => {
     jest.clearAllMocks();
   });
 
-  const renderAndSwapForReserve = async () => {
+  const renderAndSwapForReserve = async (
+    transactionData: Record<string, unknown> = {},
+  ) => {
     render(
       <Wrapper
         state={
@@ -133,6 +135,7 @@ describe("SwapAmount swap-for-reserve quote", () => {
                   requiresTrustline: true,
                   decimals: 7,
                 },
+                ...transactionData,
               },
             },
           } as any
@@ -184,6 +187,40 @@ describe("SwapAmount swap-for-reserve quote", () => {
         getTestStore()!.getState().transactionSubmission.transactionData.amount,
       ).toBe("3.2500000"),
     );
+  });
+
+  it("marks the swap classic again when it replaces a Soroban source", async () => {
+    const contract = "CBI7UCH5KGSVQRO5H4SUCZUTZABCITZLRHQQZTWL2TK4RZ72TAR6IHRV";
+    jest.spyOn(UseGetSwapAmountData, "useGetSwapAmountData").mockReturnValue({
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          ...swapData,
+          userBalances: {
+            balances: [
+              ...swapData.userBalances.balances,
+              {
+                token: { code: "TKN", issuer: { key: contract } },
+                contractId: contract,
+                total: new BigNumber("50000000"),
+                decimals: 7,
+                name: "Token",
+                symbol: "TKN",
+              },
+            ],
+          },
+        },
+        error: null,
+      },
+      fetchData: jest.fn().mockResolvedValue(undefined),
+    } as any);
+
+    await renderAndSwapForReserve({ asset: `TKN:${contract}`, isToken: true });
+
+    const { transactionData } =
+      getTestStore()!.getState().transactionSubmission;
+    expect(transactionData.asset).toBe(USDC);
+    expect(transactionData.isToken).toBe(false);
   });
 
   it("reports a classic outage instead of treating it as no route", async () => {

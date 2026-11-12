@@ -38,7 +38,14 @@ describe("getMinOut", () => {
     ["100", "7", "93"],
     ["3", "0.7", "2.979"],
   ])("takes %s less %s%% exactly, rounded down", (toAmount, slip, minOut) => {
-    expect(getMinOut(slip, toAmount)).toBe(minOut);
+    expect(getMinOut(slip, toAmount, 7)).toBe(minOut);
+  });
+
+  it.each([
+    ["2.345678", 6, "2.322221"],
+    ["0.000000000000000123", 18, "0.000000000000000121"],
+  ])("rounds %s down to %s decimals", (toAmount, decimals, minOut) => {
+    expect(getMinOut("1", toAmount, decimals)).toBe(minOut);
   });
 });
 
@@ -138,92 +145,34 @@ describe("getBuiltTx", () => {
   });
 });
 
-const CONTRACT_ID = "CAZXEHTSQATVQVWDPWWDTFSY6CM764JD4MZ6HUVPO3QKS64QEEP4KJH7";
-const CLASSIC_ISSUER =
-  "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
-
-const classicAsset = { issuer: CLASSIC_ISSUER };
-const contractAsset = { issuer: CONTRACT_ID };
-
 describe("getSwapErrorMessage", () => {
-  it("returns custom token error when source is a contract ID", () => {
-    const result = getSwapErrorMessage(
-      new Error("some error"),
-      contractAsset,
-      classicAsset,
-    );
-    expect(result).toBe(ERROR_TO_DISPLAY.CUSTOM_TOKEN_NOT_SUPPORTED);
-  });
-
-  it("returns custom token error when dest is a contract ID", () => {
-    const result = getSwapErrorMessage(
-      new Error("some error"),
-      classicAsset,
-      contractAsset,
-    );
-    expect(result).toBe(ERROR_TO_DISPLAY.CUSTOM_TOKEN_NOT_SUPPORTED);
-  });
-
-  it("returns custom token error when both are contract IDs", () => {
-    const result = getSwapErrorMessage(
-      new Error("some error"),
-      contractAsset,
-      contractAsset,
-    );
-    expect(result).toBe(ERROR_TO_DISPLAY.CUSTOM_TOKEN_NOT_SUPPORTED);
-  });
-
-  it("returns known error even when assets are contract IDs", () => {
-    const result = getSwapErrorMessage(
-      new Error(ERROR_TO_DISPLAY.NO_QUOTE),
-      contractAsset,
-      classicAsset,
-    );
-    expect(result).toBe(ERROR_TO_DISPLAY.NO_QUOTE);
-  });
-
-  it("returns known error message for classic assets", () => {
-    const result = getSwapErrorMessage(
-      new Error(ERROR_TO_DISPLAY.NO_QUOTE),
-      classicAsset,
-      classicAsset,
-    );
-    expect(result).toBe(ERROR_TO_DISPLAY.NO_QUOTE);
-  });
-
-  it("returns unknown error for unrecognized Error with classic assets", () => {
-    const result = getSwapErrorMessage(
-      new Error("something unexpected"),
-      classicAsset,
-      classicAsset,
-    );
-    expect(result).toBe(
-      "We had an issue retrieving your transaction details. Please try again.",
-    );
-  });
-
-  it("returns known error message for string errors with classic assets", () => {
-    const result = getSwapErrorMessage(
+  it("returns a known error message", () => {
+    expect(getSwapErrorMessage(new Error(ERROR_TO_DISPLAY.NO_QUOTE))).toBe(
       ERROR_TO_DISPLAY.NO_QUOTE,
-      classicAsset,
-      classicAsset,
     );
-    expect(result).toBe(ERROR_TO_DISPLAY.NO_QUOTE);
   });
 
-  it("returns unknown error for unrecognized string with classic assets", () => {
-    const result = getSwapErrorMessage(
-      "something unexpected",
-      classicAsset,
-      classicAsset,
-    );
+  it("returns unknown error for unrecognized Error", () => {
+    const result = getSwapErrorMessage(new Error("something unexpected"));
     expect(result).toBe(
       "We had an issue retrieving your transaction details. Please try again.",
     );
   });
 
-  it("returns unknown error for non-Error non-string with classic assets", () => {
-    const result = getSwapErrorMessage(42, classicAsset, classicAsset);
+  it("returns known error message for string errors", () => {
+    const result = getSwapErrorMessage(ERROR_TO_DISPLAY.NO_QUOTE);
+    expect(result).toBe(ERROR_TO_DISPLAY.NO_QUOTE);
+  });
+
+  it("returns unknown error for unrecognized string", () => {
+    const result = getSwapErrorMessage("something unexpected");
+    expect(result).toBe(
+      "We had an issue retrieving your transaction details. Please try again.",
+    );
+  });
+
+  it("returns unknown error for non-Error non-string", () => {
+    const result = getSwapErrorMessage(42);
     expect(result).toBe(
       "We had an issue retrieving your transaction details. Please try again.",
     );

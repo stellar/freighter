@@ -10,6 +10,7 @@ import {
   xdr,
 } from "stellar-sdk";
 
+import { isContractId } from "@shared/api/helpers/soroban";
 import { getAssetFromCanonical } from "@shared/helpers/stellar";
 
 /** What the review shows, read from the transaction rather than the quote. */
@@ -24,23 +25,37 @@ export interface DecodedSwapTx {
   addsTrustline: boolean;
 }
 
-// Classic assets and their contracts both use 7 decimals. Soroban-only
-// tokens are rejected below until the picker allows them (C3).
+// XLM fees, and classic assets in a path payment.
 const CLASSIC_DECIMALS = 7;
 
 // The changeTrust default; the backend builds with txnbuild.MaxTrustlineLimit.
 const MAX_TRUSTLINE_LIMIT = "922337203685.4775807";
 
-const toClassicAsset = (canonical: string): Asset => {
+interface SwapToken {
+  /** Unset for a Soroban-only token. */
+  classic?: Asset;
+  contract: string;
+}
+
+const toSwapToken = (
+  canonical: string,
+  networkPassphrase: string,
+): SwapToken => {
   const asset = getAssetFromCanonical(canonical);
-  if (!(asset instanceof Asset)) {
+  if (asset instanceof Asset) {
+    return { classic: asset, contract: asset.contractId(networkPassphrase) };
+  }
+  if (!isContractId(asset.issuer)) {
     throw new Error(`Swap: unsupported asset ${canonical}`);
   }
-  return asset;
+  return { contract: asset.issuer };
 };
 
+const fromUnits = (value: string | bigint | number, decimals: number) =>
+  new BigNumber(value.toString()).shiftedBy(-decimals).toFixed();
+
 const fromStroops = (value: string | bigint | number) =>
-  new BigNumber(value.toString()).shiftedBy(-CLASSIC_DECIMALS).toFixed();
+  fromUnits(value, CLASSIC_DECIMALS);
 
 const mismatch = (what: string) =>
   new Error(`Swap transaction does not match the request: ${what}`);
@@ -54,11 +69,14 @@ const atLeastMinOut = (amount: BigNumber, minOut: string) => {
 const decodeClassic = (
   tx: Transaction,
   account: string,
-  from: Asset,
-  to: Asset,
+  { classic: from }: SwapToken,
+  { classic: to }: SwapToken,
   amount: string,
   minOut: string,
 ): DecodedSwapTx => {
+  if (!from || !to) {
+    throw mismatch("path payment");
+  }
   const ops = tx.operations;
   const payment = ops[ops.length - 1];
   const changeTrust = ops.length === 2 ? ops[0] : null;
@@ -128,17 +146,15 @@ const contractCalls = (
 const decodeSoroban = (
   tx: Transaction,
   account: string,
-  from: Asset,
-  to: Asset,
+  { contract: fromContract }: SwapToken,
+  { contract: toContract }: SwapToken,
   amount: string,
-  networkPassphrase: string,
+  sourceDecimals: number,
 ): DecodedSwapTx => {
   const op = tx.operations[0] as Operation.InvokeHostFunction;
   if (op.func.type !== "hostFunctionTypeInvokeContract") {
     throw mismatch("host function");
   }
-  const fromContract = from.contractId(networkPassphrase);
-  const toContract = to.contractId(networkPassphrase);
 
   let sent = new BigNumber(0);
   let addsTrustline = false;
@@ -170,7 +186,7 @@ const decodeSoroban = (
         throw mismatch(name);
       }
     });
-  if (!sent.gt(0) || !sent.shiftedBy(-CLASSIC_DECIMALS).eq(amount)) {
+  if (!sent.gt(0) || !sent.shiftedBy(-sourceDecimals).eq(amount)) {
     throw mismatch("amount");
   }
 
@@ -179,7 +195,7 @@ const decodeSoroban = (
   const resourceFee =
     ext?.type === "sorobanData" ? ext.sorobanData.resourceFee : undefined;
   return {
-    sendAmount: fromStroops(sent.toFixed()),
+    sendAmount: fromUnits(sent.toFixed(), sourceDecimals),
     fee: fromStroops(tx.fee),
     ...(resourceFee !== undefined
       ? { resourceFee: fromStroops(resourceFee.toString()) }
@@ -202,6 +218,7 @@ export const decodeSwapTx = ({
   destAsset,
   amount,
   minOut,
+  sourceDecimals,
 }: {
   transactionXdr: string;
   networkPassphrase: string;
@@ -212,6 +229,8 @@ export const decodeSwapTx = ({
   amount: string;
   /** The floor the build was asked for; a lower classic minimum is refused. */
   minOut: string;
+  /** The sold token's decimals: 7 for classic assets. */
+  sourceDecimals: number;
 }): DecodedSwapTx => {
   const parsed = TransactionBuilder.fromXdr(transactionXdr, networkPassphrase);
   if (parsed instanceof FeeBumpTransaction) {
@@ -224,13 +243,13 @@ export const decodeSwapTx = ({
   ) {
     throw mismatch("source account");
   }
-  const from = toClassicAsset(sourceAsset);
-  const to = toClassicAsset(destAsset);
+  const from = toSwapToken(sourceAsset, networkPassphrase);
+  const to = toSwapToken(destAsset, networkPassphrase);
   if (
     tx.operations.length === 1 &&
     tx.operations[0].type === "invokeHostFunction"
   ) {
-    return decodeSoroban(tx, account, from, to, amount, networkPassphrase);
+    return decodeSoroban(tx, account, from, to, amount, sourceDecimals);
   }
   return decodeClassic(tx, account, from, to, amount, minOut);
 };

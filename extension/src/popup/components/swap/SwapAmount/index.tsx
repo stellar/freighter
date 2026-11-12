@@ -31,6 +31,7 @@ import {
 } from "popup/helpers/formatters";
 import { useGetSwapAmountData } from "./hooks/useGetSwapAmountData";
 import { getAssetFromCanonical } from "helpers/stellar";
+import { splitCanonical } from "@shared/helpers/stellar";
 import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
@@ -38,8 +39,16 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import { closeWindow, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
-import { getAvailableBalance } from "popup/helpers/soroban";
-import { getBalanceCanonicalKey } from "popup/helpers/balance";
+import {
+  CLASSIC_ASSET_DECIMALS,
+  getAvailableBalance,
+  isContractId,
+  isSacContract,
+} from "popup/helpers/soroban";
+import {
+  findAssetBalance,
+  getBalanceCanonicalKey,
+} from "popup/helpers/balance";
 import { useBlockaidOverrideState } from "popup/helpers/blockaid";
 import { AppDispatch } from "popup/App";
 import { emitMetric, emitScreenViewed } from "helpers/metrics";
@@ -73,7 +82,7 @@ import { SlideupModal } from "popup/components/SlideupModal";
 import { AmountCard } from "popup/components/amount/AmountCard";
 import { PercentageButtons } from "popup/components/amount/PercentageButtons";
 import { shouldShowXlmReservePreflight } from "popup/helpers/xlmReserve";
-import { getSwapQuote } from "popup/helpers/swapQuote";
+import { getHeldTokenDecimals, getSwapQuote } from "popup/helpers/swapQuote";
 import { SheetHeader } from "popup/components/SheetHeader";
 import { SheetLayout } from "popup/components/SheetLayout";
 import { XlmReserveSheet } from "popup/components/swap/XlmReserveSheet";
@@ -120,7 +129,6 @@ export const SwapAmount = ({
     destination,
     destinationAmount,
     destinationAsset,
-    isToken,
     memo,
     path,
     transactionFee,
@@ -157,10 +165,34 @@ export const SwapAmount = ({
       ? (swapAmountData.data.userBalances.unfilteredBalances ??
         swapAmountData.data.userBalances.balances)
       : [];
+  const heldSourceDecimals = getHeldTokenDecimals(asset, heldBalances);
+  const heldDestDecimals = getHeldTokenDecimals(destinationAsset, heldBalances);
+  // Input precision only: the build reads an unheld token's decimals on chain.
+  const sourceDecimals = heldSourceDecimals ?? CLASSIC_ASSET_DECIMALS;
+  // Only a classic destination needs a trustline; a contract token holds its
+  // own balances, except a SAC (held by contract ID, named CODE:ISSUER), which
+  // needs its classic asset's.
+  const dstContractBalance =
+    dstAsset && isContractId(dstAsset.issuer)
+      ? findAssetBalance(heldBalances, dstAsset)
+      : undefined;
+  const dstClassicCanonical =
+    dstContractBalance &&
+    "name" in dstContractBalance &&
+    isSacContract(
+      dstContractBalance.name,
+      dstContractBalance.contractId,
+      networkDetails.networkPassphrase,
+    )
+      ? dstContractBalance.name
+      : destinationAsset;
   const destRequiresTrustline =
     Boolean(destinationAsset) &&
+    !isContractId(splitCanonical(dstClassicCanonical).issuer) &&
     heldBalances.length > 0 &&
-    !heldBalances.some((b) => getBalanceCanonicalKey(b) === destinationAsset);
+    !heldBalances.some(
+      (b) => getBalanceCanonicalKey(b) === dstClassicCanonical,
+    );
 
   // A new-trustline swap is two ops; scale the recommended default fee by op
   // count so each op pays the recommended fee (a custom fee is the total and
@@ -189,6 +221,11 @@ export const SwapAmount = ({
       transactionTimeout,
       memo,
       destRequiresTrustline,
+      sourceDecimals: heldSourceDecimals,
+      // Read at pick for an unheld contract token; a destination that never
+      // went through the picker is read at build.
+      destDecimals:
+        heldDestDecimals ?? transactionData.destinationTokenDetails?.decimals,
     },
   });
 
@@ -290,7 +327,11 @@ export const SwapAmount = ({
   };
 
   const validate = (values: { amount: string }) => {
-    const error = validateSwapAmount(values.amount);
+    const error = validateSwapAmount(
+      values.amount,
+      sourceDecimals,
+      !isContractId(srcAsset?.issuer),
+    );
     return error ? { amount: error } : {};
   };
 
@@ -436,7 +477,6 @@ export const SwapAmount = ({
     destinationIsNonHeld,
     assetPrice,
     dstAssetPrice,
-    assetDecimals,
     priceValueUsd,
     supportsUsd,
     dstPriceValueUsd,
@@ -454,7 +494,6 @@ export const SwapAmount = ({
     data,
     asset,
     destinationAsset,
-    isToken,
     destinationAmount,
     destinationTokenDetails: transactionData.destinationTokenDetails,
     amount: formik.values.amount,
@@ -485,6 +524,8 @@ export const SwapAmount = ({
     // The receive side becomes XLM — a held token, so no trustline is needed.
     dispatch(saveDestinationAsset("native"));
     dispatch(saveDestinationTokenDetails(null));
+    // Both sides are classic from here on.
+    dispatch(saveIsToken(false));
 
     if (!sourceIsNonXlmClassic) {
       // Switching the sell side to a different token: reset the amount, since
@@ -723,7 +764,7 @@ export const SwapAmount = ({
                     })}
                     isAmountTooHigh={isAmountTooHigh}
                     maxSpendableText={displayTotal}
-                    cryptoDecimals={assetDecimals}
+                    cryptoDecimals={sourceDecimals}
                     onAmountChange={({ amount: newAmount }) => {
                       // Normalize a cleared input back to the canonical "0".
                       const v = newAmount === "" ? DEFAULT_AMOUNT : newAmount;
@@ -740,7 +781,7 @@ export const SwapAmount = ({
                       const crypto = assetPrice
                         ? new BigNumber(cleanAmount(usd))
                             .dividedBy(assetPrice)
-                            .decimalPlaces(assetDecimals)
+                            .decimalPlaces(sourceDecimals)
                             .toFixed()
                         : DEFAULT_AMOUNT;
                       formik.setFieldValue("amount", crypto);
@@ -783,15 +824,21 @@ export const SwapAmount = ({
                       // A non-held destination can't become the source, so reset
                       // it to "(+) Select" instead of moving it into the sell
                       // slot; otherwise swap the two positions normally.
-                      dispatch(
-                        saveAsset(destinationIsNonHeld ? "" : destinationAsset),
-                      );
+                      const nextSrc = destinationIsNonHeld
+                        ? ""
+                        : destinationAsset;
+                      dispatch(saveAsset(nextSrc));
                       dispatch(saveDestinationAsset(prevSrc));
-                      // The new destination (old source) and new source are both
-                      // held/classic or empty — neither carries trustline/contract
-                      // metadata.
+                      // The new destination (old source) is held, so it carries
+                      // no pick-time details.
                       dispatch(saveDestinationTokenDetails(null));
-                      dispatch(saveIsToken(false));
+                      // isToken is the sell-side token's contract-ness (the
+                      // review reads it against srcAsset).
+                      dispatch(
+                        saveIsToken(
+                          isContractId(splitCanonical(nextSrc).issuer),
+                        ),
+                      );
                       // The amount was denominated in the old source token; reset
                       // it whenever the source token changes.
                       dispatch(saveAmount(DEFAULT_AMOUNT));
@@ -845,7 +892,6 @@ export const SwapAmount = ({
                     isAmountLoading={isQuotePending}
                     isReadOnly
                     autoFocus={false}
-                    cryptoDecimals={7}
                     onAmountChange={() => {}}
                     onAmountUsdChange={() => {}}
                     onToggleInputType={() => {}}
@@ -892,7 +938,7 @@ export const SwapAmount = ({
                         cleanAmount(availableBalance),
                       )
                         .multipliedBy(new BigNumber(pct).dividedBy(100))
-                        .decimalPlaces(assetDecimals)
+                        .decimalPlaces(sourceDecimals)
                         .toFixed();
                       formik.setFieldValue("amount", pctAmount);
                       dispatch(saveAmount(pctAmount));

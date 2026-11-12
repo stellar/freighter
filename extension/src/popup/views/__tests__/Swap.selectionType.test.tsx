@@ -11,7 +11,8 @@ import BigNumber from "bignumber.js";
 
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
-import { Wrapper } from "popup/__testHelpers__";
+import { Wrapper, getTestStore } from "popup/__testHelpers__";
+import { saveIsToken } from "popup/ducks/transactionSubmission";
 import { Swap } from "popup/views/Swap";
 import { emitMetric } from "helpers/metrics";
 import * as UseGetSwapAmountData from "popup/components/swap/SwapAmount/hooks/useGetSwapAmountData";
@@ -66,7 +67,6 @@ const resolvedFromState = {
 const emptyLookupResult = {
   sections: { yourTokens: [], popular: [], verified: [], unverified: [] },
   isSearch: false,
-  hadSorobanMatches: false,
   isFallback: false,
 };
 
@@ -280,7 +280,6 @@ describe("Swap selectionType wiring", () => {
             unverified: [],
           },
           isSearch: false,
-          hadSorobanMatches: false,
           isFallback: false,
         },
         error: null,
@@ -367,5 +366,105 @@ describe("Swap selectionType wiring", () => {
     expect(
       within(screen.getByTestId("swap-receive-card")).getByText("Select"),
     ).toBeInTheDocument();
+  });
+
+  describe("isToken follows the source, not the destination picked", () => {
+    const CONTRACT = "CBI7UCH5KGSVQRO5H4SUCZUTZABCITZLRHQQZTWL2TK4RZ72TAR6IHRV";
+    const TOKEN = `TKN:${CONTRACT}`;
+    const issuer = "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
+    const USDC = `USDC:${issuer}`;
+    const tokenBalance = {
+      token: { code: "TKN", issuer: { key: CONTRACT } },
+      contractId: CONTRACT,
+      total: new BigNumber("5000000000000000000"),
+      available: new BigNumber("5000000000000000000"),
+      decimals: 18,
+    };
+    const usdcBalance = {
+      token: { code: "USDC", issuer: { key: issuer } },
+      total: new BigNumber("100"),
+      available: new BigNumber("100"),
+    };
+    const heldRow = (canonical: string, code: string, isContract: boolean) => ({
+      canonical,
+      code,
+      issuer: canonical.split(":")[1],
+      domain: null,
+      image: "",
+      isHeld: true,
+      isContract,
+      requiresTrustline: false,
+      decimals: isContract ? 18 : undefined,
+      tokenAmount: "1",
+      fiatValue: null,
+      percentChange24h: null,
+    });
+    const isToken = () =>
+      getTestStore()!.getState().transactionSubmission.transactionData.isToken;
+
+    const pickDestination = async (code: string) => {
+      jest.spyOn(UseSwapFromData, "useGetSwapFromData").mockReturnValue({
+        state: {
+          ...resolvedFromState,
+          data: {
+            ...resolvedFromState.data,
+            balances: { balances: [tokenBalance, usdcBalance], icons: {} },
+            filteredBalances: [tokenBalance, usdcBalance],
+          },
+        },
+        fetchData: jest.fn().mockResolvedValue(undefined),
+        filterBalances: jest.fn(),
+      } as any);
+      jest.spyOn(UseSwapTokenLookup, "useSwapTokenLookup").mockReturnValue({
+        fetchData: jest.fn().mockResolvedValue(undefined),
+        state: {
+          state: RequestState.SUCCESS,
+          data: {
+            ...emptyLookupResult,
+            sections: {
+              ...emptyLookupResult.sections,
+              yourTokens: [
+                heldRow(TOKEN, "TKN", true),
+                heldRow(USDC, "USDC", false),
+              ],
+            },
+          },
+          error: null,
+        },
+      } as any);
+      // A contract source, as the source picker leaves it.
+      renderSwap({}, [`/swap?source_asset=${TOKEN}`]);
+      const selectors = await screen.findAllByTestId(
+        "send-amount-edit-dest-asset",
+      );
+      act(() => {
+        getTestStore()!.dispatch(saveIsToken(true));
+      });
+      await act(async () => {
+        fireEvent.click(selectors[1]);
+      });
+      const row = await screen.findByTestId(`SwapTokenRow-${code}`);
+      await act(async () => {
+        fireEvent.click(row);
+      });
+      await waitFor(() =>
+        expect(screen.getByTestId("swap-sell-card")).toBeInTheDocument(),
+      );
+    };
+
+    it("keeps isToken for a contract source when a classic destination is picked", async () => {
+      await pickDestination("USDC");
+
+      expect(isToken()).toBe(true);
+    });
+
+    it("clears isToken when picking the source's own token clears the source", async () => {
+      await pickDestination("TKN");
+
+      expect(
+        within(screen.getByTestId("swap-sell-card")).getByText("Select"),
+      ).toBeInTheDocument();
+      expect(isToken()).toBe(false);
+    });
   });
 });

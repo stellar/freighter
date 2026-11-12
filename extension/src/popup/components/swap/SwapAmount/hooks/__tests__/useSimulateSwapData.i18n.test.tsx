@@ -125,6 +125,8 @@ const renderSimulate = (
           recommendedFee: "0.00001",
           transactionTimeout: 180,
           destRequiresTrustline: false,
+          sourceDecimals: 7,
+          destDecimals: 7,
         },
       }),
     {

@@ -9,7 +9,9 @@ import {
   UnverifiedTokenInfoSheet,
 } from "popup/components/TokenVerificationSheets";
 import { AssetListRow } from "popup/components/AssetListRow";
-import { isContractId } from "popup/helpers/soroban";
+import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
+import { swapIdentityKey } from "popup/helpers/swapQuote";
+import { truncateString } from "helpers/stellar";
 import { SecurityLevel } from "popup/constants/blockaid";
 import type { SwapTokenRecord } from "../hooks/useSwapTokenLookup";
 import type { SwapPickerSelection } from "../index";
@@ -19,17 +21,20 @@ import "./styles.scss";
 /** Which picker section a clicked row came from (used for telemetry). */
 type PickerSource = "balances" | "popular" | "search";
 
-/**
- * Builds the destination descriptor passed up to the Swap view on pick.
- * `decimals` is 7 for classic Stellar assets.
- */
+/** Builds the destination descriptor passed up to the Swap view on pick. */
 const buildSelection = (
   r: SwapTokenRecord,
   source: PickerSource,
 ): SwapPickerSelection => ({
   tokenCode: r.code ?? "",
   requiresTrustline: r.requiresTrustline,
-  decimals: 7,
+  // An unheld contract token's decimals are read when it is picked, not
+  // taken from the search record.
+  decimals: r.isContract
+    ? r.isHeld
+      ? r.decimals
+      : undefined
+    : CLASSIC_ASSET_DECIMALS,
   issuer: r.issuer || undefined,
   securityLevel: r.securityLevel,
   securityWarnings: r.securityWarnings,
@@ -48,7 +53,6 @@ export interface SwapPickerSectionsResult {
   popular: SwapTokenRecord[];
   verified: SwapTokenRecord[];
   unverified: SwapTokenRecord[];
-  hadSorobanMatches: boolean;
   isFallback: boolean;
   /** True when the account has no held balances (new/unfunded account). */
   isNewAccount: boolean;
@@ -66,11 +70,6 @@ export interface SwapPickerSectionsProps {
     details?: SwapPickerSelection,
   ) => void;
   stellarExpertUrl: string;
-  /** True on the swap-TO (destination) picker. The Soroban "not supported"
-   * empty state only applies to the destination; the source picker shows the
-   * generic "no tokens match" empty state instead (you can only swap FROM a
-   * token you already hold). */
-  isDestination: boolean;
   /** Whether token discovery (Popular + search) exists on this network — true on
    * Mainnet/Testnet, false on custom/Futurenet. When false the discovery-
    * unavailable notice is suppressed: the network simply has no Popular list, so
@@ -84,7 +83,6 @@ export const SwapPickerSections = ({
   hiddenAssets = [],
   onClickAsset,
   stellarExpertUrl,
-  isDestination,
   isDiscoverySupported = false,
 }: SwapPickerSectionsProps) => {
   const { t } = useTranslation();
@@ -96,11 +94,13 @@ export const SwapPickerSections = ({
   // Exclude hidden canonicals (the other side's asset) from the discover
   // sections. "Your tokens" is intentionally NOT filtered — every held token
   // should stay visible even when it is already selected on the other side.
-  const hidden = new Set(hiddenAssets);
+  const hidden = new Set(hiddenAssets.map(swapIdentityKey));
+  const isShown = (r: SwapTokenRecord) =>
+    !hidden.has(swapIdentityKey(r.canonical));
   const yourTokens = result.yourTokens;
-  const popular = result.popular.filter((r) => !hidden.has(r.canonical));
-  const verified = result.verified.filter((r) => !hidden.has(r.canonical));
-  const unverified = result.unverified.filter((r) => !hidden.has(r.canonical));
+  const popular = result.popular.filter(isShown);
+  const verified = result.verified.filter(isShown);
+  const unverified = result.unverified.filter(isShown);
 
   // Held "Your tokens" rows use BalanceRow, matching the account-home balances
   // list, divided like it but with no line after the last row, where the next
@@ -148,7 +148,9 @@ export const SwapPickerSections = ({
           bodyTestId={`SwapTokenRow-${code}-body`}
           code={code}
           issuer={r.issuer}
-          domain={r.domain}
+          // A contract token shows its contract ID, so a lookalike of a
+          // known token still looks different.
+          domain={r.isContract ? truncateString(r.issuer ?? "") : r.domain}
           iconUrl={r.image ?? r.icon ?? undefined}
           isSuspicious={isSuspicious}
           isMalicious={isMalicious}
@@ -187,17 +189,7 @@ export const SwapPickerSections = ({
       )}
 
       {!hasResults ? (
-        isDestination &&
-        (result.hadSorobanMatches || isContractId(searchTerm.trim())) ? (
-          <div
-            className="SwapPickerSections__empty"
-            data-testid="swap-picker-empty-soroban"
-          >
-            {t(
-              "Soroban contract tokens aren't supported for swaps yet. Try searching for a Classic token instead.",
-            )}
-          </div>
-        ) : isSearching ? (
+        isSearching ? (
           <div
             className="SwapPickerSections__empty"
             data-testid="swap-picker-empty"

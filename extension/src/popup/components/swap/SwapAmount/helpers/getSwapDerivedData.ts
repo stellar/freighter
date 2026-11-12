@@ -9,7 +9,8 @@ import {
 } from "popup/helpers/formatters";
 import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
 import { isNativeAssetId } from "@shared/helpers/assetIdentity";
-import { getAssetDecimals, getAvailableBalance } from "popup/helpers/soroban";
+import { getAvailableBalance, isContractId } from "popup/helpers/soroban";
+import { swapIdentityKey } from "popup/helpers/swapQuote";
 import {
   findAssetBalance,
   getBalanceCanonicalKey,
@@ -46,7 +47,6 @@ interface GetSwapDerivedDataParams {
   data: ResolvedSwapAmountData;
   asset: string;
   destinationAsset: string;
-  isToken: boolean;
   destinationAmount: string;
   destinationTokenDetails: DestinationTokenDetails | null;
   /** formik.values.amount */
@@ -77,7 +77,6 @@ export const getSwapDerivedData = ({
   data,
   asset,
   destinationAsset,
-  isToken,
   destinationAmount,
   destinationTokenDetails,
   amount,
@@ -102,11 +101,14 @@ export const getSwapDerivedData = ({
   // A non-held destination token can never become the source (we only swap
   // held/classic assets), so the direction toggle handles it specially. Detect
   // it by its absence from the account balances.
-  const heldCanonicals = new Set(
-    sendData.userBalances.balances.map((b) => getBalanceCanonicalKey(b)),
+  const heldKeys = new Set(
+    sendData.userBalances.balances.map((b) =>
+      swapIdentityKey(getBalanceCanonicalKey(b)),
+    ),
   );
   const destinationIsNonHeld =
-    Boolean(destinationAsset) && !heldCanonicals.has(destinationAsset);
+    Boolean(destinationAsset) &&
+    !heldKeys.has(swapIdentityKey(destinationAsset));
   const prices = sendData.tokenPrices;
   const assetPrice = prices[asset] && prices[asset].currentPrice;
   // Prefer the live backend price; fall back to the stellar.expert spot price
@@ -120,7 +122,6 @@ export const getSwapDerivedData = ({
     (isMainnet(data.networkDetails) && dstSpotPrice != null
       ? String(dstSpotPrice)
       : undefined);
-  const assetDecimals = getAssetDecimals(asset, sendData.userBalances, isToken);
   const priceValueUsd = assetPrice ? formatUsdValue(assetPrice, amount) : null;
   const supportsUsd = isMainnet(data.networkDetails) && assetPrice;
   const dstPriceValueUsd = dstAssetPrice
@@ -148,11 +149,13 @@ export const getSwapDerivedData = ({
   // "Swap for 0.5 XLM" reserve-recovery affordance on the XlmReserveSheet.
   // The sell side is the current source when it's already a non-XLM
   // classic token; otherwise the largest held non-XLM classic balance.
-  const sourceIsNonXlmClassic = !!asset && !isNativeAssetId(asset);
+  const sourceIsNonXlm = !!asset && !isNativeAssetId(asset);
+  const sourceIsNonXlmClassic =
+    sourceIsNonXlm && !isContractId(getAssetFromCanonical(asset).issuer);
 
   // Source token Blockaid verdict (from its held balance), passed to the review
   // gate so a flagged sell token also warns. XLM is never scanned.
-  const sourceBalance = sourceIsNonXlmClassic
+  const sourceBalance = sourceIsNonXlm
     ? findAssetBalance(
         sendData.userBalances.balances,
         getAssetFromCanonical(asset),
@@ -223,8 +226,7 @@ export const getSwapDerivedData = ({
     recommendedFee: "0",
   });
   const insufficientXlmForFees =
-    sourceIsNonXlmClassic &&
-    new BigNumber(xlmSpendableForFees).lt(new BigNumber(fee));
+    sourceIsNonXlm && new BigNumber(xlmSpendableForFees).lt(new BigNumber(fee));
 
   const cta = getSwapCtaState({
     hasSource: !!asset,
@@ -248,7 +250,6 @@ export const getSwapDerivedData = ({
     destinationIsNonHeld,
     assetPrice,
     dstAssetPrice,
-    assetDecimals,
     priceValueUsd,
     supportsUsd,
     dstPriceValueUsd,

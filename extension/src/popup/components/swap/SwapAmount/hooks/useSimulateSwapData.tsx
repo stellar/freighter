@@ -45,28 +45,27 @@ import {
 } from "popup/helpers/swapQuote";
 import { decodeSwapTx, DecodedSwapTx } from "popup/helpers/decodeSwapTx";
 import { isQuoteExpiredError } from "popup/helpers/quoteExpiry";
-import { isContractId } from "popup/helpers/soroban";
+import {
+  CLASSIC_ASSET_DECIMALS,
+  getDecimalsForAsset,
+} from "popup/helpers/soroban";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { AppDispatch } from "popup/App";
 
 const scanUrlstub = "internal";
 
 export const ERROR_TO_DISPLAY = {
-  CUSTOM_TOKEN_NOT_SUPPORTED: "Swapping custom tokens is not supported yet.",
   SWAPS_UNAVAILABLE: "Swaps are temporarily unavailable",
   NO_QUOTE: "No quote available",
+  TOKEN_DETAILS_UNAVAILABLE:
+    "Couldn't read this token's details. Please try again.",
   QUOTE_EXPIRED: "Quote has expired, please try again to get a new quote",
 };
 
 const UNKNOWN_ERROR_DISPLAY =
   "We had an issue retrieving your transaction details. Please try again.";
 
-export const getSwapErrorMessage = (
-  error: unknown,
-  sourceAsset: { issuer?: string },
-  destAsset: { issuer?: string },
-): string => {
-  // Surface known error messages first, regardless of asset type
+export const getSwapErrorMessage = (error: unknown): string => {
   const errorStr =
     error instanceof Error
       ? error.message
@@ -75,10 +74,6 @@ export const getSwapErrorMessage = (
         : null;
   if (errorStr && Object.values(ERROR_TO_DISPLAY).includes(errorStr)) {
     return errorStr;
-  }
-  // For unrecognized errors involving contract-ID assets, show a specific message
-  if (isContractId(sourceAsset.issuer) || isContractId(destAsset.issuer)) {
-    return ERROR_TO_DISPLAY.CUSTOM_TOKEN_NOT_SUPPORTED;
   }
   return UNKNOWN_ERROR_DISPLAY;
 };
@@ -100,6 +95,9 @@ interface SimulationParams {
   // the pick-time snapshot so defaulted/deep-linked destinations — which never
   // went through the picker — build the changeTrust op too.
   destRequiresTrustline: boolean;
+  /** From the held balance; otherwise read on chain at build time. */
+  sourceDecimals?: number;
+  destDecimals?: number;
 }
 
 export interface SimulateTxData {
@@ -245,17 +243,23 @@ export const getBuiltTx = async (
 
 // Exact decimal arithmetic, rounded down: computeDestMinWithSlippage's float
 // multiplier can miss the exact floor by a stroop.
-export const getMinOut = (allowedSlippage: string, toAmount: string) =>
+// The backend refuses a minOut with more decimals than the bought token has.
+export const getMinOut = (
+  allowedSlippage: string,
+  toAmount: string,
+  decimals: number,
+) =>
   new BigNumber(toAmount)
     .times(new BigNumber(100).minus(allowedSlippage))
     .div(100)
-    .decimalPlaces(7, BigNumber.ROUND_DOWN)
+    .decimalPlaces(decimals, BigNumber.ROUND_DOWN)
     .toFixed();
 
 const buildFromBackend = async ({
   quotes,
   key,
   allowedSlippage,
+  destDecimals,
   recommendedFee,
   customFee,
   destRequiresTrustline,
@@ -265,6 +269,7 @@ const buildFromBackend = async ({
   quotes: SwapQuotesResponse | null;
   key: SwapQuoteKey;
   allowedSlippage: string;
+  destDecimals: number;
   recommendedFee: string;
   customFee?: string;
   destRequiresTrustline: boolean;
@@ -275,7 +280,7 @@ const buildFromBackend = async ({
   if (!route) {
     throw new Error(ERROR_TO_DISPLAY.NO_QUOTE);
   }
-  const minOut = getMinOut(allowedSlippage, route.toAmount);
+  const minOut = getMinOut(allowedSlippage, route.toAmount, destDecimals);
   // Only a classic build splits the fee across ops (changeTrust + path
   // payment); a LI.FI build is one op that takes the whole fee.
   const fee =
@@ -384,6 +389,30 @@ function useSimulateTxData({
       const payload = { transactionXdr: "" } as SimulateTxData;
       const { allowedSlippage, sourceAsset, destAsset } = simParams;
 
+      const readDecimals = (
+        asset: SimulationParams["sourceAsset"],
+        held?: number,
+      ) =>
+        held ??
+        getDecimalsForAsset({
+          assetIssuer: asset.issuer ?? null,
+          publicKey,
+          networkDetails,
+        });
+      let sourceDecimals: number;
+      let destDecimals: number;
+      try {
+        [sourceDecimals, destDecimals] = await Promise.all([
+          readDecimals(sourceAsset, simParams.sourceDecimals),
+          readDecimals(destAsset, simParams.destDecimals),
+        ]);
+      } catch (e) {
+        if (!isStale()) {
+          captureException(e);
+        }
+        throw new Error(ERROR_TO_DISPLAY.TOKEN_DETAILS_UNAVAILABLE);
+      }
+
       const { recommendedFee } = simParams;
       // The local build is always classic.
       const baseFee = new BigNumber(
@@ -479,12 +508,17 @@ function useSimulateTxData({
             )
               .build()
               .toXdr(),
-            minOut: getMinOut(allowedSlippage, destinationAmount),
+            minOut: getMinOut(
+              allowedSlippage,
+              destinationAmount,
+              CLASSIC_ASSET_DECIMALS,
+            ),
           }
         : await buildFromBackend({
             quotes,
             key: getSwapQuoteKey(quoteParams),
             allowedSlippage,
+            destDecimals,
             recommendedFee,
             customFee,
             destRequiresTrustline: simParams.destRequiresTrustline,
@@ -504,6 +538,7 @@ function useSimulateTxData({
           destAsset: quoteParams.destAsset,
           amount,
           minOut,
+          sourceDecimals,
         });
       } catch (e) {
         if (!isStale()) {
@@ -542,9 +577,8 @@ function useSimulateTxData({
       if (isStale()) {
         return error;
       }
-      const { sourceAsset, destAsset } = simParams;
       // Every message is a key in the locale files.
-      const payload = t(getSwapErrorMessage(error, sourceAsset, destAsset));
+      const payload = t(getSwapErrorMessage(error));
 
       setIsQuoteExpired(
         (error instanceof Error &&

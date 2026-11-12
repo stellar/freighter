@@ -1,6 +1,6 @@
 {
+  "Couldn't read this token's details. Please try again.": "Couldn't read this token's details. Please try again.",
   "No path found for swap.": "No path found for swap.",
-  "Swapping custom tokens is not supported yet.": "Swapping custom tokens is not supported yet.",
   "We had an issue retrieving your transaction details. Please try again.": "We had an issue retrieving your transaction details. Please try again.",
   "{{appName}} disconnected": "{{appName}} disconnected",
   "{{code}} hidden": "{{code}} hidden",
@@ -607,7 +607,6 @@
   "Some destination accounts on the Stellar network require a memo to identify your payment.": "Some destination accounts on the Stellar network require a memo to identify your payment.",
   "Some of your assets may not appear, but they are still safe on the network!": "Some of your assets may not appear, but they are still safe on the network!",
   "Soroban": "Soroban",
-  "Soroban contract tokens aren't supported for swaps yet. Try searching for a Classic token instead.": "Soroban contract tokens aren't supported for swaps yet. Try searching for a Classic token instead.",
   "Soroban is temporarily experiencing issues": "Soroban is temporarily experiencing issues",
   "SOROBAN RPC URL": "SOROBAN RPC URL",
   "Source": "Source",
