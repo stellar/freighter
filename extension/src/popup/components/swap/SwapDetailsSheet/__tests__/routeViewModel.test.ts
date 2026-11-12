@@ -218,6 +218,13 @@ describe("buildRouteView", () => {
     });
   });
 
+  it("matches a /protocols venue whatever its casing or surrounding spaces", () => {
+    expect(resolveVenue(" soroswap ", PROTOCOLS)).toEqual({
+      name: "Soroswap",
+      icon: "https://icons.test/soroswap.png",
+    });
+  });
+
   it("names stellar-dex in any casing Stellar DEX, as mobile does", () => {
     expect(resolveVenue(" Stellar-DEX ", PROTOCOLS)).toEqual({
       name: "Stellar DEX",

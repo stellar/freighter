@@ -5,10 +5,7 @@ import { AssetType } from "@shared/api/types/account-balance";
 import { SwapRoute } from "@shared/api/types/backend-api";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { findTokenListIcon } from "@shared/api/helpers/getIconFromTokenList";
-import {
-  getCanonicalFromAsset,
-  splitCanonical,
-} from "@shared/helpers/stellar";
+import { getCanonicalFromAsset, splitCanonical } from "@shared/helpers/stellar";
 import { isNativeAssetPair } from "@shared/helpers/assetIdentity";
 import { truncateString } from "helpers/stellar";
 import { isContractId } from "popup/helpers/soroban";
@@ -133,17 +130,19 @@ export const resolveRouteToken = (
   };
 };
 
+// Backend venue strings and /protocols names compare like mobile's venueKey.
+const venueKey = (name: string) => name.trim().toLowerCase();
+
 export const resolveVenue = (
   venue: string,
   protocols: ProtocolEntry[],
 ): RouteVenue => {
+  const key = venueKey(venue);
   // Not in /protocols: it would show up in Discover.
-  if (venue.trim().toLowerCase() === "stellar-dex") {
+  if (key === "stellar-dex") {
     return { name: "Stellar DEX", icon: StellarLogo };
   }
-  const match = protocols.find(
-    (p) => p.name.toLowerCase() === venue.toLowerCase(),
-  );
+  const match = protocols.find((p) => venueKey(p.name) === key);
   return match
     ? { name: match.name, icon: match.iconUrl || null }
     : { name: venue, icon: null };
