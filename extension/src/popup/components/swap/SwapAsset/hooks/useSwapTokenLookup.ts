@@ -28,7 +28,10 @@ import {
 } from "@shared/helpers/assetIdentity";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
-import { searchAsset } from "popup/helpers/searchAsset";
+import { buildNativeAssetRow, searchAsset } from "popup/helpers/searchAsset";
+import { getTokenDetails } from "@shared/api/internal";
+import { isSacContractExecutable } from "@shared/helpers/soroban/token";
+import { isNativeContract } from "@shared/helpers/assetIdentity";
 import {
   getPersistedPopularTokens,
   setPersistedPopularTokens,
@@ -475,6 +478,48 @@ interface AssetSearchRecord {
   };
 }
 
+/**
+ * The one row a pasted contract ID resolves to: the token the backend
+ * describes, or a SAC as its classic asset (which needs the trustline).
+ * Empty when the contract is not a token; throws when the read fails.
+ */
+const lookupContractRow = async (
+  contractId: string,
+  publicKey: string,
+  networkDetails: NetworkDetails,
+  signal: AbortSignal,
+): Promise<ManageAssetCurrency[]> => {
+  if (isNativeContract(contractId, networkDetails.networkPassphrase)) {
+    return [buildNativeAssetRow(networkDetails)];
+  }
+  const details = await getTokenDetails({
+    contractId,
+    publicKey,
+    networkDetails,
+    signal,
+    throwOnFailure: true,
+  });
+  if (!details) {
+    return [];
+  }
+  const isSac = await isSacContractExecutable(
+    contractId,
+    networkDetails,
+    signal,
+  );
+  const issuer = isSac ? details.name.split(":")[1] || "" : contractId;
+  return [
+    {
+      code: details.symbol,
+      issuer,
+      contract: isSac ? undefined : contractId,
+      domain: "",
+      name: details.name,
+      decimals: details.decimals,
+    },
+  ];
+};
+
 const recordFromSearchResult = (
   record: AssetSearchRecord,
 ): ManageAssetCurrency => {
@@ -682,15 +727,22 @@ export const useSwapTokenLookup = () => {
       let popular: TrendingAsset[] = [];
 
       if (searchTerm.trim()) {
-        // SEARCH path: fetch Stellar Expert results and split verified / unverified
-        const resJson = await searchAsset({
-          asset: searchTerm.trim(),
-          networkDetails,
-          signal,
-        });
-        const searchResults = (
-          (resJson?._embedded?.records as AssetSearchRecord[]) ?? []
-        ).map(recordFromSearchResult);
+        // SEARCH path. A pasted contract ID is read from the backend, so any
+        // token contract resolves, indexed by stellar.expert or not; a failed
+        // read throws into the fallback below, unlike "not a token" (null).
+        // Anything else is a stellar.expert search.
+        const term = searchTerm.trim();
+        const searchResults = isContractId(term)
+          ? await lookupContractRow(term, publicKey, networkDetails, signal)
+          : (
+              ((
+                await searchAsset({
+                  asset: term,
+                  networkDetails,
+                  signal,
+                })
+              )?._embedded?.records as AssetSearchRecord[]) ?? []
+            ).map(recordFromSearchResult);
 
         const split = await splitVerifiedAssetCurrency({
           networkDetails,
