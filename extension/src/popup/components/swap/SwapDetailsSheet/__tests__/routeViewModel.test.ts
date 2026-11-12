@@ -113,6 +113,21 @@ describe("buildRouteView", () => {
     expect(view.paths.map((p) => p.share)).toEqual(["32%", "68%"]);
   });
 
+  it("lists an unlisted venue once even when its strings differ by whitespace", () => {
+    const view = buildRouteView({
+      route: {
+        ...classicRoute,
+        paths: [
+          { share: "0.5", hops: [{ venue: "Aqua", from: "XLM", to: USDC }] },
+          { share: "0.5", hops: [{ venue: "aqua ", from: "XLM", to: USDC }] },
+        ],
+      },
+      tokenContext: emptyContext,
+      protocols: [],
+    })!;
+    expect(view.providers).toHaveLength(1);
+  });
+
   it("lists each venue once across all paths, in first-seen order", () => {
     const view = buildRouteView({
       route: lifiRoute,

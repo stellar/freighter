@@ -176,7 +176,7 @@ export const buildRouteView = ({
   const pathViews = paths.map((path) => {
     const venues = path.hops.map((hop) => {
       const resolved = resolveVenue(hop.venue, protocols);
-      const key = resolved.name.toLowerCase();
+      const key = venueKey(resolved.name);
       if (!providers.has(key)) {
         providers.set(key, resolved);
       }
