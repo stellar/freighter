@@ -182,6 +182,61 @@ describe("buildSwapSections — search term", () => {
   });
 });
 
+describe("buildSwapSections — a contract token is one identity", () => {
+  // Held: the on-chain symbol; search: stellar.expert's code. Same contract.
+  const heldSoroban = {
+    token: { code: "SYM", issuer: { key: CONTRACT } },
+    contractId: CONTRACT,
+    total: "1000000",
+    decimals: 6,
+  } as any;
+  const searchRow = {
+    code: "ABC",
+    issuer: CONTRACT,
+    contract: CONTRACT,
+    domain: null,
+  };
+
+  it("dedupes a search row for a held contract, whatever code it carries", () => {
+    const result = buildSwapSections({
+      searchTerm: "abc",
+      balances: [heldSoroban],
+      networkDetails: MAINNET,
+      verifiedAssets: [searchRow],
+      unverifiedAssets: [],
+    });
+
+    expect(result.sections.verified).toEqual([]);
+  });
+
+  it("keeps a Popular row for a held contract out, whatever code it carries", () => {
+    const result = buildSwapSections({
+      searchTerm: "",
+      balances: [heldSoroban],
+      networkDetails: MAINNET,
+      popular: [{ ...searchRow, volume7d: 9 }],
+      verifiedAssets: [searchRow],
+    });
+
+    expect(result.sections.popular).toEqual([]);
+  });
+
+  it("hides a contract token by its contract, whatever code the row carries", () => {
+    const result = buildSwapSections({
+      searchTerm: "abc",
+      balances: [],
+      networkDetails: MAINNET,
+      verifiedAssets: [searchRow],
+      unverifiedAssets: [],
+    });
+
+    expect(
+      omitHiddenFromSections(result, { [`SYM:${CONTRACT}`]: "hidden" }).sections
+        .verified,
+    ).toEqual([]);
+  });
+});
+
 describe("buildSwapSections — off mainnet", () => {
   const TESTNET = {
     network: "TESTNET",

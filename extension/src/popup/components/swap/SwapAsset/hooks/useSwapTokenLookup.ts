@@ -62,6 +62,7 @@ import {
   fetchTrendingAssets,
   TrendingAsset,
 } from "popup/helpers/trendingAssets";
+import { swapIdentityKey } from "popup/helpers/swapQuote";
 
 // Re-export RequestState for consumers
 export { RequestState };
@@ -239,7 +240,9 @@ export const buildSwapSections = ({
   const isSearch = term.length > 0;
 
   const heldRecords = balancesToHeldRecords({ balances, icons, tokenPrices });
-  const heldCanonicals = new Set(heldRecords.map((r) => r.canonical));
+  const heldKeys = new Set(
+    heldRecords.map((r) => swapIdentityKey(r.canonical)),
+  );
   // Only mainnet has a source (LI.FI) that routes contract tokens.
   const isDiscoverable = (r: SwapTokenRecord) =>
     !r.isContract || isMainnet(networkDetails);
@@ -248,7 +251,7 @@ export const buildSwapSections = ({
     // IDLE mode
     const verifiedKeys = new Set(
       verifiedAssets.map((a) =>
-        getCanonicalFromAsset(a.code || "", a.issuer || ""),
+        swapIdentityKey(getCanonicalFromAsset(a.code || "", a.issuer || "")),
       ),
     );
     const popularRecords = popular
@@ -264,10 +267,10 @@ export const buildSwapSections = ({
       )
       .map((a) => currencyToRecord(a, false))
       .filter(isDiscoverable)
-      .filter(
-        (r) =>
-          !heldCanonicals.has(r.canonical) && verifiedKeys.has(r.canonical),
-      );
+      .filter((r) => {
+        const key = swapIdentityKey(r.canonical);
+        return !heldKeys.has(key) && verifiedKeys.has(key);
+      });
 
     return {
       sections: {
@@ -297,19 +300,19 @@ export const buildSwapSections = ({
     };
   }
 
-  const heldSearchKeys = new Set(yourTokens.map((r) => r.canonical));
-
-  // Dedupe by canonical, exclude held (already in yourTokens)
+  // Dedupe by identity; a held token belongs to Your tokens only, under
+  // whichever code the search knows it by.
   const dedupe = (assets: ManageAssetCurrency[]): SwapTokenRecord[] => {
     const seen = new Set<string>();
     return assets
       .map((a) => currencyToRecord(a, false))
       .filter(isDiscoverable)
       .filter((r) => {
-        if (heldSearchKeys.has(r.canonical) || seen.has(r.canonical)) {
+        const key = swapIdentityKey(r.canonical);
+        if (heldKeys.has(key) || seen.has(key)) {
           return false;
         }
-        seen.add(r.canonical);
+        seen.add(key);
         return true;
       });
   };
@@ -346,8 +349,16 @@ export const omitHiddenFromSections = (
   if (!Object.keys(hiddenAssets).length) {
     return result;
   }
+  const hiddenByKey = Object.fromEntries(
+    Object.entries(hiddenAssets).map(([canonical, visibility]) => [
+      swapIdentityKey(canonical),
+      visibility,
+    ]),
+  );
   const visible = (rows: SwapTokenRecord[]) =>
-    rows.filter((r) => isAssetVisible(hiddenAssets, r.canonical));
+    rows.filter((r) =>
+      isAssetVisible(hiddenByKey, swapIdentityKey(r.canonical)),
+    );
   return {
     ...result,
     sections: {
@@ -370,12 +381,18 @@ export const withRowIcons = (
   cachedIcons: Record<string, string | null>,
   assetsListsData: AssetListResponse[],
 ): SwapTokenLookupResult => {
+  const cachedByKey = Object.fromEntries(
+    Object.entries(cachedIcons).map(([canonical, icon]) => [
+      swapIdentityKey(canonical),
+      icon,
+    ]),
+  );
   const withIcon = (r: SwapTokenRecord): SwapTokenRecord => {
     if (!r.issuer) {
       return r;
     }
     const image =
-      cachedIcons[r.canonical] ||
+      cachedByKey[swapIdentityKey(r.canonical)] ||
       findTokenListIcon({
         issuerId: r.isContract ? undefined : r.issuer,
         contractId: r.isContract ? r.issuer : r.contract,

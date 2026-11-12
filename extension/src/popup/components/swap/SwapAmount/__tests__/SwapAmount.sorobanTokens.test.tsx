@@ -194,6 +194,35 @@ describe("SwapAmount with Soroban contract tokens", () => {
   });
 });
 
+describe("getSwapDerivedData destination identity", () => {
+  it("knows a held contract token by its contract, whatever code the pick carried", () => {
+    const derived = getSwapDerivedData({
+      data: {
+        type: AppDataType.RESOLVED,
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        icons: {},
+        userBalances: { balances: [nativeBalance, tokenBalance] },
+        tokenPrices: {},
+      } as any,
+      asset: "native",
+      // stellar.expert's code for the contract the account holds as TKN.
+      destinationAsset: `ABC:${TOKEN_CONTRACT}`,
+      destinationAmount: "1",
+      destinationTokenDetails: null,
+      amount: "1",
+      amountUsd: "0",
+      fee: "0.00001",
+      networkDetails: MAINNET_NETWORK_DETAILS,
+      inputType: "crypto",
+      publicKey: "G123",
+      swapQuoteKey: null,
+      destRequiresTrustline: false,
+    });
+
+    expect(derived.destinationIsNonHeld).toBe(false);
+  });
+});
+
 describe("getSwapDerivedData with a contract token sold", () => {
   const derive = (xlm: string) =>
     getSwapDerivedData({

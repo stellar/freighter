@@ -234,6 +234,32 @@ describe("SwapPickerSections", () => {
     expect(screen.getByTestId("row-DOGET")).toBeInTheDocument();
   });
 
+  it("excludes a hidden contract token by its contract, whatever code the row carries", () => {
+    const contract = "CAZXEHTSQATVQVWDPWWDTFSY6CM764JD4MZ6HUVPO3QKS64QEEP4KJH7";
+    render(
+      <SwapPickerSections
+        {...baseProps}
+        searchTerm=""
+        hiddenAssets={[`SYM:${contract}`]}
+        result={{
+          ...emptyResult,
+          popular: [
+            {
+              ...rec("ABC"),
+              canonical: `ABC:${contract}`,
+              issuer: contract,
+              isContract: true,
+            },
+            rec("DOGET"),
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.queryByTestId("row-ABC")).toBeNull();
+    expect(screen.getByTestId("row-DOGET")).toBeInTheDocument();
+  });
+
   it("divides Your tokens rows like Home's list, with no line after the last", () => {
     render(
       <SwapPickerSections

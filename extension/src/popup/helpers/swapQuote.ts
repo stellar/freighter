@@ -104,6 +104,14 @@ export const pickSwapRoute = (
 const isContractToken = (canonical: string) =>
   isContractId(splitCanonical(canonical).issuer);
 
+/**
+ * What makes two swap tokens the same token. A contract token's code differs
+ * between sources (the contract's symbol on a held balance, stellar.expert's
+ * code on a search row), so its contract ID alone identifies it.
+ */
+export const swapIdentityKey = (canonical: string) =>
+  isContractToken(canonical) ? splitCanonical(canonical).issuer : canonical;
+
 export const toBackendAsset = (canonical: string) => {
   if (isNativeAssetId(canonical)) {
     return "XLM";
