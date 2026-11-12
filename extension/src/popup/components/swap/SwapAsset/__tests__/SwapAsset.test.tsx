@@ -457,3 +457,75 @@ describe("SwapAsset destination: a held contract token found by another code", (
     expect(getDecimals).not.toHaveBeenCalled();
   });
 });
+
+describe("SwapAsset destination: a pick before the account data resolves", () => {
+  const CONTRACT = "CBI7UCH5KGSVQRO5H4SUCZUTZABCITZLRHQQZTWL2TK4RZ72TAR6IHRV";
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it("reads the decimals with the active account's key", async () => {
+    const getDecimals = jest
+      .spyOn(Soroban, "getDecimalsForAsset")
+      .mockResolvedValue(18);
+    jest.spyOn(UseSwapFromData, "useGetSwapFromData").mockReturnValue({
+      state: { state: RequestState.LOADING, data: null, error: null },
+      fetchData: jest.fn().mockResolvedValue(undefined),
+      filterBalances: jest.fn(),
+    } as any);
+    jest.spyOn(UseSwapTokenLookup, "useSwapTokenLookup").mockReturnValue({
+      fetchData: jest.fn().mockResolvedValue(undefined),
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          sections: {
+            yourTokens: [],
+            popular: [
+              {
+                canonical: `TKN:${CONTRACT}`,
+                code: "TKN",
+                issuer: CONTRACT,
+                contract: CONTRACT,
+                domain: null,
+                isHeld: false,
+                isContract: true,
+                requiresTrustline: false,
+              },
+            ],
+            verified: [],
+            unverified: [],
+          },
+          isSearch: false,
+          isFallback: false,
+        },
+        error: null,
+      },
+    } as any);
+    const onClickAsset = jest.fn();
+    render(
+      <Wrapper
+        state={{
+          auth: {
+            allAccounts: ["GACCOUNT"],
+            publicKey: "GACCOUNT",
+            applicationState: "MNEMONIC_PHRASE_CONFIRMED",
+          },
+        }}
+        routes={["/"]}
+      >
+        <SwapAsset
+          selectionType="destination"
+          hiddenAssets={[]}
+          onClickAsset={onClickAsset}
+          goBack={jest.fn()}
+        />
+      </Wrapper>,
+    );
+
+    fireEvent.click(screen.getByTestId("SwapTokenRow-TKN-body"));
+
+    await waitFor(() => expect(onClickAsset).toHaveBeenCalledTimes(1));
+    expect(getDecimals).toHaveBeenCalledWith(
+      expect.objectContaining({ publicKey: "GACCOUNT" }),
+    );
+  });
+});

@@ -18,6 +18,7 @@ import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { publicKeySelector } from "popup/ducks/accountServices";
 import type { DestinationTokenDetails } from "popup/ducks/transactionSubmission";
 import { getDecimalsForAsset } from "popup/helpers/soroban";
 import { swapIdentityKey } from "popup/helpers/swapQuote";
@@ -58,6 +59,7 @@ export const SwapAsset = ({
 }: SwapAssetProps) => {
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const publicKey = useSelector(publicKeySelector);
   // Token discovery (Popular + search) only exists on Mainnet/Testnet. On
   // custom/Futurenet networks the picker degrades to held-only and the Popular
   // section is simply hidden — no "discovery unavailable" notice.
@@ -322,7 +324,7 @@ export const SwapAsset = ({
     };
     getDecimalsForAsset({
       assetIssuer: splitCanonical(canonical).issuer,
-      publicKey: resolvedFromData?.publicKey ?? "",
+      publicKey,
       networkDetails,
     })
       .then((decimals) => {
