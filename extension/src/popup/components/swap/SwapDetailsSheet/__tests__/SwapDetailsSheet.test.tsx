@@ -193,4 +193,23 @@ describe("VenueIcon", () => {
     ).toBeInTheDocument();
     expect(screen.queryByTestId("SwapDetails__venue-icon")).toBeNull();
   });
+
+  it("shows the next venue's image after the previous one in the same slot failed", () => {
+    const { rerender } = render(
+      <VenueIcon
+        venue={{ name: "Aquarius", icon: "https://icons.test/gone.png" }}
+      />,
+    );
+    fireEvent.error(screen.getByTestId("SwapDetails__venue-icon"));
+    rerender(
+      <VenueIcon
+        venue={{ name: "Soroswap", icon: "https://icons.test/soroswap.png" }}
+      />,
+    );
+
+    expect(screen.getByTestId("SwapDetails__venue-icon")).toHaveAttribute(
+      "src",
+      "https://icons.test/soroswap.png",
+    );
+  });
 });
