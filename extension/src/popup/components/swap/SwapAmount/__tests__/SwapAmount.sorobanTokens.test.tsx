@@ -222,7 +222,7 @@ describe("getSwapDerivedData destination identity", () => {
       fee: "0.00001",
       networkDetails: MAINNET_NETWORK_DETAILS,
       inputType: "crypto",
-      swapQuoteKey: null,
+      isQuoteForInputs: false,
       destRequiresTrustline: false,
     });
 
