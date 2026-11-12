@@ -60,6 +60,7 @@ import {
   useIsTxSuspicious,
   getSiteSecurityStates,
   getTransactionSecurityLevel,
+  scanResultHasSimulationError,
 } from "popup/helpers/blockaid";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { Loading } from "popup/components/Loading";
@@ -322,8 +323,7 @@ export const SignTransaction = () => {
       (scanResult.validation.result_type === "Malicious" ||
         scanResult.validation.result_type === "Warning")
     );
-  const hasSimulationError =
-    scanResult && scanResult.simulation && "error" in scanResult.simulation;
+  const hasSimulationError = scanResultHasSimulationError(scanResult);
   const showBlockAidDetails =
     isUnableToScan ||
     hasSimulationError ||
@@ -333,7 +333,6 @@ export const SignTransaction = () => {
     (scanResult?.validation &&
       "result_type" in scanResult.validation &&
       scanResult.validation.result_type === "Malicious") ||
-    hasSimulationError ||
     isSiteMalicious;
 
   // Single Blockaid verdict for the banner: the worst of the transaction scan

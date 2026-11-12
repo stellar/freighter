@@ -1190,7 +1190,7 @@ describe("SignTransactions", () => {
     );
     await waitFor(() => screen.getByTestId("SignTransaction"));
     expect(screen.getByTestId("sign-tx-blockaid-banner")).toHaveTextContent(
-      "This transaction was flagged as suspicious",
+      "This transaction is likely to fail",
     );
     expect(screen.getByText("Confirm anyway")).toBeDefined();
   });

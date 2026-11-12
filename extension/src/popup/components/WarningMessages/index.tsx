@@ -25,6 +25,7 @@ import {
   isBlockaidEnabled,
   reportAssetWarning,
   reportTransactionWarning,
+  scanResultHasSimulationError,
   useBlockaidOverrideState,
   useShouldTreatAssetAsUnableToScan,
   useShouldTreatTxAsUnableToScan,
@@ -905,14 +906,26 @@ export const BlockAidScanExpanded = ({
     return null;
   }
 
+  // A revert with no risk verdict is a failure prediction. The raw simulation
+  // error is already one of the rows; the title and subtitle should not call
+  // it unsafe.
+  const isSimulationFailureOnly =
+    !mergedIsMalicious &&
+    !mergedIsSuspicious &&
+    !isAssetScan &&
+    scanResultHasSimulationError(scanResult);
   const title = mergedIsMalicious
     ? t("Do not proceed")
     : mergedIsSuspicious
       ? t("Suspicious Request")
-      : t("Proceed with caution");
-  const subtitle = isAssetScan
-    ? t("This token does not appear safe for the following reasons.")
-    : t("This transaction does not appear safe for the following reasons.");
+      : isSimulationFailureOnly
+        ? t("Likely to fail")
+        : t("Proceed with caution");
+  const subtitle = isSimulationFailureOnly
+    ? t("This transaction is expected to fail for the following reasons.")
+    : isAssetScan
+      ? t("This token does not appear safe for the following reasons.")
+      : t("This transaction does not appear safe for the following reasons.");
   return (
     <div className="BlockaidDetailsExpanded">
       <SheetHeader

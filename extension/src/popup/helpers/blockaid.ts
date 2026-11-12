@@ -607,11 +607,7 @@ export const isTxSuspicious = (
     return false;
   }
 
-  const { simulation, validation } = blockaidData;
-
-  if (simulation && "error" in simulation) {
-    return true;
-  }
+  const { validation } = blockaidData;
 
   if (
     validation &&
@@ -727,10 +723,26 @@ export const getSiteSecurityLevel = ({
 };
 
 /**
+ * True when Blockaid's simulation reverted or otherwise failed. The `error`
+ * string is the revert reason ("insufficient balance for asset …"). This is
+ * independent of `validation.result_type`, which is the risk verdict.
+ */
+export const scanResultHasSimulationError = (
+  scanResult: { simulation?: unknown } | null | undefined,
+): boolean => {
+  const simulation = scanResult?.simulation;
+  return (
+    !!simulation && typeof simulation === "object" && "error" in simulation
+  );
+};
+
+/**
  * Collapses a transaction Blockaid scan into a single SecurityLevel (or null
- * when nothing is flagged) for the reusable BlockaidBanner. A simulation error
- * is treated as suspicious. The dev override takes precedence. Shared by the
- * swap review and the dApp sign-transaction flow so both read one source.
+ * when nothing is flagged) for the reusable BlockaidBanner. A risk verdict
+ * wins over a simulation revert: Malicious and Warning stay malicious /
+ * suspicious, and a revert with no risk verdict is LIKELY_TO_FAIL. The dev
+ * override takes precedence. Shared by the swap review and the dApp
+ * sign-transaction flow so both read one source.
  */
 export const getTransactionSecurityLevel = (
   txScanResult: BlockAidScanTxResult | null | undefined,
@@ -746,12 +758,7 @@ export const getTransactionSecurityLevel = (
     return isUnableToScan ? SecurityLevel.UNABLE_TO_SCAN : null;
   }
 
-  const { simulation, validation } = txScanResult;
-
-  // Handle simulation error - treat as suspicious
-  if (simulation && "error" in simulation) {
-    return SecurityLevel.SUSPICIOUS;
-  }
+  const { validation } = txScanResult;
 
   if (validation && "result_type" in validation) {
     const resultType = validation.result_type;
@@ -761,6 +768,10 @@ export const getTransactionSecurityLevel = (
     if (resultType === "Warning") {
       return SecurityLevel.SUSPICIOUS;
     }
+  }
+
+  if (scanResultHasSimulationError(txScanResult)) {
+    return SecurityLevel.LIKELY_TO_FAIL;
   }
 
   if (isUnableToScan) {
