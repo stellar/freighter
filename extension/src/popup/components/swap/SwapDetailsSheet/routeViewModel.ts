@@ -142,7 +142,10 @@ export const resolveVenue = (
   if (key === "stellar-dex") {
     return { name: "Stellar DEX", icon: StellarLogo };
   }
-  const match = protocols.find((p) => venueKey(p.name) === key);
+  // Discover hides blacklisted protocols; the route doesn't brand them either.
+  const match = protocols.find(
+    (p) => !p.isBlacklisted && venueKey(p.name) === key,
+  );
   return match
     ? { name: match.name, icon: match.iconUrl || null }
     : { name: venue, icon: null };

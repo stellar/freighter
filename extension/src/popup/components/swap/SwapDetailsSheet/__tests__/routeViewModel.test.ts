@@ -227,6 +227,17 @@ describe("buildRouteView", () => {
     });
   });
 
+  it("gives a blacklisted protocol's venue no branding, as mobile does", () => {
+    const blacklisted = {
+      ...protocol("Shady Swap", "https://icons.test/shady.png"),
+      isBlacklisted: true,
+    };
+    expect(resolveVenue("shady swap", [blacklisted])).toEqual({
+      name: "shady swap",
+      icon: null,
+    });
+  });
+
   it("names stellar-dex in any casing Stellar DEX, as mobile does", () => {
     expect(resolveVenue(" Stellar-DEX ", PROTOCOLS)).toEqual({
       name: "Stellar DEX",
