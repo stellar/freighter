@@ -25,7 +25,6 @@ import {
   isBlockaidEnabled,
   reportAssetWarning,
   reportTransactionWarning,
-  scanResultHasSimulationError,
   useBlockaidOverrideState,
   useShouldTreatAssetAsUnableToScan,
   useShouldTreatTxAsUnableToScan,
@@ -913,7 +912,10 @@ export const BlockAidScanExpanded = ({
     !mergedIsMalicious &&
     !mergedIsSuspicious &&
     !isAssetScan &&
-    scanResultHasSimulationError(scanResult);
+    !!scanResult &&
+    "simulation" in scanResult &&
+    !!scanResult.simulation &&
+    "error" in scanResult.simulation;
   const title = mergedIsMalicious
     ? t("Do not proceed")
     : mergedIsSuspicious

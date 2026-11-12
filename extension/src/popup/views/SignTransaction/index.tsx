@@ -60,7 +60,6 @@ import {
   useIsTxSuspicious,
   getSiteSecurityStates,
   getTransactionSecurityLevel,
-  scanResultHasSimulationError,
 } from "popup/helpers/blockaid";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { Loading } from "popup/components/Loading";
@@ -323,7 +322,9 @@ export const SignTransaction = () => {
       (scanResult.validation.result_type === "Malicious" ||
         scanResult.validation.result_type === "Warning")
     );
-  const hasSimulationError = scanResultHasSimulationError(scanResult);
+  const hasSimulationError = !!(
+    scanResult?.simulation && "error" in scanResult.simulation
+  );
   const showBlockAidDetails =
     isUnableToScan ||
     hasSimulationError ||

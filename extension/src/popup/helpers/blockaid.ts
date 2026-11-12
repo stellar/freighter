@@ -723,20 +723,6 @@ export const getSiteSecurityLevel = ({
 };
 
 /**
- * True when Blockaid's simulation reverted or otherwise failed. The `error`
- * string is the revert reason ("insufficient balance for asset …"). This is
- * independent of `validation.result_type`, which is the risk verdict.
- */
-export const scanResultHasSimulationError = (
-  scanResult: { simulation?: unknown } | null | undefined,
-): boolean => {
-  const simulation = scanResult?.simulation;
-  return (
-    !!simulation && typeof simulation === "object" && "error" in simulation
-  );
-};
-
-/**
  * Collapses a transaction Blockaid scan into a single SecurityLevel (or null
  * when nothing is flagged) for the reusable BlockaidBanner. A risk verdict
  * wins over a simulation revert: Malicious and Warning stay malicious /
@@ -758,7 +744,7 @@ export const getTransactionSecurityLevel = (
     return isUnableToScan ? SecurityLevel.UNABLE_TO_SCAN : null;
   }
 
-  const { validation } = txScanResult;
+  const { simulation, validation } = txScanResult;
 
   if (validation && "result_type" in validation) {
     const resultType = validation.result_type;
@@ -770,7 +756,8 @@ export const getTransactionSecurityLevel = (
     }
   }
 
-  if (scanResultHasSimulationError(txScanResult)) {
+  // A revert is "this will fail". It is not a risk verdict.
+  if (simulation && "error" in simulation) {
     return SecurityLevel.LIKELY_TO_FAIL;
   }
 
