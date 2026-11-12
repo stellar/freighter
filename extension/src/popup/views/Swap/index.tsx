@@ -256,9 +256,10 @@ export const Swap = () => {
             selectionType="destination"
             hiddenAssets={[transactionData.asset]}
             goBack={() => setActiveStep(STEPS.AMOUNT)}
-            onClickAsset={(canonical, isContract, details) => {
+            onClickAsset={(canonical, _isContract, details) => {
               dispatch(saveDestinationAsset(canonical));
-              dispatch(saveIsToken(isContract));
+              // isToken describes the source (the review reads it against
+              // srcAsset), so a destination pick leaves it alone.
               dispatch(saveDestinationTokenDetails(details ?? null));
               // Can't swap a token for itself: if it matches the current
               // source, reset the source to "(+) Select".
@@ -267,6 +268,7 @@ export const Swap = () => {
                 swapIdentityKey(transactionData.asset)
               ) {
                 dispatch(saveAsset(""));
+                dispatch(saveIsToken(false));
                 dispatch(saveAmount("0"));
                 dispatch(saveAmountUsd("0.00"));
               }
