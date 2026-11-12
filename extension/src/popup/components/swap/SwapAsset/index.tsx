@@ -1,6 +1,7 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Navigate } from "react-router-dom";
-import { Icon, Input, Loader } from "@stellar/design-system";
+import { Icon, Input, Loader, Notification } from "@stellar/design-system";
+import { captureException } from "@sentry/browser";
 import { useFormik } from "formik";
 import { debounce } from "lodash";
 import { useTranslation } from "react-i18next";
@@ -18,6 +19,9 @@ import { reRouteOnboarding } from "popup/helpers/route";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import type { DestinationTokenDetails } from "popup/ducks/transactionSubmission";
+import { getDecimalsForAsset } from "popup/helpers/soroban";
+import { swapIdentityKey } from "popup/helpers/swapQuote";
+import { splitCanonical } from "@shared/helpers/stellar";
 import { useGetSwapFromData } from "./hooks/useSwapFromData";
 import {
   useSwapTokenLookup,
@@ -80,6 +84,17 @@ export const SwapAsset = ({
   // for the whole fetch promise — that kept the spinner up through the silent
   // Blockaid revalidation / cached-result repaint.
   const [isSearchPending, setIsSearchPending] = React.useState(false);
+  const [pickError, setPickError] = React.useState<string | null>(null);
+  // A contract-token pick waits on its decimals; a newer pick or the picker
+  // closing wins over a late result.
+  const pickIdRef = useRef(0);
+  const pendingPickRef = useRef<string | null>(null);
+  useEffect(
+    () => () => {
+      pickIdRef.current += 1;
+    },
+    [],
+  );
 
   const isLoading = isDestination
     ? lookupState.state === RequestState.IDLE ||
@@ -252,6 +267,63 @@ export const SwapAsset = ({
         isNewAccount: true,
       };
 
+  // An unheld contract token's decimals scale every amount sent for it, so
+  // they are read before the pick applies; stellar.expert's copy comes from
+  // the issuer's toml and is not trusted for that. A held token's come from
+  // its balance.
+  const heldKeys = new Set(
+    pickerResult.yourTokens.map((r) => swapIdentityKey(r.canonical)),
+  );
+  const handleDestinationPick = (
+    canonical: string,
+    isContract: boolean,
+    details?: SwapPickerSelection,
+  ) => {
+    if (pendingPickRef.current === canonical) {
+      return;
+    }
+    // Every pick supersedes a pending read, whether or not it needs one.
+    pickIdRef.current += 1;
+    if (!isContract || heldKeys.has(swapIdentityKey(canonical))) {
+      pendingPickRef.current = null;
+      onClickAsset(canonical, isContract, details);
+      return;
+    }
+    const pickId = pickIdRef.current;
+    pendingPickRef.current = canonical;
+    setPickError(null);
+    const isLatest = () => {
+      if (pickId !== pickIdRef.current) {
+        return false;
+      }
+      pendingPickRef.current = null;
+      return true;
+    };
+    getDecimalsForAsset({
+      assetIssuer: splitCanonical(canonical).issuer,
+      publicKey: resolvedFromData?.publicKey ?? "",
+      networkDetails,
+    })
+      .then((decimals) => {
+        if (isLatest()) {
+          onClickAsset(
+            canonical,
+            isContract,
+            details && { ...details, decimals },
+          );
+        }
+      })
+      .catch((e) => {
+        if (!isLatest()) {
+          return;
+        }
+        captureException(e);
+        setPickError(
+          t("Couldn't read this token's details. Please try again."),
+        );
+      });
+  };
+
   // The source ("Swap from") picker shows the same held "Your tokens" list as
   // the destination — held tokens only, filtered locally by the search term.
   const sourceResult: SwapPickerSectionsResult = {
@@ -291,14 +363,24 @@ export const SwapAsset = ({
               <Loader size="2rem" />
             </div>
           ) : isDestination ? (
-            <SwapPickerSections
-              result={pickerResult}
-              searchTerm={formik.values.searchTerm}
-              hiddenAssets={hiddenAssets}
-              onClickAsset={onClickAsset}
-              stellarExpertUrl={stellarExpertUrl}
-              isDiscoverySupported={isDiscoverySupported}
-            />
+            <>
+              {pickError && (
+                <div
+                  className="SwapPickerSections__notice"
+                  data-testid="swap-picker-pick-error"
+                >
+                  <Notification variant="error" title={pickError} />
+                </div>
+              )}
+              <SwapPickerSections
+                result={pickerResult}
+                searchTerm={formik.values.searchTerm}
+                hiddenAssets={hiddenAssets}
+                onClickAsset={handleDestinationPick}
+                stellarExpertUrl={stellarExpertUrl}
+                isDiscoverySupported={isDiscoverySupported}
+              />
+            </>
           ) : (
             <SwapPickerSections
               result={sourceResult}

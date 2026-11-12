@@ -1,12 +1,16 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { captureException } from "@sentry/browser";
 
 import { Wrapper } from "popup/__testHelpers__";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import * as UseSwapFromData from "popup/components/swap/SwapAsset/hooks/useSwapFromData";
 import * as UseSwapTokenLookup from "popup/components/swap/SwapAsset/hooks/useSwapTokenLookup";
+import * as Soroban from "popup/helpers/soroban";
 import { SwapAsset } from "popup/components/swap/SwapAsset";
+
+jest.mock("@sentry/browser", () => ({ captureException: jest.fn() }));
 
 const resolvedFromState = {
   state: RequestState.SUCCESS,
@@ -238,5 +242,135 @@ describe("SwapAsset selectionType", () => {
     expect(lookupFetchData).toHaveBeenCalledWith(
       expect.objectContaining({ searchTerm: "", balances: [heldUsdc] }),
     );
+  });
+});
+
+describe("SwapAsset destination: a contract token the account doesn't hold", () => {
+  const CONTRACT = "CBI7UCH5KGSVQRO5H4SUCZUTZABCITZLRHQQZTWL2TK4RZ72TAR6IHRV";
+  const tokenRow = {
+    canonical: `TKN:${CONTRACT}`,
+    code: "TKN",
+    issuer: CONTRACT,
+    contract: CONTRACT,
+    domain: null,
+    isHeld: false,
+    isContract: true,
+    requiresTrustline: false,
+    // stellar.expert's (toml-sourced) value: never what the pick stores.
+    decimals: 6,
+  };
+  const aquaRow = {
+    canonical: "AQUA:G456",
+    code: "AQUA",
+    issuer: "G456",
+    domain: "aqua.network",
+    isHeld: false,
+    isContract: false,
+    requiresTrustline: true,
+  };
+
+  const renderPicker = (onClickAsset = jest.fn()) => {
+    jest.spyOn(UseSwapFromData, "useGetSwapFromData").mockReturnValue({
+      state: resolvedFromState,
+      fetchData: jest.fn().mockResolvedValue(undefined),
+      filterBalances: jest.fn(),
+    } as any);
+    jest.spyOn(UseSwapTokenLookup, "useSwapTokenLookup").mockReturnValue({
+      fetchData: jest.fn().mockResolvedValue(undefined),
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          sections: {
+            yourTokens: [],
+            popular: [aquaRow, tokenRow],
+            verified: [],
+            unverified: [],
+          },
+          isSearch: false,
+          isFallback: false,
+        },
+        error: null,
+      },
+    } as any);
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <SwapAsset
+          selectionType="destination"
+          hiddenAssets={[]}
+          onClickAsset={onClickAsset}
+          goBack={jest.fn()}
+        />
+      </Wrapper>,
+    );
+    return onClickAsset;
+  };
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it("reads its decimals from the backend before the pick applies", async () => {
+    const getDecimals = jest
+      .spyOn(Soroban, "getDecimalsForAsset")
+      .mockResolvedValue(18);
+    const onClickAsset = renderPicker();
+
+    fireEvent.click(screen.getByTestId("SwapTokenRow-TKN-body"));
+
+    await waitFor(() => expect(onClickAsset).toHaveBeenCalledTimes(1));
+    expect(getDecimals).toHaveBeenCalledWith(
+      expect.objectContaining({ assetIssuer: CONTRACT, publicKey: "G123" }),
+    );
+    expect(onClickAsset.mock.calls[0][2]).toMatchObject({
+      tokenCode: "TKN",
+      decimals: 18,
+    });
+  });
+
+  it("refuses the pick when the decimals can't be read, and says so", async () => {
+    jest
+      .spyOn(Soroban, "getDecimalsForAsset")
+      .mockRejectedValue(new Error("rpc down"));
+    const onClickAsset = renderPicker();
+
+    fireEvent.click(screen.getByTestId("SwapTokenRow-TKN-body"));
+
+    expect(
+      await screen.findByText(
+        "Couldn't read this token's details. Please try again.",
+      ),
+    ).toBeInTheDocument();
+    expect(onClickAsset).not.toHaveBeenCalled();
+    expect(captureException).toHaveBeenCalled();
+  });
+
+  it("ignores a repeat tap while the read is pending", async () => {
+    let resolve: (n: number) => void = () => {};
+    const getDecimals = jest
+      .spyOn(Soroban, "getDecimalsForAsset")
+      .mockReturnValue(new Promise((r) => (resolve = r)));
+    const onClickAsset = renderPicker();
+
+    fireEvent.click(screen.getByTestId("SwapTokenRow-TKN-body"));
+    fireEvent.click(screen.getByTestId("SwapTokenRow-TKN-body"));
+    expect(getDecimals).toHaveBeenCalledTimes(1);
+
+    resolve(18);
+    await waitFor(() => expect(onClickAsset).toHaveBeenCalledTimes(1));
+  });
+
+  it("drops a late read when a newer pick was made", async () => {
+    let resolve: (n: number) => void = () => {};
+    jest
+      .spyOn(Soroban, "getDecimalsForAsset")
+      .mockReturnValue(new Promise((r) => (resolve = r)));
+    const onClickAsset = renderPicker();
+
+    fireEvent.click(screen.getByTestId("SwapTokenRow-TKN-body"));
+    fireEvent.click(screen.getByTestId("SwapTokenRow-AQUA-body"));
+    expect(onClickAsset).toHaveBeenCalledTimes(1);
+    expect(onClickAsset.mock.calls[0][0]).toBe("AQUA:G456");
+
+    resolve(18);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(onClickAsset).toHaveBeenCalledTimes(1);
   });
 });

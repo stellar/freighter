@@ -28,7 +28,13 @@ const buildSelection = (
 ): SwapPickerSelection => ({
   tokenCode: r.code ?? "",
   requiresTrustline: r.requiresTrustline,
-  decimals: r.isContract ? r.decimals : CLASSIC_ASSET_DECIMALS,
+  // An unheld contract token's decimals are read when it is picked, not
+  // taken from the search record.
+  decimals: r.isContract
+    ? r.isHeld
+      ? r.decimals
+      : undefined
+    : CLASSIC_ASSET_DECIMALS,
   issuer: r.issuer || undefined,
   securityLevel: r.securityLevel,
   securityWarnings: r.securityWarnings,

@@ -9,6 +9,7 @@ import { isNativeAssetPair } from "@shared/helpers/assetIdentity";
 import { SecurityLevel } from "popup/constants/blockaid";
 import { InputType } from "helpers/transaction";
 import { formatAmountPreserveCursor } from "popup/helpers/formatters";
+import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 
 import "./styles.scss";
@@ -49,7 +50,8 @@ export interface AmountCardProps {
    * (e.g. the swap CTA disables itself while the sell input is focused). */
   onInputFocus?: () => void;
   onInputBlur?: () => void;
-  cryptoDecimals: number;
+  /** Input precision; a read-only card never uses it. */
+  cryptoDecimals?: number;
   onAmountChange: (next: { amount: string; newCursor: number }) => void;
   onAmountUsdChange: (next: { amount: string; newCursor: number }) => void;
   onToggleInputType: () => void;
@@ -80,7 +82,7 @@ export const AmountCard = ({
   amountInputRef,
   onInputFocus,
   onInputBlur,
-  cryptoDecimals,
+  cryptoDecimals = CLASSIC_ASSET_DECIMALS,
   onAmountChange,
   onAmountUsdChange,
   onToggleInputType,

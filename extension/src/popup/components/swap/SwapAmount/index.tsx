@@ -222,7 +222,10 @@ export const SwapAmount = ({
       memo,
       destRequiresTrustline,
       sourceDecimals: heldSourceDecimals,
-      destDecimals: heldDestDecimals,
+      // Read at pick for an unheld contract token; a destination that never
+      // went through the picker is read at build.
+      destDecimals:
+        heldDestDecimals ?? transactionData.destinationTokenDetails?.decimals,
     },
   });
 
@@ -883,7 +886,6 @@ export const SwapAmount = ({
                     isAmountLoading={isQuotePending}
                     isReadOnly
                     autoFocus={false}
-                    cryptoDecimals={heldDestDecimals ?? CLASSIC_ASSET_DECIMALS}
                     onAmountChange={() => {}}
                     onAmountUsdChange={() => {}}
                     onToggleInputType={() => {}}
