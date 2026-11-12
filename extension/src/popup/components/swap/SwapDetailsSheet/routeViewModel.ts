@@ -179,11 +179,12 @@ export const buildRouteView = ({
       resolveRouteToken(path.hops[0].from, tokenContext),
       ...path.hops.map((hop) => resolveRouteToken(hop.to, tokenContext)),
     ];
+    const pools = path.hops.filter((h) => h.pool).length;
     return {
       share: formatShare(path.share),
       venues,
       tokens,
-      poolCount: path.hops.some((h) => h.pool) ? path.hops.length : null,
+      poolCount: pools > 0 ? pools : null,
     };
   });
 

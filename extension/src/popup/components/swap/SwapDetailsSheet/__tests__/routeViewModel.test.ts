@@ -177,6 +177,26 @@ describe("buildRouteView", () => {
     expect(view.paths.map((p) => p.poolCount)).toEqual([3, null]);
   });
 
+  it("counts only the hops that carry a pool", () => {
+    const view = buildRouteView({
+      route: {
+        ...lifiRoute,
+        paths: [
+          {
+            share: "1",
+            hops: [
+              { venue: "Aquarius", from: "XLM", to: EURC, pool: "p1" },
+              { venue: "stellar-dex", from: EURC, to: USDC },
+            ],
+          },
+        ],
+      },
+      tokenContext: emptyContext,
+      protocols: PROTOCOLS,
+    })!;
+    expect(view.paths[0].poolCount).toBe(1);
+  });
+
   it("gives a venue /protocols doesn't list no icon", () => {
     const view = buildRouteView({
       route: {
