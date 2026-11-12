@@ -324,7 +324,8 @@ export const SwapAmount = ({
       spendableXlm: getAvailableBalance({
         assetCanonical: "native",
         balances: sendData.userBalances.balances,
-        recommendedFee: fee,
+        // Includes a Soroban route's resource fee, which the XLM also pays.
+        recommendedFee: displayFee,
       }),
     });
     if (needsReserve) {

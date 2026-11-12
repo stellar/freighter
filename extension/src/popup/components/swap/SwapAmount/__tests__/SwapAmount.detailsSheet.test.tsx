@@ -330,6 +330,32 @@ describe("SwapAmount details sheet", () => {
       );
     });
 
+    // 0.55 XLM spendable after the inclusion fee clears the 0.5 trustline
+    // reserve; after the LI.FI resource fee too, it doesn't.
+    it("opens the XLM-reserve sheet when the resource fee leaves too little for a new trustline", async () => {
+      withBalances([xlm("1.55"), usdc]);
+      renderSwapAmount({
+        asset: USDC,
+        destinationAsset: AQUA,
+        swapQuotes: quotes({ resourceFee: "0.0858459" }),
+        swapQuoteKey: getSwapQuoteKey({
+          mode: "send",
+          amount: "5",
+          sourceAsset: USDC,
+          destAsset: AQUA,
+          networkDetails: MAINNET_NETWORK_DETAILS,
+          publicKey: "G123",
+        }),
+      });
+      expect(screen.getByTestId("swap-amount-btn-continue")).toHaveTextContent(
+        "Review swap",
+      );
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("swap-amount-btn-continue"));
+      });
+      expect(await screen.findByTestId("XlmReserveSheet")).toBeInTheDocument();
+    });
+
     it("lets a non-XLM source through on a classic route", () => {
       withBalances([xlm("1.0001"), usdc]);
       renderSwapAmount(nonXlmSource({ source: "classic" }));
