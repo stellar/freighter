@@ -9,6 +9,7 @@
   "{{domain}} is not currently connected to Varial": "{{domain}} is not currently connected to Varial",
   "{{from}} has been swapped to {{to}}": "{{from}} has been swapped to {{to}}",
   "{{rate}}% APY": "{{rate}}% APY",
+  "{{walletType}} logo": "{{walletType}} logo",
   "* All Stellar accounts must maintain a minimum balance of lumens.": "* All Stellar accounts must maintain a minimum balance of lumens.",
   "0.5 XLM required": "0.5 XLM required",
   "1:1 backed, unified liquidity": "1:1 backed, unified liquidity",

@@ -1,5 +1,6 @@
 import { FeeBumpTransaction, Transaction, StrKey } from "stellar-sdk";
 import semver from "semver";
+import type { FC, SVGProps } from "react";
 import {
   ConfigurableWalletType,
   WalletType,
@@ -10,7 +11,7 @@ import i18n from "popup/helpers/localizationConfig";
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
 import LedgerApi from "@ledgerhq/hw-app-str";
 
-import LedgerLogo from "popup/assets/ledger-logo.png";
+import LedgerLogo from "popup/assets/ledger-logo.svg?react";
 /* end Ledger imports */
 
 // SEP-53 message signing (APDU 0x0C) landed in the Ledger Stellar app v6.0.0.
@@ -458,8 +459,9 @@ export const hardwareSignMessage: HardwareSignMessage = {
 
 type WalletAssets = {
   [key in ConfigurableWalletType]: {
-    // hardware wallet's logo. Recommended size: 223 x 60
-    logo: string;
+    // hardware wallet's logo as an inline SVG component. Paint it with
+    // fill="currentColor" so it follows the theme's text color.
+    logo: FC<SVGProps<SVGSVGElement>>;
   };
 };
 
