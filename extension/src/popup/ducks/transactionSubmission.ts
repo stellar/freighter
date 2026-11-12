@@ -745,10 +745,11 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.swapQuotes = action.payload.quotes ?? null;
       state.transactionData.swapQuoteKey = action.payload.key ?? null;
       const { quotes, key } = action.payload;
-      if (quotes && key) {
+      // An answer with no route says nothing about the pair's fee.
+      if (quotes?.routes[0] && key) {
         state.transactionData.swapLastQuotedFee = {
           key,
-          resourceFee: quotes.routes[0]?.resourceFee ?? null,
+          resourceFee: quotes.routes[0].resourceFee ?? null,
         };
       }
     },
