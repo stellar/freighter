@@ -224,12 +224,16 @@ export const SwapAmount = ({
       amount,
       allowedSlippage,
       path,
-      transactionFee: fee,
+      recommendedFee,
+      customFee: transactionFee,
       transactionTimeout,
       memo,
       destRequiresTrustline,
       sourceDecimals: heldSourceDecimals,
-      destDecimals: heldDestDecimals,
+      // Read at pick for an unheld contract token; a destination that never
+      // went through the picker is read at build.
+      destDecimals:
+        heldDestDecimals ?? transactionData.destinationTokenDetails?.decimals,
     },
   });
 
@@ -867,15 +871,21 @@ export const SwapAmount = ({
                       // A non-held destination can't become the source, so reset
                       // it to "(+) Select" instead of moving it into the sell
                       // slot; otherwise swap the two positions normally.
-                      dispatch(
-                        saveAsset(destinationIsNonHeld ? "" : destinationAsset),
-                      );
+                      const nextSrc = destinationIsNonHeld
+                        ? ""
+                        : destinationAsset;
+                      dispatch(saveAsset(nextSrc));
                       dispatch(saveDestinationAsset(prevSrc));
-                      // The new destination (old source) and new source are both
-                      // held/classic or empty — neither carries trustline/contract
-                      // metadata.
+                      // The new destination (old source) is held, so it carries
+                      // no pick-time details.
                       dispatch(saveDestinationTokenDetails(null));
-                      dispatch(saveIsToken(false));
+                      // isToken is the sell-side token's contract-ness (the
+                      // review reads it against srcAsset).
+                      dispatch(
+                        saveIsToken(
+                          isContractId(splitCanonical(nextSrc).issuer),
+                        ),
+                      );
                       // The amount was denominated in the old source token; reset
                       // it whenever the source token changes.
                       dispatch(saveAmount(DEFAULT_AMOUNT));
@@ -929,7 +939,6 @@ export const SwapAmount = ({
                     isAmountLoading={isQuotePending}
                     isReadOnly
                     autoFocus={false}
-                    cryptoDecimals={heldDestDecimals ?? CLASSIC_ASSET_DECIMALS}
                     onAmountChange={() => {}}
                     onAmountUsdChange={() => {}}
                     onToggleInputType={() => {}}
@@ -1056,11 +1065,7 @@ export const SwapAmount = ({
               await buildReview({
                 amount,
                 destinationRate: dstAssetPrice,
-                transactionFee: getSwapTotalFee({
-                  recommendedFee,
-                  customFee: fee,
-                  opCount: swapOpCount,
-                }),
+                customFee: fee,
                 transactionTimeout: timeout,
               });
               returnToReview();

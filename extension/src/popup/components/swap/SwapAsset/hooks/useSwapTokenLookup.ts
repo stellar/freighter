@@ -28,7 +28,10 @@ import {
 } from "@shared/helpers/assetIdentity";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
-import { searchAsset } from "popup/helpers/searchAsset";
+import { buildNativeAssetRow, searchAsset } from "popup/helpers/searchAsset";
+import { getTokenDetails } from "@shared/api/internal";
+import { isSacContractExecutable } from "@shared/helpers/soroban/token";
+import { isNativeContract } from "@shared/helpers/assetIdentity";
 import {
   getPersistedPopularTokens,
   setPersistedPopularTokens,
@@ -62,6 +65,7 @@ import {
   fetchTrendingAssets,
   TrendingAsset,
 } from "popup/helpers/trendingAssets";
+import { swapIdentityKey } from "popup/helpers/swapQuote";
 
 // Re-export RequestState for consumers
 export { RequestState };
@@ -239,7 +243,9 @@ export const buildSwapSections = ({
   const isSearch = term.length > 0;
 
   const heldRecords = balancesToHeldRecords({ balances, icons, tokenPrices });
-  const heldCanonicals = new Set(heldRecords.map((r) => r.canonical));
+  const heldKeys = new Set(
+    heldRecords.map((r) => swapIdentityKey(r.canonical)),
+  );
   // Only mainnet has a source (LI.FI) that routes contract tokens.
   const isDiscoverable = (r: SwapTokenRecord) =>
     !r.isContract || isMainnet(networkDetails);
@@ -248,7 +254,7 @@ export const buildSwapSections = ({
     // IDLE mode
     const verifiedKeys = new Set(
       verifiedAssets.map((a) =>
-        getCanonicalFromAsset(a.code || "", a.issuer || ""),
+        swapIdentityKey(getCanonicalFromAsset(a.code || "", a.issuer || "")),
       ),
     );
     const popularRecords = popular
@@ -264,10 +270,10 @@ export const buildSwapSections = ({
       )
       .map((a) => currencyToRecord(a, false))
       .filter(isDiscoverable)
-      .filter(
-        (r) =>
-          !heldCanonicals.has(r.canonical) && verifiedKeys.has(r.canonical),
-      );
+      .filter((r) => {
+        const key = swapIdentityKey(r.canonical);
+        return !heldKeys.has(key) && verifiedKeys.has(key);
+      });
 
     return {
       sections: {
@@ -297,19 +303,27 @@ export const buildSwapSections = ({
     };
   }
 
-  const heldSearchKeys = new Set(yourTokens.map((r) => r.canonical));
+  const heldSearchKeys = new Set(
+    yourTokens.map((r) => swapIdentityKey(r.canonical)),
+  );
 
-  // Dedupe by canonical, exclude held (already in yourTokens)
+  // Dedupe by identity against the held rows the term matched. A held
+  // contract searched by a code its balance doesn't carry is only reachable
+  // through its search row, which lists flagged as held.
   const dedupe = (assets: ManageAssetCurrency[]): SwapTokenRecord[] => {
     const seen = new Set<string>();
     return assets
-      .map((a) => currencyToRecord(a, false))
+      .map((a) => {
+        const { canonical } = currencyToRecord(a, false);
+        return currencyToRecord(a, heldKeys.has(swapIdentityKey(canonical)));
+      })
       .filter(isDiscoverable)
       .filter((r) => {
-        if (heldSearchKeys.has(r.canonical) || seen.has(r.canonical)) {
+        const key = swapIdentityKey(r.canonical);
+        if (heldSearchKeys.has(key) || seen.has(key)) {
           return false;
         }
-        seen.add(r.canonical);
+        seen.add(key);
         return true;
       });
   };
@@ -346,8 +360,16 @@ export const omitHiddenFromSections = (
   if (!Object.keys(hiddenAssets).length) {
     return result;
   }
+  const hiddenByKey = Object.fromEntries(
+    Object.entries(hiddenAssets).map(([canonical, visibility]) => [
+      swapIdentityKey(canonical),
+      visibility,
+    ]),
+  );
   const visible = (rows: SwapTokenRecord[]) =>
-    rows.filter((r) => isAssetVisible(hiddenAssets, r.canonical));
+    rows.filter((r) =>
+      isAssetVisible(hiddenByKey, swapIdentityKey(r.canonical)),
+    );
   return {
     ...result,
     sections: {
@@ -370,12 +392,18 @@ export const withRowIcons = (
   cachedIcons: Record<string, string | null>,
   assetsListsData: AssetListResponse[],
 ): SwapTokenLookupResult => {
+  const cachedByKey = Object.fromEntries(
+    Object.entries(cachedIcons).map(([canonical, icon]) => [
+      swapIdentityKey(canonical),
+      icon,
+    ]),
+  );
   const withIcon = (r: SwapTokenRecord): SwapTokenRecord => {
     if (!r.issuer) {
       return r;
     }
     const image =
-      cachedIcons[r.canonical] ||
+      cachedByKey[swapIdentityKey(r.canonical)] ||
       findTokenListIcon({
         issuerId: r.isContract ? undefined : r.issuer,
         contractId: r.isContract ? r.issuer : r.contract,
@@ -457,6 +485,48 @@ interface AssetSearchRecord {
     name?: string;
   };
 }
+
+/**
+ * The one row a pasted contract ID resolves to: the token the backend
+ * describes, or a SAC as its classic asset (which needs the trustline).
+ * Empty when the contract is not a token; throws when the read fails.
+ */
+const lookupContractRow = async (
+  contractId: string,
+  publicKey: string,
+  networkDetails: NetworkDetails,
+  signal: AbortSignal,
+): Promise<ManageAssetCurrency[]> => {
+  if (isNativeContract(contractId, networkDetails.networkPassphrase)) {
+    return [buildNativeAssetRow(networkDetails)];
+  }
+  const details = await getTokenDetails({
+    contractId,
+    publicKey,
+    networkDetails,
+    signal,
+    throwOnFailure: true,
+  });
+  if (!details) {
+    return [];
+  }
+  const isSac = await isSacContractExecutable(
+    contractId,
+    networkDetails,
+    signal,
+  );
+  const issuer = isSac ? details.name.split(":")[1] || "" : contractId;
+  return [
+    {
+      code: details.symbol,
+      issuer,
+      contract: isSac ? undefined : contractId,
+      domain: "",
+      name: details.name,
+      decimals: details.decimals,
+    },
+  ];
+};
 
 const recordFromSearchResult = (
   record: AssetSearchRecord,
@@ -665,15 +735,22 @@ export const useSwapTokenLookup = () => {
       let popular: TrendingAsset[] = [];
 
       if (searchTerm.trim()) {
-        // SEARCH path: fetch Stellar Expert results and split verified / unverified
-        const resJson = await searchAsset({
-          asset: searchTerm.trim(),
-          networkDetails,
-          signal,
-        });
-        const searchResults = (
-          (resJson?._embedded?.records as AssetSearchRecord[]) ?? []
-        ).map(recordFromSearchResult);
+        // SEARCH path. A pasted contract ID is read from the backend, so any
+        // token contract resolves, indexed by stellar.expert or not; a failed
+        // read throws into the fallback below, unlike "not a token" (null).
+        // Anything else is a stellar.expert search.
+        const term = searchTerm.trim();
+        const searchResults = isContractId(term)
+          ? await lookupContractRow(term, publicKey, networkDetails, signal)
+          : (
+              ((
+                await searchAsset({
+                  asset: term,
+                  networkDetails,
+                  signal,
+                })
+              )?._embedded?.records as AssetSearchRecord[]) ?? []
+            ).map(recordFromSearchResult);
 
         const split = await splitVerifiedAssetCurrency({
           networkDetails,

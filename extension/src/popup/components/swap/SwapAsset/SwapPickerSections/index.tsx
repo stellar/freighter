@@ -10,6 +10,7 @@ import {
 } from "popup/components/TokenVerificationSheets";
 import { AssetListRow } from "popup/components/AssetListRow";
 import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
+import { swapIdentityKey } from "popup/helpers/swapQuote";
 import { truncateString } from "helpers/stellar";
 import { SecurityLevel } from "popup/constants/blockaid";
 import type { SwapTokenRecord } from "../hooks/useSwapTokenLookup";
@@ -27,7 +28,13 @@ const buildSelection = (
 ): SwapPickerSelection => ({
   tokenCode: r.code ?? "",
   requiresTrustline: r.requiresTrustline,
-  decimals: r.isContract ? r.decimals : CLASSIC_ASSET_DECIMALS,
+  // An unheld contract token's decimals are read when it is picked, not
+  // taken from the search record.
+  decimals: r.isContract
+    ? r.isHeld
+      ? r.decimals
+      : undefined
+    : CLASSIC_ASSET_DECIMALS,
   issuer: r.issuer || undefined,
   securityLevel: r.securityLevel,
   securityWarnings: r.securityWarnings,
@@ -87,11 +94,13 @@ export const SwapPickerSections = ({
   // Exclude hidden canonicals (the other side's asset) from the discover
   // sections. "Your tokens" is intentionally NOT filtered — every held token
   // should stay visible even when it is already selected on the other side.
-  const hidden = new Set(hiddenAssets);
+  const hidden = new Set(hiddenAssets.map(swapIdentityKey));
+  const isShown = (r: SwapTokenRecord) =>
+    !hidden.has(swapIdentityKey(r.canonical));
   const yourTokens = result.yourTokens;
-  const popular = result.popular.filter((r) => !hidden.has(r.canonical));
-  const verified = result.verified.filter((r) => !hidden.has(r.canonical));
-  const unverified = result.unverified.filter((r) => !hidden.has(r.canonical));
+  const popular = result.popular.filter(isShown);
+  const verified = result.verified.filter(isShown);
+  const unverified = result.unverified.filter(isShown);
 
   // Held "Your tokens" rows use BalanceRow, matching the account-home balances
   // list, divided like it but with no line after the last row, where the next

@@ -56,6 +56,25 @@ describe("EditSettings", () => {
     expect(defaultProps.onSubmit).not.toHaveBeenCalled();
   });
 
+  // The swap backend decodes the timeout as whole seconds.
+  it.each(["1.5", "1e3", " 30"])(
+    "ignores a timeout entry of %j, keeping the whole seconds already set",
+    async (entry) => {
+      render(<EditSettings {...defaultProps} />);
+
+      fireEvent.change(screen.getByLabelText("Timeout (seconds)"), {
+        target: { value: entry },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+      await waitFor(() =>
+        expect(defaultProps.onSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({ timeout: 30 }),
+        ),
+      );
+    },
+  );
+
   it("rejects a timeout above a day", async () => {
     render(<EditSettings {...defaultProps} />);
 

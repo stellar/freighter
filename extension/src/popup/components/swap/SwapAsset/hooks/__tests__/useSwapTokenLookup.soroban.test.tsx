@@ -33,7 +33,19 @@ jest.mock("popup/helpers/blockaid", () => ({
   ...jest.requireActual("popup/helpers/blockaid"),
   scanAssetBulk: jest.fn(),
 }));
+jest.mock("@sentry/browser", () => ({ captureException: jest.fn() }));
+jest.mock("@shared/api/internal", () => ({
+  ...jest.requireActual("@shared/api/internal"),
+  getTokenDetails: jest.fn(),
+}));
+jest.mock("@shared/helpers/soroban/token", () => ({
+  ...jest.requireActual("@shared/helpers/soroban/token"),
+  isSacContractExecutable: jest.fn().mockResolvedValue(false),
+}));
 
+import { captureException } from "@sentry/browser";
+import { getTokenDetails } from "@shared/api/internal";
+import { isSacContractExecutable } from "@shared/helpers/soroban/token";
 import { searchAsset } from "popup/helpers/searchAsset";
 import { scanAssetBulk } from "popup/helpers/blockaid";
 import { SecurityLevel } from "popup/constants/blockaid";
@@ -160,5 +172,85 @@ describe("useSwapTokenLookup with Soroban contract tokens", () => {
 
       expect(row.image).toBe("https://cached.example/tkn.png");
     });
+  });
+});
+
+describe("useSwapTokenLookup with a pasted contract ID", () => {
+  const USDC_ISSUER =
+    "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+
+  beforeEach(() => {
+    (scanAssetBulk as jest.Mock).mockResolvedValue({ results: {} });
+  });
+  afterEach(() => {
+    jest.clearAllMocks();
+    resetSwapIdleCacheForTests();
+  });
+
+  it("lists the token the backend describes, whether or not stellar.expert indexes it", async () => {
+    (getTokenDetails as jest.Mock).mockResolvedValue({
+      name: "Token",
+      symbol: "TKN",
+      decimals: 18,
+    });
+    const { result } = renderLookup();
+
+    const rows = await search(result, CONTRACT);
+
+    expect(searchAsset).not.toHaveBeenCalled();
+    expect(getTokenDetails).toHaveBeenCalledWith(
+      expect.objectContaining({ contractId: CONTRACT, publicKey: "GADUMMY" }),
+    );
+    expect(rows).toEqual([
+      expect.objectContaining({
+        code: "TKN",
+        issuer: CONTRACT,
+        canonical: `TKN:${CONTRACT}`,
+        isContract: true,
+        decimals: 18,
+      }),
+    ]);
+  });
+
+  it("lists a SAC's id as its classic asset, which needs the trustline", async () => {
+    (getTokenDetails as jest.Mock).mockResolvedValue({
+      name: `USDC:${USDC_ISSUER}`,
+      symbol: "USDC",
+      decimals: 7,
+    });
+    (isSacContractExecutable as jest.Mock).mockResolvedValue(true);
+    const { result } = renderLookup();
+
+    const rows = await search(result, CONTRACT);
+
+    expect(rows).toEqual([
+      expect.objectContaining({
+        code: "USDC",
+        issuer: USDC_ISSUER,
+        canonical: `USDC:${USDC_ISSUER}`,
+        isContract: false,
+        requiresTrustline: true,
+      }),
+    ]);
+  });
+
+  it("shows no match when the id is not a token", async () => {
+    (getTokenDetails as jest.Mock).mockResolvedValue(null);
+    const { result } = renderLookup();
+
+    const rows = await search(result, CONTRACT);
+
+    expect(rows).toEqual([]);
+    expect(result.current.state.data!.isFallback).toBe(false);
+  });
+
+  it("falls back to held tokens, as a failed search does, when the lookup fails", async () => {
+    (getTokenDetails as jest.Mock).mockRejectedValue(new Error("502"));
+    const { result } = renderLookup();
+
+    await search(result, CONTRACT);
+
+    expect(result.current.state.data!.isFallback).toBe(true);
+    expect(captureException).toHaveBeenCalled();
   });
 });

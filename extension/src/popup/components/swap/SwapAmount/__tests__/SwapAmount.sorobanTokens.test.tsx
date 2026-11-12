@@ -129,7 +129,7 @@ describe("SwapAmount with Soroban contract tokens", () => {
     expect(lastSimParams().destDecimals).toBeUndefined();
   });
 
-  it("leaves a contract token not held to be read on chain, not the picked row's value", () => {
+  it("builds an unheld contract token with the decimals read at pick", () => {
     renderSwapAmount({
       destinationAsset: TOKEN,
       destinationTokenDetails: {
@@ -138,6 +138,15 @@ describe("SwapAmount with Soroban contract tokens", () => {
         requiresTrustline: false,
         decimals: 6,
       },
+    });
+
+    expect(lastSimParams().destDecimals).toBe(6);
+  });
+
+  it("leaves a destination that never went through the picker to be read at build", () => {
+    renderSwapAmount({
+      destinationAsset: TOKEN,
+      destinationTokenDetails: null,
     });
 
     expect(lastSimParams().destDecimals).toBeUndefined();
@@ -190,6 +199,34 @@ describe("SwapAmount with Soroban contract tokens", () => {
 
       expect(lastSimParams().destRequiresTrustline).toBe(false);
     });
+  });
+});
+
+describe("getSwapDerivedData destination identity", () => {
+  it("knows a held contract token by its contract, whatever code the pick carried", () => {
+    const derived = getSwapDerivedData({
+      data: {
+        type: AppDataType.RESOLVED,
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        icons: {},
+        userBalances: { balances: [nativeBalance, tokenBalance] },
+        tokenPrices: {},
+      } as any,
+      asset: "native",
+      // stellar.expert's code for the contract the account holds as TKN.
+      destinationAsset: `ABC:${TOKEN_CONTRACT}`,
+      destinationAmount: "1",
+      destinationTokenDetails: null,
+      amount: "1",
+      amountUsd: "0",
+      fee: "0.00001",
+      networkDetails: MAINNET_NETWORK_DETAILS,
+      inputType: "crypto",
+      swapQuoteKey: null,
+      destRequiresTrustline: false,
+    });
+
+    expect(derived.destinationIsNonHeld).toBe(false);
   });
 });
 

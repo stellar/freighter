@@ -182,6 +182,79 @@ describe("buildSwapSections — search term", () => {
   });
 });
 
+describe("buildSwapSections — a contract token is one identity", () => {
+  // Held: the on-chain symbol; search: stellar.expert's code. Same contract.
+  const heldSoroban = {
+    token: { code: "SYM", issuer: { key: CONTRACT } },
+    contractId: CONTRACT,
+    total: "1000000",
+    decimals: 6,
+  } as any;
+  const searchRow = {
+    code: "ABC",
+    issuer: CONTRACT,
+    contract: CONTRACT,
+    domain: null,
+  };
+
+  it("lists a held contract searched by another code, as held", () => {
+    // The held row's symbol doesn't match the term, so the search row is the
+    // only way to the token; it is kept and flagged held by its contract.
+    const result = buildSwapSections({
+      searchTerm: "abc",
+      balances: [heldSoroban],
+      networkDetails: MAINNET,
+      verifiedAssets: [searchRow],
+      unverifiedAssets: [],
+    });
+
+    expect(result.sections.yourTokens).toEqual([]);
+    expect(result.sections.verified).toEqual([
+      expect.objectContaining({ code: "ABC", isHeld: true }),
+    ]);
+  });
+
+  it("dedupes a search row against the held row that matches the term", () => {
+    const result = buildSwapSections({
+      searchTerm: "sym",
+      balances: [heldSoroban],
+      networkDetails: MAINNET,
+      verifiedAssets: [{ ...searchRow, code: "SYM" }, searchRow],
+      unverifiedAssets: [],
+    });
+
+    expect(result.sections.yourTokens.map((r) => r.code)).toEqual(["SYM"]);
+    expect(result.sections.verified).toEqual([]);
+  });
+
+  it("keeps a Popular row for a held contract out, whatever code it carries", () => {
+    const result = buildSwapSections({
+      searchTerm: "",
+      balances: [heldSoroban],
+      networkDetails: MAINNET,
+      popular: [{ ...searchRow, volume7d: 9 }],
+      verifiedAssets: [searchRow],
+    });
+
+    expect(result.sections.popular).toEqual([]);
+  });
+
+  it("hides a contract token by its contract, whatever code the row carries", () => {
+    const result = buildSwapSections({
+      searchTerm: "abc",
+      balances: [],
+      networkDetails: MAINNET,
+      verifiedAssets: [searchRow],
+      unverifiedAssets: [],
+    });
+
+    expect(
+      omitHiddenFromSections(result, { [`SYM:${CONTRACT}`]: "hidden" }).sections
+        .verified,
+    ).toEqual([]);
+  });
+});
+
 describe("buildSwapSections — off mainnet", () => {
   const TESTNET = {
     network: "TESTNET",

@@ -71,6 +71,7 @@ const decodeClassic = (
   account: string,
   { classic: from }: SwapToken,
   { classic: to }: SwapToken,
+  amount: string,
   minOut: string,
 ): DecodedSwapTx => {
   if (!from || !to) {
@@ -102,6 +103,9 @@ const decodeClassic = (
   ) {
     throw mismatch("trustline");
   }
+  if (!new BigNumber(payment.sendAmount).eq(amount)) {
+    throw mismatch("amount");
+  }
   atLeastMinOut(new BigNumber(payment.destMin), minOut);
   return {
     sendAmount: new BigNumber(payment.sendAmount).toFixed(),
@@ -113,6 +117,17 @@ const decodeClassic = (
 
 const contractFnName = (fn: xdr.InvokeContractArgs) =>
   fn.functionName.toString();
+
+// The SEP-41/SAC calls an account authorizes for itself, besides a transfer
+// of the sold token and a trust on the bought one. Anything else the account
+// authorizes (the aggregator's own calls) is source-specific and left to the
+// backend.
+const UNEXPECTED_TOKEN_CALLS = [
+  "approve",
+  "burn",
+  "transfer_from",
+  "burn_from",
+];
 
 const contractCalls = (
   invocation: xdr.SorobanAuthorizedInvocation,
@@ -133,6 +148,7 @@ const decodeSoroban = (
   account: string,
   { contract: fromContract }: SwapToken,
   { contract: toContract }: SwapToken,
+  amount: string,
   sourceDecimals: number,
 ): DecodedSwapTx => {
   const op = tx.operations[0] as Operation.InvokeHostFunction;
@@ -161,11 +177,16 @@ const decodeSoroban = (
           throw mismatch("transfer");
         }
         sent = sent.plus(amount.toString());
-      } else if (contract === toContract && name === "trust") {
+      } else if (name === "trust") {
+        if (contract !== toContract) {
+          throw mismatch("trustline");
+        }
         addsTrustline = true;
+      } else if (UNEXPECTED_TOKEN_CALLS.includes(name)) {
+        throw mismatch(name);
       }
     });
-  if (!sent.gt(0)) {
+  if (!sent.gt(0) || !sent.shiftedBy(-sourceDecimals).eq(amount)) {
     throw mismatch("amount");
   }
 
@@ -195,6 +216,7 @@ export const decodeSwapTx = ({
   account,
   sourceAsset,
   destAsset,
+  amount,
   minOut,
   sourceDecimals,
 }: {
@@ -203,6 +225,8 @@ export const decodeSwapTx = ({
   account: string;
   sourceAsset: string;
   destAsset: string;
+  /** The amount sent to `/swap/tx`; the transaction must sell exactly it. */
+  amount: string;
   /** The floor the build was asked for; a lower classic minimum is refused. */
   minOut: string;
   /** The sold token's decimals: 7 for classic assets. */
@@ -225,7 +249,7 @@ export const decodeSwapTx = ({
     tx.operations.length === 1 &&
     tx.operations[0].type === "invokeHostFunction"
   ) {
-    return decodeSoroban(tx, account, from, to, sourceDecimals);
+    return decodeSoroban(tx, account, from, to, amount, sourceDecimals);
   }
-  return decodeClassic(tx, account, from, to, minOut);
+  return decodeClassic(tx, account, from, to, amount, minOut);
 };

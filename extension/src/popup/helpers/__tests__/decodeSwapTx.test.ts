@@ -54,13 +54,19 @@ const classicTx = ({
     source,
   );
 
-const decode = (transactionXdr: string, account = ACCOUNT, minOut = "1.715") =>
+const decode = (
+  transactionXdr: string,
+  account = ACCOUNT,
+  minOut = "1.715",
+  amount = "10",
+) =>
   decodeSwapTx({
     transactionXdr,
     networkPassphrase: Networks.PUBLIC,
     account,
     sourceAsset: "native",
     destAsset: USDC,
+    amount,
     minOut,
     sourceDecimals: 7,
   });
@@ -144,7 +150,9 @@ describe("decodeSwapTx", () => {
   });
 
   it("reads a LI.FI swap call without a trustline", () => {
-    expect(decode(lifi.noTrust.xdr, lifi.noTrust.account)).toMatchObject({
+    expect(
+      decode(lifi.noTrust.xdr, lifi.noTrust.account, "1.715", "100000"),
+    ).toMatchObject({
       sendAmount: "100000",
       addsTrustline: false,
     });
@@ -181,7 +189,7 @@ describe("decodeSwapTx", () => {
     expect(decoded.minReceived).toBeUndefined();
   });
 
-  it("accepts a zero LI.FI fee transfer, as the backend does", () => {
+  it("accepts a zero LI.FI fee transfer that still adds up to the amount", () => {
     const env = xdr.TransactionEnvelope.fromXDR(
       lifi.withTrust.xdr,
       "base64",
@@ -192,9 +200,23 @@ describe("decodeSwapTx", () => {
     feeTransfer.args[2] = i128(BigInt(0));
 
     expect(
-      decode(env.toXDR("base64"), lifi.withTrust.account, "1.8340983")
+      decode(env.toXDR("base64"), lifi.withTrust.account, "1.8340983", "9.975")
         .sendAmount,
     ).toBe("9.975");
+  });
+
+  describe("amount", () => {
+    it("refuses a classic swap that sells a different amount than asked", () => {
+      expect(() => decode(classicTx(), ACCOUNT, "1.715", "9")).toThrow(
+        /amount/,
+      );
+    });
+
+    it("refuses a Soroban swap whose authorized transfers do not add up to the amount", () => {
+      expect(() =>
+        decode(lifi.withTrust.xdr, lifi.withTrust.account, "1.8340983", "11"),
+      ).toThrow(/amount/);
+    });
   });
 
   it("refuses a LI.FI auth tree that transfers a negative amount", () => {
@@ -212,12 +234,63 @@ describe("decodeSwapTx", () => {
     ).toThrow(/transfer/);
   });
 
+  // Adds a call the account authorizes to the LI.FI fixture's auth tree.
+  const lifiWithAuthorizedCall = (
+    contract: string,
+    functionName: string,
+    args: xdr.ScVal[],
+  ) => {
+    const env = xdr.TransactionEnvelope.fromXDR(
+      lifi.withTrust.xdr,
+      "base64",
+    ) as any;
+    env.v1.tx.operations[0].body.invokeHostFunctionOp.auth[0].rootInvocation.subInvocations.push(
+      new xdr.SorobanAuthorizedInvocation({
+        function:
+          xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeContractFn(
+            new xdr.InvokeContractArgs({
+              contractAddress: new Address(contract).toScAddress(),
+              functionName,
+              args: [new Address(lifi.withTrust.account).toScVal(), ...args],
+            }),
+          ),
+        subInvocations: [],
+      }),
+    );
+    return env.toXDR("base64");
+  };
+
+  it("refuses an allowance the account would grant alongside the swap", () => {
+    const xdrString = lifiWithAuthorizedCall(
+      usdc.contractId(Networks.PUBLIC),
+      "approve",
+      [
+        new Address(OTHER).toScVal(),
+        i128(BigInt("170141183460469231731687303715884105727")),
+        nativeToScVal(1000000, { type: "u32" }),
+      ],
+    );
+
+    expect(() =>
+      decode(xdrString, lifi.withTrust.account, "1.8340983"),
+    ).toThrow(/approve/);
+  });
+
+  it("refuses a trustline for an asset other than the one bought", () => {
+    const xdrString = lifiWithAuthorizedCall(OTHER_CONTRACT, "trust", []);
+
+    expect(() =>
+      decode(xdrString, lifi.withTrust.account, "1.8340983"),
+    ).toThrow(/trustline/);
+  });
+
   describe("Soroban contract tokens", () => {
     const decodeToken = (
       transactionXdr: string,
       sourceAsset: string,
       destAsset: string,
       sourceDecimals: number,
+      amount: string,
     ) =>
       decodeSwapTx({
         transactionXdr,
@@ -225,6 +298,7 @@ describe("decodeSwapTx", () => {
         account: ACCOUNT,
         sourceAsset,
         destAsset,
+        amount,
         minOut: "1",
         sourceDecimals,
       });
@@ -235,6 +309,7 @@ describe("decodeSwapTx", () => {
         TOKEN,
         USDC,
         18,
+        "1.5",
       );
 
       expect(decoded.sendAmount).toBe("1.5");
@@ -250,18 +325,27 @@ describe("decodeSwapTx", () => {
           "native",
           TOKEN,
           7,
+          "2.5",
         ).sendAmount,
       ).toBe("2.5");
     });
 
     it("refuses a transfer of a token other than the one sold", () => {
       expect(() =>
-        decodeToken(sorobanTx(OTHER_CONTRACT, BigInt(1)), TOKEN, USDC, 18),
+        decodeToken(
+          sorobanTx(OTHER_CONTRACT, BigInt(1)),
+          TOKEN,
+          USDC,
+          18,
+          "1",
+        ),
       ).toThrow(/transfer/);
     });
 
     it("refuses a classic path payment for a contract token", () => {
-      expect(() => decodeToken(classicTx(), "native", TOKEN, 7)).toThrow(
+      expect(() =>
+        decodeToken(classicTx(), "native", TOKEN, 7, "10"),
+      ).toThrow(
         /does not match/,
       );
     });

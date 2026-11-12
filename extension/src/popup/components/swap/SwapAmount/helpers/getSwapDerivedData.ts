@@ -10,6 +10,7 @@ import {
 import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
 import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import { getAvailableBalance, isContractId } from "popup/helpers/soroban";
+import { swapIdentityKey } from "popup/helpers/swapQuote";
 import {
   findAssetBalance,
   getBalanceCanonicalKey,
@@ -93,11 +94,14 @@ export const getSwapDerivedData = ({
   // A non-held destination token can never become the source (we only swap
   // held/classic assets), so the direction toggle handles it specially. Detect
   // it by its absence from the account balances.
-  const heldCanonicals = new Set(
-    sendData.userBalances.balances.map((b) => getBalanceCanonicalKey(b)),
+  const heldKeys = new Set(
+    sendData.userBalances.balances.map((b) =>
+      swapIdentityKey(getBalanceCanonicalKey(b)),
+    ),
   );
   const destinationIsNonHeld =
-    Boolean(destinationAsset) && !heldCanonicals.has(destinationAsset);
+    Boolean(destinationAsset) &&
+    !heldKeys.has(swapIdentityKey(destinationAsset));
   const prices = sendData.tokenPrices;
   const assetPrice = prices[asset] && prices[asset].currentPrice;
   // Prefer the live backend price; fall back to the stellar.expert spot price
