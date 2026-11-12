@@ -271,8 +271,14 @@ export const SwapAsset = ({
   // they are read before the pick applies; stellar.expert's copy comes from
   // the issuer's toml and is not trusted for that. A held token's come from
   // its balance.
-  const heldKeys = new Set(
-    pickerResult.yourTokens.map((r) => swapIdentityKey(r.canonical)),
+  // Every held balance, not only the rows the search term matched: a held
+  // contract found under another code is picked as the balance.
+  const heldByKey = new Map(
+    balancesToHeldRecords({
+      balances: heldBalancesForNewAccount,
+      icons,
+      tokenPrices,
+    }).map((r) => [swapIdentityKey(r.canonical), r]),
   );
   const handleDestinationPick = (
     canonical: string,
@@ -284,9 +290,24 @@ export const SwapAsset = ({
     }
     // Every pick supersedes a pending read, whether or not it needs one.
     pickIdRef.current += 1;
-    if (!isContract || heldKeys.has(swapIdentityKey(canonical))) {
+    const held = isContract
+      ? heldByKey.get(swapIdentityKey(canonical))
+      : undefined;
+    if (!isContract || held) {
       pendingPickRef.current = null;
-      onClickAsset(canonical, isContract, details);
+      onClickAsset(
+        held ? held.canonical : canonical,
+        isContract,
+        held && details
+          ? {
+              ...details,
+              tokenCode: held.code ?? details.tokenCode,
+              issuer: held.issuer,
+              decimals: held.decimals,
+              requiresTrustline: false,
+            }
+          : details,
+      );
       return;
     }
     const pickId = pickIdRef.current;

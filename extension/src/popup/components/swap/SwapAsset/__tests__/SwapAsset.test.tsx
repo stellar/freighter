@@ -374,3 +374,86 @@ describe("SwapAsset destination: a contract token the account doesn't hold", () 
     expect(onClickAsset).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("SwapAsset destination: a held contract token found by another code", () => {
+  const C1 = "CAZXEHTSQATVQVWDPWWDTFSY6CM764JD4MZ6HUVPO3QKS64QEEP4KJH7";
+  const heldSoroban = {
+    token: { code: "SYM", issuer: { key: C1 } },
+    contractId: C1,
+    total: "1000000000000000000",
+    decimals: 18,
+  };
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it("picks the held balance, without reading its decimals", async () => {
+    const getDecimals = jest.spyOn(Soroban, "getDecimalsForAsset");
+    jest.spyOn(UseSwapFromData, "useGetSwapFromData").mockReturnValue({
+      state: {
+        ...resolvedFromState,
+        data: {
+          ...resolvedFromState.data,
+          balances: { balances: [heldSoroban], icons: {} },
+        },
+      },
+      fetchData: jest.fn().mockResolvedValue(undefined),
+      filterBalances: jest.fn(),
+    } as any);
+    jest.spyOn(UseSwapTokenLookup, "useSwapTokenLookup").mockReturnValue({
+      fetchData: jest.fn().mockResolvedValue(undefined),
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          sections: {
+            // "abc" doesn't match the held row's symbol.
+            yourTokens: [],
+            popular: [],
+            verified: [
+              {
+                canonical: `ABC:${C1}`,
+                code: "ABC",
+                issuer: C1,
+                contract: C1,
+                domain: null,
+                isHeld: true,
+                isContract: true,
+                requiresTrustline: false,
+              },
+            ],
+            unverified: [],
+          },
+          isSearch: true,
+          isFallback: false,
+        },
+        error: null,
+      },
+    } as any);
+    const onClickAsset = jest.fn();
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <SwapAsset
+          selectionType="destination"
+          hiddenAssets={[]}
+          onClickAsset={onClickAsset}
+          goBack={jest.fn()}
+        />
+      </Wrapper>,
+    );
+
+    fireEvent.change(screen.getByTestId("swap-from-search"), {
+      target: { value: "abc" },
+    });
+    fireEvent.click(await screen.findByTestId("SwapTokenRow-ABC-body"));
+
+    await waitFor(() => expect(onClickAsset).toHaveBeenCalledTimes(1));
+    const [canonical, isContract, details] = onClickAsset.mock.calls[0];
+    expect(canonical).toBe(`SYM:${C1}`);
+    expect(isContract).toBe(true);
+    expect(details).toMatchObject({
+      tokenCode: "SYM",
+      decimals: 18,
+      requiresTrustline: false,
+    });
+    expect(getDecimals).not.toHaveBeenCalled();
+  });
+});
