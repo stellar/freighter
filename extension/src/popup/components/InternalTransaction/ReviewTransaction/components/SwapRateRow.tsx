@@ -39,7 +39,7 @@ export const SwapRateRow = ({
     <div className="ReviewTx__Details__Row ReviewTx__Details__Row--rate">
       <div className="ReviewTx__Details__Row__Title">
         <Icon.SwitchHorizontal01 />
-        {t("Rate")}
+        {t("Swap details rate")}
       </div>
       <div
         className="ReviewTx__Details__Row__Value"

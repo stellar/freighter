@@ -44,6 +44,12 @@ describe("SwapRateRow", () => {
     ).toBeInTheDocument();
   });
 
+  // The shared "Rate" key is "Taxa" (fee) in pt; this row is swap-only.
+  it("labels the row with the swap rate key, not the shared Rate", () => {
+    renderRow({});
+    expect(screen.getByText("Swap details rate")).toBeInTheDocument();
+  });
+
   it("derives the value font-size from the rendered rate length", () => {
     renderRow({
       srcCode: "LONGTOKENA",
