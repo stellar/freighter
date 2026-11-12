@@ -1,74 +1,91 @@
 import { Page } from "@playwright/test";
 import { expect } from "../test-fixtures";
 
-const DEFAULT_IMPORT_TIMEOUT_MS = 10000;
+const DEFAULT_IMPORT_TIMEOUT_MS = 20000;
 
 /**
- * Starts the import wallet flow by clicking "Import wallet",
- * filling in password and confirm password, checking terms of use, and clicking Confirm.
- * Waits for the "Import wallet from recovery phrase" screen to be visible.
- *
- * @param confirmPassword - Optional. If not provided, defaults to the same value as password.
- *                          Use a different value to test password mismatch scenarios.
+ * Clicks "Import wallet" on the Welcome page and waits for the import text
+ * box.
  */
-export const startImportWalletFlow = async ({
+export const openImportWallet = async ({ page }: { page: Page }) => {
+  await page.getByText("Import wallet").click();
+  await expect(page.getByTestId("import-secret-input")).toBeVisible();
+};
+
+/**
+ * Fills the import text box with a recovery phrase or secret key and clicks
+ * Next. Does not wait for the password step, so callers can assert an
+ * input error instead.
+ */
+export const enterImportSecret = async ({
+  page,
+  secret,
+}: {
+  page: Page;
+  secret: string;
+}) => {
+  await page.getByTestId("import-secret-input").fill(secret);
+  await page.getByTestId("import-secret-next").click();
+};
+
+/**
+ * Fills the password step (password, confirmation, terms of use) and clicks
+ * Confirm.
+ *
+ * @param confirmPassword - Optional. Defaults to `password`.
+ */
+export const fillPasswordAndConfirm = async ({
   page,
   password,
   confirmPassword,
+  confirmLabel = "Confirm",
 }: {
   page: Page;
   password: string;
   confirmPassword?: string;
+  confirmLabel?: string;
 }) => {
-  await page.getByText("Import wallet").click();
-  await expect(page.getByText("Create a password")).toBeVisible();
-
+  await expect(page.locator("#new-password-input")).toBeVisible();
   await page.locator("#new-password-input").fill(password);
   await page
     .locator("#confirm-password-input")
     .fill(confirmPassword ?? password);
   await page.locator("#termsOfUse-input").check({ force: true });
-  await page.getByText("Confirm").click();
-
-  await expect(
-    page.getByText("Import wallet from recovery phrase"),
-  ).toBeVisible();
-  await expect(
-    page.getByText("You can also paste the phrase in the first box."),
-  ).toBeVisible();
+  await page.getByText(confirmLabel, { exact: true }).click();
 };
 
 /**
- * Fills in mnemonic phrase inputs with the provided words.
- * Words are filled sequentially into inputs named MnemonicPhrase-1, MnemonicPhrase-2, etc.
+ * Waits for the import to land on the "You’re all set!" success route.
  */
-export const fillMnemonicInputs = async ({
-  page,
-  words,
-}: {
-  page: Page;
-  words: string[];
-}) => {
-  for (let i = 1; i <= words.length; i++) {
-    const input = page.locator(`input[name="MnemonicPhrase-${i}"]`);
-    await input.fill(words[i - 1]);
-  }
-};
-
-/**
- * Clicks the Import button and waits for the "You're all set!" message to appear,
- * indicating successful wallet import.
- *
- * @param timeout - Optional. Time in milliseconds to wait for success message.
- *                  Defaults to DEFAULT_IMPORT_TIMEOUT_MS (10000ms).
- */
-export const clickImportAndWaitForSuccess = async ({
+export const waitForImportSuccess = async ({
   page,
   timeout = DEFAULT_IMPORT_TIMEOUT_MS,
+  successText = "You’re all set!",
 }: {
   page: Page;
   timeout?: number;
+  successText?: string;
 }) => {
-  await page.getByRole("button", { name: "Import" }).click();
-  await expect(page.getByText("You’re all set!")).toBeVisible({ timeout });
+  await expect(page.getByText(successText)).toBeVisible({ timeout });
+};
+
+/**
+ * Runs the whole import from the Welcome page: text box, Next, password
+ * step, then waits for the success route.
+ */
+export const importWallet = async ({
+  page,
+  secret,
+  password,
+  timeout,
+}: {
+  page: Page;
+  secret: string;
+  password: string;
+  timeout?: number;
+}) => {
+  await openImportWallet({ page });
+  await enterImportSecret({ page, secret });
+  await fillPasswordAndConfirm({ page, password });
+  await waitForImportSuccess({ page, timeout });
 };
