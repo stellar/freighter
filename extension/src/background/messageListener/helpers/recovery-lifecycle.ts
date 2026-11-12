@@ -31,7 +31,8 @@ import { activatePublicKey } from "./activate-public-key";
 /*
   Wipes the wallet's accounts and sources ahead of a recovery while keeping
   app settings. Both recovery handlers call it after validating their input
-  (and after removePreviousAccount when overwriting).
+  (and after removePreviousAccount when overwriting), and the secret-key
+  handler calls it again to roll back a failed store.
 */
 export const clearWalletForRecovery = async ({
   localStore,
@@ -43,15 +44,17 @@ export const clearWalletForRecovery = async ({
   // resets accounts list
   sessionStore.dispatch(reset());
 
+  // Every keystore goes, listed or not. A store that failed after `storeKey`
+  // but before the list write leaves a keystore only this sweep can find.
+  const keystoreKeys = (await localStore.getAllKeys()).filter((key) =>
+    key.startsWith("stellarkeys:"),
+  );
+  await localStore.remove(keystoreKeys);
+
   const keyIdList = await getKeyIdList({ localStore });
 
   if (keyIdList.length) {
     /* Clear any existing account data while maintaining app settings */
-
-    for (let i = 0; i < keyIdList.length; i += 1) {
-      await localStore.remove(`stellarkeys:${keyIdList[i]}`);
-    }
-
     await localStore.setItem(KEY_ID_LIST, []);
     await localStore.remove(ACCOUNT_NAME_LIST_ID);
     await clearSecretSources({ localStore });

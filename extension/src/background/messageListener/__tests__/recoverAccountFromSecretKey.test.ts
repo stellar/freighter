@@ -28,11 +28,17 @@ import {
   getSecretSources,
 } from "background/helpers/secret-sources";
 import { getDerivationIndices } from "background/helpers/derivation-indices";
+import { setAccountProvenance } from "background/helpers/account-provenance";
 import { ACCOUNT_MUTATING_SERVICE_TYPES } from "background/helpers/account-mutation-lock";
 
 jest.mock("background/helpers/secret-sources", () => ({
   ...jest.requireActual("background/helpers/secret-sources"),
   addSecretSource: jest.fn(),
+}));
+
+jest.mock("background/helpers/account-provenance", () => ({
+  ...jest.requireActual("background/helpers/account-provenance"),
+  setAccountProvenance: jest.fn(),
 }));
 
 // The linker is fire-and-forget: a real pass outlives the test that started it
@@ -93,6 +99,11 @@ const recoverFromPhrase = () =>
     isOverwritingAccount: false,
   } as RecoverAccountMessage);
 
+const storedKeystoreKeys = async () =>
+  Object.keys(await mockStorageApi.get(null)).filter((k) =>
+    k.startsWith("stellarkeys:"),
+  );
+
 const snapshotWallet = async () => {
   const keyIdList = (await mockDataStorage.getItem(KEY_ID_LIST)) as string[];
   const keystores = await Promise.all(
@@ -124,6 +135,12 @@ describe("Recover account from secret key message listener", () => {
     startSession = jest.spyOn(testAlarm, "startSession");
     const actual = jest.requireActual("background/helpers/secret-sources");
     (addSecretSource as jest.Mock).mockImplementation(actual.addSecretSource);
+    const actualProvenance = jest.requireActual(
+      "background/helpers/account-provenance",
+    );
+    (setAccountProvenance as jest.Mock).mockImplementation(
+      actualProvenance.setAccountProvenance,
+    );
   });
 
   afterEach(() => {
@@ -213,6 +230,35 @@ describe("Recover account from secret key message listener", () => {
     expect(await getSecretSources({ localStore: mockDataStorage })).toEqual({});
     expect(await mockDataStorage.getItem(APPLICATION_ID)).toBeFalsy();
     expect(startSession).not.toHaveBeenCalled();
+  });
+
+  it("removes the stored keystore when a write after storeKey fails", async () => {
+    (setAccountProvenance as jest.Mock).mockRejectedValueOnce(
+      new Error("storage full"),
+    );
+
+    const res = await recoverFromSecretKey(SECRET);
+
+    expect(res.error).toBe("Error importing account");
+    expect(
+      ((await mockDataStorage.getItem(KEY_ID_LIST)) as string[] | null) ?? [],
+    ).toEqual([]);
+    expect(await storedKeystoreKeys()).toEqual([]);
+    expect(await getSecretSources({ localStore: mockDataStorage })).toEqual({});
+    expect(await mockDataStorage.getItem(APPLICATION_ID)).toBeFalsy();
+    expect(startSession).not.toHaveBeenCalled();
+  });
+
+  it("removes unlisted keystores left by an earlier attempt", async () => {
+    await mockDataStorage.setItem("stellarkeys:orphan", { id: "orphan" });
+
+    const res = await recoverFromSecretKey(SECRET);
+
+    expect(res.error).toBe("");
+    const keyIdList = (await mockDataStorage.getItem(KEY_ID_LIST)) as string[];
+    expect(await storedKeystoreKeys()).toEqual(
+      keyIdList.map((id) => `stellarkeys:${id}`),
+    );
   });
 
   it("leaves a clean fresh install when registering the source fails", async () => {
