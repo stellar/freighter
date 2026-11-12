@@ -1540,11 +1540,12 @@ export const getTokenDetails = async ({
       }${shouldFetchBalance ? "&should_fetch_balance=true" : ""}`,
       { signal },
     );
-    const data = await response.json();
+    // Not a token contract: an answer, not a failure. Checked before the
+    // body is parsed, since a 400 can be plain text.
     if (response.status === 400) {
-      // Not a token contract: an answer, not a failure.
       return null;
     }
+    const data = await response.json();
     if (!response.ok) {
       throw new Error(data);
     }
