@@ -82,8 +82,7 @@ export const clearWalletForRecovery = async ({
 };
 
 /*
-  Makes a recovered wallet usable: gives it an application state if it has
-  none, activates `publicKey`, starts the session timer and links the
+  Makes a recovered wallet usable: marks it onboarded, activates `publicKey`, starts the session timer and links the
   wallet's sources.
 */
 export const finishRecovery = async ({
@@ -97,12 +96,13 @@ export const finishRecovery = async ({
   sessionStore: Store;
   sessionTimer: SessionTimer;
 }) => {
-  // if we don't have an application state, assign them one
-  const applicationState =
-    (await localStore.getItem(APPLICATION_ID)) ||
-    APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
-
-  await localStore.setItem(APPLICATION_ID, applicationState);
+  // Always onboarded: a recovery replaces any create flow left half done,
+  // whose PASSWORD_CREATED or MNEMONIC_PHRASE_FAILED would send the user
+  // back to wallet creation.
+  await localStore.setItem(
+    APPLICATION_ID,
+    APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+  );
 
   await activatePublicKey({
     publicKey,

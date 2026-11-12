@@ -173,6 +173,26 @@ describe("Recover account from secret key message listener", () => {
     );
   });
 
+  it.each([
+    APPLICATION_STATE.PASSWORD_CREATED,
+    APPLICATION_STATE.MNEMONIC_PHRASE_FAILED,
+  ])(
+    "marks the wallet onboarded over an abandoned create (%s)",
+    async (state) => {
+      await mockDataStorage.setItem(APPLICATION_ID, state);
+
+      const res = await recoverFromSecretKey(SECRET);
+
+      expect(res.error).toBe("");
+      expect(res.applicationState).toBe(
+        APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+      );
+      expect(await mockDataStorage.getItem(APPLICATION_ID)).toBe(
+        APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+      );
+    },
+  );
+
   it("rejects an invalid key without touching storage", async () => {
     await recoverFromPhrase();
     const before = await snapshotWallet();
