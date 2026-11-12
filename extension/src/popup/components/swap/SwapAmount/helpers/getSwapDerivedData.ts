@@ -49,6 +49,8 @@ interface GetSwapDerivedDataParams {
   /** formik.values.amountUsd */
   amountUsd: string;
   fee: string;
+  /** The fee XLM must cover; `fee` can include a held-back resource fee. */
+  feesGateFee?: string;
   blockaidOverrideState?: string | null;
   networkDetails: NetworkDetails;
   inputType: InputType;
@@ -76,6 +78,7 @@ export const getSwapDerivedData = ({
   amount,
   amountUsd,
   fee,
+  feesGateFee = fee,
   blockaidOverrideState,
   networkDetails,
   inputType,
@@ -209,7 +212,8 @@ export const getSwapDerivedData = ({
     recommendedFee: "0",
   });
   const insufficientXlmForFees =
-    sourceIsNonXlm && new BigNumber(xlmSpendableForFees).lt(new BigNumber(fee));
+    sourceIsNonXlm &&
+    new BigNumber(xlmSpendableForFees).lt(new BigNumber(feesGateFee));
 
   const cta = getSwapCtaState({
     hasSource: !!asset,

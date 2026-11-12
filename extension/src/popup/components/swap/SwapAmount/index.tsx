@@ -550,6 +550,7 @@ export const SwapAmount = ({
     amountUsd: formik.values.amountUsd,
     // Max and the XLM fee check hold back what the swap will pay.
     fee: balanceFee,
+    feesGateFee: displayFee,
     blockaidOverrideState,
     networkDetails,
     inputType,
