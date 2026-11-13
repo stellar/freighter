@@ -424,4 +424,63 @@ describe("Recover Account View", () => {
     expect(screen.getByTestId("import-secret-input")).toHaveValue(SECRET_KEY);
     expect(screen.queryByTestId("welcome")).not.toBeInTheDocument();
   });
+  it("does not redirect after the route is left during a successful import", async () => {
+    let resolve: (value: any) => void = () => {};
+    jest.spyOn(ApiInternal, "recoverAccountFromSecretKey").mockImplementation(
+      () =>
+        new Promise((r) => {
+          resolve = r;
+        }),
+    );
+    renderView();
+
+    await enterSecret(SECRET_KEY);
+    await fillPasswordForm();
+    fireEvent.click(screen.getByTestId("account-creator-submit"));
+    await screen.findByText("Importing your wallet…");
+
+    act(() => {
+      testNavigate(ROUTES.welcome);
+    });
+    jest.useFakeTimers();
+    await act(async () => {
+      resolve(successResponse);
+    });
+    act(() => {
+      jest.advanceTimersByTime(READY_SCREEN_MS);
+    });
+
+    expect(screen.getByTestId("welcome")).toBeInTheDocument();
+    expect(screen.queryByTestId("success-route")).not.toBeInTheDocument();
+  });
+
+  it("does not pop history after the route is left during a failing import", async () => {
+    let resolve: (value: any) => void = () => {};
+    jest.spyOn(ApiInternal, "recoverAccountFromSecretKey").mockImplementation(
+      () =>
+        new Promise((r) => {
+          resolve = r;
+        }),
+    );
+    renderView([ROUTES.welcome, ROUTES.recoverAccount]);
+
+    await enterSecret(SECRET_KEY);
+    await fillPasswordForm();
+    fireEvent.click(screen.getByTestId("account-creator-submit"));
+    await screen.findByText("Importing your wallet…");
+
+    act(() => {
+      testNavigate(ROUTES.welcome);
+    });
+    await act(async () => {
+      resolve({
+        ...successResponse,
+        publicKey: "",
+        error: "Error importing account",
+      });
+    });
+
+    expect(screen.getByTestId("welcome")).toBeInTheDocument();
+    expect(screen.queryByTestId("import-secret-input")).not.toBeInTheDocument();
+  });
 });

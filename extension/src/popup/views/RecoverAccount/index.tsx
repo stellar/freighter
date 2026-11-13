@@ -86,6 +86,9 @@ export const RecoverAccount = () => {
   // Enter in the password form, or a second click before it unmounts,
   // would otherwise start a second import.
   const isImporting = useRef(false);
+  // The user can leave the route while an import is pending; nothing after
+  // its awaits may touch the UI or history once this view is gone.
+  const isMounted = useRef(false);
   const readyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
   );
@@ -109,6 +112,7 @@ export const RecoverAccount = () => {
   }
 
   useEffect(() => {
+    isMounted.current = true;
     // A reload keeps { step: "password" } on the entry; drop it so the
     // input step owns this entry again.
     if (isPasswordEntry) {
@@ -118,6 +122,7 @@ export const RecoverAccount = () => {
       // The hook keeps the error state; it's rendered below.
     });
     return () => {
+      isMounted.current = false;
       clearTimeout(readyTimer.current);
       dispatch(clearApiError());
     };
@@ -237,6 +242,9 @@ export const RecoverAccount = () => {
                 isOverwritingAccount,
               }),
             );
+      if (!isMounted.current) {
+        return;
+      }
 
       if (
         recoverAccount.fulfilled.match(res) ||
@@ -247,6 +255,9 @@ export const RecoverAccount = () => {
           await fetchData();
         } catch (e) {
           // The account is stored; the next screen loads its own data.
+        }
+        if (!isMounted.current) {
+          return;
         }
         setPhase("ready");
         readyTimer.current = setTimeout(() => {
