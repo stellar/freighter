@@ -60,7 +60,39 @@ describe("account recovery metrics", () => {
       METRIC_NAMES.accountRecoveryFailed,
       {
         recovery_method: "secret_key",
-        reason_code: "Invalid secret key",
+        reason_code: "invalid_secret_key",
+      },
+    );
+  });
+
+  // `key_S…` has no word boundary before the key, so scrubStrKeys would
+  // let it through.
+  it("sends a fixed code for any other secret-key failure, never the error text", () => {
+    const secretKey =
+      "SBPQUZ6G4FZNWFHKUWC5BEYWF6R52E3SEP7R3GWYSM2XTKGF5LNTWW4R";
+    handlerFor(recoverAccountFromSecretKey.rejected)(
+      {},
+      { payload: { errorMessage: `could not store key_${secretKey}` } },
+    );
+    expect(emitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.accountRecoveryFailed,
+      {
+        recovery_method: "secret_key",
+        reason_code: "store_failed",
+      },
+    );
+    expect(JSON.stringify((emitMetric as jest.Mock).mock.calls)).not.toContain(
+      secretKey,
+    );
+  });
+
+  it("sends store_failed when the rejection has no payload", () => {
+    handlerFor(recoverAccountFromSecretKey.rejected)({}, {});
+    expect(emitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.accountRecoveryFailed,
+      {
+        recovery_method: "secret_key",
+        reason_code: "store_failed",
       },
     );
   });
