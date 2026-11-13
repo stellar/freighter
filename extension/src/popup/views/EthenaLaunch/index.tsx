@@ -24,7 +24,7 @@ const STARGATE_USDE_URL =
   "https://stargate.finance/?srcChain=ethereum&srcToken=0x4c9EDD5852cd905f086C759E8383e09bff1E68B3&dstChain=stellar&dstToken=CCNOV6XVI2O5BSTA3232GIRUQULDEBV7IWGKM6QKI6II5OIIQTU24JJN";
 const STARGATE_SUSDE_URL =
   "https://stargate.finance/?srcChain=ethereum&srcToken=0x9D39A5DE30e57443BfF2A8307A4256c8797A3497&dstChain=stellar&dstToken=CACSKWC753QVGC4J6YPDBIR2BEHFVWIAE7CBSS3HOVYMN623OAIQYE2M";
-const ETHENA_URL = "https://ethena.fi/";
+const ETHENA_DOCS_URL = "https://docs.ethena.fi/";
 
 interface EthenaTokenSectionProps {
   id: string;
@@ -130,7 +130,7 @@ export const EthenaLaunch = () => {
   };
 
   const handleLearnMore = () => {
-    openTab(ETHENA_URL);
+    openTab(ETHENA_DOCS_URL);
   };
 
   return (

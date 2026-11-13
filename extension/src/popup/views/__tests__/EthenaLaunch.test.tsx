@@ -140,12 +140,12 @@ describe("EthenaLaunch", () => {
     expect(await screen.findByText("view-public-key")).toBeInTheDocument();
   });
 
-  it("links out to Ethena", async () => {
+  it("links out to Ethena's docs", async () => {
     renderView();
 
     await userEvent.click(screen.getByTestId("ethena-launch-learn-more"));
 
-    expect(openTab).toHaveBeenCalledWith("https://ethena.fi/");
+    expect(openTab).toHaveBeenCalledWith("https://docs.ethena.fi/");
   });
 
   it("closes to the destination it was given", async () => {
