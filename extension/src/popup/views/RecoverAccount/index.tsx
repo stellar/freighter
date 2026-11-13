@@ -42,11 +42,13 @@ import {
 import "./styles.scss";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
+import { OnboardingStatus } from "popup/components/OnboardingStatus";
 import { useRecoverAccountData } from "./hooks/useGetRecoverAccountData";
-import { ImportStatus } from "./ImportStatus";
 
-// How long "Your wallet is ready!" stays up before the success route.
-export const READY_SCREEN_MS = 1500;
+// Shortest time "Importing your wallet…" stays up. A secret key imports
+// almost instantly (no account discovery like a phrase), which would
+// otherwise show the screen as a flash.
+export const MIN_IMPORTING_MS = 500;
 
 // Background errors that mean the value itself was rejected.
 const INVALID_INPUT_ERRORS = ["Invalid mnemonic phrase", "Invalid secret key"];
@@ -59,14 +61,14 @@ const RecoverAccountSchema = YupObject().shape({
 
 /*
   Onboarding import: one text box that takes a recovery phrase or a secret
-  key, then a password, then "importing" and "ready" before the success route.
+  key, then a password, then "importing" and "ready".
 
   input / password: the password step is its own history entry, so the
   password form's Back button (navigate(-1)) returns to the text box with the
   value still in component state. Only Next opens that step; the history
   state alone does not.
   importing / ready: full-screen status while the background stores the
-  account.
+  account. "ready" is the end of onboarding; the user closes the tab.
 
   The value is dropped from state once the import succeeds.
 */
@@ -89,9 +91,6 @@ export const RecoverAccount = () => {
   // The user can leave the route while an import is pending; nothing after
   // its awaits may touch the UI or history once this view is gone.
   const isMounted = useRef(false);
-  const readyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
-    undefined,
-  );
   const { state, fetchData } = useRecoverAccountData();
 
   // Set by Next once the value parses; reset whenever it is edited. History
@@ -123,18 +122,15 @@ export const RecoverAccount = () => {
     });
     return () => {
       isMounted.current = false;
-      clearTimeout(readyTimer.current);
       dispatch(clearApiError());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (step === "importing") {
-    return <ImportStatus text={t("Importing your wallet…")} />;
-  }
-
-  if (step === "ready") {
-    return <ImportStatus text={t("Your wallet is ready!")} />;
+  // One element for both states so the screen stays put and only the copy
+  // transitions.
+  if (step === "importing" || step === "ready") {
+    return <OnboardingStatus status={step} />;
   }
 
   if (
@@ -226,6 +222,11 @@ export const RecoverAccount = () => {
     setPhase("importing");
 
     try {
+      // Started alongside the request, so it only adds time when the import
+      // finishes early.
+      const minimumWait = new Promise((resolve) => {
+        setTimeout(resolve, MIN_IMPORTING_MS);
+      });
       const res =
         parsed.type === "phrase"
           ? await dispatch(
@@ -242,6 +243,7 @@ export const RecoverAccount = () => {
                 isOverwritingAccount,
               }),
             );
+      await minimumWait;
       if (!isMounted.current) {
         return;
       }
@@ -254,15 +256,12 @@ export const RecoverAccount = () => {
         try {
           await fetchData();
         } catch (e) {
-          // The account is stored; the next screen loads its own data.
+          // The account is stored; the popup loads its own data when opened.
         }
         if (!isMounted.current) {
           return;
         }
         setPhase("ready");
-        readyTimer.current = setTimeout(() => {
-          navigateTo(ROUTES.recoverAccountSuccess, navigate);
-        }, READY_SCREEN_MS);
         return;
       }
 

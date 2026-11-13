@@ -41,20 +41,4 @@
     display: flex;
     justify-content: flex-end;
   }
-
-  &__status {
-    align-items: center;
-    display: flex;
-    flex-direction: column;
-    gap: #{pxToRem(16px)};
-    height: 100%;
-    justify-content: center;
-    text-align: center;
-    color: var(--sds-clr-gray-12);
-
-    &__logo {
-      height: #{pxToRem(48px)};
-      width: #{pxToRem(48px)};
-    }
-  }
 }

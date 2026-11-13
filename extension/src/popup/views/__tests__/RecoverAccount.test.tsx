@@ -20,7 +20,8 @@ import {
 } from "@shared/constants/stellar";
 import { Wrapper } from "popup/__testHelpers__";
 import { ROUTES } from "popup/constants/routes";
-import { RecoverAccount, READY_SCREEN_MS } from "popup/views/RecoverAccount";
+import { RecoverAccount, MIN_IMPORTING_MS } from "popup/views/RecoverAccount";
+import { STATUS_EXIT_MS } from "popup/components/OnboardingStatus";
 
 const WORDS = [
   "have",
@@ -88,8 +89,8 @@ const renderView = (
       <Routes>
         <Route path={ROUTES.recoverAccount} element={<RecoverAccount />} />
         <Route
-          path={ROUTES.recoverAccountSuccess}
-          element={<div data-testid="success-route" />}
+          path={ROUTES.account}
+          element={<div data-testid="account-route" />}
         />
         <Route path={ROUTES.welcome} element={<div data-testid="welcome" />} />
       </Routes>
@@ -291,7 +292,7 @@ describe("Recover Account View", () => {
     expect(keySpy).toHaveBeenCalledTimes(1);
   });
 
-  it("shows the ready state then navigates", async () => {
+  it("stays on the ready state", async () => {
     jest
       .spyOn(ApiInternal, "recoverAccountFromSecretKey")
       .mockResolvedValue(successResponse as any);
@@ -303,12 +304,91 @@ describe("Recover Account View", () => {
     fireEvent.click(screen.getByTestId("account-creator-submit"));
 
     await screen.findByText("Your wallet is ready!");
-    expect(screen.queryByTestId("success-route")).not.toBeInTheDocument();
+
+    // Onboarding ends here; the user closes the tab.
+    act(() => {
+      jest.advanceTimersByTime(60_000);
+    });
+    expect(screen.getByText("Your wallet is ready!")).toBeInTheDocument();
+    expect(screen.queryByTestId("account-route")).not.toBeInTheDocument();
+  });
+
+  it("keeps the status screen mounted and swaps only the copy", async () => {
+    let resolve: (value: any) => void = () => {};
+    jest.spyOn(ApiInternal, "recoverAccountFromSecretKey").mockImplementation(
+      () =>
+        new Promise((r) => {
+          resolve = r;
+        }),
+    );
+    renderView();
+
+    await enterSecret(SECRET_KEY);
+    await fillPasswordForm();
+    jest.useFakeTimers();
+    fireEvent.click(screen.getByTestId("account-creator-submit"));
+    await screen.findByText("Importing your wallet…");
+    const statusScreen = screen.getByTestId("onboarding-status");
+
+    await act(async () => {
+      resolve(successResponse);
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(MIN_IMPORTING_MS);
+    });
+    // The old line plays its exit before the new one replaces it.
+    expect(screen.getByText("Importing your wallet…")).toHaveClass(
+      "OnboardingStatus__text--leaving",
+    );
 
     act(() => {
-      jest.advanceTimersByTime(READY_SCREEN_MS);
+      jest.advanceTimersByTime(STATUS_EXIT_MS);
     });
-    expect(screen.getByTestId("success-route")).toBeInTheDocument();
+    expect(screen.getByText("Your wallet is ready!")).not.toHaveClass(
+      "OnboardingStatus__text--leaving",
+    );
+    expect(
+      screen.queryByText("Importing your wallet…"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("onboarding-status")).toBe(statusScreen);
+  });
+
+  it("keeps the importing screen up for a minimum time", async () => {
+    jest
+      .spyOn(ApiInternal, "recoverAccountFromSecretKey")
+      .mockResolvedValue(successResponse as any);
+    renderView();
+
+    await enterSecret(SECRET_KEY);
+    await fillPasswordForm();
+    jest.useFakeTimers();
+    fireEvent.click(screen.getByTestId("account-creator-submit"));
+    // Let the mocked import and the account reload settle.
+    const flushPromises = async () => {
+      for (let i = 0; i < 20; i += 1) {
+        // eslint-disable-next-line no-await-in-loop
+        await Promise.resolve();
+      }
+    };
+    await act(async () => {
+      jest.advanceTimersByTime(MIN_IMPORTING_MS - 1);
+      await flushPromises();
+    });
+    expect(ApiInternal.recoverAccountFromSecretKey).toHaveBeenCalled();
+    expect(screen.getByTestId("onboarding-status")).toHaveAttribute(
+      "data-status",
+      "importing",
+    );
+
+    await act(async () => {
+      jest.advanceTimersByTime(1);
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId("onboarding-status")).toHaveAttribute(
+        "data-status",
+        "ready",
+      ),
+    );
   });
 
   it("returns to the input with the error when the import fails", async () => {
@@ -447,11 +527,11 @@ describe("Recover Account View", () => {
       resolve(successResponse);
     });
     act(() => {
-      jest.advanceTimersByTime(READY_SCREEN_MS);
+      jest.advanceTimersByTime(60_000);
     });
 
     expect(screen.getByTestId("welcome")).toBeInTheDocument();
-    expect(screen.queryByTestId("success-route")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("account-route")).not.toBeInTheDocument();
   });
 
   it("does not pop history after the route is left during a failing import", async () => {
