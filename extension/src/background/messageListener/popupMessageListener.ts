@@ -51,6 +51,7 @@ import { getMnemonicPhrase } from "./handlers/getMnemonicPhrase";
 import { confirmMnemonicPhrase } from "./handlers/confirmMnemonicPhrase";
 import { confirmMigratedMnemonicPhrase } from "./handlers/confirmMigratedMnemonicPhrase";
 import { recoverAccount } from "./handlers/recoverAccount";
+import { recoverAccountFromSecretKey } from "./handlers/recoverAccountFromSecretKey";
 import { showBackupPhrase } from "./handlers/showBackupPhrase";
 import { revealSecretKey } from "./handlers/revealSecretKey";
 import { confirmPassword } from "./handlers/confirmPassword";
@@ -357,6 +358,15 @@ export const popupMessageListener = (
         keyManager,
         sessionTimer,
         numOfPublicKeysToCheck,
+      });
+    }
+    case SERVICE_TYPES.RECOVER_ACCOUNT_FROM_SECRET_KEY: {
+      return recoverAccountFromSecretKey({
+        request,
+        sessionStore,
+        localStore,
+        keyManager,
+        sessionTimer,
       });
     }
     case SERVICE_TYPES.SHOW_BACKUP_PHRASE: {

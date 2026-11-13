@@ -241,6 +241,13 @@ export interface RecoverAccountMessage extends BaseMessage {
   recoverMnemonic: string;
 }
 
+export interface RecoverAccountFromSecretKeyMessage extends BaseMessage {
+  type: SERVICE_TYPES.RECOVER_ACCOUNT_FROM_SECRET_KEY;
+  isOverwritingAccount: boolean;
+  password: string;
+  secretKey: string;
+}
+
 export interface ShowBackupPhraseMessage extends BaseMessage {
   type: SERVICE_TYPES.SHOW_BACKUP_PHRASE;
   password: string;
@@ -613,6 +620,7 @@ export type ServiceMessageRequest =
   | ConfirmMnemonicPhraseMessage
   | ConfirmMigratedMnemonicPhraseMessage
   | RecoverAccountMessage
+  | RecoverAccountFromSecretKeyMessage
   | ShowBackupPhraseMessage
   | RevealSecretKeyMessage
   | ConfirmPasswordMessage

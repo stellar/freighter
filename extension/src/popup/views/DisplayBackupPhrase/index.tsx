@@ -2,11 +2,14 @@ import React, { useEffect, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Button, Input, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import { Field, Form, Formik } from "formik";
 
 import { showBackupPhrase } from "@shared/api/internal";
 
 import { ROUTES } from "popup/constants/routes";
+import { secretSourcesSelector } from "popup/ducks/accountServices";
+import { hasRecoveryPhrase } from "popup/helpers/hasRecoveryPhrase";
 import { closeWindow, navigateTo, openTab } from "popup/helpers/navigate";
 import { emitScreenViewed } from "helpers/metrics";
 
@@ -31,6 +34,7 @@ export const DisplayBackupPhrase = () => {
   const [isPhraseUnlocked, setIsPhraseUnlocked] = useState(false);
   const [mnemonicPhrase, setMnemonicPhrase] = useState("");
   const { state, fetchData } = useGetAppData();
+  const secretSources = useSelector(secretSourcesSelector);
 
   useEffect(() => {
     // Canonical cross-platform names (RFC #2883): mobile uses
@@ -49,6 +53,10 @@ export const DisplayBackupPhrase = () => {
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  if (!hasRecoveryPhrase(secretSources)) {
+    return <Navigate to={ROUTES.security} replace />;
+  }
 
   if (
     state.state === RequestState.IDLE ||

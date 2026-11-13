@@ -6,92 +6,39 @@
   height: 100%;
   margin-top: #{pxToRem(121px)};
 
-  &__mnemonic-wrapper {
-    overflow: auto;
-    height: #{pxToRem(246px)};
-    scrollbar-width: thin;
-  }
-
-  &__mnemonic-input {
+  &__body {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: #{pxToRem(6px)} #{pxToRem(16px)};
-    padding: #{pxToRem(3px)} #{pxToRem(6px)};
-    position: relative;
-  }
-
-  &__phrase-input {
-    align-items: center;
-    display: flex;
-    gap: 0.5rem;
-    width: #{pxToRem(153px)};
-
-    &__number {
-      color: var(--sds-clr-gray-11);
-      font-size: #{pxToRem(14px)};
-      line-height: #{pxToRem(20px)};
-      margin-left: #{pxToRem(10px)};
-      position: absolute;
-      z-index: var(--z-index-tooltip);
-    }
-
-    .Input__container {
-      padding-left: #{pxToRem(30px)};
-      padding-right: 0;
-
-      input {
-        width: #{pxToRem(130px)};
-      }
-    }
-  }
-
-  &__phrase-toggle {
-    align-items: center;
-    display: flex;
-    font-size: 0.875rem;
-    gap: 0.75rem;
-  }
-
-  &__mnemonic-footer {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 0.5rem;
     flex-direction: column;
-    align-items: center;
-    gap: #{pxToRem(16px)};
-
-    &__row {
-      display: flex;
-      justify-content: space-between;
-      width: 100%;
-    }
+    gap: #{pxToRem(24px)};
   }
 
-  &__text-toggle {
-    align-items: center;
-    cursor: pointer;
+  &__titles {
     display: flex;
+    flex-direction: column;
+    gap: #{pxToRem(8px)};
 
-    span {
-      font-size: 0.875rem;
+    p {
+      color: var(--sds-clr-gray-11);
     }
   }
 
-  &__import {
-    margin-top: #{pxToRem(16px)};
-    width: 100%;
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: #{pxToRem(8px)};
+
+    textarea {
+      resize: none;
+    }
   }
 
-  // @TODO: remove when Toggle is updated to be tab-able
-  .Toggle__input {
-    display: block;
-    height: 0;
-    width: 0;
+  // Masked like a password field; the eye button below reveals it.
+  &__input--masked {
+    -webkit-text-security: disc;
   }
 
-  .Toggle__input:focus-visible ~ .Toggle__track {
-    box-shadow: 0 0 0 #{pxToRem(2px)}
-      var(--sds-input-color-border-default-focus);
+  &__visibility {
+    display: flex;
+    justify-content: flex-end;
   }
 }

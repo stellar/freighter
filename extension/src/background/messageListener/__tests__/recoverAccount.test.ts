@@ -12,6 +12,8 @@ import {
 import { AUTH_KEYPAIR_VECTORS } from "@shared/api/helpers/authKeypairVectors";
 import { SecretSourceType } from "@shared/api/types";
 import { getMnemonics } from "background/helpers/session";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { APPLICATION_ID } from "constants/localStorageTypes";
 import {
   getPinnedSourceId,
   getSecretSources,
@@ -77,6 +79,25 @@ describe("Recover account message listener", () => {
   afterEach(() => {
     jest.restoreAllMocks();
   });
+
+  it.each([
+    APPLICATION_STATE.PASSWORD_CREATED,
+    APPLICATION_STATE.MNEMONIC_PHRASE_FAILED,
+  ])(
+    "marks the wallet onboarded over an abandoned create (%s)",
+    async (state) => {
+      await mockDataStorage.setItem(APPLICATION_ID, state);
+
+      const res = (await recover()) as { applicationState: string };
+
+      expect(res.applicationState).toBe(
+        APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+      );
+      expect(await mockDataStorage.getItem(APPLICATION_ID)).toBe(
+        APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+      );
+    },
+  );
 
   // Regression: the preload loop used to store derivation indices 1..n with
   // `imported: true`, so recovering a phrase with several funded accounts
