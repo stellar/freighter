@@ -155,8 +155,9 @@ describe("views navigate handler → screen.viewed", () => {
       (r) =>
         r !== ROUTES.manageAssetsListsModifyAssetList &&
         // Derived rather than hardcoded so the two cannot drift: the set covers
-        // the send container (D8, whose per-step screens are emitted by the Send
-        // flow) and the routes that are now bare redirects.
+        // the send and earn containers (D8, whose per-step screens are emitted
+        // by their flows' own step effects) and the routes that are now bare
+        // redirects.
         !ROUTES_WITHOUT_SCREEN_VIEW.has(r),
     );
     const names: string[] = [];

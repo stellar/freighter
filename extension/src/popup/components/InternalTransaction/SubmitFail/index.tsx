@@ -40,7 +40,11 @@ interface ErrorDetails {
 // price snapshot and the transaction result in scope, so its events carry
 // volume; its pre-submission failure path deliberately emits without either,
 // since nothing reached the network to have volume or a result.
-export const SubmitFail = () => {
+/**
+ * @param onDismiss overrides "Got it", which otherwise resets the submission and
+ * navigates home. An embedding flow needs to dismiss its own step instead.
+ */
+export const SubmitFail = ({ onDismiss }: { onDismiss?: () => void } = {}) => {
   const { error } = useSelector(transactionSubmissionSelector);
   const isSwap = useIsSwap();
   const { t } = useTranslation();
@@ -223,6 +227,10 @@ export const SubmitFail = () => {
           variant="tertiary"
           size="md"
           onClick={() => {
+            if (onDismiss) {
+              onDismiss();
+              return;
+            }
             dispatch(resetSubmission());
             navigateTo(ROUTES.account, navigate);
           }}

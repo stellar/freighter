@@ -35,9 +35,7 @@ describe("parseLinkedText", () => {
 
   it("handles multiple links in the same string", () => {
     expect(
-      parseLinkedText(
-        "First https://a.com then [second](https://b.com) link.",
-      ),
+      parseLinkedText("First https://a.com then [second](https://b.com) link."),
     ).toEqual([
       { text: "First " },
       { text: "https://a.com", url: "https://a.com" },

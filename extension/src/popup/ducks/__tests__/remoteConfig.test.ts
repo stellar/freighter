@@ -6,6 +6,7 @@ import {
   maintenanceScreenSelector,
   isRemoteConfigInitializedSelector,
   balancesV2Selector,
+  earnDepositSelector,
   tokenPriceHistoryEnabledSelector,
   reducer,
 } from "../remoteConfig";
@@ -393,6 +394,32 @@ describe("remoteConfig selectors", () => {
     const store = makeStore();
     await store.dispatch(fetchFeatureFlags());
     expect(balancesV2Selector(store.getState())).toBe(false);
+  });
+
+  describe("earnDepositSelector (defaults on, fails closed)", () => {
+    it("is false before the flags settle, although the flag defaults to true", () => {
+      const store = makeStore();
+      expect(getState(store).earn_deposit).toBe(true);
+      expect(earnDepositSelector(store.getState())).toBe(false);
+    });
+
+    it("is true once the flags settle with the flag omitted", async () => {
+      (getExperimentClient as jest.Mock).mockReturnValue(makeClient());
+
+      const store = makeStore();
+      await store.dispatch(fetchFeatureFlags());
+      expect(earnDepositSelector(store.getState())).toBe(true);
+    });
+
+    it("is false when the variant is off", async () => {
+      (getExperimentClient as jest.Mock).mockReturnValue(
+        makeClient({ earn_deposit: { value: "off" } }),
+      );
+
+      const store = makeStore();
+      await store.dispatch(fetchFeatureFlags());
+      expect(earnDepositSelector(store.getState())).toBe(false);
+    });
   });
 
   describe("tokenPriceHistoryEnabledSelector (kill switch, fails closed)", () => {

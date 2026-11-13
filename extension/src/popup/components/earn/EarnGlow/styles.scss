@@ -1,0 +1,20 @@
+@use "../../../styles/utils.scss" as *;
+
+// The design's 264px disc (r=132 in Figma's 664px export) under a 100px
+// Gaussian. The blur paints past the element's box, and the hosts clip it.
+.EarnGlow {
+  width: pxToRem(264);
+  height: pxToRem(264);
+  border-radius: 50%;
+  // Light first, like the app's theme fallback. The design has no light frame
+  // for this glow; green-06 is the step that stands off white about as far as
+  // the dark glow stands off black, where green-04 all but disappears.
+  background: var(--sds-clr-green-06);
+  filter: blur(#{pxToRem(100)});
+  pointer-events: none;
+}
+
+// The nearest token to the dark frame's #11351E.
+.sds-theme-dark .EarnGlow {
+  background: var(--sds-clr-green-04);
+}

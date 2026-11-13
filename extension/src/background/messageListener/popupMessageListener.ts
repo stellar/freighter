@@ -105,6 +105,8 @@ import { addRecentProtocol } from "./handlers/addRecentProtocol";
 import { clearRecentProtocols } from "./handlers/clearRecentProtocols";
 import { getDiscoverWelcomeSeen } from "./handlers/getDiscoverWelcomeSeen";
 import { dismissDiscoverWelcome } from "./handlers/dismissDiscoverWelcome";
+import { getEarnIntroSeen } from "./handlers/getEarnIntroSeen";
+import { dismissEarnIntro } from "./handlers/dismissEarnIntro";
 import { claimRebrandAnnouncement } from "./handlers/claimRebrandAnnouncement";
 import { callBackendV2 } from "background/helpers/callBackendV2";
 import { getCachedSwapTopTokens } from "./handlers/getCachedSwapTopTokens";
@@ -650,6 +652,12 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.DISMISS_DISCOVER_WELCOME: {
       return dismissDiscoverWelcome({ localStore });
+    }
+    case SERVICE_TYPES.GET_EARN_INTRO_SEEN: {
+      return getEarnIntroSeen({ localStore });
+    }
+    case SERVICE_TYPES.DISMISS_EARN_INTRO: {
+      return dismissEarnIntro({ localStore });
     }
     case SERVICE_TYPES.CLAIM_REBRAND_ANNOUNCEMENT: {
       return claimRebrandAnnouncement({ localStore });

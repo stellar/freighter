@@ -35,6 +35,11 @@ export interface BalanceRowProps {
   /** Raw 24h % change number string (e.g. "1.23"); drives color + display.
    * Null → NO_FIAT_VALUE. */
   percentChange?: string | null;
+  /**
+   * Replaces the fiat + 24h-delta pair on the right entirely. Used by the Earn
+   * token picker, whose rows carry an APY badge instead of a price.
+   */
+  rightSlot?: React.ReactNode;
   onClick?: () => void;
   /** Draws the 1px line under the row, inset to the text column. */
   hasDivider?: boolean;
@@ -61,6 +66,7 @@ export const BalanceRow = ({
   amount,
   fiatAmount,
   percentChange,
+  rightSlot,
   onClick,
   hasDivider = false,
   "data-testid": dataTestId,
@@ -119,19 +125,23 @@ export const BalanceRow = ({
         </div>
       </div>
       <div className="BalanceRow__right">
-        {hasFiat && (
-          <div className="BalanceRow__fiat" data-testid={fiatTestId}>
-            {fiatAmount}
-          </div>
+        {rightSlot ?? (
+          <>
+            {hasFiat && (
+              <div className="BalanceRow__fiat" data-testid={fiatTestId}>
+                {fiatAmount}
+              </div>
+            )}
+            <div
+              className={`BalanceRow__delta ${deltaColor}`}
+              data-testid={deltaTestId}
+            >
+              {hasDelta
+                ? `${formatAmount(roundUsdValue(percentChange as string))}%`
+                : NO_FIAT_VALUE}
+            </div>
+          </>
         )}
-        <div
-          className={`BalanceRow__delta ${deltaColor}`}
-          data-testid={deltaTestId}
-        >
-          {hasDelta
-            ? `${formatAmount(roundUsdValue(percentChange as string))}%`
-            : NO_FIAT_VALUE}
-        </div>
       </div>
     </div>
   );
