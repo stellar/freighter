@@ -15,10 +15,12 @@ import {
   ACCOUNT_NAME_LIST_ID,
   APPLICATION_ID,
   REBRAND_ANNOUNCEMENT_STATUS_ID,
+  ETHENA_LAUNCH_PROMO_STATUS_ID,
   KEY_DERIVATION_NUMBER_ID,
   KEY_ID_LIST,
 } from "constants/localStorageTypes";
 import { REBRAND_ANNOUNCEMENT_STATUS } from "constants/rebrandAnnouncement";
+import { ETHENA_LAUNCH_PROMO_STATUS } from "constants/ethenaLaunchPromo";
 import { clearSession, SessionTimer } from "background/helpers/session";
 import { storeAccount } from "../helpers/store-account";
 import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
@@ -84,10 +86,14 @@ export const recoverAccount = async ({
 
     await localStore.setItem(KEY_DERIVATION_NUMBER_ID, "0");
     // Recovery is onboarding (also the "forgot password" path), which must
-    // not be followed by the one-time rebrand announcement.
+    // not be followed by the one-time rebrand announcement or launch promo.
     await localStore.setItem(
       REBRAND_ANNOUNCEMENT_STATUS_ID,
       REBRAND_ANNOUNCEMENT_STATUS.SEEN,
+    );
+    await localStore.setItem(
+      ETHENA_LAUNCH_PROMO_STATUS_ID,
+      ETHENA_LAUNCH_PROMO_STATUS.SEEN,
     );
 
     await clearSession({ localStore, sessionStore });

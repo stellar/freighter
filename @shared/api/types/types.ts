@@ -143,6 +143,7 @@ export interface Response {
   recentProtocols: RecentProtocolEntry[];
   hasSeenDiscoverWelcome: boolean;
   shouldShowRebrandAnnouncement: boolean;
+  shouldShowEthenaLaunchPromo: boolean;
   cachedSwapTopTokens: { tokens: TrendingAsset[]; updatedAt: number } | null;
 }
 

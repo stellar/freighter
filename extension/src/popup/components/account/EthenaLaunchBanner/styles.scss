@@ -1,0 +1,102 @@
+@use "../../../styles/utils.scss" as *;
+
+.EthenaLaunchBanner {
+  position: relative;
+  // Its own stacking context, so the dismiss button's z-index stays inside
+  // the banner instead of lifting it over Home's pinned header as the banner
+  // scrolls under it, and the glow can sit behind the copy at z-index -1.
+  isolation: isolate;
+  overflow: hidden;
+  // The campaign's fixed near-black surface, the same in both themes.
+  background: #070908;
+  // Dark mode outlines the card (below). The border is there in light mode
+  // too, transparent over the same fill, so the card is the same size in
+  // both; the padding is Figma's 12px/16px less that 1px.
+  border: pxToRem(1px) solid transparent;
+  border-radius: pxToRem(16px);
+  // No margins: this sits in `AccountHeader__account-info`, which spans the
+  // content column and spaces its children 16px apart, so the banner
+  // stretches to match the action tiles.
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  // The blurred blue disc bleeding off the card's top-right corner. Offsets
+  // are Figma's, less the 1px border the padding box starts inside.
+  &__glow {
+    position: absolute;
+    z-index: -1;
+    top: pxToRem(-81px);
+    right: pxToRem(-80px);
+    width: pxToRem(263px);
+    height: pxToRem(263px);
+    max-width: none;
+    pointer-events: none;
+  }
+
+  // The launch surface is a real <button> so the promo is reachable by
+  // keyboard — reset the user-agent button chrome. It carries the card's
+  // padding so the entire card (minus the dismiss button) is a click
+  // target, matching the whole-card hover cue. The right padding keeps the
+  // copy clear of the dismiss button.
+  &__content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: pxToRem(11px) pxToRem(40px) pxToRem(11px) pxToRem(15px);
+    background: none;
+    border: none;
+    border-radius: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  // The surface doesn't follow the theme, so neither does its copy.
+  &__title {
+    font-size: pxToRem(14px);
+    line-height: pxToRem(20px);
+    font-weight: var(--sds-fw-semi-bold);
+    color: var(--sds-clr-white);
+  }
+
+  &__subtitle {
+    font-size: pxToRem(12px);
+    line-height: pxToRem(18px);
+    font-weight: var(--sds-fw-regular);
+    color: #c7c7c7;
+  }
+
+  &__dismiss {
+    position: absolute;
+    top: pxToRem(7px);
+    right: pxToRem(7px);
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: pxToRem(4px);
+    background: none;
+    border: none;
+    border-radius: pxToRem(16px);
+    cursor: pointer;
+    // Gray/10 is the X's color in both of Figma's themes.
+    color: var(--sds-clr-gray-10);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    svg {
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+      @include icon-stroke(16, 1);
+    }
+  }
+}
+
+.sds-theme-dark .EthenaLaunchBanner {
+  border-color: var(--sds-clr-gray-04);
+}

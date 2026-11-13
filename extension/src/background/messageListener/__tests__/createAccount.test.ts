@@ -14,7 +14,9 @@ import {
   KEY_ID_LIST,
   APPLICATION_ID,
   TEMPORARY_STORE_ID,
+  ETHENA_LAUNCH_PROMO_STATUS_ID,
 } from "constants/localStorageTypes";
+import { ETHENA_LAUNCH_PROMO_STATUS } from "constants/ethenaLaunchPromo";
 import { createAccount } from "background/messageListener/handlers/createAccount";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
@@ -63,6 +65,30 @@ describe("Create account message listener", () => {
     expect(keyId).toBeDefined();
     expect(applicationState).toBe(APPLICATION_STATE.PASSWORD_CREATED);
     expect(tempStoreId[keyId]).toBeDefined();
+  });
+  it("doesn't owe a new wallet the Ethena launch promo", async () => {
+    // Pending from a wallet that existed before the reset/onboarding.
+    await mockDataStorage.setItem(
+      ETHENA_LAUNCH_PROMO_STATUS_ID,
+      ETHENA_LAUNCH_PROMO_STATUS.PENDING,
+    );
+
+    await popupMessageListener(
+      {
+        type: SERVICE_TYPES.CREATE_ACCOUNT,
+        password: "test",
+        isOverwritingAccount: false,
+      } as CreateAccountMessage,
+      mockSessionStore,
+      mockDataStorage,
+      mockKeyManager,
+      testAlarm as any,
+      { id: "fake-extension-id" },
+    );
+
+    expect(await mockDataStorage.getItem(ETHENA_LAUNCH_PROMO_STATUS_ID)).toBe(
+      ETHENA_LAUNCH_PROMO_STATUS.SEEN,
+    );
   });
   it("can overwrite account", async () => {
     const response = (await popupMessageListener(

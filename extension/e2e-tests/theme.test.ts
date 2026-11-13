@@ -81,29 +81,30 @@ test("welcome screen follows the color scheme", async ({
   expect(await backdrop(body)).toBe(BASE_00.dark);
 });
 
-test("USDT0 sheet stays dark in light theme", async ({
+test("Ethena launch promo stays dark in light theme", async ({
   page,
   extensionId,
   context,
 }) => {
   await page.emulateMedia({ colorScheme: "light" });
   await loginToTestAccount({ page, extensionId, context });
-  await page.getByTestId("usdt0-launch-banner-open").click();
-  await expect(page.getByTestId("usdt0-launch-sheet")).toBeVisible();
+  await page.getByTestId("ethena-launch-banner-open").click();
+  const promo = page.getByTestId("ethena-launch");
+  await expect(promo).toBeVisible();
 
-  // Its hero art is fixed-dark, so the text over it must resolve dark-theme
-  // tokens even though the page is light.
+  // Its hero art is drawn for a black page, so the page and the text over it
+  // must resolve dark-theme tokens even though the app is light.
   const colorOf = (el: Element) => getComputedStyle(el).color;
   const darkGray12 = "rgb(237, 237, 237)";
+  expect(await backdrop(promo)).toBe(BASE_00.dark);
   expect(
     await page
-      .locator(".Usdt0LaunchSheet__feature__title")
-      .first()
+      .getByRole("heading", { name: "Meet Ethena on Stellar" })
       .evaluate(colorOf),
   ).toBe(darkGray12);
-  expect(
-    await page.getByTestId("usdt0-launch-sheet-close").evaluate(colorOf),
-  ).toBe(darkGray12);
+  expect(await page.getByTestId("ethena-launch-close").evaluate(colorOf)).toBe(
+    darkGray12,
+  );
 });
 
 // The lock screen and its Forgot password sheet resolve their colors in both

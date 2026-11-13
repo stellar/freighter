@@ -41,6 +41,7 @@ import { SignTransaction } from "popup/views/SignTransaction";
 import { SignAuthEntry } from "popup/views/SignAuthEntry";
 import { UnlockAccount } from "popup/views/UnlockAccount";
 import { RebrandAnnouncement } from "popup/views/RebrandAnnouncement";
+import { EthenaLaunch } from "popup/views/EthenaLaunch";
 import { Welcome } from "popup/views/Welcome";
 import { DisplayBackupPhrase } from "popup/views/DisplayBackupPhrase";
 import { Debug } from "popup/views/Debug";
@@ -257,6 +258,14 @@ export const Router = () => (
           element={
             <VerifiedAccountRoute>
               <RebrandAnnouncement />
+            </VerifiedAccountRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.ethenaLaunch}
+          element={
+            <VerifiedAccountRoute>
+              <EthenaLaunch />
             </VerifiedAccountRoute>
           }
         ></Route>
