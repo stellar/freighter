@@ -6,7 +6,7 @@ import {
   openImportWallet,
   enterImportSecret,
   fillPasswordAndConfirm,
-  waitForImportSuccess,
+  waitForOnboardingReady,
 } from "./helpers/onboarding";
 import { stubAllExternalApis } from "./helpers/stubs";
 import type { Page } from "@playwright/test";
@@ -91,7 +91,7 @@ test("Create new wallet", async ({ page }) => {
     await page.getByLabel(words[i]).check({ force: true });
   }
   await page.getByTestId("display-mnemonic-phrase-confirm-btn").click();
-  await expect(page.getByText("You’re all set!")).toBeVisible();
+  await waitForOnboardingReady({ page });
   await expectPageToHaveScreenshot({
     page,
     screenshot: "wallet-create-complete-page.png",
@@ -159,7 +159,7 @@ test("Import 12 word wallet", async ({ page }) => {
   await expect(page.getByText("Your wallet is ready!")).toBeVisible({
     timeout: 20000,
   });
-  await waitForImportSuccess({ page });
+  await waitForOnboardingReady({ page });
   await expectPageToHaveScreenshot({
     page,
     screenshot: "wallet-import-complete-page.png",
@@ -189,7 +189,7 @@ test("Import 12 word wallet by pasting", async ({ page, context }) => {
 
   await page.getByTestId("import-secret-next").click();
   await fillPasswordAndConfirm({ page, password: PASSWORD });
-  await waitForImportSuccess({ page });
+  await waitForOnboardingReady({ page });
 });
 
 test("Import 24 word wallet", async ({ page }) => {
@@ -209,7 +209,7 @@ test("Import 24 word wallet", async ({ page }) => {
 
   await page.getByTestId("import-secret-next").click();
   await fillPasswordAndConfirm({ page, password: PASSWORD });
-  await waitForImportSuccess({ page });
+  await waitForOnboardingReady({ page });
   await expectPageToHaveScreenshot({
     page,
     screenshot: "wallet-import-complete-page.png",
@@ -240,7 +240,7 @@ test("Import 24 word wallet by pasting", async ({ page, context }) => {
 
   await page.getByTestId("import-secret-next").click();
   await fillPasswordAndConfirm({ page, password: PASSWORD });
-  await waitForImportSuccess({ page });
+  await waitForOnboardingReady({ page });
 });
 
 test("onboards with a secret key", async ({ page, extensionId, context }) => {
@@ -253,7 +253,7 @@ test("onboards with a secret key", async ({ page, extensionId, context }) => {
   await expect(page.getByText("Your wallet is ready!")).toBeVisible({
     timeout: 20000,
   });
-  await waitForImportSuccess({ page });
+  await waitForOnboardingReady({ page });
 
   await page.goto(`chrome-extension://${extensionId}/index.html#/`);
   await expect(page.getByTestId("account-view")).toBeVisible({
@@ -450,7 +450,7 @@ test("Reset wallet and create a new wallet", async ({
   await welcomePage.getByText("Create new wallet").click();
   await fillNewPassword(welcomePage);
   await welcomePage.getByText("Do this later").click();
-  await expect(welcomePage.getByText("You’re all set!")).toBeVisible();
+  await waitForOnboardingReady({ page: welcomePage });
 
   await expectOnlyNewWalletAccount(welcomePage, extensionId);
   await unlockOriginalPage(page);
@@ -471,7 +471,7 @@ test("Reset wallet and import a wallet", async ({
   const TEST_WORDS = generateMnemonic({ entropyBits: 128 }).split(" ");
   await enterImportSecret({ page: welcomePage, secret: TEST_WORDS.join(" ") });
   await fillNewPassword(welcomePage);
-  await waitForImportSuccess({ page: welcomePage });
+  await waitForOnboardingReady({ page: welcomePage });
 
   await expectOnlyNewWalletAccount(welcomePage, extensionId);
   await unlockOriginalPage(page);
@@ -547,7 +547,7 @@ test("Overwrites account when user abandons mnemonic phrase confirmation", async
   await page.getByTestId("display-mnemonic-phrase-next-btn").click();
   await page.getByTestId("display-mnemonic-phrase-skip-btn").click();
 
-  await expect(page.getByText("You’re all set!")).toBeVisible();
+  await waitForOnboardingReady({ page });
 
   await page.goto(`chrome-extension://${extensionId}/index.html#/`);
   await expect(page.getByTestId("account-view")).toBeVisible({
@@ -618,7 +618,7 @@ test("Overwrites account when user abandons after password creation", async ({
   );
   await page.getByTestId("display-mnemonic-phrase-next-btn").click();
   await page.getByTestId("display-mnemonic-phrase-skip-btn").click();
-  await expect(page.getByText("You’re all set!")).toBeVisible();
+  await waitForOnboardingReady({ page });
 
   await page.goto(`chrome-extension://${extensionId}/index.html#/`);
   await expect(page.getByTestId("account-view")).toBeVisible({
@@ -688,7 +688,7 @@ test("Invalid recovery phrase shows an error and allows retry", async ({
 
   await page.getByTestId("import-secret-next").click();
   await fillPasswordAndConfirm({ page, password: "SecurePass456" });
-  await waitForImportSuccess({ page });
+  await waitForOnboardingReady({ page });
 });
 
 test("Invalid secret key shows an error", async ({ page }) => {
@@ -726,7 +726,7 @@ test("Multiple invalid attempts then a valid phrase imports", async ({
     secret: TEST_MNEMONIC_12_WORDS.join(" "),
   });
   await fillPasswordAndConfirm({ page, password: "MultiRetryPass999" });
-  await waitForImportSuccess({ page });
+  await waitForOnboardingReady({ page });
 });
 
 test("Back from the password step keeps the entered value", async ({
@@ -747,5 +747,5 @@ test("Back from the password step keeps the entered value", async ({
 
   await page.getByTestId("import-secret-next").click();
   await fillPasswordAndConfirm({ page, password: "AnotherPass789" });
-  await waitForImportSuccess({ page });
+  await waitForOnboardingReady({ page });
 });

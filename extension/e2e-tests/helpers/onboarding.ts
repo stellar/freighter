@@ -55,23 +55,25 @@ export const fillPasswordAndConfirm = async ({
 };
 
 /**
- * Waits for the import to land on the "You’re all set!" success route.
+ * Waits for "Your wallet is ready!", the last screen of both onboarding
+ * flows (create and import). The status attribute is checked instead of the copy so translated
+ * runs work too.
  */
-export const waitForImportSuccess = async ({
+export const waitForOnboardingReady = async ({
   page,
   timeout = DEFAULT_IMPORT_TIMEOUT_MS,
-  successText = "You’re all set!",
 }: {
   page: Page;
   timeout?: number;
-  successText?: string;
 }) => {
-  await expect(page.getByText(successText)).toBeVisible({ timeout });
+  await expect(
+    page.locator('[data-testid="onboarding-status"][data-status="ready"]'),
+  ).toBeVisible({ timeout });
 };
 
 /**
  * Runs the whole import from the Welcome page: text box, Next, password
- * step, then waits for the success route.
+ * step, then waits for the ready screen.
  */
 export const importWallet = async ({
   page,
@@ -87,5 +89,5 @@ export const importWallet = async ({
   await openImportWallet({ page });
   await enterImportSecret({ page, secret });
   await fillPasswordAndConfirm({ page, password });
-  await waitForImportSuccess({ page, timeout });
+  await waitForOnboardingReady({ page, timeout });
 };
