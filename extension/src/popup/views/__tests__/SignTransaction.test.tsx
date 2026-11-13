@@ -35,6 +35,7 @@ import { RequestState } from "constants/request";
 import { TRANSACTION_WARNING } from "constants/transaction";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import * as SigningFlowHooks from "popup/helpers/useSetupSigningFlow";
+import * as BlockaidHelpers from "popup/helpers/blockaid";
 import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { sortBalances } from "popup/helpers/account";
@@ -1190,9 +1191,146 @@ describe("SignTransactions", () => {
     );
     await waitFor(() => screen.getByTestId("SignTransaction"));
     expect(screen.getByTestId("sign-tx-blockaid-banner")).toHaveTextContent(
-      "This transaction was flagged as suspicious",
+      "This transaction is likely to fail",
     );
     expect(screen.getByText("Confirm anyway")).toBeDefined();
+  });
+  it("keeps the malicious site verdict in the details sheet when a benign tx is expected to fail", async () => {
+    const getSiteSecurityStatesSpy = jest
+      .spyOn(BlockaidHelpers, "getSiteSecurityStates")
+      .mockReturnValue({
+        isMalicious: true,
+        isSuspicious: false,
+        isUnableToScan: false,
+      });
+    let currentSignTxDataMock = {
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          type: AppDataType.RESOLVED,
+          scanResult: {
+            simulation: {
+              status: "Error" as any,
+              error: "This transaction is expected to fail" as any,
+            },
+            validation: null,
+            request_id: "1",
+          },
+          icons: {},
+          balances: {
+            balances: sortBalances(mockBalances.balances),
+            isFunded: true,
+            subentryCount: 0,
+          },
+          publicKey: mockAccounts[0].publicKey,
+          signFlowState: {
+            allAccounts: mockAccounts,
+            accountNotFound: false,
+            currentAccount: mockAccounts[0],
+          },
+          applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+          networkDetails: {
+            ...defaultSettingsState.networkDetails,
+            networkPassphrase: "Test SDF Network ; September 2015",
+          },
+          siteScanData: null,
+          blockaidOverrideState: null,
+        },
+        error: null,
+      },
+      fetchData: jest.fn(),
+    } as ReturnType<typeof SignTxDataHooks.useGetSignTxData>;
+    jest
+      .spyOn(SignTxDataHooks, "useGetSignTxData")
+      .mockReturnValue(currentSignTxDataMock);
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: {
+          ...defaultSettingsState.networkDetails,
+          networkPassphrase: "Test SDF Network ; September 2015",
+          networkName: "Test Net",
+        },
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: {
+          "Test Net": {
+            [mockAccounts[0].publicKey]: ["laboratory.stellar.org"],
+          },
+        },
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        isOpenSidebarByDefault: false,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+      }),
+    );
+    const transaction = TransactionBuilder.fromXdr(
+      transactions.classic,
+      Networks.TESTNET,
+    ) as Transaction;
+    const op = transaction.operations[0];
+    jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
+      ...mockTransactionInfo,
+      transactionXdr: transactions.classic,
+      transaction: {
+        ...mockTransactionInfo.transaction,
+        _networkPassphrase: Networks.TESTNET,
+        _operations: [op],
+      },
+      isHttpsDomain: false,
+      domain: "laboratory.stellar.org",
+      uuid: "123-123-123-123-123",
+    }));
+    render(
+      <Wrapper
+        routes={[ROUTES.signTransaction]}
+        state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
+          settings: {
+            allowList: {
+              "Test Net": {
+                [mockAccounts[0].publicKey]: ["laboratory.stellar.org"],
+              },
+            },
+            isExperimentalModeEnabled: false,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: "Test SDF Network ; September 2015",
+              networkName: "Test Net",
+            },
+          },
+        }}
+      >
+        <SignTransaction />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("SignTransaction"));
+    fireEvent.click(screen.getByTestId("sign-tx-blockaid-banner"));
+    await waitFor(() => screen.getByText("Do not proceed"));
+    expect(screen.queryByText("Likely to fail")).toBeNull();
+    expect(
+      screen.getByText("This site was flagged as malicious"),
+    ).toBeDefined();
+    expect(
+      screen.getByText("This transaction is expected to fail"),
+    ).toBeDefined();
+    getSiteSecurityStatesSpy.mockRestore();
   });
   it("renders blockaid scan label when tx is malicious", async () => {
     let currentSignTxDataMock = {

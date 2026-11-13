@@ -211,7 +211,10 @@ export const Account = () => {
   // was dismissed.
   const reloadBalances = () => refreshBalances();
 
-  const totalBalanceUsd = getTotalUsd(tokenPrices ?? {}, balances);
+  const { totalUsd: totalBalanceUsd, hasPrices } = getTotalUsd(
+    tokenPrices ?? {},
+    balances,
+  );
   // The hero is never hidden; see getTotalUsdLabel for which of a total, a
   // zero or the placeholder it shows. The network comes from Redux because
   // `resolvedData` is null once the fetch has failed.
@@ -219,7 +222,7 @@ export const Account = () => {
     hasError,
     hasPriceFeed: isMainnet(networkDetails),
     isFunded,
-    tokenPrices,
+    hasPrices,
     totalUsd: totalBalanceUsd,
   });
 

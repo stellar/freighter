@@ -1,11 +1,7 @@
 import { useReducer } from "react";
 import { captureException } from "@sentry/browser";
-import { useDispatch, useSelector, useStore } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { tokenPricesSelector } from "popup/ducks/cache";
-import {
-  tokenPricesV2Selector,
-  waitForRemoteConfig,
-} from "popup/ducks/remoteConfig";
 import { getTokenPrices } from "@shared/api/internal";
 import { initialState, isCacheValid, reducer } from "helpers/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
@@ -13,7 +9,7 @@ import { getCanonicalFromAsset } from "helpers/stellar";
 import { ApiTokenPrices } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { saveTokenPrices } from "popup/ducks/cache";
-import { AppDispatch, AppState } from "popup/App";
+import { AppDispatch } from "popup/App";
 import { AccountBalances } from "./useGetBalances";
 
 export interface GetTokenPricesData {
@@ -34,7 +30,6 @@ const getPriceableAssetIds = (balances: AccountBalances["balances"]) =>
 
 export function useGetTokenPrices() {
   const reduxDispatch = useDispatch<AppDispatch>();
-  const store = useStore<AppState>();
   const cachedTokenPrices = useSelector(tokenPricesSelector);
 
   const [state, dispatch] = useReducer(
@@ -83,12 +78,9 @@ export function useGetTokenPrices() {
       );
       if (unseenAssetIds.length) {
         try {
-          await waitForRemoteConfig(store);
-          const useV2 = tokenPricesV2Selector(store.getState());
           const unseenPrices = await getTokenPrices(
             unseenAssetIds,
             networkDetails,
-            useV2,
           );
           const mergedTokenPrices = {
             ...payloadTokenPrices,
@@ -117,16 +109,9 @@ export function useGetTokenPrices() {
       try {
         const assetIds = getPriceableAssetIds(balances);
         if (assetIds.length) {
-          // Read the flag from the store at call time (not a render-captured
-          // value) so a freshly resolved Amplitude flag isn't missed when this
-          // fetch runs inside a long-lived async flow that closed over a stale
-          // default.
-          await waitForRemoteConfig(store);
-          const useV2 = tokenPricesV2Selector(store.getState());
           const fetchedTokenPrices = await getTokenPrices(
             assetIds,
             networkDetails,
-            useV2,
           );
           reduxDispatch(
             saveTokenPrices({
@@ -153,12 +138,9 @@ export function useGetTokenPrices() {
       const missingExtra = additionalAssetIds.filter((id) => !(id in resolved));
       if (missingExtra.length) {
         try {
-          await waitForRemoteConfig(store);
-          const useV2 = tokenPricesV2Selector(store.getState());
           const extraPrices = await getTokenPrices(
             missingExtra,
             networkDetails,
-            useV2,
           );
           const mergedTokenPrices = { ...resolved, ...extraPrices };
           reduxDispatch(

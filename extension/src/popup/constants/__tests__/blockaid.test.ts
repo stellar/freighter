@@ -19,6 +19,21 @@ describe("mergeSecurityLevels", () => {
     ).toBe(SecurityLevel.MALICIOUS);
   });
 
+  it("ranks a revert above UNABLE_TO_SCAN and below SUSPICIOUS", () => {
+    expect(
+      mergeSecurityLevels([
+        SecurityLevel.UNABLE_TO_SCAN,
+        SecurityLevel.LIKELY_TO_FAIL,
+      ]),
+    ).toBe(SecurityLevel.LIKELY_TO_FAIL);
+    expect(
+      mergeSecurityLevels([
+        SecurityLevel.LIKELY_TO_FAIL,
+        SecurityLevel.SUSPICIOUS,
+      ]),
+    ).toBe(SecurityLevel.SUSPICIOUS);
+  });
+
   it("ranks SUSPICIOUS above UNABLE_TO_SCAN", () => {
     expect(
       mergeSecurityLevels([

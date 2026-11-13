@@ -32,6 +32,12 @@ describe("getBlockaidBannerTitle", () => {
     );
   });
 
+  it("labels a simulation revert as likely to fail, not suspicious", () => {
+    expect(
+      getBlockaidBannerTitle(t, "transaction", SecurityLevel.LIKELY_TO_FAIL),
+    ).toBe("This transaction is likely to fail");
+  });
+
   it("uses a soft caution title for unable-to-scan (site gets its own copy)", () => {
     expect(
       getBlockaidBannerTitle(t, "token", SecurityLevel.UNABLE_TO_SCAN),
