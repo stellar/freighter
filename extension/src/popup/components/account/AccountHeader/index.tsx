@@ -53,7 +53,7 @@ const ACTION_TILES = [
 // has an allowlisted Blend pool (pubnet and testnet).
 const EARN_TILE = {
   route: ROUTES.earn,
-  icon: <IconEarn />,
+  icon: <IconEarn className="AccountHeader__earn-icon" />,
   label: "Earn",
   testId: "nav-link-earn",
 };

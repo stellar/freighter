@@ -130,6 +130,12 @@
         stroke: var(--sds-clr-gray-09);
         @include icon-stroke(20);
       }
+
+      // Earn's icon is drawn on a 20px viewBox, not SDS's 24px, so it keeps
+      // its own 2px stroke; the mixin above would thicken it to 2.4px.
+      .AccountHeader__earn-icon path {
+        stroke-width: 2;
+      }
     }
   }
 }
