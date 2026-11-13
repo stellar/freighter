@@ -1,5 +1,6 @@
 import React from "react";
 import { render, waitFor, screen, fireEvent } from "@testing-library/react";
+import { Route, Routes } from "react-router-dom";
 import { SendingTransaction } from "popup/components/InternalTransaction/SubmitTransaction";
 import { mockAccounts, Wrapper } from "popup/__testHelpers__";
 import { ROUTES } from "popup/constants/routes";
@@ -80,6 +81,46 @@ describe("SubmitTransaction", () => {
       );
       expect(screen.getByText("Close")).toBeInTheDocument();
     });
+  });
+
+  it("returns home instead of closing the popup when Close is clicked mid-submission", async () => {
+    // Keep the submission pending so the in-progress footer with Close stays up.
+    jest
+      .spyOn(ApiInternal, "submitFreighterTransaction")
+      .mockImplementationOnce(() => new Promise(() => {}));
+    const closeSpy = jest.spyOn(window, "close").mockImplementation(() => {});
+
+    render(
+      <Wrapper
+        routes={[ROUTES.sendPayment]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+            hasPrivateKey: true,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+          },
+        }}
+      >
+        <Routes>
+          <Route
+            path={ROUTES.sendPayment}
+            element={<SendingTransaction xdr="xdr" goBack={() => {}} />}
+          />
+          <Route path={ROUTES.account} element={<div>Home screen</div>} />
+        </Routes>
+      </Wrapper>,
+    );
+
+    fireEvent.click(await screen.findByText("Close"));
+
+    expect(await screen.findByText("Home screen")).toBeInTheDocument();
+    expect(closeSpy).not.toHaveBeenCalled();
+    closeSpy.mockRestore();
   });
 
   it("shows verify account modal and confirms password", async () => {
