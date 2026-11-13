@@ -31,6 +31,7 @@ import {
   getPhraseSourceId,
   getPinnedSourceId,
   getSecretSources,
+  removeSecretSource,
 } from "background/helpers/secret-sources";
 import { getSigningIdentity } from "background/helpers/signing-identity";
 import {
@@ -320,5 +321,54 @@ describe("secret sources", () => {
     const keyId = await mockDataStorage.getItem(KEY_ID);
     const keyStore = await mockKeyManager.loadKey(keyId, PASSWORD);
     expect(Object.keys(keyStore.extra)).toEqual(["imported", "mnemonicPhrase"]);
+  });
+});
+
+describe("removeSecretSource", () => {
+  const ID_A = "a".repeat(64);
+  const ID_B = "b".repeat(64);
+  const ID_C = "c".repeat(64);
+
+  const register = async (...ids: string[]) => {
+    for (const id of ids) {
+      await addSecretSource({
+        localStore: mockDataStorage,
+        id,
+        type: SecretSourceType.PHRASE,
+      });
+    }
+  };
+
+  beforeEach(async () => {
+    await mockStorageApi.clear();
+  });
+
+  it("deletes only the given source", async () => {
+    await register(ID_A, ID_B, ID_C);
+
+    await removeSecretSource({ localStore: mockDataStorage, id: ID_B });
+
+    const sources = await getSecretSources({ localStore: mockDataStorage });
+    expect(Object.keys(sources)).toEqual([ID_A, ID_C]);
+    expect(sources[ID_C].label).toBe("Seed Phrase 3");
+    expect(await getPinnedSourceId({ localStore: mockDataStorage })).toBe(ID_A);
+  });
+
+  it("re-pins when the removed source was pinned", async () => {
+    await register(ID_A, ID_B);
+
+    await removeSecretSource({ localStore: mockDataStorage, id: ID_A });
+
+    expect(await getPinnedSourceId({ localStore: mockDataStorage })).toBe(ID_B);
+  });
+
+  it("is a no-op for an unknown id", async () => {
+    await register(ID_A);
+    const before = await mockDataStorage.getItem(SECRET_SOURCES_ID);
+
+    await removeSecretSource({ localStore: mockDataStorage, id: ID_B });
+
+    expect(await mockDataStorage.getItem(SECRET_SOURCES_ID)).toEqual(before);
+    expect(await getPinnedSourceId({ localStore: mockDataStorage })).toBe(ID_A);
   });
 });

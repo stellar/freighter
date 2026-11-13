@@ -294,7 +294,7 @@ describe("CreateWallet", () => {
 });
 
 describe("AddWallet", () => {
-  it("offers create, secret key import and hardware, in that order", () => {
+  it("offers create, phrase import, secret key import and hardware, in that order", () => {
     render(
       <Wrapper routes={[ROUTES.addWallet]} state={{}}>
         <Routes>
@@ -307,11 +307,13 @@ describe("AddWallet", () => {
     expect(
       [
         "add-wallet-create",
+        "add-wallet-import-phrase",
         "add-wallet-import-secret-key",
         "add-wallet-connect-hardware",
       ].map((id) => screen.getByTestId(id).getAttribute("href")),
     ).toEqual([
       ROUTES.createWallet,
+      ROUTES.importRecoveryPhrase,
       ROUTES.importAccount,
       ROUTES.connectWallet,
     ]);
