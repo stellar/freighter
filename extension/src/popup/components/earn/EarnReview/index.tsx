@@ -53,7 +53,11 @@ interface EarnReviewProps {
   assetIcon?: string | null;
   /** Human-readable deposit amount. */
   amount: string;
-  /** USD value of the deposit; null when the asset has no fresh price. */
+  /**
+   * USD value of the deposit, unformatted ("1234.56"): it is added to the
+   * position's value and formatted here. Null when the asset has no fresh
+   * price.
+   */
   amountUsd: string | null;
   apy: number | null;
   /** Existing position in display units, "0" when there is none. */

@@ -161,13 +161,13 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
   const decimals = getAssetDecimals(asset, data.balances, true);
 
   const assetPrice = data.tokenPrices[asset]?.currentPrice;
-  const priceValueUsd = assetPrice
-    ? formatAmount(
-        roundUsdValue(
-          new BigNumber(assetPrice)
-            .multipliedBy(new BigNumber(cleanAmount(amount || "0")))
-            .toString(),
-        ),
+  // Left unformatted ("1234.56") and formatted where it is shown: the review
+  // also adds it to the position, which a thousands separator turns into NaN.
+  const depositUsd = assetPrice
+    ? roundUsdValue(
+        new BigNumber(assetPrice)
+          .multipliedBy(new BigNumber(cleanAmount(amount || "0")))
+          .toString(),
       )
     : null;
 
@@ -375,7 +375,7 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
               hasAsset: Boolean(asset),
               inputType: "crypto",
               price: assetPrice,
-              priceUsd: priceValueUsd,
+              priceUsd: depositUsd === null ? null : formatAmount(depositUsd),
               cryptoAmount: amount,
               code: selected?.code || "",
             })}
@@ -441,7 +441,7 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
           // reads as a lookup in flight and answers with a spinner.
           assetIcon={data.balances.icons?.[asset]}
           amount={amount}
-          amountUsd={priceValueUsd}
+          amountUsd={depositUsd}
           apy={selectedAssetApy}
           currentPosition={currentPositionTokens}
           currentPositionUsd={
