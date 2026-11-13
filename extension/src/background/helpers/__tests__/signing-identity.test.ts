@@ -14,6 +14,7 @@ import { sessionSlice } from "background/ducks/session";
 import {
   KEY_ID,
   KEY_ID_LIST,
+  LINK_STATUS_ID,
   PINNED_SOURCE_ID,
 } from "constants/localStorageTypes";
 
@@ -257,6 +258,67 @@ describe("getSigningIdentity", () => {
     await setPinnedSourceId({
       localStore: stores.localStore,
       sourceId: "f".repeat(64),
+    });
+
+    expect((await getSigningIdentity(stores))?.sourceId).toBe(phraseAId);
+  });
+
+  describe("when the pinned source is not held", () => {
+    // A phrase and an imported key, neither of them the pinned source.
+    const unlockWithoutPin = async (status: Record<string, string>) => {
+      const stores = await unlock({
+        keystores: { "key-imported": importedSecret },
+        mnemonics: { [phraseAId]: phraseA.mnemonic },
+        order: [],
+      });
+      await setPinnedSourceId({
+        localStore: stores.localStore,
+        sourceId: "f".repeat(64),
+      });
+      await stores.localStore.setItem(LINK_STATUS_ID, status);
+      return stores;
+    };
+
+    it("signs with a linked source over a phrase another user owns", async () => {
+      const stores = await unlockWithoutPin({
+        [phraseAId]: "conflict",
+        [importedId]: "linked",
+      });
+
+      expect((await getSigningIdentity(stores))?.sourceId).toBe(importedId);
+      expect(await getPinnedSourceId(stores)).toBe("f".repeat(64));
+    });
+
+    it("signs with an unconfirmed source over one another user owns", async () => {
+      const stores = await unlockWithoutPin({ [phraseAId]: "conflict" });
+
+      expect((await getSigningIdentity(stores))?.sourceId).toBe(importedId);
+    });
+
+    it("prefers a linked source over an unconfirmed phrase", async () => {
+      const stores = await unlockWithoutPin({ [importedId]: "linked" });
+
+      expect((await getSigningIdentity(stores))?.sourceId).toBe(importedId);
+    });
+
+    it("returns null when every held source belongs to another user", async () => {
+      const stores = await unlockWithoutPin({
+        [phraseAId]: "conflict",
+        [importedId]: "conflict",
+      });
+
+      expect(await getSigningIdentity(stores)).toBeNull();
+    });
+  });
+
+  it("signs with the held pinned source whatever the link status says", async () => {
+    const stores = await unlock({
+      keystores: { "key-imported": importedSecret },
+      mnemonics: { [phraseAId]: phraseA.mnemonic },
+      order: [phrase, key],
+    });
+    await stores.localStore.setItem(LINK_STATUS_ID, {
+      [importedId]: "linked",
     });
 
     expect((await getSigningIdentity(stores))?.sourceId).toBe(phraseAId);
