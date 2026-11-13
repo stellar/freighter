@@ -1,7 +1,8 @@
 @use "../../../styles/utils.scss" as *;
 
-// Figma's banner (4414:42195), drawn the same in both themes: the campaign's
-// fixed near-black card, with fixed colors on it rather than theme tokens.
+// Figma's banner (4414:42195): the campaign's fixed near-black card, with
+// fixed colors on it rather than theme tokens, so it's the same in both themes
+// apart from dark mode's outline (below).
 .EthenaLaunchBanner {
   position: relative;
   // Its own stacking context, so the dismiss button's z-index stays inside
@@ -55,6 +56,12 @@
     font: inherit;
     text-align: left;
     cursor: pointer;
+
+    // The card clips anything drawn outside it, and dark mode's outline
+    // covers its edge, so the keyboard focus ring goes inside both.
+    &:focus-visible {
+      outline-offset: pxToRem(-3px);
+    }
   }
 
   &__title {
@@ -97,4 +104,12 @@
       @include icon-stroke(16, 1);
     }
   }
+}
+
+// Dark mode outlines the card, so it stands out on the black page (Figma
+// 4414:59535). An inset outline rather than a border: it takes no space, so
+// nothing on the card moves, and like Figma's stroke it's drawn over the glow.
+.sds-theme-dark .EthenaLaunchBanner {
+  outline: pxToRem(1px) solid var(--sds-clr-gray-04);
+  outline-offset: pxToRem(-1px);
 }

@@ -50,12 +50,7 @@ const backdrop = (locator: Locator) =>
 
 const computed = (
   locator: Locator,
-  property:
-    | "color"
-    | "backgroundColor"
-    | "borderTopWidth"
-    | "fill"
-    | "fontWeight",
+  property: "color" | "backgroundColor" | "fill" | "fontWeight",
 ) => locator.evaluate((el, prop) => getComputedStyle(el)[prop], property);
 
 // Varial pages sit on base-00; sheets floating over them stay on gray-01.
@@ -91,9 +86,10 @@ test("welcome screen follows the color scheme", async ({
   expect(await backdrop(body)).toBe(BASE_00.dark);
 });
 
-// The Ethena launch is one design in both themes. These compare whole renders
-// across a live theme change rather than spot-checking a few colors, so any
-// property that follows the theme fails the test, named.
+// The Ethena launch is one design in both themes, but for the banner's outline
+// in dark mode. These compare whole renders across a live theme change rather
+// than spot-checking a few colors, so any property that follows the theme
+// shows up, named.
 
 // Waits out entrance animations and transitions, so a render is of the
 // settled UI rather than a frame of its motion.
@@ -144,7 +140,7 @@ const styleChanges = (before: RenderedStyles, after: RenderedStyles) => [
   ),
 ];
 
-test("Ethena launch banner looks the same in both themes", async ({
+test("Ethena launch banner only adds an outline in dark mode", async ({
   page,
   extensionId,
   context,
@@ -161,13 +157,21 @@ test("Ethena launch banner looks the same in both themes", async ({
   await page.emulateMedia({ colorScheme: "dark" });
   await expect(page.locator("body")).toHaveClass(/sds-theme-dark/);
   await settle(banner);
-  expect(styleChanges(light, await renderedStyles(banner))).toEqual([]);
+  // Dark mode outlines the card in gray-04, so it stands out on the black
+  // page (Figma 4414:59535). Drawn inside the card, it moves nothing, and
+  // nothing else follows the theme. (Light mode's 3px is the initial width,
+  // which Chrome reports while the style is none; nothing is drawn.)
+  expect(styleChanges(light, await renderedStyles(banner))).toEqual([
+    "div.EthenaLaunchBanner outline-color: rgb(255, 255, 255) → rgb(40, 40, 40)",
+    "div.EthenaLaunchBanner outline-offset: 0px → -1px",
+    "div.EthenaLaunchBanner outline-style: none → solid",
+    "div.EthenaLaunchBanner outline-width: 3px → 1px",
+  ]);
 
-  // And it's Figma's banner (4414:42195): the near-black card with no
-  // outline, white title, light-gray subtitle and gray X.
+  // Otherwise it's Figma's banner (4414:42195): the near-black card, white
+  // title, light-gray subtitle and gray X.
   expect({
     card: await computed(banner, "backgroundColor"),
-    outline: await computed(banner, "borderTopWidth"),
     title: await computed(banner.getByText("Meet Ethena on Stellar"), "color"),
     subtitle: await computed(
       banner.getByText("USDe and sUSDe are now available."),
@@ -179,7 +183,6 @@ test("Ethena launch banner looks the same in both themes", async ({
     ),
   }).toEqual({
     card: "rgb(7, 9, 8)",
-    outline: "0px",
     title: "rgb(255, 255, 255)",
     subtitle: "rgb(199, 199, 199)",
     dismiss: "rgb(133, 133, 133)",
