@@ -84,12 +84,13 @@ const ALLOWED_RAW_COLORS: Record<string, string[]> = {
   "popup/styles/varialPalette.scss": ["*"],
   // Emulates the browser's native focus ring; deliberately not themed.
   "popup/styles/utils.scss": ["rgb(153, 200, 255)"],
-  // Ethena launch banner: the campaign's fixed near-black surface and the
-  // dismiss-button hover drawn on it (correct in both themes).
+  // Ethena launch banner: one design in both themes, Figma's (4414:42195).
+  // The campaign's fixed near-black surface and the colors drawn on it.
   "popup/components/account/EthenaLaunchBanner/styles.scss": [
     "#070908",
-    "#c7c7c7", // subtitle on the fixed campaign surface; must not theme-flip
-    "rgba(255, 255, 255, 0.1)",
+    "#c7c7c7", // subtitle
+    "#858585", // dismiss X
+    "rgba(255, 255, 255, 0.1)", // dismiss hover
   ],
   // Account avatar artwork; fixed so an avatar looks the same in both themes.
   "popup/components/identicons/IdenticonImg/colors.ts": ["*"],

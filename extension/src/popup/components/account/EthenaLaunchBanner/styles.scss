@@ -1,5 +1,7 @@
 @use "../../../styles/utils.scss" as *;
 
+// Figma's banner (4414:42195), drawn the same in both themes: the campaign's
+// fixed near-black card, with fixed colors on it rather than theme tokens.
 .EthenaLaunchBanner {
   position: relative;
   // Its own stacking context, so the dismiss button's z-index stays inside
@@ -7,13 +9,13 @@
   // scrolls under it, and the glow can sit behind the copy at z-index -1.
   isolation: isolate;
   overflow: hidden;
-  // The campaign's fixed near-black surface, the same in both themes.
   background: #070908;
-  // Dark mode outlines the card (below). The border is there in light mode
-  // too, transparent over the same fill, so the card is the same size in
-  // both; the padding is Figma's 12px/16px less that 1px.
-  border: pxToRem(1px) solid transparent;
   border-radius: pxToRem(16px);
+  // The copy is white unless it says otherwise.
+  color: var(--sds-clr-white);
+  // What the browser draws itself, like the keyboard focus ring, follows the
+  // color scheme. Fixed to the dark card's so it doesn't flip either.
+  color-scheme: dark;
   // No margins: this sits in `AccountHeader__account-info`, which spans the
   // content column and spaces its children 16px apart, so the banner
   // stretches to match the action tiles.
@@ -23,13 +25,13 @@
     opacity: 0.9;
   }
 
-  // The blurred blue disc bleeding off the card's top-right corner. Offsets
-  // are Figma's, less the 1px border the padding box starts inside.
+  // The blurred blue disc bleeding off the card's top-right corner, at
+  // Figma's offsets.
   &__glow {
     position: absolute;
     z-index: -1;
-    top: pxToRem(-81px);
-    right: pxToRem(-80px);
+    top: pxToRem(-80px);
+    right: pxToRem(-79px);
     width: pxToRem(263px);
     height: pxToRem(263px);
     max-width: none;
@@ -45,21 +47,20 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    padding: pxToRem(11px) pxToRem(40px) pxToRem(11px) pxToRem(15px);
+    padding: pxToRem(12px) pxToRem(40px) pxToRem(12px) pxToRem(16px);
     background: none;
     border: none;
     border-radius: inherit;
+    color: inherit;
     font: inherit;
     text-align: left;
     cursor: pointer;
   }
 
-  // The surface doesn't follow the theme, so neither does its copy.
   &__title {
     font-size: pxToRem(14px);
     line-height: pxToRem(20px);
     font-weight: var(--sds-fw-semi-bold);
-    color: var(--sds-clr-white);
   }
 
   &__subtitle {
@@ -69,10 +70,12 @@
     color: #c7c7c7;
   }
 
+  // The X sits 12px in from the top and right, as in Figma, inside its 4px
+  // hover padding.
   &__dismiss {
     position: absolute;
-    top: pxToRem(7px);
-    right: pxToRem(7px);
+    top: pxToRem(8px);
+    right: pxToRem(8px);
     z-index: 1;
     display: flex;
     align-items: center;
@@ -82,8 +85,7 @@
     border: none;
     border-radius: pxToRem(16px);
     cursor: pointer;
-    // Gray/10 is the X's color in both of Figma's themes.
-    color: var(--sds-clr-gray-10);
+    color: #858585;
 
     &:hover {
       background: rgba(255, 255, 255, 0.1);
@@ -95,8 +97,4 @@
       @include icon-stroke(16, 1);
     }
   }
-}
-
-.sds-theme-dark .EthenaLaunchBanner {
-  border-color: var(--sds-clr-gray-04);
 }
