@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { Keypair } from "stellar-sdk";
 
 import { SERVICE_TYPES } from "@shared/constants/services";
+import { PHRASE_ALREADY_HELD_ERROR } from "@shared/constants/errors";
 import {
   ACCOUNT_SOURCE_VECTORS,
   AUTH_KEYPAIR_VECTORS,
@@ -191,6 +192,14 @@ const importKey = (secret: string, activePublicKey: string) =>
     privateKey: secret,
   });
 
+const importPhrase = (mnemonicPhrase: string, activePublicKey: string) =>
+  send({
+    type: SERVICE_TYPES.IMPORT_RECOVERY_PHRASE,
+    activePublicKey,
+    password: PASSWORD,
+    mnemonicPhrase,
+  });
+
 const addAccount = (sourceId: string, activePublicKey: string) =>
   send({
     type: SERVICE_TYPES.ADD_ACCOUNT,
@@ -305,6 +314,49 @@ describe("concurrent account-mutating messages", () => {
     expect(allAccounts().map(({ publicKey }) => publicKey)).toEqual(
       expect.arrayContaining([ROWS_1[1].publicKey, ROWS_2[1].publicKey]),
     );
+  });
+
+  it("stores one set of accounts when the same phrase is imported twice at once", async () => {
+    // Hold the funded-account lookups until both imports are discovering
+    // (each keeps 10 in flight), so both reach the post-discovery "held"
+    // check together. Under the lock only one import discovers at a time,
+    // so the timeout releases the first.
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const releaseTimer = setTimeout(() => release(), 1_000);
+    let pending = 0;
+    global.fetch = jest.fn(async () => {
+      pending += 1;
+      if (pending >= 20) release();
+      await gate;
+      return { json: async () => ({ account_id: "funded" }) };
+    }) as unknown as typeof fetch;
+    const active = activeKey();
+
+    const results = await Promise.all([
+      importPhrase(PHRASE_2.mnemonic, active),
+      importPhrase(PHRASE_2.mnemonic, active),
+    ]);
+    clearTimeout(releaseTimer);
+
+    expect(results.map((r) => r.error).sort()).toEqual(
+      [PHRASE_ALREADY_HELD_ERROR, undefined].sort(),
+    );
+
+    const sources = Object.values(
+      local(SECRET_SOURCES_ID) as Record<string, SecretSource>,
+    );
+    expect(sources.filter(({ id }) => id === PHRASE_2.userId)).toHaveLength(1);
+
+    const publicKeys = allAccounts().map(({ publicKey }) => publicKey);
+    expect(new Set(publicKeys).size).toBe(publicKeys.length);
+    expect(publicKeys).toContain(ROWS_2[0].publicKey);
+
+    const keyIds = local(KEY_ID_LIST) as string[];
+    expect(new Set(keyIds).size).toBe(keyIds.length);
+    expect(keyIds).toHaveLength(publicKeys.length);
   });
 
   it("gives a concurrent add and import distinct names and provenance", async () => {
