@@ -24,6 +24,7 @@ export type BlockaidEntity =
 /**
  * Resolves the banner title from the flagged entity and its severity.
  * UNABLE_TO_SCAN is a soft "proceed with caution" (site has its own copy).
+ * LIKELY_TO_FAIL is a simulation revert, not a risk flag.
  * SAFE never produces a title.
  */
 export const getBlockaidBannerTitle = (
@@ -31,6 +32,10 @@ export const getBlockaidBannerTitle = (
   entity: BlockaidEntity,
   securityLevel: SecurityLevel,
 ): string => {
+  if (securityLevel === SecurityLevel.LIKELY_TO_FAIL) {
+    return t("This transaction is likely to fail");
+  }
+
   if (securityLevel === SecurityLevel.UNABLE_TO_SCAN) {
     return entity === "site"
       ? t("Unable to scan site for malicious behavior")
@@ -73,8 +78,9 @@ interface BlockaidBannerProps {
 
 /**
  * The single reusable Blockaid warning banner. Filled style, colored by
- * severity (red for malicious, amber for suspicious / unable-to-scan), with a
- * chevron when it opens a detail sheet. Renders nothing for a SAFE verdict.
+ * severity (red for malicious, amber for suspicious / likely-to-fail /
+ * unable-to-scan), with a chevron when it opens a detail sheet. Renders
+ * nothing for a SAFE verdict.
  */
 export const BlockaidBanner = ({
   securityLevel,
