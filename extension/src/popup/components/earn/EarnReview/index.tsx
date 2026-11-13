@@ -33,6 +33,7 @@ import {
 import { getAuthEntryBoundAddress } from "popup/helpers/soroban";
 import { NO_FIAT_VALUE, formatAmount } from "popup/helpers/formatters";
 import { formatRate } from "popup/components/earn/helpers/formatPoolStats";
+import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
 import { StatRow } from "popup/components/earn/StatRow";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 import {
@@ -413,7 +414,7 @@ export const EarnReview = ({
               {t("To")}
             </Text>
             <div className="EarnReview__amount">
-              {pool?.name || t("Blend pool")}
+              {formatPoolName(pool?.name, t)}
             </div>
           </div>
         </div>

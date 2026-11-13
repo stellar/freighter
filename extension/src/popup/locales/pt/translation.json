@@ -8,6 +8,7 @@
   "{{domain}} is not currently connected to Freighter": "{{domain}} não está atualmente conectado ao Freighter",
   "{{domain}} is not currently connected to Varial": "{{domain}} não está atualmente conectado ao Varial",
   "{{from}} has been swapped to {{to}}": "{{from}} foi trocado por {{to}}",
+  "{{name}} Pool": "Pool {{name}}",
   "{{rate}}% APY": "{{rate}}% APY",
   "{{walletType}} logo": "Logo {{walletType}}",
   "* All Stellar accounts must maintain a minimum balance of lumens.": "* Todas as contas Stellar devem manter um saldo mínimo de lumens.",

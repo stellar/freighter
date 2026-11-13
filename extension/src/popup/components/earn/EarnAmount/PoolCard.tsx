@@ -3,6 +3,7 @@ import { Icon, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { formatRate } from "popup/components/earn/helpers/formatPoolStats";
+import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
 
 interface PoolCardProps {
@@ -44,7 +45,7 @@ export const PoolCard = ({ poolName, apy, onOpenDetails }: PoolCardProps) => {
             weight="medium"
             addlClassName="PoolCard__name"
           >
-            {poolName || t("Blend pool")}
+            {formatPoolName(poolName, t)}
           </Text>
           <Text
             as="div"

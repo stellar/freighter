@@ -11,6 +11,7 @@ import {
   formatCompactUsd,
   formatRate,
 } from "popup/components/earn/helpers/formatPoolStats";
+import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
 
 import "./styles.scss";
 
@@ -42,7 +43,7 @@ export const PoolDetailsSheet = ({ pool, onClose }: PoolDetailsSheetProps) => {
         <PoolIcon />
         <div className="PoolDetailsSheet__identity">
           <Text as="div" size="md" weight="semi-bold">
-            {pool.name || t("Blend pool")}
+            {formatPoolName(pool.name, t)}
           </Text>
           <Text as="div" size="sm">
             {t("by Blend")}

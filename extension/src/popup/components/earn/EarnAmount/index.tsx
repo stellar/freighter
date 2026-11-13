@@ -16,6 +16,7 @@ import {
 } from "popup/components/amount/helpers/amountDisplay";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { PoolDetailsSheet } from "popup/components/earn/PoolDetailsSheet";
+import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { newTabHref } from "helpers/urls";
@@ -464,7 +465,7 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
       <SlideupModal
         isModalOpen={isPoolSheetOpen}
         setIsModalOpen={setIsPoolSheetOpen}
-        ariaLabel={pool ? pool.name || t("Blend pool") : undefined}
+        ariaLabel={pool ? formatPoolName(pool.name, t) : undefined}
       >
         {pool ? (
           <PoolDetailsSheet

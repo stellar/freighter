@@ -7,6 +7,7 @@ import { ActionStatus } from "@shared/api/types";
 import { View } from "popup/basics/layout/View";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
+import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
 import { RequestState } from "constants/request";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { isCustomNetwork } from "@shared/helpers/stellar";
@@ -211,7 +212,7 @@ export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
               {t("{{amount}} {{code}} to {{pool}}", {
                 amount: formatAmount(amount),
                 code: srcAsset.code,
-                pool: pool?.name || t("Blend pool"),
+                pool: formatPoolName(pool?.name, t),
               })}
             </Text>
           </div>
