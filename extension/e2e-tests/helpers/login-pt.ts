@@ -5,7 +5,7 @@ import { PASSWORD, TEST_ACCOUNT_WORDS } from "./login";
 import {
   enterImportSecret,
   fillPasswordAndConfirm,
-  waitForImportSuccess,
+  waitForOnboardingReady,
 } from "./onboarding";
 
 export { PASSWORD };
@@ -38,7 +38,7 @@ export const loginToTestAccountPT = async ({
     confirmLabel: "Confirmar",
   });
 
-  await waitForImportSuccess({ page, successText: "Tudo pronto!" });
+  await waitForOnboardingReady({ page });
 
   await page.goto(`chrome-extension://${extensionId}/index.html#/`);
   await expect(page.getByTestId("account-chip")).toBeVisible({

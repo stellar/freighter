@@ -36,7 +36,7 @@ import { PluginWallet } from "popup/views/AddAccount/connect/PluginWallet";
 import { DeviceConnect } from "popup/views/AddAccount/connect/DeviceConnect";
 import { GrantAccess } from "popup/views/GrantAccess";
 import { MnemonicPhrase } from "popup/views/MnemonicPhrase";
-import { FullscreenSuccessMessage } from "popup/views/FullscreenSuccessMessage";
+import { OnboardingStatus } from "popup/components/OnboardingStatus";
 import { RecoverAccount } from "popup/views/RecoverAccount";
 import { AddToken } from "popup/views/AddToken";
 import { SignTransaction } from "popup/views/SignTransaction";
@@ -288,7 +288,7 @@ export const Router = () => (
         ></Route>
         <Route
           path={ROUTES.mnemonicPhraseConfirmed}
-          element={<FullscreenSuccessMessage />}
+          element={<OnboardingStatus status="ready" />}
         ></Route>
         <Route
           path={ROUTES.accountCreator}
@@ -301,7 +301,7 @@ export const Router = () => (
         <Route path={ROUTES.verifyAccount} element={<VerifyAccount />}></Route>
         <Route
           path={ROUTES.recoverAccountSuccess}
-          element={<FullscreenSuccessMessage />}
+          element={<OnboardingStatus status="ready" />}
         ></Route>
         <Route
           path={`${ROUTES.sendPayment}/*`}
