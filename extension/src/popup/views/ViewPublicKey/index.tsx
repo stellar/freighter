@@ -3,12 +3,13 @@ import { useSelector } from "react-redux";
 import { QRCodeSVG } from "qrcode.react";
 import { Icon, Button, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { emitMetric } from "helpers/metrics";
 import { truncatedPublicKey } from "helpers/stellar";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { closeWindow, openTab } from "popup/helpers/navigate";
+import { useEscapeToClose } from "popup/helpers/hooks/useEscapeToClose";
 import { View } from "popup/basics/layout/View";
 import { showToast } from "popup/basics/shadcn/Toast";
 import { accountNameSelector } from "popup/ducks/accountServices";
@@ -26,8 +27,12 @@ import "./styles.scss";
 export const ViewPublicKey = () => {
   const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
   const accountName = useSelector(accountNameSelector);
   const { state, fetchData } = useGetAppData();
+
+  // Esc goes back like the X does, rather than closing the popup.
+  useEscapeToClose(() => navigate(-1));
 
   useEffect(() => {
     const getData = async () => {

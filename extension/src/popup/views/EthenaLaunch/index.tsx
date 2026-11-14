@@ -6,6 +6,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { View } from "popup/basics/layout/View";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo, openTab } from "popup/helpers/navigate";
+import { useEscapeToClose } from "popup/helpers/hooks/useEscapeToClose";
 
 import EthenaLaunchWave from "popup/assets/ethena-launch-wave.svg";
 import EthenaCoinLight from "popup/assets/ethena-launch-coin-light.png";
@@ -182,6 +183,9 @@ export const EthenaLaunch = () => {
   const handleClose = () => {
     navigate(destination, { replace: true });
   };
+
+  // Esc closes the promo like the X does, rather than the popup.
+  useEscapeToClose(handleClose);
 
   const handleReceive = () => {
     // The address screen closes by going back, to this history entry, so

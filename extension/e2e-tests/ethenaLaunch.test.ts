@@ -173,6 +173,26 @@ test("Ethena launch promo comes back from Receive as it was left", async ({
   ).toBe(0);
 });
 
+test("Esc closes the address screen, then the Ethena launch promo", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context });
+  await page.getByTestId("ethena-launch-banner-open").click();
+  await expect(page.getByTestId("ethena-launch")).toBeVisible();
+
+  // The address screen: Esc goes back to the promo, like its X.
+  await page.getByTestId("ethena-launch-receive-usde").click();
+  await expect(page.getByTestId("view-public-key-account-name")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("ethena-launch")).toBeVisible();
+
+  // The promo: Esc goes Home, like its X.
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("account-view")).toBeVisible();
+});
+
 test("Ethena launch promo keeps its close button on a bar as the page scrolls", async ({
   page,
   extensionId,

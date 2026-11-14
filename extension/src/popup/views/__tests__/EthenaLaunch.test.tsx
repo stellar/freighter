@@ -271,6 +271,16 @@ describe("EthenaLaunch", () => {
     expect(await screen.findByText("settings-home")).toBeInTheDocument();
   });
 
+  it("closes to its destination on Esc, keeping the popup open", async () => {
+    renderView(ROUTES.settings);
+
+    // fireEvent returns false when the key was marked handled, which is what
+    // stops Chrome closing the popup on Esc.
+    expect(fireEvent.keyDown(document, { key: "Escape" })).toBe(false);
+
+    expect(await screen.findByText("settings-home")).toBeInTheDocument();
+  });
+
   it("closes to the account view when no destination was given", async () => {
     renderView();
 
