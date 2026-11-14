@@ -111,6 +111,67 @@ describe("EthenaLaunch", () => {
     expect(header).not.toHaveClass("EthenaLaunch__header--scrolled");
   });
 
+  describe("scroll cue", () => {
+    // jsdom has no layout: the cue 544px down a page scrolled 20px, under
+    // the 80px bar.
+    const layOut = () => {
+      const page = screen.getByTestId("ethena-launch");
+      const cue = screen.getByRole("button", {
+        name: "Scroll to discover tokens",
+      });
+      const scrollTo = jest.fn();
+      page.scrollTo = scrollTo;
+      page.scrollTop = 20;
+      jest
+        .spyOn(page, "getBoundingClientRect")
+        .mockReturnValue({ top: 0 } as DOMRect);
+      jest
+        .spyOn(cue, "getBoundingClientRect")
+        .mockReturnValue({ top: 544 } as DOMRect);
+      Object.defineProperty(
+        screen.getByTestId("ethena-launch-header"),
+        "offsetHeight",
+        { configurable: true, value: 80 },
+      );
+      return { cue, scrollTo };
+    };
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it("scrolls the tokens up until the cue is 60px below the bar", async () => {
+      renderView();
+      const { cue, scrollTo } = layOut();
+
+      await userEvent.click(cue);
+
+      expect(scrollTo).toHaveBeenCalledWith({
+        top: 20 + 544 - 80 - 60,
+        behavior: "smooth",
+      });
+    });
+
+    it("jumps there instead under reduced motion", async () => {
+      jest.spyOn(window, "matchMedia").mockImplementation(
+        (query: string) =>
+          ({
+            matches: query === "(prefers-reduced-motion: reduce)",
+            media: query,
+          }) as MediaQueryList,
+      );
+      renderView();
+      const { cue, scrollTo } = layOut();
+
+      await userEvent.click(cue);
+
+      expect(scrollTo).toHaveBeenCalledWith({
+        top: 20 + 544 - 80 - 60,
+        behavior: "auto",
+      });
+    });
+  });
+
   it("swaps from XLM to each token on Sushi", async () => {
     renderView();
 

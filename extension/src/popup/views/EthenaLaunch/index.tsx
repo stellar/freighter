@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Button, Heading, Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -35,6 +35,11 @@ const sushiSwapUrl = (contractId: string) =>
 const stargateUrl = (ethereumAddress: string, contractId: string) =>
   `https://stargate.finance/?srcChain=ethereum&srcToken=${ethereumAddress}&dstChain=stellar&dstToken=${contractId}`;
 const ETHENA_DOCS_URL = "https://docs.ethena.fi/";
+
+// The scroll cue scrolls the page until it sits this far below the close
+// button's bar, with the tokens under it.
+const SCROLL_CUE_GAP = 60;
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
 interface EthenaTokenSectionProps {
   id: string;
@@ -133,11 +138,31 @@ export const EthenaLaunch = () => {
     ROUTES.account,
   ) as string;
 
+  const pageRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+
   // The close button's bar fills in once the page scrolls (see styles).
   const [isScrolled, setIsScrolled] = useState(false);
 
   const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
     setIsScrolled(event.currentTarget.scrollTop > 0);
+  };
+
+  const handleScrollToTokens = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const page = pageRef.current;
+    if (!page) {
+      return;
+    }
+    const cueTop =
+      event.currentTarget.getBoundingClientRect().top -
+      page.getBoundingClientRect().top;
+    const barHeight = headerRef.current?.offsetHeight ?? 0;
+    page.scrollTo({
+      top: page.scrollTop + cueTop - barHeight - SCROLL_CUE_GAP,
+      behavior: window.matchMedia?.(REDUCED_MOTION_QUERY)?.matches
+        ? "auto"
+        : "smooth",
+    });
   };
 
   const handleClose = () => {
@@ -156,11 +181,13 @@ export const EthenaLaunch = () => {
     // Pinned dark: the hero art is drawn for a black page and there is no
     // light design.
     <div
+      ref={pageRef}
       className="EthenaLaunch sds-theme-dark"
       onScroll={handleScroll}
       data-testid="ethena-launch"
     >
       <div
+        ref={headerRef}
         className={`EthenaLaunch__header${isScrolled ? " EthenaLaunch__header--scrolled" : ""}`}
         data-testid="ethena-launch-header"
       >
@@ -204,10 +231,15 @@ export const EthenaLaunch = () => {
             {t("Discover USDe and sUSDe, now available on Stellar.")}
           </div>
         </div>
-        <div className="EthenaLaunch__scroll-hint">
+        <button
+          type="button"
+          className="EthenaLaunch__scroll-hint"
+          onClick={handleScrollToTokens}
+          data-testid="ethena-launch-scroll-hint"
+        >
           {t("Scroll to discover tokens")}
           <Icon.ChevronDown aria-hidden="true" />
-        </div>
+        </button>
       </section>
 
       <section className="EthenaLaunch__tokens">

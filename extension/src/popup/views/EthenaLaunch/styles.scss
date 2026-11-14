@@ -190,6 +190,7 @@ $header-fade-in: 200ms;
     text-wrap: balance;
   }
 
+  // A button: it scrolls the tokens into view (see handleScrollToTokens).
   &__scroll-hint {
     // Pushed to the bottom of the first screen however tall the window is.
     margin-top: auto;
@@ -197,6 +198,11 @@ $header-fade-in: 200ms;
     flex-direction: column;
     align-items: center;
     gap: pxToRem(4px);
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
     font-size: pxToRem(12px);
     line-height: pxToRem(18px);
     font-weight: var(--sds-fw-medium);
@@ -204,6 +210,10 @@ $header-fade-in: 200ms;
     text-align: center;
     animation: EthenaLaunch-fade-in $fade-duration $fade-easing
       $scroll-hint-delay both;
+
+    &:hover {
+      color: var(--sds-clr-gray-12);
+    }
 
     svg {
       width: pxToRem(18px);
@@ -271,15 +281,16 @@ $header-fade-in: 200ms;
   }
 
   // Borderless text button per design. No SDS Button variant is transparent,
-  // so it's hand-rolled at Figma's metrics (32px tall, 14/20 text).
+  // so it's hand-rolled at the metrics of SDS's lg Button, which Swap and
+  // Receive above it are: 40px tall, 14/22 text and a 14px icon.
   &__transfer {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: pxToRem(4px);
     width: 100%;
-    height: pxToRem(32px);
-    padding: pxToRem(6px) pxToRem(12px);
+    height: pxToRem(40px);
+    padding: pxToRem(8px) pxToRem(12px);
     background: none;
     border: none;
     border-radius: pxToRem(100px);
@@ -288,7 +299,7 @@ $header-fade-in: 200ms;
     font-family: inherit;
     font-size: pxToRem(14px);
     font-weight: var(--sds-fw-semi-bold);
-    line-height: pxToRem(20px);
+    line-height: pxToRem(22px);
 
     &:hover {
       // Opaque fallback first: manifest v2 still allows Firefox < 113, no
@@ -297,10 +308,10 @@ $header-fade-in: 200ms;
       background: color-mix(in srgb, var(--sds-clr-gray-12) 10%, transparent);
     }
 
+    // Sized like the icon in an SDS Button, so its stroke matches Swap's.
     svg {
-      width: pxToRem(16px);
-      height: pxToRem(16px);
-      @include icon-stroke(16);
+      width: pxToRem(14px);
+      height: pxToRem(14px);
     }
   }
 

@@ -57,6 +57,60 @@ test("a wallet that predates the launch sees the Ethena launch promo once, on it
   await expect(page.getByTestId("ethena-launch")).toHaveCount(0);
 });
 
+test("Ethena launch promo's token actions are all the same size", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context });
+  await page.getByTestId("ethena-launch-banner-open").click();
+  await expect(page.getByTestId("ethena-launch")).toBeVisible();
+
+  const size = (testId: string) =>
+    page.getByTestId(testId).evaluate((el) => {
+      const icon = el.querySelector("svg")?.getBoundingClientRect();
+      return {
+        height: el.getBoundingClientRect().height,
+        icon: icon ? icon.width : null,
+      };
+    });
+  for (const token of ["usde", "susde"]) {
+    const swap = await size(`ethena-launch-swap-${token}`);
+    const receive = await size(`ethena-launch-receive-${token}`);
+    const transfer = await size(`ethena-launch-transfer-${token}`);
+    // SDS's lg Button, which Swap and Receive are.
+    expect(swap.height).toBe(40);
+    expect(receive.height).toBe(swap.height);
+    expect(transfer).toEqual(swap);
+  }
+});
+
+test("Ethena launch promo's scroll cue scrolls the tokens into view", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context });
+  await page.getByTestId("ethena-launch-banner-open").click();
+  const bar = page.getByTestId("ethena-launch-header");
+  const cue = page.getByRole("button", { name: "Scroll to discover tokens" });
+  await expect(cue).toBeVisible();
+
+  await cue.click();
+
+  // It stops with the cue 60px below the close button's bar, the tokens
+  // under it.
+  const gap = async () => {
+    const [barBox, cueBox] = await Promise.all([
+      bar.boundingBox(),
+      cue.boundingBox(),
+    ]);
+    return Math.round(cueBox!.y - (barBox!.y + barBox!.height));
+  };
+  await expect.poll(gap).toBe(60);
+  await expect(page.getByTestId("ethena-launch-swap-usde")).toBeInViewport();
+});
+
 test("Ethena launch promo keeps its close button on a bar as the page scrolls", async ({
   page,
   extensionId,
