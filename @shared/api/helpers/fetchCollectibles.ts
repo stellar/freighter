@@ -7,6 +7,10 @@ import {
 } from "../types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { fetchMetadataJson } from "./fetchMetadataJson";
+import {
+  isMetadataDataUri,
+  parseMetadataDataUri,
+} from "./parseMetadataDataUri";
 import { fetchBackendV2 } from "./fetchBackendV2";
 import { redactErrorBody } from "./redactErrorBody";
 
@@ -15,7 +19,7 @@ import { redactErrorBody } from "./redactErrorBody";
  * The metadata follows the NFT metadata standard and includes name, description,
  * image, external URL, and attributes.
  *
- * @param {string} tokenUri - The URI where the collectible metadata is hosted
+ * @param {string} tokenUri - The URI where the collectible metadata is hosted (https), or a `data:application/json` URI that embeds it
  * @returns {Promise<CollectibleMetadata | null>} The collectible metadata object, or null if the fetch fails or the response is invalid
  */
 export const fetchCollectibleMetadata = async (tokenUri: string) => {
@@ -28,7 +32,11 @@ export const fetchCollectibleMetadata = async (tokenUri: string) => {
   };
 
   try {
-    const data = await fetchMetadataJson<CollectibleMetadataResponse>(tokenUri);
+    // Some contracts return the metadata document itself as a `data:` URI
+    // instead of a link to it; read those inline rather than fetching.
+    const data = isMetadataDataUri(tokenUri)
+      ? parseMetadataDataUri<CollectibleMetadataResponse>(tokenUri)
+      : await fetchMetadataJson<CollectibleMetadataResponse>(tokenUri);
 
     if (!data) {
       return null;
@@ -39,7 +47,10 @@ export const fetchCollectibleMetadata = async (tokenUri: string) => {
     metadata.externalUrl = data.external_url;
     metadata.attributes = (data.attributes || [])
       .map((attr) => {
-        if (attr.trait_type && attr.value) {
+        // 0 is a real trait value, so only skip values that are missing
+        const hasValue =
+          attr.value !== undefined && attr.value !== null && attr.value !== "";
+        if (attr.trait_type && hasValue) {
           return {
             traitType: attr.trait_type,
             value: attr.value,
