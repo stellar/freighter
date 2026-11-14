@@ -214,12 +214,6 @@ test("Ethena launch promo looks the same in both themes", async ({
   expect(await computed(page.getByTestId("ethena-launch-close"), "color")).toBe(
     darkGray12,
   );
-  // It fills the window, so none of the themed page shows around it.
-  expect(await promo.boundingBox()).toEqual({
-    x: 0,
-    y: 0,
-    ...page.viewportSize(),
-  });
   const light = await renderedStyles(promo);
 
   await page.emulateMedia({ colorScheme: "dark" });

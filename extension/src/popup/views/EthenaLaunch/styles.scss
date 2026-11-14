@@ -10,9 +10,6 @@ $scroll-hint-delay: 400ms;
 $slide-easing: cubic-bezier(0.22, 1, 0.36, 1);
 $fade-easing: cubic-bezier(0.4, 0, 0.2, 1);
 
-// The design is a 360px column; wider windows centre it on the black page.
-$column-width: 360px;
-
 // The close button's bar is Home's pinned header: as tall, with the same fade.
 $header-height: 80px;
 $header-fade-in: 200ms;
@@ -32,6 +29,17 @@ $header-fade-in: 200ms;
 
   &::-webkit-scrollbar {
     display: none;
+  }
+
+  // Home's frame (a View inset): the whole window in the popup and sidebar,
+  // a centred column with vertical borders in fullscreen mode. The promo
+  // fills it, top to bottom.
+  &__frame {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
   }
 
   // Sticky, so the X stays put while the page scrolls under it, and pulled
@@ -87,10 +95,8 @@ $header-fade-in: 200ms;
   // its bottom edge and the tokens starting below the fold.
   &__hero {
     position: relative;
-    width: pxToRem($column-width);
-    max-width: 100%;
+    width: 100%;
     min-height: 100%;
-    margin: 0 auto;
     padding: pxToRem(130px) 0 pxToRem(16px);
     display: flex;
     flex-direction: column;
@@ -224,9 +230,7 @@ $header-fade-in: 200ms;
   }
 
   &__tokens {
-    width: pxToRem($column-width);
-    max-width: 100%;
-    margin: 0 auto;
+    width: 100%;
     padding-bottom: pxToRem(24px);
     display: flex;
     flex-direction: column;

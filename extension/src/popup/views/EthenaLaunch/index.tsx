@@ -3,6 +3,7 @@ import { Button, Heading, Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 
+import { View } from "popup/basics/layout/View";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 
@@ -200,105 +201,114 @@ export const EthenaLaunch = () => {
   };
 
   return (
-    // Pinned dark: the hero art is drawn for a black page and there is no
-    // light design.
-    <div
-      ref={pageRef}
-      className={`EthenaLaunch sds-theme-dark${returnScrollTop === undefined ? "" : " EthenaLaunch--returning"}`}
-      onScroll={handleScroll}
-      data-testid="ethena-launch"
+    // Home's frame: in fullscreen mode a centred column with vertical
+    // borders, which the promo fills instead of the whole window.
+    <View.Inset
+      hasVerticalBorder
+      hasNoPadding
+      additionalClassName="EthenaLaunch__frame"
+      data-testid="ethena-launch-frame"
     >
+      {/* Pinned dark: the hero art is drawn for a black page and there is no
+        light design. */}
       <div
-        ref={headerRef}
-        className={`EthenaLaunch__header${isScrolled ? " EthenaLaunch__header--scrolled" : ""}`}
-        data-testid="ethena-launch-header"
+        ref={pageRef}
+        className={`EthenaLaunch sds-theme-dark${returnScrollTop === undefined ? "" : " EthenaLaunch--returning"}`}
+        onScroll={handleScroll}
+        data-testid="ethena-launch"
       >
-        <button
-          type="button"
-          className="EthenaLaunch__close"
-          aria-label={t("Close")}
-          onClick={handleClose}
-          data-testid="ethena-launch-close"
+        <div
+          ref={headerRef}
+          className={`EthenaLaunch__header${isScrolled ? " EthenaLaunch__header--scrolled" : ""}`}
+          data-testid="ethena-launch-header"
         >
-          <Icon.X />
-        </button>
-      </div>
-
-      <section className="EthenaLaunch__hero">
-        <div className="EthenaLaunch__wave" aria-hidden="true">
-          <img src={EthenaLaunchWave} alt="" />
-        </div>
-        <div className="EthenaLaunch__coins" aria-hidden="true">
-          <img
-            className="EthenaLaunch__coin EthenaLaunch__coin--light"
-            src={EthenaCoinLight}
-            alt=""
-          />
-          <img
-            className="EthenaLaunch__coin EthenaLaunch__coin--dark"
-            src={EthenaCoinDark}
-            alt=""
-          />
-        </div>
-        <div className="EthenaLaunch__intro">
-          <Heading
-            as="h1"
-            size="sm"
-            weight="medium"
-            addlClassName="EthenaLaunch__title"
+          <button
+            type="button"
+            className="EthenaLaunch__close"
+            aria-label={t("Close")}
+            onClick={handleClose}
+            data-testid="ethena-launch-close"
           >
-            {t("Meet Ethena on Stellar")}
-          </Heading>
-          <div className="EthenaLaunch__subtitle">
-            {t("Discover USDe and sUSDe, now available on Stellar.")}
-          </div>
+            <Icon.X />
+          </button>
         </div>
-        <button
-          type="button"
-          className="EthenaLaunch__scroll-hint"
-          onClick={handleScrollToTokens}
-          data-testid="ethena-launch-scroll-hint"
-        >
-          {t("Scroll to discover tokens")}
-          <Icon.ChevronDown aria-hidden="true" />
-        </button>
-      </section>
 
-      <section className="EthenaLaunch__tokens">
-        <EthenaTokenSection
-          id="usde"
-          code="USDe"
-          logo={LogoUsde}
-          name={t("Synthetic Dollar")}
-          description={t(
-            "A synthetic dollar designed to maintain a value of $1.",
-          )}
-          swapUrl={sushiSwapUrl(USDE_CONTRACT_ID)}
-          transferUrl={stargateUrl(USDE_ETHEREUM_ADDRESS, USDE_CONTRACT_ID)}
-          onReceive={handleReceive}
-        />
-        <EthenaTokenSection
-          id="susde"
-          code="sUSDe"
-          logo={LogoSusde}
-          name={t("Staked USDe")}
-          description={t(
-            "A staked version of USDe that accrues variable protocol rewards.",
-          )}
-          swapUrl={sushiSwapUrl(SUSDE_CONTRACT_ID)}
-          transferUrl={stargateUrl(SUSDE_ETHEREUM_ADDRESS, SUSDE_CONTRACT_ID)}
-          onReceive={handleReceive}
-        />
-        <button
-          type="button"
-          className="EthenaLaunch__learn-more"
-          onClick={handleLearnMore}
-          data-testid="ethena-launch-learn-more"
-        >
-          {t("Learn more about Ethena")}
-          <Icon.ArrowUpRight />
-        </button>
-      </section>
-    </div>
+        <section className="EthenaLaunch__hero">
+          <div className="EthenaLaunch__wave" aria-hidden="true">
+            <img src={EthenaLaunchWave} alt="" />
+          </div>
+          <div className="EthenaLaunch__coins" aria-hidden="true">
+            <img
+              className="EthenaLaunch__coin EthenaLaunch__coin--light"
+              src={EthenaCoinLight}
+              alt=""
+            />
+            <img
+              className="EthenaLaunch__coin EthenaLaunch__coin--dark"
+              src={EthenaCoinDark}
+              alt=""
+            />
+          </div>
+          <div className="EthenaLaunch__intro">
+            <Heading
+              as="h1"
+              size="sm"
+              weight="medium"
+              addlClassName="EthenaLaunch__title"
+            >
+              {t("Meet Ethena on Stellar")}
+            </Heading>
+            <div className="EthenaLaunch__subtitle">
+              {t("Discover USDe and sUSDe, now available on Stellar.")}
+            </div>
+          </div>
+          <button
+            type="button"
+            className="EthenaLaunch__scroll-hint"
+            onClick={handleScrollToTokens}
+            data-testid="ethena-launch-scroll-hint"
+          >
+            {t("Scroll to discover tokens")}
+            <Icon.ChevronDown aria-hidden="true" />
+          </button>
+        </section>
+
+        <section className="EthenaLaunch__tokens">
+          <EthenaTokenSection
+            id="usde"
+            code="USDe"
+            logo={LogoUsde}
+            name={t("Synthetic Dollar")}
+            description={t(
+              "A synthetic dollar designed to maintain a value of $1.",
+            )}
+            swapUrl={sushiSwapUrl(USDE_CONTRACT_ID)}
+            transferUrl={stargateUrl(USDE_ETHEREUM_ADDRESS, USDE_CONTRACT_ID)}
+            onReceive={handleReceive}
+          />
+          <EthenaTokenSection
+            id="susde"
+            code="sUSDe"
+            logo={LogoSusde}
+            name={t("Staked USDe")}
+            description={t(
+              "A staked version of USDe that accrues variable protocol rewards.",
+            )}
+            swapUrl={sushiSwapUrl(SUSDE_CONTRACT_ID)}
+            transferUrl={stargateUrl(SUSDE_ETHEREUM_ADDRESS, SUSDE_CONTRACT_ID)}
+            onReceive={handleReceive}
+          />
+          <button
+            type="button"
+            className="EthenaLaunch__learn-more"
+            onClick={handleLearnMore}
+            data-testid="ethena-launch-learn-more"
+          >
+            {t("Learn more about Ethena")}
+            <Icon.ArrowUpRight />
+          </button>
+        </section>
+      </div>
+    </View.Inset>
   );
 };

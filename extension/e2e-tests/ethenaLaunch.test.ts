@@ -57,6 +57,43 @@ test("a wallet that predates the launch sees the Ethena launch promo once, on it
   await expect(page.getByTestId("ethena-launch")).toHaveCount(0);
 });
 
+test("Ethena launch promo sits in Home's frame in a wide window, filling it", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  // The fixture's window is wide, like fullscreen mode's tab.
+  await loginToTestAccount({ page, extensionId, context });
+  const frameOf = (selector: string) =>
+    page.locator(selector).evaluate((el) => {
+      const { x, width, height } = el.getBoundingClientRect();
+      const style = getComputedStyle(el);
+      return {
+        x,
+        width,
+        height,
+        borders: `${style.borderLeft} | ${style.borderRight}`,
+      };
+    });
+  const home = await frameOf(".AccountHeader__hero");
+  expect(home.width).toBeLessThan(page.viewportSize()!.width);
+
+  await page.getByTestId("ethena-launch-banner-open").click();
+  await expect(page.getByTestId("ethena-launch")).toBeVisible();
+  const promo = await frameOf('[data-testid="ethena-launch-frame"]');
+
+  // Same place, width and borders as Home's, all the way down.
+  expect({ ...promo, height: undefined }).toEqual({
+    ...home,
+    height: undefined,
+  });
+  expect(promo.height).toBe(page.viewportSize()!.height);
+  // The content stretches across it: Swap spans the frame less its borders
+  // and 24px gutters, as other fullscreen screens' buttons do.
+  const swap = await page.getByTestId("ethena-launch-swap-usde").boundingBox();
+  expect(swap!.width).toBe(promo.width - 2 - 2 * 24);
+});
+
 test("Ethena launch promo's token actions are all the same size", async ({
   page,
   extensionId,
