@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button, Heading, Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -15,15 +15,25 @@ import LogoSusde from "popup/assets/logo-susde.svg";
 
 import "./styles.scss";
 
-// Sushi's Stellar swap page reads no URL parameters (its pair is set in
-// code), so this can only land on it; the user picks USDe or sUSDe there.
-const SUSHI_STELLAR_SWAP_URL = "https://www.sushi.com/stellar/swap";
-// Stargate, from Ethereum to Stellar with the token preselected on both
-// sides. Addresses are the ones LayerZero's transfer token list publishes.
-const STARGATE_USDE_URL =
-  "https://stargate.finance/?srcChain=ethereum&srcToken=0x4c9EDD5852cd905f086C759E8383e09bff1E68B3&dstChain=stellar&dstToken=CCNOV6XVI2O5BSTA3232GIRUQULDEBV7IWGKM6QKI6II5OIIQTU24JJN";
-const STARGATE_SUSDE_URL =
-  "https://stargate.finance/?srcChain=ethereum&srcToken=0x9D39A5DE30e57443BfF2A8307A4256c8797A3497&dstChain=stellar&dstToken=CACSKWC753QVGC4J6YPDBIR2BEHFVWIAE7CBSS3HOVYMN623OAIQYE2M";
+// Mainnet token contracts on Stellar: XLM's Stellar Asset Contract, and USDe's
+// and sUSDe's, which LayerZero's transfer token list also publishes.
+const XLM_CONTRACT_ID =
+  "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA";
+const USDE_CONTRACT_ID =
+  "CCNOV6XVI2O5BSTA3232GIRUQULDEBV7IWGKM6QKI6II5OIIQTU24JJN";
+const SUSDE_CONTRACT_ID =
+  "CACSKWC753QVGC4J6YPDBIR2BEHFVWIAE7CBSS3HOVYMN623OAIQYE2M";
+// The same tokens on Ethereum, from the same list.
+const USDE_ETHEREUM_ADDRESS = "0x4c9EDD5852cd905f086C759E8383e09bff1E68B3";
+const SUSDE_ETHEREUM_ADDRESS = "0x9D39A5DE30e57443BfF2A8307A4256c8797A3497";
+
+// Sushi's Stellar swap, from XLM to the token. Sushi is adding these
+// parameters; until they ship, the page opens on its default pair.
+const sushiSwapUrl = (contractId: string) =>
+  `https://www.sushi.com/stellar/swap?token0=${XLM_CONTRACT_ID}&token1=${contractId}`;
+// Stargate, from Ethereum to Stellar with the token preselected on both sides.
+const stargateUrl = (ethereumAddress: string, contractId: string) =>
+  `https://stargate.finance/?srcChain=ethereum&srcToken=${ethereumAddress}&dstChain=stellar&dstToken=${contractId}`;
 const ETHENA_DOCS_URL = "https://docs.ethena.fi/";
 
 interface EthenaTokenSectionProps {
@@ -32,6 +42,7 @@ interface EthenaTokenSectionProps {
   logo: string;
   name: string;
   description: string;
+  swapUrl: string;
   transferUrl: string;
   onReceive: () => void;
 }
@@ -42,13 +53,14 @@ const EthenaTokenSection = ({
   logo,
   name,
   description,
+  swapUrl,
   transferUrl,
   onReceive,
 }: EthenaTokenSectionProps) => {
   const { t } = useTranslation();
 
   const handleSwap = () => {
-    openTab(SUSHI_STELLAR_SWAP_URL);
+    openTab(swapUrl);
   };
 
   const handleTransfer = () => {
@@ -107,7 +119,7 @@ const EthenaTokenSection = ({
 
 /**
  * Full-screen "Meet Ethena on Stellar" launch promo. UnlockAccount routes here
- * once per eligible wallet (the background marks it seen as it hands it out),
+ * once per wallet (the background marks it seen as it hands it out),
  * and the Home banner opens it on demand. Closing returns to the destination
  * in location state, or Home.
  */
@@ -120,6 +132,13 @@ export const EthenaLaunch = () => {
     "state.destination",
     ROUTES.account,
   ) as string;
+
+  // The close button's bar fills in once the page scrolls (see styles).
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    setIsScrolled(event.currentTarget.scrollTop > 0);
+  };
 
   const handleClose = () => {
     navigate(destination, { replace: true });
@@ -136,8 +155,15 @@ export const EthenaLaunch = () => {
   return (
     // Pinned dark: the hero art is drawn for a black page and there is no
     // light design.
-    <div className="EthenaLaunch sds-theme-dark" data-testid="ethena-launch">
-      <div className="EthenaLaunch__header">
+    <div
+      className="EthenaLaunch sds-theme-dark"
+      onScroll={handleScroll}
+      data-testid="ethena-launch"
+    >
+      <div
+        className={`EthenaLaunch__header${isScrolled ? " EthenaLaunch__header--scrolled" : ""}`}
+        data-testid="ethena-launch-header"
+      >
         <button
           type="button"
           className="EthenaLaunch__close"
@@ -193,7 +219,8 @@ export const EthenaLaunch = () => {
           description={t(
             "A synthetic dollar designed to maintain a value of $1.",
           )}
-          transferUrl={STARGATE_USDE_URL}
+          swapUrl={sushiSwapUrl(USDE_CONTRACT_ID)}
+          transferUrl={stargateUrl(USDE_ETHEREUM_ADDRESS, USDE_CONTRACT_ID)}
           onReceive={handleReceive}
         />
         <EthenaTokenSection
@@ -204,7 +231,8 @@ export const EthenaLaunch = () => {
           description={t(
             "A staked version of USDe that accrues variable protocol rewards.",
           )}
-          transferUrl={STARGATE_SUSDE_URL}
+          swapUrl={sushiSwapUrl(SUSDE_CONTRACT_ID)}
+          transferUrl={stargateUrl(SUSDE_ETHEREUM_ADDRESS, SUSDE_CONTRACT_ID)}
           onReceive={handleReceive}
         />
         <button

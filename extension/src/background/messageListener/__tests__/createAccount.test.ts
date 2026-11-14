@@ -14,10 +14,10 @@ import {
   KEY_ID_LIST,
   APPLICATION_ID,
   TEMPORARY_STORE_ID,
-  ETHENA_LAUNCH_PROMO_STATUS_ID,
+  HAS_SEEN_ETHENA_LAUNCH_PROMO,
 } from "constants/localStorageTypes";
-import { ETHENA_LAUNCH_PROMO_STATUS } from "constants/ethenaLaunchPromo";
 import { createAccount } from "background/messageListener/handlers/createAccount";
+import { claimEthenaLaunchPromo } from "background/messageListener/handlers/claimEthenaLaunchPromo";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
 jest.mock("stellar-hd-wallet", () => {
@@ -66,12 +66,10 @@ describe("Create account message listener", () => {
     expect(applicationState).toBe(APPLICATION_STATE.PASSWORD_CREATED);
     expect(tempStoreId[keyId]).toBeDefined();
   });
-  it("doesn't owe a new wallet the Ethena launch promo", async () => {
-    // Pending from a wallet that existed before the reset/onboarding.
-    await mockDataStorage.setItem(
-      ETHENA_LAUNCH_PROMO_STATUS_ID,
-      ETHENA_LAUNCH_PROMO_STATUS.PENDING,
-    );
+  // Every wallet sees the launch promo once, a new one too: on its first
+  // unlock to Home.
+  it("leaves a new wallet owed the Ethena launch promo", async () => {
+    await mockDataStorage.remove(HAS_SEEN_ETHENA_LAUNCH_PROMO);
 
     await popupMessageListener(
       {
@@ -86,9 +84,9 @@ describe("Create account message listener", () => {
       { id: "fake-extension-id" },
     );
 
-    expect(await mockDataStorage.getItem(ETHENA_LAUNCH_PROMO_STATUS_ID)).toBe(
-      ETHENA_LAUNCH_PROMO_STATUS.SEEN,
-    );
+    expect(
+      await claimEthenaLaunchPromo({ localStore: mockDataStorage }),
+    ).toEqual({ shouldShowEthenaLaunchPromo: true });
   });
   it("can overwrite account", async () => {
     const response = (await popupMessageListener(

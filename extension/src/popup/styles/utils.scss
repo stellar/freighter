@@ -28,3 +28,14 @@ $base-font-size: 16px;
   outline-style: auto;
   outline-width: 1px;
 }
+
+// Figma's Top (3705-77862; mobile's HeaderFade), for a header that stays
+// pinned over scrolling content: the page color runs solid to 80.714% of the
+// header and is clear by 93.214%, so content scrolling up under it fades out.
+@mixin header-fade-background {
+  background: linear-gradient(
+    to bottom,
+    var(--sds-clr-base-00) 80.714%,
+    transparent 93.214%
+  );
+}

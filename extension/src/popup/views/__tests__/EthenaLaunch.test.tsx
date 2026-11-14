@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router-dom";
 
@@ -28,7 +28,11 @@ const { openTab } = jest.requireMock<typeof import("popup/helpers/navigate")>(
   "popup/helpers/navigate",
 );
 
-const SUSHI_STELLAR_SWAP_URL = "https://www.sushi.com/stellar/swap";
+// From XLM (token0) to each token (token1), by their Mainnet token contracts.
+const SUSHI_USDE_URL =
+  "https://www.sushi.com/stellar/swap?token0=CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA&token1=CCNOV6XVI2O5BSTA3232GIRUQULDEBV7IWGKM6QKI6II5OIIQTU24JJN";
+const SUSHI_SUSDE_URL =
+  "https://www.sushi.com/stellar/swap?token0=CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA&token1=CACSKWC753QVGC4J6YPDBIR2BEHFVWIAE7CBSS3HOVYMN623OAIQYE2M";
 const STARGATE_USDE_URL =
   "https://stargate.finance/?srcChain=ethereum&srcToken=0x4c9EDD5852cd905f086C759E8383e09bff1E68B3&dstChain=stellar&dstToken=CCNOV6XVI2O5BSTA3232GIRUQULDEBV7IWGKM6QKI6II5OIIQTU24JJN";
 const STARGATE_SUSDE_URL =
@@ -92,7 +96,22 @@ describe("EthenaLaunch", () => {
     expect(screen.getByTestId("ethena-launch")).toHaveClass("sds-theme-dark");
   });
 
-  it("swaps on Sushi for either token", async () => {
+  it("puts the close button on a bar once the page scrolls", () => {
+    renderView();
+    const page = screen.getByTestId("ethena-launch");
+    const header = screen.getByTestId("ethena-launch-header");
+
+    // Clear over the hero at the top, where the wave runs up behind the X.
+    expect(header).not.toHaveClass("EthenaLaunch__header--scrolled");
+
+    fireEvent.scroll(page, { target: { scrollTop: 120 } });
+    expect(header).toHaveClass("EthenaLaunch__header--scrolled");
+
+    fireEvent.scroll(page, { target: { scrollTop: 0 } });
+    expect(header).not.toHaveClass("EthenaLaunch__header--scrolled");
+  });
+
+  it("swaps from XLM to each token on Sushi", async () => {
     renderView();
 
     await userEvent.click(screen.getByTestId("ethena-launch-swap-usde"));
@@ -104,8 +123,8 @@ describe("EthenaLaunch", () => {
     expect(screen.getByTestId("ethena-launch-swap-susde")).toHaveTextContent(
       "Swap to sUSDe",
     );
-    expect(openTab).toHaveBeenNthCalledWith(1, SUSHI_STELLAR_SWAP_URL);
-    expect(openTab).toHaveBeenNthCalledWith(2, SUSHI_STELLAR_SWAP_URL);
+    expect(openTab).toHaveBeenNthCalledWith(1, SUSHI_USDE_URL);
+    expect(openTab).toHaveBeenNthCalledWith(2, SUSHI_SUSDE_URL);
   });
 
   it("transfers each token to Stellar through Stargate", async () => {

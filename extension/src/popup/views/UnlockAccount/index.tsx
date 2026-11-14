@@ -75,7 +75,7 @@ export const UnlockAccount = () => {
     // their destination. The background hands it out once, so of several
     // surfaces unlocked by the same broadcast only the first shows it.
     //
-    // Wallets that pre-date the Ethena launch build get its one-time promo
+    // Every wallet, new or existing, gets the one-time Ethena launch promo
     // the same way, but only on the way Home: a dApp request isn't held up
     // for it, and at most one takeover plays per unlock. Either way the
     // promo stays owed until a later unlock claims it.

@@ -1,27 +1,23 @@
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import { ETHENA_LAUNCH_PROMO_STATUS_ID } from "constants/localStorageTypes";
-import { ETHENA_LAUNCH_PROMO_STATUS } from "constants/ethenaLaunchPromo";
+import { HAS_SEEN_ETHENA_LAUNCH_PROMO } from "constants/localStorageTypes";
 
 // Every surface unlocked by the same broadcast asks at once. Serialising the
 // read-and-write means only the first one is told to show the promo.
 let claimQueue: Promise<unknown> = Promise.resolve();
 
+// Every wallet sees the one-time launch promo once, whether it's an existing
+// install or a new one: the first claim gets it, and marks it seen.
 export const claimEthenaLaunchPromo = ({
   localStore,
 }: {
   localStore: DataStorageAccess;
 }): Promise<{ shouldShowEthenaLaunchPromo: boolean }> => {
   const claim = claimQueue.then(async () => {
-    const status = await localStore.getItem(ETHENA_LAUNCH_PROMO_STATUS_ID);
-
-    if (status !== ETHENA_LAUNCH_PROMO_STATUS.PENDING) {
+    if (await localStore.getItem(HAS_SEEN_ETHENA_LAUNCH_PROMO)) {
       return { shouldShowEthenaLaunchPromo: false };
     }
 
-    await localStore.setItem(
-      ETHENA_LAUNCH_PROMO_STATUS_ID,
-      ETHENA_LAUNCH_PROMO_STATUS.SEEN,
-    );
+    await localStore.setItem(HAS_SEEN_ETHENA_LAUNCH_PROMO, true);
 
     return { shouldShowEthenaLaunchPromo: true };
   });

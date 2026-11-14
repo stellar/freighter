@@ -41,7 +41,6 @@ import {
   migrateSorobanRpcUrlNetworkDetails,
   versionedMigration,
   markRebrandAnnouncementEligibility,
-  markEthenaLaunchPromoEligibility,
 } from "./helpers/dataStorage";
 import {
   dataStorageAccess,
@@ -212,7 +211,6 @@ export const initInstalledListener = () => {
   browser?.runtime?.onInstalled.addListener(migrateSorobanRpcUrlNetworkDetails);
   browser?.runtime?.onInstalled.addListener(versionedMigration);
   browser?.runtime?.onInstalled.addListener(markRebrandAnnouncementEligibility);
-  browser?.runtime?.onInstalled.addListener(markEthenaLaunchPromoEligibility);
 };
 
 export const initSidebarBehavior = async () => {

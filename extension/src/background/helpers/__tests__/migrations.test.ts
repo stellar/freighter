@@ -14,12 +14,10 @@ import {
   STORAGE_VERSION,
   KEY_ID_LIST,
   REBRAND_ANNOUNCEMENT_STATUS_ID,
-  ETHENA_LAUNCH_PROMO_STATUS_ID,
   TOKEN_ID_LIST,
 } from "constants/localStorageTypes";
 import * as DataStorage from "../dataStorage";
 import { REBRAND_ANNOUNCEMENT_STATUS } from "constants/rebrandAnnouncement";
-import { ETHENA_LAUNCH_PROMO_STATUS } from "constants/ethenaLaunchPromo";
 import * as DataStorageAccess from "../dataStorageAccess";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
 
@@ -260,41 +258,6 @@ describe("Storage migrations", () => {
       const stored = await mockStorage.get(REBRAND_ANNOUNCEMENT_STATUS_ID);
       expect(stored[REBRAND_ANNOUNCEMENT_STATUS_ID]).toEqual(
         REBRAND_ANNOUNCEMENT_STATUS.SEEN,
-      );
-    });
-  });
-  describe("markEthenaLaunchPromoEligibility", () => {
-    it("marks a wallet that exists when the launch build arrives as pending", async () => {
-      await mockStorage.set({ [KEY_ID_LIST]: ["key-1"] });
-
-      await DataStorage.markEthenaLaunchPromoEligibility();
-
-      const stored = await mockStorage.get(ETHENA_LAUNCH_PROMO_STATUS_ID);
-      expect(stored[ETHENA_LAUNCH_PROMO_STATUS_ID]).toEqual(
-        ETHENA_LAUNCH_PROMO_STATUS.PENDING,
-      );
-    });
-
-    it("marks a fresh install as seen", async () => {
-      await DataStorage.markEthenaLaunchPromoEligibility();
-
-      const stored = await mockStorage.get(ETHENA_LAUNCH_PROMO_STATUS_ID);
-      expect(stored[ETHENA_LAUNCH_PROMO_STATUS_ID]).toEqual(
-        ETHENA_LAUNCH_PROMO_STATUS.SEEN,
-      );
-    });
-
-    it("leaves a recorded status alone on later updates", async () => {
-      await mockStorage.set({
-        [KEY_ID_LIST]: ["key-1"],
-        [ETHENA_LAUNCH_PROMO_STATUS_ID]: ETHENA_LAUNCH_PROMO_STATUS.SEEN,
-      });
-
-      await DataStorage.markEthenaLaunchPromoEligibility();
-
-      const stored = await mockStorage.get(ETHENA_LAUNCH_PROMO_STATUS_ID);
-      expect(stored[ETHENA_LAUNCH_PROMO_STATUS_ID]).toEqual(
-        ETHENA_LAUNCH_PROMO_STATUS.SEEN,
       );
     });
   });

@@ -40,5 +40,5 @@ export const METRICS_USER_ID = "metrics_user_id";
 export const RECENT_PROTOCOLS = "recentProtocols";
 export const HAS_SEEN_DISCOVER_WELCOME = "hasSeenDiscoverWelcome";
 export const REBRAND_ANNOUNCEMENT_STATUS_ID = "rebrandAnnouncementStatus";
-export const ETHENA_LAUNCH_PROMO_STATUS_ID = "ethenaLaunchPromoStatus";
+export const HAS_SEEN_ETHENA_LAUNCH_PROMO = "hasSeenEthenaLaunchPromo";
 export const AUTO_LOCK_TIMEOUT_MINUTES_ID = "autoLockTimeoutMinutes";

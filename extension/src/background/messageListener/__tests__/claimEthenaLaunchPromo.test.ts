@@ -1,27 +1,14 @@
 import { mockDataStorage } from "background/messageListener/helpers/test-helpers";
-import { ETHENA_LAUNCH_PROMO_STATUS_ID } from "constants/localStorageTypes";
-import { ETHENA_LAUNCH_PROMO_STATUS } from "constants/ethenaLaunchPromo";
+import { HAS_SEEN_ETHENA_LAUNCH_PROMO } from "constants/localStorageTypes";
 
 import { claimEthenaLaunchPromo } from "../handlers/claimEthenaLaunchPromo";
 
 describe("claimEthenaLaunchPromo", () => {
   beforeEach(async () => {
-    await mockDataStorage.remove(ETHENA_LAUNCH_PROMO_STATUS_ID);
+    await mockDataStorage.remove(HAS_SEEN_ETHENA_LAUNCH_PROMO);
   });
 
-  it("says no when nothing has been recorded (fresh install)", async () => {
-    const result = await claimEthenaLaunchPromo({
-      localStore: mockDataStorage,
-    });
-    expect(result).toEqual({ shouldShowEthenaLaunchPromo: false });
-  });
-
-  it("says yes once for a pending wallet and marks it seen", async () => {
-    await mockDataStorage.setItem(
-      ETHENA_LAUNCH_PROMO_STATUS_ID,
-      ETHENA_LAUNCH_PROMO_STATUS.PENDING,
-    );
-
+  it("says yes once to any wallet that hasn't seen it, then remembers", async () => {
     const first = await claimEthenaLaunchPromo({
       localStore: mockDataStorage,
     });
@@ -31,17 +18,22 @@ describe("claimEthenaLaunchPromo", () => {
 
     expect(first).toEqual({ shouldShowEthenaLaunchPromo: true });
     expect(second).toEqual({ shouldShowEthenaLaunchPromo: false });
-    expect(
-      await mockDataStorage.getItem(ETHENA_LAUNCH_PROMO_STATUS_ID),
-    ).toEqual(ETHENA_LAUNCH_PROMO_STATUS.SEEN);
+    expect(await mockDataStorage.getItem(HAS_SEEN_ETHENA_LAUNCH_PROMO)).toBe(
+      true,
+    );
+  });
+
+  it("says no once it's been seen", async () => {
+    await mockDataStorage.setItem(HAS_SEEN_ETHENA_LAUNCH_PROMO, true);
+
+    const result = await claimEthenaLaunchPromo({
+      localStore: mockDataStorage,
+    });
+
+    expect(result).toEqual({ shouldShowEthenaLaunchPromo: false });
   });
 
   it("lets only one of several concurrent surfaces show it", async () => {
-    await mockDataStorage.setItem(
-      ETHENA_LAUNCH_PROMO_STATUS_ID,
-      ETHENA_LAUNCH_PROMO_STATUS.PENDING,
-    );
-
     const results = await Promise.all([
       claimEthenaLaunchPromo({ localStore: mockDataStorage }),
       claimEthenaLaunchPromo({ localStore: mockDataStorage }),

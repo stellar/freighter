@@ -13,6 +13,10 @@ $fade-easing: cubic-bezier(0.4, 0, 0.2, 1);
 // The design is a 360px column; wider windows centre it on the black page.
 $column-width: 360px;
 
+// The close button's bar is Home's pinned header: as tall, with the same fade.
+$header-height: 80px;
+$header-fade-in: 200ms;
+
 .EthenaLaunch {
   position: relative;
   flex: 1;
@@ -30,15 +34,34 @@ $column-width: 360px;
     display: none;
   }
 
-  // Sticky, so the X stays reachable once the tokens scroll under it, and
-  // zero-height, so it overlays the hero instead of pushing it down.
+  // Sticky, so the X stays put while the page scrolls under it, and pulled
+  // back over the hero by its own height, so it pushes nothing down.
   &__header {
     position: sticky;
     top: 0;
     z-index: 1;
-    height: 0;
+    height: pxToRem($header-height);
+    margin-bottom: pxToRem(-$header-height);
     display: flex;
+    align-items: flex-start;
     justify-content: flex-end;
+
+    // The bar behind the X. Clear at the top, where the wave runs up behind
+    // the X; once the page scrolls it fills in like Home's pinned header, and
+    // the tokens fade out as they scroll up under it.
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      @include header-fade-background;
+      opacity: 0;
+      transition: opacity $header-fade-in $fade-easing;
+    }
+
+    &--scrolled::before {
+      opacity: 1;
+    }
   }
 
   &__close {
@@ -314,6 +337,10 @@ $column-width: 360px;
     &__intro,
     &__scroll-hint {
       animation: none;
+    }
+
+    &__header::before {
+      transition: none;
     }
   }
 }
