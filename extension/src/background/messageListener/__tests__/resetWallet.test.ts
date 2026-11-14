@@ -23,6 +23,8 @@ import {
   CACHED_SWAP_TOP_TOKENS_ID,
   COLLECTIBLES_ID,
   DATA_SHARING_ID,
+  ETHENA_LAUNCH_BANNER_DISMISSED,
+  ETHENA_LAUNCH_PROMO_STATUS_ID,
   HAS_ACCOUNT_SUBSCRIPTION,
   HAS_SEEN_DISCOVER_WELCOME,
   HIDDEN_ASSETS,
@@ -52,7 +54,6 @@ import {
   TEMPORARY_STORE_EXTRA_ID,
   TEMPORARY_STORE_ID,
   TOKEN_ID_LIST,
-  USDT0_LAUNCH_BANNER_DISMISSED,
 } from "constants/localStorageTypes";
 
 jest.mock("stellar-hd-wallet", () => ({
@@ -118,10 +119,11 @@ const OLD_WALLET_DATA: Record<string, unknown> = {
   [CACHED_SWAP_TOP_TOKENS_ID]: [],
   [CACHED_MEMO_REQUIRED_ACCOUNTS_ID]: [],
   [`${CACHED_MEMO_REQUIRED_ACCOUNTS_ID}_date`]: 1,
-  [USDT0_LAUNCH_BANNER_DISMISSED]: true,
+  [ETHENA_LAUNCH_BANNER_DISMISSED]: true,
   [HAS_SEEN_DISCOVER_WELCOME]: true,
   [IS_BLOCKAID_ANNOUNCED_ID]: true,
   [REBRAND_ANNOUNCEMENT_STATUS_ID]: "pending",
+  [ETHENA_LAUNCH_PROMO_STATUS_ID]: "pending",
   isTestnet: true,
 };
 
@@ -290,6 +292,10 @@ describe("RESET_WALLET", () => {
       CACHED_MEMO_REQUIRED_ACCOUNTS_ID,
       CACHED_SWAP_TOP_TOKENS_ID,
       COLLECTIBLES_ID,
+      ETHENA_LAUNCH_BANNER_DISMISSED,
+      // Whether this wallet is still owed the launch promo. Like the rebrand
+      // status below, create and import mark it seen for the next wallet.
+      ETHENA_LAUNCH_PROMO_STATUS_ID,
       HAS_ACCOUNT_SUBSCRIPTION,
       HAS_SEEN_DISCOVER_WELCOME,
       HIDDEN_ASSETS,
@@ -308,7 +314,6 @@ describe("RESET_WALLET", () => {
       RECENT_PROTOCOLS,
       TEMPORARY_STORE_ID,
       TOKEN_ID_LIST,
-      USDT0_LAUNCH_BANNER_DISMISSED,
     ];
     // Not top-level browser.storage.local keys: the metrics keys live in page
     // localStorage, and TEMPORARY_STORE_EXTRA_ID is nested in temporaryStore.

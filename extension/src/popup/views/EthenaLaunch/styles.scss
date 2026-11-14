@@ -1,0 +1,390 @@
+@use "../../styles/utils.scss" as *;
+
+// Figma's launch timeline (1s, plays once): the wave and the coins slide in
+// over 800ms, the title and subtitle fade in from 200ms, the scroll cue from
+// 400ms.
+$enter-duration: 800ms;
+$fade-duration: 500ms;
+$copy-delay: 200ms;
+$scroll-hint-delay: 400ms;
+$slide-easing: cubic-bezier(0.22, 1, 0.36, 1);
+$fade-easing: cubic-bezier(0.4, 0, 0.2, 1);
+
+// The close button's bar is Home's pinned header: as tall, with the same fade.
+$header-height: 80px;
+$header-fade-in: 200ms;
+
+.EthenaLaunch {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: var(--sds-clr-base-00);
+  // Re-resolves inherited text against this subtree's theme class; body's
+  // color arrives already computed in the page theme.
+  color: var(--sds-clr-gray-12);
+  // No scrollbar, as in the design: the scroll cue says there's more below.
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  // Home's frame (a View inset): the whole window in the popup and sidebar,
+  // a centred column with vertical borders in fullscreen mode. The promo
+  // fills it, top to bottom.
+  &__frame {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+  }
+
+  // Sticky, so the X stays put while the page scrolls under it, and pulled
+  // back over the hero by its own height, so it pushes nothing down.
+  &__header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    height: pxToRem($header-height);
+    margin-bottom: pxToRem(-$header-height);
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+
+    // The bar behind the X. Clear at the top, where the wave runs up behind
+    // the X; once the page scrolls it fills in like Home's pinned header, and
+    // the tokens fade out as they scroll up under it.
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      @include header-fade-background;
+      opacity: 0;
+      transition: opacity $header-fade-in $fade-easing;
+    }
+
+    &--scrolled::before {
+      opacity: 1;
+    }
+  }
+
+  &__close {
+    flex-shrink: 0;
+    width: pxToRem(24px);
+    height: pxToRem(24px);
+    margin: pxToRem(24px) pxToRem(16px) 0 0;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--sds-clr-gray-12);
+
+    svg {
+      display: block;
+      width: pxToRem(24px);
+      height: pxToRem(24px);
+      @include icon-stroke(24, 1.5);
+    }
+  }
+
+  // The first screen: at least as tall as the window, with the scroll cue on
+  // its bottom edge and the tokens starting below the fold.
+  &__hero {
+    position: relative;
+    width: 100%;
+    min-height: 100%;
+    padding: pxToRem(130px) 0 pxToRem(16px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: pxToRem(48px);
+  }
+
+  // Figma clips the wave art to a 534x301 frame centred 50px left of the
+  // column; the image sits inside it at the frame's own offsets.
+  &__wave {
+    position: absolute;
+    top: pxToRem(48px);
+    left: calc(50% - #{pxToRem(317px)});
+    width: pxToRem(534px);
+    height: pxToRem(301px);
+    overflow: hidden;
+    pointer-events: none;
+    animation:
+      EthenaLaunch-slide-in-x $enter-duration $slide-easing both,
+      EthenaLaunch-fade-in $enter-duration $fade-easing both;
+
+    // The frame's side edges, and the bottom edge where the strokes run down
+    // to it on the left, fall outside the 360px popup. A wider sidebar or tab
+    // would show the strokes cut off there, so fade them out.
+    @media (min-width: 435px) {
+      mask-image:
+        linear-gradient(
+          to right,
+          transparent,
+          black 20%,
+          black 80%,
+          transparent
+        ),
+        linear-gradient(to bottom, black 60%, transparent);
+      mask-composite: intersect;
+    }
+
+    img {
+      position: absolute;
+      top: pxToRem(-82.254px);
+      left: pxToRem(-163.603px);
+      width: pxToRem(786.059px);
+      height: pxToRem(476.965px);
+      max-width: none;
+    }
+  }
+
+  // The two coins overlap as in Figma's stack: the dark one on top.
+  &__coins {
+    position: relative;
+    flex-shrink: 0;
+    width: pxToRem(240px);
+    height: pxToRem(195.5px);
+  }
+
+  &__coin {
+    position: absolute;
+    max-width: none;
+    object-fit: cover;
+    animation:
+      EthenaLaunch-slide-in-y $enter-duration $slide-easing both,
+      EthenaLaunch-fade-in $enter-duration $fade-easing both;
+
+    &--light {
+      top: pxToRem(53.55px);
+      left: pxToRem(84.71px);
+      width: pxToRem(155.294px);
+      height: pxToRem(141.961px);
+    }
+
+    // The artwork carries empty space above the coin, which Figma crops.
+    &--dark {
+      top: 0;
+      left: 0;
+      width: pxToRem(187px);
+      height: pxToRem(161px);
+      object-position: bottom;
+    }
+  }
+
+  &__intro {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8px);
+    width: 100%;
+    padding: 0 pxToRem(24px);
+    text-align: center;
+    animation: EthenaLaunch-fade-in $fade-duration $fade-easing $copy-delay both;
+  }
+
+  &__subtitle {
+    font-size: pxToRem(14px);
+    line-height: pxToRem(20px);
+    color: var(--sds-clr-gray-11);
+    // Breaks after "sUSDe," as the design does, without hardcoding the
+    // break into the translated copy.
+    text-wrap: balance;
+  }
+
+  // A button: it scrolls the tokens into view (see handleScrollToTokens).
+  &__scroll-hint {
+    // Pushed to the bottom of the first screen however tall the window is.
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: pxToRem(4px);
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: pxToRem(12px);
+    line-height: pxToRem(18px);
+    font-weight: var(--sds-fw-medium);
+    color: var(--sds-clr-gray-11);
+    text-align: center;
+    animation: EthenaLaunch-fade-in $fade-duration $fade-easing
+      $scroll-hint-delay both;
+
+    &:hover {
+      color: var(--sds-clr-gray-12);
+    }
+
+    svg {
+      width: pxToRem(18px);
+      height: pxToRem(18px);
+      color: var(--sds-clr-gray-09);
+      @include icon-stroke(18);
+    }
+  }
+
+  &__tokens {
+    width: 100%;
+    padding-bottom: pxToRem(24px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  &__token {
+    width: 100%;
+    padding: pxToRem(16px) pxToRem(24px);
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(24px);
+
+    &__info {
+      display: flex;
+      flex-direction: column;
+      gap: pxToRem(8px);
+    }
+
+    &__heading {
+      display: flex;
+      align-items: center;
+      gap: pxToRem(12px);
+    }
+
+    &__logo {
+      flex-shrink: 0;
+      width: pxToRem(40px);
+      height: pxToRem(40px);
+    }
+
+    &__code {
+      font-size: pxToRem(16px);
+      line-height: pxToRem(24px);
+      font-weight: var(--sds-fw-semi-bold);
+      color: var(--sds-clr-gray-12);
+    }
+
+    &__name,
+    &__description {
+      font-size: pxToRem(12px);
+      line-height: pxToRem(18px);
+      font-weight: var(--sds-fw-medium);
+      color: var(--sds-clr-gray-11);
+    }
+
+    &__actions {
+      display: flex;
+      flex-direction: column;
+      gap: pxToRem(8px);
+    }
+  }
+
+  // Borderless text button per design. No SDS Button variant is transparent,
+  // so it's hand-rolled at the metrics of SDS's lg Button, which Swap and
+  // Receive above it are: 40px tall, 14/22 text and a 14px icon.
+  &__transfer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: pxToRem(4px);
+    width: 100%;
+    height: pxToRem(40px);
+    padding: pxToRem(8px) pxToRem(12px);
+    background: none;
+    border: none;
+    border-radius: pxToRem(100px);
+    cursor: pointer;
+    color: var(--sds-clr-gray-12);
+    font-family: inherit;
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-semi-bold);
+    line-height: pxToRem(22px);
+
+    &:hover {
+      // Opaque fallback first: manifest v2 still allows Firefox < 113, no
+      // color-mix
+      background: var(--sds-clr-gray-04);
+      background: color-mix(in srgb, var(--sds-clr-gray-12) 10%, transparent);
+    }
+
+    // Sized like the icon in an SDS Button, so its stroke matches Swap's.
+    svg {
+      width: pxToRem(14px);
+      height: pxToRem(14px);
+    }
+  }
+
+  &__learn-more {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(8px);
+    margin-top: pxToRem(24px);
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--sds-clr-gray-09);
+    font-family: inherit;
+    font-size: pxToRem(12px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(18px);
+
+    &:hover {
+      color: var(--sds-clr-gray-11);
+    }
+
+    svg {
+      width: pxToRem(14px);
+      height: pxToRem(14px);
+      color: var(--sds-clr-gray-10);
+      @include icon-stroke(14, 1.5);
+    }
+  }
+
+  // Back from Receive's address screen, as it was left: the intro doesn't
+  // replay.
+  &--returning {
+    .EthenaLaunch__wave,
+    .EthenaLaunch__coin,
+    .EthenaLaunch__intro,
+    .EthenaLaunch__scroll-hint {
+      animation: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__wave,
+    &__coin,
+    &__intro,
+    &__scroll-hint {
+      animation: none;
+    }
+
+    &__header::before {
+      transition: none;
+    }
+  }
+}
+
+@keyframes EthenaLaunch-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes EthenaLaunch-slide-in-x {
+  from {
+    transform: translateX(-20px);
+  }
+}
+
+@keyframes EthenaLaunch-slide-in-y {
+  from {
+    transform: translateY(40px);
+  }
+}

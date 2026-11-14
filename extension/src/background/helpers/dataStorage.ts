@@ -16,8 +16,10 @@ import {
   LAST_USED_ACCOUNT,
   KEY_ID_LIST,
   REBRAND_ANNOUNCEMENT_STATUS_ID,
+  ETHENA_LAUNCH_PROMO_STATUS_ID,
 } from "constants/localStorageTypes";
 import { REBRAND_ANNOUNCEMENT_STATUS } from "constants/rebrandAnnouncement";
+import { ETHENA_LAUNCH_PROMO_STATUS } from "constants/ethenaLaunchPromo";
 import {
   DEFAULT_NETWORKS,
   NetworkDetails,
@@ -400,6 +402,28 @@ export const markRebrandAnnouncementEligibility = async () => {
     keyIdList.length
       ? REBRAND_ANNOUNCEMENT_STATUS.PENDING
       : REBRAND_ANNOUNCEMENT_STATUS.SEEN,
+  );
+};
+
+/**
+ * Same once-per-install decision as the rebrand announcement, for the
+ * one-time Ethena launch promo: a wallet that already exists when the launch
+ * build first runs is marked pending; a fresh install is marked seen.
+ */
+export const markEthenaLaunchPromoEligibility = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+
+  if (await localStore.getItem(ETHENA_LAUNCH_PROMO_STATUS_ID)) {
+    return;
+  }
+
+  const keyIdList = ((await localStore.getItem(KEY_ID_LIST)) || []) as string[];
+
+  await localStore.setItem(
+    ETHENA_LAUNCH_PROMO_STATUS_ID,
+    keyIdList.length
+      ? ETHENA_LAUNCH_PROMO_STATUS.PENDING
+      : ETHENA_LAUNCH_PROMO_STATUS.SEEN,
   );
 };
 

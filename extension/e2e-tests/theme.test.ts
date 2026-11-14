@@ -48,6 +48,11 @@ const backdrop = (locator: Locator) =>
     return "";
   });
 
+const computed = (
+  locator: Locator,
+  property: "color" | "backgroundColor" | "fill" | "fontWeight",
+) => locator.evaluate((el, prop) => getComputedStyle(el)[prop], property);
+
 // Varial pages sit on base-00; sheets floating over them stay on gray-01.
 const BASE_00 = { light: "rgb(255, 255, 255)", dark: "rgb(0, 0, 0)" };
 const GRAY_01 = { light: "rgb(252, 252, 252)", dark: "rgb(22, 22, 22)" };
@@ -81,39 +86,145 @@ test("welcome screen follows the color scheme", async ({
   expect(await backdrop(body)).toBe(BASE_00.dark);
 });
 
-test("USDT0 sheet stays dark in light theme", async ({
+// The Ethena launch is one design in both themes, but for the banner's outline
+// in dark mode. These compare whole renders across a live theme change rather
+// than spot-checking a few colors, so any property that follows the theme
+// shows up, named.
+
+// Waits out entrance animations and transitions, so a render is of the
+// settled UI rather than a frame of its motion.
+const settle = (locator: Locator) =>
+  locator.evaluate(async (root) => {
+    await Promise.all(
+      root.getAnimations({ subtree: true }).map(({ finished }) => finished),
+    );
+  });
+
+// Every computed property of every element under the locator, in document
+// order. Custom properties are left out: they're the theme's inputs, and one
+// changes what's drawn only through the properties that use it, which are
+// compared themselves.
+const renderedStyles = (locator: Locator) =>
+  locator.evaluate((root) =>
+    [root, ...Array.from(root.querySelectorAll("*"))].map((el) => {
+      const style = getComputedStyle(el);
+      const properties: Record<string, string> = {};
+      for (let i = 0; i < style.length; i += 1) {
+        const name = style.item(i);
+        if (!name.startsWith("--")) {
+          properties[name] = style.getPropertyValue(name);
+        }
+      }
+      return {
+        element: `${el.tagName.toLowerCase()}.${el.getAttribute("class") ?? ""}`,
+        properties,
+      };
+    }),
+  );
+
+type RenderedStyles = Awaited<ReturnType<typeof renderedStyles>>;
+
+// What changed between two renders of the same elements, one line per
+// property, so a failure says exactly what the theme flipped.
+const styleChanges = (before: RenderedStyles, after: RenderedStyles) => [
+  ...(after.length === before.length
+    ? []
+    : [`${before.length} elements → ${after.length}`]),
+  ...before.flatMap(({ element, properties }, index) =>
+    Object.entries(properties)
+      .filter(([name, value]) => after[index]?.properties[name] !== value)
+      .map(
+        ([name, value]) =>
+          `${element} ${name}: ${value} → ${after[index]?.properties[name]}`,
+      ),
+  ),
+];
+
+test("Ethena launch banner only adds an outline in dark mode", async ({
   page,
   extensionId,
   context,
 }) => {
   await page.emulateMedia({ colorScheme: "light" });
   await loginToTestAccount({ page, extensionId, context });
-  await page.getByTestId("usdt0-launch-banner-open").click();
-  await expect(page.getByTestId("usdt0-launch-sheet")).toBeVisible();
+  const banner = page.getByTestId("ethena-launch-banner");
+  await expect(banner).toBeVisible();
+  // Off the banner, so neither render is of its hover state.
+  await page.mouse.move(0, 0);
+  await settle(banner);
+  const light = await renderedStyles(banner);
 
-  // Its hero art is fixed-dark, so the text over it must resolve dark-theme
-  // tokens even though the page is light.
-  const colorOf = (el: Element) => getComputedStyle(el).color;
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect(page.locator("body")).toHaveClass(/sds-theme-dark/);
+  await settle(banner);
+  // Dark mode outlines the card in gray-04, so it stands out on the black
+  // page (Figma 4414:59535). Drawn inside the card, it moves nothing, and
+  // nothing else follows the theme. (Light mode's 3px is the initial width,
+  // which Chrome reports while the style is none; nothing is drawn.)
+  expect(styleChanges(light, await renderedStyles(banner))).toEqual([
+    "div.EthenaLaunchBanner outline-color: rgb(255, 255, 255) → rgb(40, 40, 40)",
+    "div.EthenaLaunchBanner outline-offset: 0px → -1px",
+    "div.EthenaLaunchBanner outline-style: none → solid",
+    "div.EthenaLaunchBanner outline-width: 3px → 1px",
+  ]);
+
+  // Otherwise it's Figma's banner (4414:42195): the near-black card, white
+  // title, light-gray subtitle and gray X.
+  expect({
+    card: await computed(banner, "backgroundColor"),
+    title: await computed(banner.getByText("Meet Ethena on Stellar"), "color"),
+    subtitle: await computed(
+      banner.getByText("USDe and sUSDe are now available."),
+      "color",
+    ),
+    dismiss: await computed(
+      page.getByTestId("ethena-launch-banner-dismiss"),
+      "color",
+    ),
+  }).toEqual({
+    card: "rgb(7, 9, 8)",
+    title: "rgb(255, 255, 255)",
+    subtitle: "rgb(199, 199, 199)",
+    dismiss: "rgb(133, 133, 133)",
+  });
+});
+
+test("Ethena launch promo looks the same in both themes", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await loginToTestAccount({ page, extensionId, context });
+  await page.getByTestId("ethena-launch-banner-open").click();
+  const promo = page.getByTestId("ethena-launch");
+  await expect(promo).toBeVisible();
+  await settle(promo);
+
+  // Its hero art is drawn for a black page, so the page and the text over it
+  // must resolve dark-theme tokens even though the app is light.
   const darkGray12 = "rgb(237, 237, 237)";
+  expect(await backdrop(promo)).toBe(BASE_00.dark);
   expect(
-    await page
-      .locator(".Usdt0LaunchSheet__feature__title")
-      .first()
-      .evaluate(colorOf),
+    await computed(
+      page.getByRole("heading", { name: "Meet Ethena on Stellar" }),
+      "color",
+    ),
   ).toBe(darkGray12);
-  expect(
-    await page.getByTestId("usdt0-launch-sheet-close").evaluate(colorOf),
-  ).toBe(darkGray12);
+  expect(await computed(page.getByTestId("ethena-launch-close"), "color")).toBe(
+    darkGray12,
+  );
+  const light = await renderedStyles(promo);
+
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect(page.locator("body")).toHaveClass(/sds-theme-dark/);
+  await settle(promo);
+  expect(styleChanges(light, await renderedStyles(promo))).toEqual([]);
 });
 
 // The lock screen and its Forgot password sheet resolve their colors in both
 // themes. Expected values are the resolved tokens: gray, red and base from
 // SDS's .sds-theme-* blocks, lilac from varialPalette.scss.
-const computed = (
-  locator: Locator,
-  property: "color" | "backgroundColor" | "fill" | "fontWeight",
-) => locator.evaluate((el, prop) => getComputedStyle(el)[prop], property);
-
 const lockScreenColors = async (page: Page) => ({
   heading: await computed(
     page.getByRole("heading", { name: "Welcome back" }),

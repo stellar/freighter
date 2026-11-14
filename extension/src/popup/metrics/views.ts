@@ -69,6 +69,7 @@ const SCREEN_BY_ROUTE: Partial<Record<ROUTES, ScreenDef>> = {
   },
   [ROUTES.unlockAccount]: { screen_name: "unlock_account", flow: "security" },
   [ROUTES.rebrandAnnouncement]: { screen_name: "rebrand_announcement" },
+  [ROUTES.ethenaLaunch]: { screen_name: "ethena_launch" },
   [ROUTES.verifyAccount]: { screen_name: "verify_account", flow: "security" },
   [ROUTES.mnemonicPhraseConfirmed]: {
     screen_name: "account_creator_finished",
