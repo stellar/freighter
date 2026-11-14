@@ -147,14 +147,14 @@ describe("EthenaLaunch", () => {
       jest.restoreAllMocks();
     });
 
-    it("scrolls the tokens up until the cue is 60px below the bar", async () => {
+    it("scrolls the tokens up until the cue is 20px below the bar", async () => {
       renderView();
       const { cue, scrollTo } = layOut();
 
       await userEvent.click(cue);
 
       expect(scrollTo).toHaveBeenCalledWith({
-        top: 20 + 544 - 80 - 60,
+        top: 20 + 544 - 80 - 20,
         behavior: "smooth",
       });
     });
@@ -173,7 +173,7 @@ describe("EthenaLaunch", () => {
       await userEvent.click(cue);
 
       expect(scrollTo).toHaveBeenCalledWith({
-        top: 20 + 544 - 80 - 60,
+        top: 20 + 544 - 80 - 20,
         behavior: "auto",
       });
     });

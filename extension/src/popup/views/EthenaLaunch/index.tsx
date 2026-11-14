@@ -39,7 +39,7 @@ const ETHENA_DOCS_URL = "https://docs.ethena.fi/";
 
 // The scroll cue scrolls the page until it sits this far below the close
 // button's bar, with the tokens under it.
-const SCROLL_CUE_GAP = 60;
+const SCROLL_CUE_GAP = 20;
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
 interface EthenaTokenSectionProps {

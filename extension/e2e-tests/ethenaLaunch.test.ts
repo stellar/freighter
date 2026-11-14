@@ -135,7 +135,7 @@ test("Ethena launch promo's scroll cue scrolls the tokens into view", async ({
 
   await cue.click();
 
-  // It stops with the cue 60px below the close button's bar, the tokens
+  // It stops with the cue 20px below the close button's bar, the tokens
   // under it.
   const gap = async () => {
     const [barBox, cueBox] = await Promise.all([
@@ -144,7 +144,7 @@ test("Ethena launch promo's scroll cue scrolls the tokens into view", async ({
     ]);
     return Math.round(cueBox!.y - (barBox!.y + barBox!.height));
   };
-  await expect.poll(gap).toBe(60);
+  await expect.poll(gap).toBe(20);
   await expect(page.getByTestId("ethena-launch-swap-usde")).toBeInViewport();
 });
 
