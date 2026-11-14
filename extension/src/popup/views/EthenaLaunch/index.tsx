@@ -1,8 +1,7 @@
-import React, { useRef, useState } from "react";
+import React, { useLayoutEffect, useRef, useState } from "react";
 import { Button, Heading, Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
-import get from "lodash/get";
 
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo, openTab } from "popup/helpers/navigate";
@@ -122,6 +121,13 @@ const EthenaTokenSection = ({
   );
 };
 
+interface EthenaLaunchLocationState {
+  // Where closing goes: UnlockAccount's original destination, or Home.
+  destination?: string;
+  // How far the page was scrolled when it left for Receive.
+  scrollTop?: number;
+}
+
 /**
  * Full-screen "Meet Ethena on Stellar" launch promo. UnlockAccount routes here
  * once per eligible wallet (the background marks it seen as it hands it out),
@@ -132,17 +138,24 @@ export const EthenaLaunch = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const destination = get(
-    location,
-    "state.destination",
-    ROUTES.account,
-  ) as string;
+  const locationState = (location.state ?? {}) as EthenaLaunchLocationState;
+  const destination = locationState.destination ?? ROUTES.account;
+  // Back from Receive's address screen: the page comes back as it was left,
+  // scrolled where it was and without replaying the intro.
+  const returnScrollTop = locationState.scrollTop;
 
   const pageRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
 
   // The close button's bar fills in once the page scrolls (see styles).
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(Boolean(returnScrollTop));
+
+  // Before the first paint, so the page never shows at the top first.
+  useLayoutEffect(() => {
+    if (returnScrollTop !== undefined && pageRef.current) {
+      pageRef.current.scrollTop = returnScrollTop;
+    }
+  }, [returnScrollTop]);
 
   const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
     setIsScrolled(event.currentTarget.scrollTop > 0);
@@ -170,6 +183,15 @@ export const EthenaLaunch = () => {
   };
 
   const handleReceive = () => {
+    // The address screen closes by going back, to this history entry, so
+    // note in it where the page is.
+    navigate(`${location.pathname}${location.search}`, {
+      replace: true,
+      state: {
+        ...locationState,
+        scrollTop: pageRef.current?.scrollTop ?? 0,
+      },
+    });
     navigateTo(ROUTES.viewPublicKey, navigate);
   };
 
@@ -182,7 +204,7 @@ export const EthenaLaunch = () => {
     // light design.
     <div
       ref={pageRef}
-      className="EthenaLaunch sds-theme-dark"
+      className={`EthenaLaunch sds-theme-dark${returnScrollTop === undefined ? "" : " EthenaLaunch--returning"}`}
       onScroll={handleScroll}
       data-testid="ethena-launch"
     >

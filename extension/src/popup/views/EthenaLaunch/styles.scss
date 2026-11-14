@@ -342,6 +342,17 @@ $header-fade-in: 200ms;
     }
   }
 
+  // Back from Receive's address screen, as it was left: the intro doesn't
+  // replay.
+  &--returning {
+    .EthenaLaunch__wave,
+    .EthenaLaunch__coin,
+    .EthenaLaunch__intro,
+    .EthenaLaunch__scroll-hint {
+      animation: none;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     &__wave,
     &__coin,

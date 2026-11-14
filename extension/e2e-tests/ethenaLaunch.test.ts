@@ -111,6 +111,31 @@ test("Ethena launch promo's scroll cue scrolls the tokens into view", async ({
   await expect(page.getByTestId("ethena-launch-swap-usde")).toBeInViewport();
 });
 
+test("Ethena launch promo comes back from Receive as it was left", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context });
+  await page.getByTestId("ethena-launch-banner-open").click();
+  const promo = page.getByTestId("ethena-launch");
+  await expect(promo).toBeVisible();
+  await promo.evaluate((el) => el.scrollTo(0, 400));
+  const left = await promo.evaluate((el) => el.scrollTop);
+  expect(left).toBeGreaterThan(0);
+
+  await page.getByTestId("ethena-launch-receive-usde").click();
+  await expect(page.getByTestId("view-public-key-account-name")).toBeVisible();
+  await page.getByTestId("BackButton").click();
+
+  // Where it was, with nothing replaying.
+  await expect(promo).toBeVisible();
+  expect(await promo.evaluate((el) => el.scrollTop)).toBe(left);
+  expect(
+    await promo.evaluate((el) => el.getAnimations({ subtree: true }).length),
+  ).toBe(0);
+});
+
 test("Ethena launch promo keeps its close button on a bar as the page scrolls", async ({
   page,
   extensionId,

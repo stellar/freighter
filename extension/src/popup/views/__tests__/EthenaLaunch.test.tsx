@@ -1,7 +1,7 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useNavigate } from "react-router-dom";
 
 import { ROUTES } from "popup/constants/routes";
 import { Wrapper } from "popup/__testHelpers__";
@@ -38,6 +38,16 @@ const STARGATE_USDE_URL =
 const STARGATE_SUSDE_URL =
   "https://stargate.finance/?srcChain=ethereum&srcToken=0x9D39A5DE30e57443BfF2A8307A4256c8797A3497&dstChain=stellar&dstToken=CACSKWC753QVGC4J6YPDBIR2BEHFVWIAE7CBSS3HOVYMN623OAIQYE2M";
 
+// The address screen, closed the way the real one is: back in history.
+const ViewPublicKeyStub = () => {
+  const navigate = useNavigate();
+  return (
+    <button type="button" onClick={() => navigate(-1)}>
+      view-public-key
+    </button>
+  );
+};
+
 const renderView = (destination?: string) =>
   render(
     <Wrapper
@@ -53,10 +63,7 @@ const renderView = (destination?: string) =>
         <Route path={ROUTES.ethenaLaunch} element={<EthenaLaunch />} />
         <Route path={ROUTES.account} element={<div>account-home</div>} />
         <Route path={ROUTES.settings} element={<div>settings-home</div>} />
-        <Route
-          path={ROUTES.viewPublicKey}
-          element={<div>view-public-key</div>}
-        />
+        <Route path={ROUTES.viewPublicKey} element={<ViewPublicKeyStub />} />
       </Routes>
     </Wrapper>,
   );
@@ -218,6 +225,34 @@ describe("EthenaLaunch", () => {
     await userEvent.click(screen.getByTestId("ethena-launch-receive-susde"));
 
     expect(await screen.findByText("view-public-key")).toBeInTheDocument();
+  });
+
+  it("comes back from Receive as it was left: same scroll, no intro", async () => {
+    renderView();
+    const page = screen.getByTestId("ethena-launch");
+    expect(page).not.toHaveClass("EthenaLaunch--returning");
+    page.scrollTop = 420;
+    fireEvent.scroll(page);
+
+    await userEvent.click(screen.getByTestId("ethena-launch-receive-usde"));
+    await userEvent.click(await screen.findByText("view-public-key"));
+
+    const returned = await screen.findByTestId("ethena-launch");
+    expect(returned).toHaveClass("EthenaLaunch--returning");
+    expect(returned.scrollTop).toBe(420);
+    expect(screen.getByTestId("ethena-launch-header")).toHaveClass(
+      "EthenaLaunch__header--scrolled",
+    );
+  });
+
+  it("still closes to its destination after a trip to Receive", async () => {
+    renderView(ROUTES.settings);
+
+    await userEvent.click(screen.getByTestId("ethena-launch-receive-usde"));
+    await userEvent.click(await screen.findByText("view-public-key"));
+    await userEvent.click(await screen.findByTestId("ethena-launch-close"));
+
+    expect(await screen.findByText("settings-home")).toBeInTheDocument();
   });
 
   it("links out to Ethena's docs", async () => {
