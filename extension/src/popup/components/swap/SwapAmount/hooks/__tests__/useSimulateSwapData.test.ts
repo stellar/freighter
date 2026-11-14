@@ -164,20 +164,20 @@ describe("getSwapErrorMessage", () => {
 
   it("returns known error even when assets are contract IDs", () => {
     const result = getSwapErrorMessage(
-      new Error(ERROR_TO_DISPLAY.NO_PATH_FOUND),
+      new Error(ERROR_TO_DISPLAY.NO_QUOTE),
       contractAsset,
       classicAsset,
     );
-    expect(result).toBe(ERROR_TO_DISPLAY.NO_PATH_FOUND);
+    expect(result).toBe(ERROR_TO_DISPLAY.NO_QUOTE);
   });
 
   it("returns known error message for classic assets", () => {
     const result = getSwapErrorMessage(
-      new Error(ERROR_TO_DISPLAY.NO_PATH_FOUND),
+      new Error(ERROR_TO_DISPLAY.NO_QUOTE),
       classicAsset,
       classicAsset,
     );
-    expect(result).toBe(ERROR_TO_DISPLAY.NO_PATH_FOUND);
+    expect(result).toBe(ERROR_TO_DISPLAY.NO_QUOTE);
   });
 
   it("returns unknown error for unrecognized Error with classic assets", () => {
@@ -193,11 +193,11 @@ describe("getSwapErrorMessage", () => {
 
   it("returns known error message for string errors with classic assets", () => {
     const result = getSwapErrorMessage(
-      ERROR_TO_DISPLAY.NO_PATH_FOUND,
+      ERROR_TO_DISPLAY.NO_QUOTE,
       classicAsset,
       classicAsset,
     );
-    expect(result).toBe(ERROR_TO_DISPLAY.NO_PATH_FOUND);
+    expect(result).toBe(ERROR_TO_DISPLAY.NO_QUOTE);
   });
 
   it("returns unknown error for unrecognized string with classic assets", () => {

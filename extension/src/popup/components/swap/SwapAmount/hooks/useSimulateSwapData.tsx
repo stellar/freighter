@@ -1,6 +1,7 @@
 import { useReducer, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
+import { captureException } from "@sentry/browser";
 import {
   Asset,
   BASE_FEE,
@@ -29,7 +30,12 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { useScanTx } from "popup/helpers/blockaid";
 import { BlockAidScanTxResult, ErrorMessage } from "@shared/api/types";
-import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
+import { SwapQuotesError } from "@shared/api/helpers/getSwapQuotes";
+import {
+  getSwapQuote,
+  getSwapQuoteKey,
+  isSameSwapQuoteKey,
+} from "popup/helpers/swapQuote";
 import { isQuoteExpiredError } from "popup/helpers/quoteExpiry";
 import { isContractId } from "popup/helpers/soroban";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
@@ -38,8 +44,9 @@ import { AppDispatch } from "popup/App";
 const scanUrlstub = "internal";
 
 export const ERROR_TO_DISPLAY = {
-  NO_PATH_FOUND: "No path found for swap.",
   CUSTOM_TOKEN_NOT_SUPPORTED: "Swapping custom tokens is not supported yet.",
+  SWAPS_UNAVAILABLE: "Swaps are temporarily unavailable",
+  NO_QUOTE: "No quote available",
 };
 
 const UNKNOWN_ERROR_DISPLAY =
@@ -232,6 +239,8 @@ function useSimulateTxData({
     memo,
     path: storedPath,
     destinationAmount: storedDestinationAmount,
+    swapQuotes: storedSwapQuotes,
+    swapQuoteKey: storedSwapQuoteKey,
   } = useSelector(transactionDataSelector);
   const reduxDispatch = useDispatch<AppDispatch>();
 
@@ -267,36 +276,54 @@ function useSimulateTxData({
       // path + destination amount are in Redux) instead of re-fetching, so the
       // reviewed amount matches exactly what the user saw — no last-moment jump.
       // Any drift by submit time is bounded by destMin (slippage) and recovered
-      // via the quote-expiry flow. Only fetch a fresh path when no live quote
-      // exists yet (path may legitimately be empty for a direct swap).
+      // via the quote-expiry flow. Fetch a fresh path when no live quote exists
+      // for these exact inputs (path may legitimately be empty for a direct swap).
       let destinationAmount = storedDestinationAmount;
       let path: string[] = storedPath || [];
+      let quotes = storedSwapQuotes;
+      let key = storedSwapQuoteKey;
+      const quoteParams = {
+        mode: "send" as const,
+        amount,
+        sourceAsset: getCanonicalFromAsset(
+          sourceAsset.code,
+          sourceAsset.issuer,
+        ),
+        destAsset: getCanonicalFromAsset(destAsset.code, destAsset.issuer),
+        networkDetails,
+        publicKey,
+      };
 
-      if (!destinationAmount || new BigNumber(destinationAmount).lte(0)) {
-        const bestPath = await horizonGetBestPath({
-          amount,
-          sourceAsset: getCanonicalFromAsset(
-            sourceAsset.code,
-            sourceAsset.issuer,
-          ),
-          destAsset: getCanonicalFromAsset(destAsset.code, destAsset.issuer),
-          networkDetails,
-        });
-
-        if (!bestPath?.destination_amount) {
-          throw new Error(ERROR_TO_DISPLAY.NO_PATH_FOUND);
+      if (
+        !isSameSwapQuoteKey(storedSwapQuoteKey, getSwapQuoteKey(quoteParams)) ||
+        !destinationAmount ||
+        new BigNumber(destinationAmount).lte(0)
+      ) {
+        let result;
+        try {
+          result = await getSwapQuote(quoteParams);
+        } catch (e) {
+          if (e instanceof SwapQuotesError) {
+            // Reported per Review press, 400 included: the request was built
+            // from the extension's own state, so a rejection is worth seeing.
+            captureException(e.message);
+            throw new Error(
+              e.kind === "unavailable"
+                ? ERROR_TO_DISPLAY.SWAPS_UNAVAILABLE
+                : ERROR_TO_DISPLAY.NO_QUOTE,
+            );
+          }
+          throw e;
         }
 
-        destinationAmount = bestPath.destination_amount;
-        // store in canonical form for easier use
-        path = [];
-        bestPath.path.forEach((p) => {
-          if (!p.asset_code && !p.asset_issuer) {
-            path.push(p.asset_type);
-          } else {
-            path.push(getCanonicalFromAsset(p.asset_code, p.asset_issuer));
-          }
-        });
+        if (!result.route) {
+          throw new Error(ERROR_TO_DISPLAY.NO_QUOTE);
+        }
+
+        destinationAmount = result.route.destinationAmount;
+        path = result.route.path;
+        quotes = result.quotes;
+        key = result.key;
       }
       if (destinationRate) {
         payload.dstAmountPriceUsd = formatAmount(
@@ -335,6 +362,8 @@ function useSimulateTxData({
         saveSwapBestPath({
           path,
           destinationAmount,
+          quotes,
+          key,
         }),
       );
 

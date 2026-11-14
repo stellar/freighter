@@ -73,7 +73,9 @@ import { SlideupModal } from "popup/components/SlideupModal";
 import { AmountCard } from "popup/components/amount/AmountCard";
 import { PercentageButtons } from "popup/components/amount/PercentageButtons";
 import { shouldShowXlmReservePreflight } from "popup/helpers/xlmReserve";
-import { horizonGetBestReceivePath } from "popup/helpers/horizonGetBestPath";
+import { getSwapQuote } from "popup/helpers/swapQuote";
+import { SheetHeader } from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
 import { XlmReserveSheet } from "popup/components/swap/XlmReserveSheet";
 import { useSwapLiveQuote } from "./hooks/useSwapLiveQuote";
 import { EditSlippage } from "./EditSlippage";
@@ -226,6 +228,7 @@ export const SwapAmount = ({
     });
   }, [isReviewingTx]);
   const [isXlmReserveOpen, setIsXlmReserveOpen] = useState(false);
+  const [isQuoteUnavailableOpen, setIsQuoteUnavailableOpen] = useState(false);
   // Tracks focus on the sell input so the "Enter an amount" CTA can disable
   // itself while the input is focused. The extension has no virtual keyboard,
   // so once the input is focused the tap-to-focus affordance is redundant.
@@ -237,6 +240,8 @@ export const SwapAmount = ({
   );
 
   const handleContinue = async (values: { amount: string }) => {
+    // A live quote landing now would overwrite the quote the review builds.
+    cancelLiveQuote();
     // Retrying after a quote-expiry submit failure: dismiss the stale notice
     // before re-simulating against a fresh quote.
     if (isSwapQuoteExpired) {
@@ -340,15 +345,25 @@ export const SwapAmount = ({
   });
 
   const sellInputRef = useRef<HTMLInputElement>(null);
+  // A receive quote for the reserve prefill can take seconds; its answer is
+  // only applied to the inputs it was asked for.
+  const reserveQuoteInputsRef = useRef("");
+  reserveQuoteInputsRef.current = `${asset}|${publicKey}|${networkDetails.network}`;
+  useEffect(
+    () => () => {
+      reserveQuoteInputsRef.current = "";
+    },
+    [],
+  );
 
   // Live "You receive" quote as the user types (debounced path-only lookup).
-  // isLiveQuoteLoading lets the CTA tell "loading a quote" apart from "no path".
-  const { isLiveQuoteLoading } = useSwapLiveQuote({
+  const { cancelLiveQuote } = useSwapLiveQuote({
     amount,
     asset,
     destinationAsset,
     destinationAmount,
     networkDetails,
+    publicKey,
     isReviewingTx,
     swapAmountData,
     dispatch,
@@ -414,6 +429,7 @@ export const SwapAmount = ({
     bestNonXlmClassicCanonical,
     canSwapForReserve,
     isAmountTooHigh,
+    isQuotePending,
     cta,
   } = getSwapDerivedData({
     data,
@@ -428,9 +444,17 @@ export const SwapAmount = ({
     blockaidOverrideState,
     networkDetails,
     inputType,
-    isLiveQuoteLoading,
+    publicKey,
+    swapQuoteKey: transactionData.swapQuoteKey,
     destRequiresTrustline,
   });
+
+  const isQuoteUnavailable = !!cta.isQuoteUnavailable;
+  // Close the sheet once a quote arrives (set during render: cta is derived
+  // below the early returns, where an effect can't go).
+  if (isQuoteUnavailableOpen && !isQuoteUnavailable) {
+    setIsQuoteUnavailableOpen(false);
+  }
 
   const handleSwapForReserve = async () => {
     const sellCanonical = sourceIsNonXlmClassic
@@ -468,20 +492,26 @@ export const SwapAmount = ({
       const reserveTarget = new BigNumber(BASE_RESERVE)
         .dividedBy(1 - slippageFraction)
         .toFixed(7);
-      const path = await horizonGetBestReceivePath({
-        destinationAmount: reserveTarget,
+      const quotedFor = reserveQuoteInputsRef.current;
+      const { route } = await getSwapQuote({
+        mode: "receive",
+        amount: reserveTarget,
         sourceAsset: sellCanonical,
         destAsset: "native",
         networkDetails,
+        publicKey,
       });
-      if (path?.source_amount) {
+      if (reserveQuoteInputsRef.current !== quotedFor) {
+        return; // the sell token, account or network changed meanwhile
+      }
+      if (route?.sourceAmount) {
         const sellSpendable = getAvailableBalance({
           assetCanonical: sellCanonical,
           balances: sendData.userBalances.balances,
           recommendedFee: fee,
         });
         const capped = BigNumber.minimum(
-          new BigNumber(path.source_amount),
+          new BigNumber(route.sourceAmount),
           new BigNumber(sellSpendable),
         );
         dispatch(saveAmount(capped.toFixed(7)));
@@ -505,7 +535,7 @@ export const SwapAmount = ({
     } catch (e) {
       // No path / network error — leave the amount as-is for manual entry.
       captureException(
-        `Swap-for-reserve prefill failed - ${JSON.stringify(e)}`,
+        `Swap-for-reserve prefill failed - ${e instanceof Error ? e.message : JSON.stringify(e)}`,
       );
     }
   };
@@ -515,7 +545,6 @@ export const SwapAmount = ({
     enter: t("Enter an amount"),
     insufficientBalance: t("Insufficient balance"),
     insufficientXlmFees: t("Not enough XLM for network fees"),
-    noQuote: t("No quote available"),
     review: t("Review swap"),
   };
 
@@ -572,7 +601,9 @@ export const SwapAmount = ({
               isFullWidth
               isRounded
               variant="secondary"
-              isLoading={simulationState.state === RequestState.LOADING}
+              isLoading={
+                simulationState.state === RequestState.LOADING || cta.isLoading
+              }
               disabled={
                 cta.disabled || (cta.labelKey === "enter" && isSellInputFocused)
               }
@@ -685,7 +716,7 @@ export const SwapAmount = ({
                         ? new BigNumber(cleanAmount(usd))
                             .dividedBy(assetPrice)
                             .decimalPlaces(assetDecimals)
-                            .toString()
+                            .toFixed()
                         : DEFAULT_AMOUNT;
                       formik.setFieldValue("amount", crypto);
                       dispatch(saveAmount(crypto));
@@ -786,6 +817,7 @@ export const SwapAmount = ({
                       code: dstAsset ? dstAsset.code : "",
                     })}
                     isAmountTooHigh={false}
+                    isAmountLoading={isQuotePending}
                     isReadOnly
                     autoFocus={false}
                     cryptoDecimals={7}
@@ -801,6 +833,18 @@ export const SwapAmount = ({
                     }}
                   />
                 </div>
+                {isQuoteUnavailable ? (
+                  <div className="SwapAsset__details-link">
+                    <button
+                      type="button"
+                      data-testid="swap-quote-unavailable"
+                      onClick={() => setIsQuoteUnavailableOpen(true)}
+                    >
+                      {t("Quote unavailable")}
+                      <Icon.InfoCircle />
+                    </button>
+                  </div>
+                ) : null}
                 <div
                   className="SwapAsset__percentage-buttons"
                   data-testid="swap-percentage-buttons"
@@ -824,7 +868,7 @@ export const SwapAmount = ({
                       )
                         .multipliedBy(new BigNumber(pct).dividedBy(100))
                         .decimalPlaces(assetDecimals)
-                        .toString();
+                        .toFixed();
                       formik.setFieldValue("amount", pctAmount);
                       dispatch(saveAmount(pctAmount));
                       if (inputType === "fiat" && assetPrice) {
@@ -936,6 +980,29 @@ export const SwapAmount = ({
             // snapshot — the same flag that made getBuiltTx add the op.
             requiresTrustline={destRequiresTrustline}
           />
+        ) : (
+          <></>
+        )}
+      </SlideupModal>
+      <SlideupModal
+        setIsModalOpen={() => setIsQuoteUnavailableOpen(false)}
+        isModalOpen={isQuoteUnavailableOpen}
+        ariaLabel={t("Quote unavailable")}
+      >
+        {isQuoteUnavailableOpen ? (
+          <SheetLayout data-testid="QuoteUnavailableSheet">
+            <SheetHeader
+              title={t("Quote unavailable")}
+              onClose={() => setIsQuoteUnavailableOpen(false)}
+              closeTestId="QuoteUnavailableSheet__close"
+              titleTestId="QuoteUnavailableSheet__title"
+            />
+            <div className="SwapAsset__quote-unavailable-body">
+              {t(
+                "We couldn't get a quote for this swap right now. Try a different amount or token pair, or try again later.",
+              )}
+            </div>
+          </SheetLayout>
         ) : (
           <></>
         )}

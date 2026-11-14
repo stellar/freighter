@@ -23,6 +23,11 @@ import {
   pickBestNonXlmClassicCanonical,
 } from "popup/helpers/xlmReserve";
 import { InputType } from "helpers/transaction";
+import {
+  getSwapQuoteKey,
+  isSameSwapQuoteKey,
+  SwapQuoteKey,
+} from "popup/helpers/swapQuote";
 import { getSwapCtaState } from "./swapCtaState";
 import { ResolvedSwapAmountData } from "../hooks/useGetSwapAmountData";
 
@@ -52,7 +57,9 @@ interface GetSwapDerivedDataParams {
   blockaidOverrideState?: string | null;
   networkDetails: NetworkDetails;
   inputType: InputType;
-  isLiveQuoteLoading: boolean;
+  publicKey: string;
+  /** Key of the quote behind destinationAmount. */
+  swapQuoteKey: SwapQuoteKey | null;
   // Balances-derived "this swap adds a trustline", checked against the
   // UNFILTERED balances (a hidden held asset needs no new trustline). Drives
   // the reserve math; distinct from destinationIsNonHeld below, which is a
@@ -79,7 +86,8 @@ export const getSwapDerivedData = ({
   blockaidOverrideState,
   networkDetails,
   inputType,
-  isLiveQuoteLoading,
+  publicKey,
+  swapQuoteKey,
   destRequiresTrustline,
 }: GetSwapDerivedDataParams) => {
   const sendData = data;
@@ -182,12 +190,28 @@ export const getSwapDerivedData = ({
       ? new BigNumber(cleanAmount(amount)).gt(0)
       : new BigNumber(cleanAmount(amountUsd)).gt(0);
 
-  // The live quote settled with no route for a positive amount → no swap path.
-  // While a quote is in flight (isLiveQuoteLoading) we leave the CTA enabled so
-  // it doesn't flicker disabled between keystrokes.
+  // Pending means the stored quote is not for these inputs. A failed quote
+  // also stores its key, so it settles; a dropped or superseded response
+  // stores nothing, so it stays pending until the newer one lands.
+  const isQuotePending =
+    !!asset &&
+    !!destinationAsset &&
+    new BigNumber(cleanAmount(amount)).gt(0) &&
+    !isSameSwapQuoteKey(
+      swapQuoteKey,
+      getSwapQuoteKey({
+        mode: "send",
+        amount,
+        sourceAsset: asset,
+        destAsset: destinationAsset,
+        networkDetails,
+        publicKey,
+      }),
+    );
+
   const hasNoSwapPath =
     swapAmountPositive &&
-    !isLiveQuoteLoading &&
+    !isQuotePending &&
     new BigNumber(cleanAmount(destinationAmount || "0")).isZero();
 
   // Non-XLM swaps pay the network fee from the separate XLM balance; block the
@@ -214,6 +238,7 @@ export const getSwapDerivedData = ({
     isAmountTooHigh,
     insufficientXlmForFees,
     hasNoSwapPath,
+    isQuotePending,
   });
 
   return {
@@ -237,6 +262,7 @@ export const getSwapDerivedData = ({
     isAmountTooHigh,
     xlmSpendableForFees,
     insufficientXlmForFees,
+    isQuotePending,
     cta,
   };
 };

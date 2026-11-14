@@ -1,0 +1,272 @@
+import React from "react";
+import { act, renderHook } from "@testing-library/react";
+import { Asset, TransactionBuilder } from "stellar-sdk";
+import { captureException } from "@sentry/browser";
+
+import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import * as FetchBackendV2 from "@shared/api/helpers/fetchBackendV2";
+import { Wrapper, getTestStore } from "popup/__testHelpers__";
+import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
+import * as Blockaid from "popup/helpers/blockaid";
+import * as HorizonGetBestPath from "popup/helpers/horizonGetBestPath";
+
+import { useSimulateTxData } from "../useSimulateSwapData";
+
+jest.mock("@sentry/browser", () => ({
+  ...jest.requireActual("@sentry/browser"),
+  captureException: jest.fn(),
+}));
+jest.mock("@shared/api/helpers/stellarSdkServer", () => ({
+  stellarSdkServer: () => ({
+    loadAccount: async (pk: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { Account } = require("stellar-sdk");
+      return new Account(pk, "1");
+    },
+  }),
+}));
+
+const PUBLIC_KEY = "GCXRLIZUQNZ3YYJDGX6Z445P7FG5WXT7UILBO5CFIYYM7Z7YTIOELC6O";
+const USDC_ISSUER = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+const USDC = `USDC:${USDC_ISSUER}`;
+const AQUA_ISSUER = "GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA";
+const AQUA = `AQUA:${AQUA_ISSUER}`;
+
+const quotes = {
+  routes: [
+    {
+      source: "classic",
+      fromAmount: "10",
+      toAmount: "1.5",
+      paths: [
+        {
+          share: "1",
+          hops: [
+            { venue: "stellar-dex", from: "XLM", to: AQUA },
+            { venue: "stellar-dex", from: AQUA, to: USDC },
+          ],
+        },
+      ],
+      fees: [],
+    },
+  ],
+  unavailable: [],
+};
+
+const storedKey = {
+  account: PUBLIC_KEY,
+  network: "PUBLIC",
+  networkUrl: MAINNET_NETWORK_DETAILS.networkUrl,
+  mode: "send",
+  sourceAsset: "native",
+  destAsset: USDC,
+  amount: "10",
+};
+
+const storedQuote = {
+  destinationAmount: "1.6",
+  path: [] as string[],
+  swapQuotes: quotes,
+  swapQuoteKey: storedKey,
+};
+
+const renderSimulate = (
+  stored: Record<string, unknown> = {
+    // No live quote yet: the hook must fetch one.
+    destinationAmount: "",
+    path: [],
+  },
+) =>
+  renderHook(
+    () =>
+      useSimulateTxData({
+        publicKey: PUBLIC_KEY,
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        simParams: {
+          sourceAsset: Asset.native(),
+          destAsset: new Asset("USDC", USDC_ISSUER),
+          amount: "10",
+          allowedSlippage: "1",
+          path: [],
+          transactionFee: "0.00001",
+          transactionTimeout: 180,
+          destRequiresTrustline: false,
+        },
+      }),
+    {
+      wrapper: ({ children }) => (
+        <Wrapper
+          routes={["/"]}
+          state={{
+            transactionSubmission: {
+              ...transactionSubmissionInitialState,
+              transactionData: {
+                ...transactionSubmissionInitialState.transactionData,
+                ...stored,
+              },
+            },
+          }}
+        >
+          {children}
+        </Wrapper>
+      ),
+    },
+  );
+
+describe("useSimulateTxData quote when no live quote exists", () => {
+  let fetchBackendV2: jest.SpyInstance;
+  let horizonGetBestPath: jest.SpyInstance;
+
+  beforeEach(() => {
+    jest.spyOn(Blockaid, "useScanTx").mockReturnValue({
+      scanTx: jest.fn().mockResolvedValue(null),
+    } as any);
+    fetchBackendV2 = jest.spyOn(FetchBackendV2, "fetchBackendV2");
+    horizonGetBestPath = jest
+      .spyOn(HorizonGetBestPath, "horizonGetBestPath")
+      .mockRejectedValue(new Error("Horizon must not be called"));
+  });
+  afterEach(() => {
+    jest.restoreAllMocks();
+    jest.clearAllMocks();
+  });
+
+  it("builds the path payment from the backend's classic route", async () => {
+    fetchBackendV2.mockResolvedValue({ status: 200, body: { data: quotes } });
+    const { result } = renderSimulate();
+
+    let payload: any;
+    await act(async () => {
+      payload = await result.current.fetchData({ amount: "10" });
+    });
+
+    expect(fetchBackendV2).toHaveBeenCalledWith(
+      expect.objectContaining({ path: "/swap/quotes?network=PUBLIC" }),
+    );
+    expect(horizonGetBestPath).not.toHaveBeenCalled();
+
+    const tx = TransactionBuilder.fromXDR(
+      payload.transactionXdr,
+      MAINNET_NETWORK_DETAILS.networkPassphrase,
+    ) as any;
+    const op = tx.operations[0];
+    expect(op.type).toBe("pathPaymentStrictSend");
+    expect(op.path.map((a: Asset) => `${a.code}:${a.issuer}`)).toEqual([AQUA]);
+    // 1.5 less 1% slippage
+    expect(op.destMin).toBe("1.4850000");
+
+    const { transactionData } =
+      getTestStore()!.getState().transactionSubmission;
+    expect(transactionData.swapQuotes).toEqual(quotes);
+  });
+
+  it("reports swaps unavailable when the backend can't quote", async () => {
+    fetchBackendV2.mockResolvedValue({ status: 503, body: {} });
+    const { result } = renderSimulate();
+
+    await act(async () => {
+      await result.current.fetchData({ amount: "10" });
+    });
+
+    expect(result.current.state.error).toBe(
+      "Swaps are temporarily unavailable",
+    );
+    expect(captureException).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows the live CTA's no-quote message when the re-quote is a 400", async () => {
+    fetchBackendV2.mockResolvedValue({
+      status: 400,
+      body: { error: "account not found" },
+    });
+    const { result } = renderSimulate();
+
+    await act(async () => {
+      await result.current.fetchData({ amount: "10" });
+    });
+
+    expect(result.current.state.error).toBe("No quote available");
+    // The extension built this request, so a 400 is a client bug to see.
+    expect(captureException).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows the same no-quote message as a 400 when the response has no classic route", async () => {
+    fetchBackendV2.mockResolvedValue({
+      status: 200,
+      body: { data: { routes: [], unavailable: [] } },
+    });
+    const { result } = renderSimulate();
+
+    await act(async () => {
+      await result.current.fetchData({ amount: "10" });
+    });
+
+    expect(fetchBackendV2).toHaveBeenCalled();
+    expect(result.current.state.error).toBe("No quote available");
+  });
+
+  describe("with a stored live quote", () => {
+    const opOf = (payload: any) =>
+      (
+        TransactionBuilder.fromXDR(
+          payload.transactionXdr,
+          MAINNET_NETWORK_DETAILS.networkPassphrase,
+        ) as any
+      ).operations[0];
+
+    it("reuses it when it answered these exact inputs", async () => {
+      const { result } = renderSimulate(storedQuote);
+
+      let payload: any;
+      await act(async () => {
+        payload = await result.current.fetchData({ amount: "10" });
+      });
+
+      expect(fetchBackendV2).not.toHaveBeenCalled();
+      // 1.6 less 1% slippage
+      expect(opOf(payload).destMin).toBe("1.5840000");
+    });
+
+    it("re-quotes when the amount changed before the debounced quote landed", async () => {
+      fetchBackendV2.mockResolvedValue({ status: 200, body: { data: quotes } });
+      const { result } = renderSimulate(storedQuote);
+
+      await act(async () => {
+        await result.current.fetchData({ amount: "100" });
+      });
+
+      expect(fetchBackendV2).toHaveBeenCalledTimes(1);
+      expect(JSON.parse(fetchBackendV2.mock.calls[0][0].body).amount).toBe(
+        "100",
+      );
+    });
+
+    it("re-quotes when the stored quote was for another destination", async () => {
+      fetchBackendV2.mockResolvedValue({ status: 200, body: { data: quotes } });
+      const { result } = renderSimulate({
+        ...storedQuote,
+        swapQuoteKey: { ...storedKey, destAsset: AQUA },
+      });
+
+      await act(async () => {
+        await result.current.fetchData({ amount: "10" });
+      });
+
+      expect(fetchBackendV2).toHaveBeenCalledTimes(1);
+    });
+
+    it("re-quotes when the stored quote has no key (expired at submit)", async () => {
+      fetchBackendV2.mockResolvedValue({ status: 200, body: { data: quotes } });
+      const { result } = renderSimulate({ ...storedQuote, swapQuoteKey: null });
+
+      let payload: any;
+      await act(async () => {
+        payload = await result.current.fetchData({ amount: "10" });
+      });
+
+      expect(fetchBackendV2).toHaveBeenCalledTimes(1);
+      // fresh quote's 1.5, not the stored 1.6
+      expect(opOf(payload).destMin).toBe("1.4850000");
+    });
+  });
+});

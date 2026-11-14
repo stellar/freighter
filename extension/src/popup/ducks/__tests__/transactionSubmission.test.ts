@@ -15,6 +15,7 @@ import {
   submitFreighterTransaction,
   initialState,
   DestinationTokenDetails,
+  saveSwapBestPath,
 } from "../transactionSubmission";
 
 const makeStore = () =>
@@ -129,6 +130,40 @@ describe("transactionSubmission isSwapQuoteExpired", () => {
     store.dispatch(rejectedWith(["op_under_dest_min"]));
     store.dispatch(resetSubmission());
     expect(quoteExpiredFlag(store)).toBe(false);
+  });
+});
+
+describe("transactionSubmission swapQuoteKey", () => {
+  const key = {
+    account: "GCXRLIZUQNZ3YYJDGX6Z445P7FG5WXT7UILBO5CFIYYM7Z7YTIOELC6O",
+    network: NETWORKS.PUBLIC,
+    networkUrl: "https://horizon.stellar.org",
+    mode: "send" as const,
+    sourceAsset: "native",
+    destAsset: "AQUA:GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
+    amount: "10",
+  };
+  const storedKey = (store: ReturnType<typeof makeStore>) =>
+    store.getState().transactionSubmission.transactionData.swapQuoteKey;
+
+  it("stores the request a quote answered", () => {
+    const store = makeStore();
+    store.dispatch(saveSwapBestPath({ path: [], destinationAmount: "1", key }));
+    expect(storedKey(store)).toEqual(key);
+  });
+
+  it("drops the key when the quote expires at submit, so retry re-quotes", () => {
+    const store = makeStore();
+    store.dispatch(saveSwapBestPath({ path: [], destinationAmount: "1", key }));
+    store.dispatch(rejectedWith(["op_under_dest_min"]));
+    expect(storedKey(store)).toBeNull();
+  });
+
+  it("keeps the key on a submit failure that isn't an expiry", () => {
+    const store = makeStore();
+    store.dispatch(saveSwapBestPath({ path: [], destinationAmount: "1", key }));
+    store.dispatch(rejectedWith(["op_underfunded"]));
+    expect(storedKey(store)).toEqual(key);
   });
 });
 

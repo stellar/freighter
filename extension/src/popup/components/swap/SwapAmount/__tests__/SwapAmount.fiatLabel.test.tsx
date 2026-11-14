@@ -9,7 +9,8 @@ import { SwapAmount } from "popup/components/swap/SwapAmount";
 import * as UseGetSwapAmountData from "popup/components/swap/SwapAmount/hooks/useGetSwapAmountData";
 import * as UseSimulateSwapData from "popup/components/swap/SwapAmount/hooks/useSimulateSwapData";
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
-import * as HorizonGetBestPath from "popup/helpers/horizonGetBestPath";
+import * as FetchBackendV2 from "@shared/api/helpers/fetchBackendV2";
+import * as SwapQuote from "popup/helpers/swapQuote";
 
 const USDC_ISSUER = "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
 const USDC_CANONICAL = `USDC:${USDC_ISSUER}`;
@@ -81,9 +82,21 @@ describe("SwapAmount fiat label", () => {
       isQuoteExpired: false,
       fetchData: jest.fn().mockResolvedValue(undefined),
     } as any);
+    jest.spyOn(FetchBackendV2, "fetchBackendV2").mockResolvedValue({
+      status: 200,
+      body: { data: { routes: [], unavailable: [] } },
+    });
     jest
-      .spyOn(HorizonGetBestPath, "horizonGetBestPath")
-      .mockResolvedValue(null as any);
+      .spyOn(SwapQuote, "getSwapQuote")
+      .mockImplementation(async (params) => ({
+        route: {
+          sourceAmount: params.amount,
+          destinationAmount: "10",
+          path: [],
+        },
+        quotes: null,
+        key: SwapQuote.getSwapQuoteKey(params),
+      }));
   });
   afterEach(() => jest.restoreAllMocks());
 
@@ -97,7 +110,7 @@ describe("SwapAmount fiat label", () => {
       fetchData: jest.fn().mockResolvedValue(undefined),
     } as any);
 
-  it("shows '--' on both cards when the selected assets have no price", () => {
+  it("shows '--' on both cards when the selected assets have no price", async () => {
     mockAmountData({});
     renderAmount({ asset: "native", destinationAsset: USDC_CANONICAL });
 
@@ -105,7 +118,7 @@ describe("SwapAmount fiat label", () => {
       within(screen.getByTestId("swap-sell-card")).getByText("--"),
     ).toBeInTheDocument();
     expect(
-      within(screen.getByTestId("swap-receive-card")).getByText("--"),
+      await within(screen.getByTestId("swap-receive-card")).findByText("--"),
     ).toBeInTheDocument();
   });
 
@@ -132,7 +145,7 @@ describe("SwapAmount fiat label", () => {
     ).toBeInTheDocument();
   });
 
-  it("falls back to the destination's stellar.expert spot price when /token-prices has none", () => {
+  it("falls back to the destination's stellar.expert spot price when /token-prices has none", async () => {
     // tokenPrices is empty -> the receive card relies on the spot-price fallback.
     mockAmountData({});
     renderAmount({
@@ -150,7 +163,7 @@ describe("SwapAmount fiat label", () => {
 
     // 10 USDC * $0.5 spot = $5 -> receive card shows a value, not "--".
     const receive = screen.getByTestId("swap-receive-card");
-    expect(within(receive).getByText(/^\$5/)).toBeInTheDocument();
+    expect(await within(receive).findByText(/^\$5/)).toBeInTheDocument();
     expect(within(receive).queryByText("--")).toBeNull();
   });
 });

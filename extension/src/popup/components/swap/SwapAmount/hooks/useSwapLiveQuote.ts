@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { debounce } from "lodash";
 import BigNumber from "bignumber.js";
+import { captureException } from "@sentry/browser";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { AppDispatch } from "popup/App";
 import { saveSwapBestPath } from "popup/ducks/transactionSubmission";
+import { SwapQuotesError } from "@shared/api/helpers/getSwapQuotes";
 import { cleanAmount } from "popup/helpers/formatters";
-import { getCanonicalFromAsset } from "helpers/stellar";
-import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
+import { getSwapQuote, getSwapQuoteKey } from "popup/helpers/swapQuote";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 
@@ -24,6 +25,7 @@ interface UseSwapLiveQuoteParams {
   destinationAsset: string;
   destinationAmount: string;
   networkDetails: NetworkDetails;
+  publicKey: string;
   isReviewingTx: boolean;
   swapAmountData: SwapAmountDataState;
   dispatch: AppDispatch;
@@ -39,8 +41,9 @@ interface UseSwapLiveQuoteParams {
  * the debounced callback stays stable and quote results don't re-trigger the
  * effect (which would loop).
  *
- * Returns isLiveQuoteLoading so the CTA can tell "still loading a quote" apart
- * from "no path exists". All path results flow through Redux (saveSwapBestPath).
+ * All path results flow through Redux (saveSwapBestPath), keyed by the inputs they
+ * answer; "still loading" is the stored key not matching the current inputs,
+ * so a dropped or superseded response cannot leave the screen pending.
  */
 export const useSwapLiveQuote = ({
   amount,
@@ -48,15 +51,28 @@ export const useSwapLiveQuote = ({
   destinationAsset,
   destinationAmount,
   networkDetails,
+  publicKey,
   isReviewingTx,
   swapAmountData,
   dispatch,
 }: UseSwapLiveQuoteParams) => {
-  const [isLiveQuoteLoading, setIsLiveQuoteLoading] = useState(false);
-
   const liveQuoteReqRef = useRef(0);
-  const liveQuoteArgsRef = useRef({ asset, destinationAsset, networkDetails });
-  liveQuoteArgsRef.current = { asset, destinationAsset, networkDetails };
+  // Last failure reported to Sentry this mount. The quote re-fires per
+  // debounced keystroke, so an outage is reported once until a quote
+  // succeeds, not once per keystroke.
+  const lastReportedRef = useRef<string | null>(null);
+  const liveQuoteArgsRef = useRef({
+    asset,
+    destinationAsset,
+    networkDetails,
+    publicKey,
+  });
+  liveQuoteArgsRef.current = {
+    asset,
+    destinationAsset,
+    networkDetails,
+    publicKey,
+  };
   const destinationAmountRef = useRef(destinationAmount);
   destinationAmountRef.current = destinationAmount;
   // Once the review sheet is open the quote is frozen — a late live quote must
@@ -72,46 +88,52 @@ export const useSwapLiveQuote = ({
           asset: src,
           destinationAsset: dst,
           networkDetails: net,
+          publicKey: account,
         } = liveQuoteArgsRef.current;
+        const quoteParams = {
+          mode: "send" as const,
+          amount: quoteAmount,
+          sourceAsset: src,
+          destAsset: dst,
+          networkDetails: net,
+          publicKey: account,
+        };
         (async () => {
           try {
-            const bestPath = await horizonGetBestPath({
-              amount: quoteAmount,
-              sourceAsset: src,
-              destAsset: dst,
-              networkDetails: net,
-            });
+            const { route, quotes, key } = await getSwapQuote(quoteParams);
             if (liveQuoteReqRef.current !== reqId || isReviewingRef.current) {
               return; // superseded by a newer quote, or frozen for review
             }
-            // Stop signalling "loading" so the CTA can distinguish a missing
-            // path from a pending one.
-            setIsLiveQuoteLoading(false);
-            if (!bestPath?.destination_amount) {
-              dispatch(saveSwapBestPath({ path: [], destinationAmount: "0" }));
-              return;
-            }
-            const path: string[] = [];
-            bestPath.path.forEach((p) => {
-              if (!p.asset_code && !p.asset_issuer) {
-                path.push(p.asset_type);
-              } else {
-                path.push(getCanonicalFromAsset(p.asset_code, p.asset_issuer));
-              }
-            });
+            lastReportedRef.current = null;
             dispatch(
               saveSwapBestPath({
-                path,
-                destinationAmount: bestPath.destination_amount,
+                path: route?.path ?? [],
+                destinationAmount: route?.destinationAmount ?? "0",
+                quotes,
+                key,
               }),
             );
-          } catch {
+          } catch (e) {
             if (liveQuoteReqRef.current !== reqId || isReviewingRef.current) {
               return;
             }
-            setIsLiveQuoteLoading(false);
-            // No path / network error: clear the stale received amount.
-            dispatch(saveSwapBestPath({ path: [], destinationAmount: "0" }));
+            // A 400 here is the user's state (an unfunded account, an
+            // unsupported token); the review path reports those.
+            if (!(e instanceof SwapQuotesError && e.kind === "badRequest")) {
+              const message = e instanceof Error ? e.message : String(e);
+              if (message !== lastReportedRef.current) {
+                lastReportedRef.current = message;
+                captureException(message);
+              }
+            }
+            // No path / bad input / network error: clear the stale amount.
+            dispatch(
+              saveSwapBestPath({
+                path: [],
+                destinationAmount: "0",
+                key: getSwapQuoteKey(quoteParams),
+              }),
+            );
           }
         })();
       }, LIVE_QUOTE_DEBOUNCE_MS),
@@ -119,7 +141,24 @@ export const useSwapLiveQuote = ({
     [],
   );
 
-  useEffect(() => () => debouncedQuote.cancel(), [debouncedQuote]);
+  const cancelLiveQuote = useCallback(() => {
+    debouncedQuote.cancel();
+    liveQuoteReqRef.current += 1;
+  }, [debouncedQuote]);
+
+  useEffect(
+    () => () => {
+      debouncedQuote.cancel();
+      liveQuoteReqRef.current += 1;
+    },
+    [debouncedQuote],
+  );
+
+  // The crypto amount is the source of truth in both display modes (the fiat
+  // input keeps it in sync), so quote it directly. Keyed on the cleaned value
+  // so Review committing "1,000" as "1000" is not a change and cannot re-arm
+  // a quote behind the review sheet.
+  const cryptoAmount = cleanAmount(amount || "0");
 
   useEffect(() => {
     if (
@@ -129,17 +168,12 @@ export const useSwapLiveQuote = ({
     ) {
       return;
     }
-    // The crypto amount is the source of truth in both display modes (the fiat
-    // input keeps it in sync), so quote it directly.
-    const cryptoAmount = cleanAmount(amount || "0");
 
     if (new BigNumber(cryptoAmount || "0").isGreaterThan(0)) {
-      setIsLiveQuoteLoading(true);
       debouncedQuote(cryptoAmount);
     } else {
       // Source amount cleared: cancel any pending/in-flight quote and reset the
       // received amount so the card shows 0 (skip the dispatch if already 0).
-      setIsLiveQuoteLoading(false);
       debouncedQuote.cancel();
       liveQuoteReqRef.current += 1;
       if (
@@ -150,7 +184,15 @@ export const useSwapLiveQuote = ({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- debouncedQuote/dispatch are stable and destinationAmount is read via a ref, so quote results don't re-trigger this effect (which would loop)
-  }, [amount, asset, destinationAsset, swapAmountData.state]);
+  }, [
+    cryptoAmount,
+    asset,
+    destinationAsset,
+    swapAmountData.state,
+    publicKey,
+    networkDetails.network,
+    networkDetails.networkUrl,
+  ]);
 
-  return { isLiveQuoteLoading };
+  return { cancelLiveQuote };
 };

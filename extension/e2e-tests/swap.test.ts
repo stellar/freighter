@@ -50,6 +50,7 @@ import {
   stubScanAssetSafe,
   stubScanTxMalicious,
   stubScanTxSafe,
+  stubSwapQuotes,
   TESTNET_TRENDING_ASSETS_ROUTE,
   TRENDING_ASSETS_ROUTE,
 } from "./helpers/stubs";
@@ -70,6 +71,13 @@ async function openSwapToPicker(page: Page) {
     .getByTestId("send-amount-edit-dest-asset")
     .click({ force: true });
   await expect(page.getByText("Swap to")).toBeVisible();
+}
+
+// The CTA stays disabled until the quote for the entered amount lands.
+async function clickReviewSwap(page: Page) {
+  const cta = page.getByTestId("swap-amount-btn-continue");
+  await expect(cta).toBeEnabled({ timeout: 10000 });
+  await cta.click({ force: true });
 }
 
 // ---------------------------------------------------------------------------
@@ -118,26 +126,7 @@ test("held-to-held swap reaches review screen", async ({
     });
     await stubAccountBalancesV2(page, balancesJson);
     // Path so the held-to-held swap simulates and reaches the review.
-    await page.route("**/paths**", (route) =>
-      route.fulfill({
-        json: {
-          _embedded: {
-            records: [
-              {
-                source_asset_type: "native",
-                source_asset_code: "XLM",
-                source_asset_issuer: "",
-                destination_asset_type: "credit_alphanum4",
-                destination_asset_code: "USDC",
-                destination_asset_issuer: USDC_ISSUER,
-                destination_amount: "0.95",
-                path: [],
-              },
-            ],
-          },
-        },
-      }),
-    );
+    await stubSwapQuotes(context, { toAmount: "0.95" });
   };
 
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
@@ -156,7 +145,7 @@ test("held-to-held swap reaches review screen", async ({
     .getByTestId("swap-sell-card")
     .getByTestId("send-amount-amount-input")
     .fill("1");
-  await page.getByTestId("swap-amount-btn-continue").click({ force: true });
+  await clickReviewSwap(page);
 
   // Review screen
   await expect(page.getByText("You are swapping")).toBeVisible({
@@ -213,6 +202,8 @@ test("swap to new token shows trustline banner at review", async ({
   };
 
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  // Registered after login so it overrides the default no-route stub.
+  await stubSwapQuotes(context, { toAmount: "0.95" });
   await switchToMainnet(page);
 
   await page.getByTestId("nav-link-swap").click();
@@ -231,7 +222,7 @@ test("swap to new token shows trustline banner at review", async ({
     .getByTestId("swap-sell-card")
     .getByTestId("send-amount-amount-input")
     .fill("1");
-  await page.getByTestId("swap-amount-btn-continue").click({ force: true });
+  await clickReviewSwap(page);
 
   // Review screen should show trustline banner (AQUA not in account balances)
   await expect(page.getByTestId("review-tx-trustline-banner")).toBeVisible({
@@ -311,6 +302,8 @@ test("shows XLM-reserve sheet when balance cannot cover the reserve", async ({
   };
 
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  // Registered after login so it overrides the default no-route stub.
+  await stubSwapQuotes(context, { toAmount: "0.95" });
   await switchToMainnet(page);
 
   await page.getByTestId("nav-link-swap").click();
@@ -324,7 +317,7 @@ test("shows XLM-reserve sheet when balance cannot cover the reserve", async ({
     .getByTestId("swap-sell-card")
     .getByTestId("send-amount-amount-input")
     .fill("0.05");
-  await page.getByTestId("swap-amount-btn-continue").click({ force: true });
+  await clickReviewSwap(page);
 
   // XlmReserveSheet appears because spendable XLM < required reserve
   await expect(page.getByTestId("XlmReserveSheet")).toBeVisible({
@@ -362,28 +355,8 @@ test("flagged destination surfaces blockaid malicious warning at review", async 
     );
     // Stub a swap path so the simulation succeeds and reaches the review
     // screen (where the transaction scan runs). Without this the swap dies at
-    // "No path found for swap" and never reaches the banner.
-    await page.route("**/paths**", (route) =>
-      route.fulfill({
-        json: {
-          _embedded: {
-            records: [
-              {
-                source_asset_type: "native",
-                source_asset_code: "XLM",
-                source_asset_issuer: "",
-                destination_asset_type: "credit_alphanum4",
-                destination_asset_code: "SCAM",
-                destination_asset_issuer:
-                  "GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
-                destination_amount: "0.95",
-                path: [],
-              },
-            ],
-          },
-        },
-      }),
-    );
+    // "No quote available" and never reaches the banner.
+    await stubSwapQuotes(context, { toAmount: "0.95" });
     // Stub scan-tx to return Malicious (stubScanTxMalicious matches "**/scan-tx**")
     await stubScanTxMalicious(page);
   };
@@ -402,7 +375,7 @@ test("flagged destination surfaces blockaid malicious warning at review", async 
     .getByTestId("swap-sell-card")
     .getByTestId("send-amount-amount-input")
     .fill("1");
-  await page.getByTestId("swap-amount-btn-continue").click({ force: true });
+  await clickReviewSwap(page);
 
   // Review screen: the unified transaction Blockaid banner must be visible
   // (tx scan takes precedence over the token verdict on the review).
@@ -561,27 +534,7 @@ test("flagged non-held destination stacks trustline and Blockaid banners", async
       route.fulfill(assetSearchResponse([])),
     );
     // Path so the simulation succeeds and reaches review.
-    await page.route("**/paths**", (route) =>
-      route.fulfill({
-        json: {
-          _embedded: {
-            records: [
-              {
-                source_asset_type: "native",
-                source_asset_code: "XLM",
-                source_asset_issuer: "",
-                destination_asset_type: "credit_alphanum4",
-                destination_asset_code: "SCAM",
-                destination_asset_issuer:
-                  "GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
-                destination_amount: "0.95",
-                path: [],
-              },
-            ],
-          },
-        },
-      }),
-    );
+    await stubSwapQuotes(context, { toAmount: "0.95" });
     // Flag the destination TOKEN malicious via the bulk-scan endpoint. The swap
     // reads data.results["CODE-ISSUER"], so the map MUST be keyed exactly by
     // "SCAM-<issuer>". The transaction scan stays safe, so the review's single
@@ -631,7 +584,7 @@ test("flagged non-held destination stacks trustline and Blockaid banners", async
     .getByTestId("swap-sell-card")
     .getByTestId("send-amount-amount-input")
     .fill("1");
-  await page.getByTestId("swap-amount-btn-continue").click({ force: true });
+  await clickReviewSwap(page);
 
   // Both banners must render together at review.
   await expect(page.getByTestId("review-tx-trustline-banner")).toBeVisible({
@@ -687,26 +640,7 @@ test("completes a swap to a new token and shows the success summary", async ({
       ),
     );
     // Path so the swap simulates and builds a prepared transaction to submit.
-    await page.route("**/paths**", (route) =>
-      route.fulfill({
-        json: {
-          _embedded: {
-            records: [
-              {
-                source_asset_type: "native",
-                source_asset_code: "XLM",
-                source_asset_issuer: "",
-                destination_asset_type: "credit_alphanum4",
-                destination_asset_code: "AQUA",
-                destination_asset_issuer: AQUA_ISSUER,
-                destination_amount: "0.95",
-                path: [],
-              },
-            ],
-          },
-        },
-      }),
-    );
+    await stubSwapQuotes(context, { toAmount: "0.95" });
     // Token + transaction both scan clean, so the review shows the normal
     // Confirm button (no "Confirm anyway").
     await page.route("**/scan-asset-bulk**", (route) =>
@@ -749,7 +683,7 @@ test("completes a swap to a new token and shows the success summary", async ({
     .getByTestId("swap-sell-card")
     .getByTestId("send-amount-amount-input")
     .fill("1");
-  await page.getByTestId("swap-amount-btn-continue").click({ force: true });
+  await clickReviewSwap(page);
 
   // Review renders with the trustline banner (AQUA not yet trusted).
   await expect(page.getByTestId("review-tx-trustline-banner")).toBeVisible({
@@ -896,26 +830,7 @@ test("recovers to the amount screen when the swap quote expires at submit", asyn
     await context.route(TRENDING_ASSETS_ROUTE, (route) =>
       route.fulfill(assetSearchResponse([])),
     );
-    await page.route("**/paths**", (route) =>
-      route.fulfill({
-        json: {
-          _embedded: {
-            records: [
-              {
-                source_asset_type: "native",
-                source_asset_code: "XLM",
-                source_asset_issuer: "",
-                destination_asset_type: "credit_alphanum4",
-                destination_asset_code: "AQUA",
-                destination_asset_issuer: AQUA_ISSUER,
-                destination_amount: "0.95",
-                path: [],
-              },
-            ],
-          },
-        },
-      }),
-    );
+    await stubSwapQuotes(context, { toAmount: "0.95" });
     await stubScanTxSafe(page);
     await stubScanAssetSafe(page);
     // Submit fails with a quote-expiry op code → the flow recovers to review.
@@ -948,7 +863,7 @@ test("recovers to the amount screen when the swap quote expires at submit", asyn
     .getByTestId("swap-sell-card")
     .getByTestId("send-amount-amount-input")
     .fill("1");
-  await page.getByTestId("swap-amount-btn-continue").click({ force: true });
+  await clickReviewSwap(page);
 
   await expect(page.getByTestId("review-tx-trustline-banner")).toBeVisible({
     timeout: 30000,
@@ -962,6 +877,10 @@ test("recovers to the amount screen when the swap quote expires at submit", asyn
     page.getByText("Quote has expired, please try again to get a new quote"),
   ).toBeVisible({ timeout: 30000 });
   await expect(page.getByTestId("swap-sell-card")).toBeVisible();
+  // The expired quote's key is cleared, so the amount screen re-quotes.
+  await expect(page.getByTestId("swap-amount-btn-continue")).toBeEnabled({
+    timeout: 10000,
+  });
 });
 
 // ---------------------------------------------------------------------------

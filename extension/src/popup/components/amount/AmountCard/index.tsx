@@ -3,6 +3,7 @@ import { Button, Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { AssetIcon } from "popup/components/account/AccountAssets";
+import { Shimmer } from "popup/components/Shimmer";
 import { AssetIcons } from "@shared/api/types";
 import { isNativeAssetPair } from "@shared/helpers/assetIdentity";
 import { SecurityLevel } from "popup/constants/blockaid";
@@ -34,6 +35,8 @@ export interface AmountCardProps {
   hasUsdPrice?: boolean;
   fiatLineText: string;
   isAmountTooHigh: boolean;
+  /** Shows a placeholder instead of the amount and fiat line. */
+  isAmountLoading?: boolean;
   /** Pre-formatted max-spendable amount shown in the insufficient-balance
    * error (e.g. "123.23"); the token code is taken from assetCode. */
   maxSpendableText?: string;
@@ -70,6 +73,7 @@ export const AmountCard = ({
   hasUsdPrice = true,
   fiatLineText,
   isAmountTooHigh,
+  isAmountLoading = false,
   maxSpendableText = "",
   isReadOnly = false,
   autoFocus = true,
@@ -154,7 +158,14 @@ export const AmountCard = ({
           >
             {amountUsd || "0"}
           </span>
-          {inputType === "crypto" && (
+          {isAmountLoading && (
+            <Shimmer
+              width="6rem"
+              height="1.5rem"
+              data-testid="amount-card-amount-loading"
+            />
+          )}
+          {!isAmountLoading && inputType === "crypto" && (
             <input
               ref={inputRef}
               className={fontClass}
@@ -187,7 +198,8 @@ export const AmountCard = ({
               autoComplete="off"
             />
           )}
-          {inputType === "fiat" &&
+          {!isAmountLoading &&
+            inputType === "fiat" &&
             (hasUsdPrice ? (
               <>
                 <div
@@ -270,7 +282,11 @@ export const AmountCard = ({
           no value); only the input-type toggle depends on a usable USD price. */}
       <div className="AmountCard__balance-row">
         <div className="AmountCard__amount-price">
-          {fiatLineText}
+          {isAmountLoading ? (
+            <Shimmer width="3.5rem" height="0.875rem" />
+          ) : (
+            fiatLineText
+          )}
           {/* Read-only cards (e.g. the swap "You receive" card) show the fiat
               value but cannot toggle input type, so omit the toggle. The toggle
               also needs a usable USD price. */}

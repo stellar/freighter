@@ -150,3 +150,43 @@ export interface V2AccountBalances {
   subentry_count: number;
   balances: V2Balance[];
 }
+
+// freighter-backend-v2 `POST /swap/quotes` wire types; mirror
+// internal/types/swap.go. Assets are "XLM", "CODE:ISSUER" or a "C…" contract ID.
+export type SwapQuoteMode = "send" | "receive";
+
+export interface SwapHop {
+  venue: string;
+  from: string;
+  to: string;
+  pool?: string;
+}
+
+export interface SwapPath {
+  share: string;
+  hops: SwapHop[];
+}
+
+export interface SwapFee {
+  name: string;
+  amount: string;
+  asset: string;
+}
+
+export interface SwapRoute {
+  source: string;
+  fromAmount: string;
+  toAmount: string;
+  paths: SwapPath[];
+  fees: SwapFee[];
+}
+
+export interface SwapUnavailable {
+  source: string;
+  reason: string;
+}
+
+export interface SwapQuotesResponse {
+  routes: SwapRoute[];
+  unavailable: SwapUnavailable[];
+}
