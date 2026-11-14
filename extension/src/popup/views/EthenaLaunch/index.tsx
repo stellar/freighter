@@ -119,7 +119,7 @@ const EthenaTokenSection = ({
 
 /**
  * Full-screen "Meet Ethena on Stellar" launch promo. UnlockAccount routes here
- * once per wallet (the background marks it seen as it hands it out),
+ * once per eligible wallet (the background marks it seen as it hands it out),
  * and the Home banner opens it on demand. Closing returns to the destination
  * in location state, or Home.
  */

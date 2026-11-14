@@ -9,8 +9,8 @@ import {
   mockStorageApi,
   MockBrowserAlarm,
 } from "background/messageListener/helpers/test-helpers";
-import { HAS_SEEN_ETHENA_LAUNCH_PROMO } from "constants/localStorageTypes";
-import { claimEthenaLaunchPromo } from "background/messageListener/handlers/claimEthenaLaunchPromo";
+import { ETHENA_LAUNCH_PROMO_STATUS_ID } from "constants/localStorageTypes";
+import { ETHENA_LAUNCH_PROMO_STATUS } from "constants/ethenaLaunchPromo";
 
 // Distinct keys per derivation index, so the recovery preload loop stores a
 // separate account for each one rather than collapsing into a single entry.
@@ -74,15 +74,18 @@ describe("Recover account message listener", () => {
     );
   });
 
-  // Every wallet sees the launch promo once, an imported one too: on its
-  // first unlock to Home.
-  it("leaves a recovered wallet owed the Ethena launch promo", async () => {
-    await mockDataStorage.remove(HAS_SEEN_ETHENA_LAUNCH_PROMO);
+  // Recovery is onboarding (also the "forgot password" path), so it isn't
+  // followed by the one-time launch promo either.
+  it("doesn't owe a recovered wallet the Ethena launch promo", async () => {
+    await mockDataStorage.setItem(
+      ETHENA_LAUNCH_PROMO_STATUS_ID,
+      ETHENA_LAUNCH_PROMO_STATUS.PENDING,
+    );
 
     await recover();
 
-    expect(
-      await claimEthenaLaunchPromo({ localStore: mockDataStorage }),
-    ).toEqual({ shouldShowEthenaLaunchPromo: true });
+    expect(await mockDataStorage.getItem(ETHENA_LAUNCH_PROMO_STATUS_ID)).toBe(
+      ETHENA_LAUNCH_PROMO_STATUS.SEEN,
+    );
   });
 });

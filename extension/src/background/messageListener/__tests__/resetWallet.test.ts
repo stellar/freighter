@@ -24,9 +24,9 @@ import {
   COLLECTIBLES_ID,
   DATA_SHARING_ID,
   ETHENA_LAUNCH_BANNER_DISMISSED,
+  ETHENA_LAUNCH_PROMO_STATUS_ID,
   HAS_ACCOUNT_SUBSCRIPTION,
   HAS_SEEN_DISCOVER_WELCOME,
-  HAS_SEEN_ETHENA_LAUNCH_PROMO,
   HIDDEN_ASSETS,
   HIDDEN_ASSET_LIST,
   HIDDEN_COLLECTIBLES,
@@ -121,9 +121,9 @@ const OLD_WALLET_DATA: Record<string, unknown> = {
   [`${CACHED_MEMO_REQUIRED_ACCOUNTS_ID}_date`]: 1,
   [ETHENA_LAUNCH_BANNER_DISMISSED]: true,
   [HAS_SEEN_DISCOVER_WELCOME]: true,
-  [HAS_SEEN_ETHENA_LAUNCH_PROMO]: true,
   [IS_BLOCKAID_ANNOUNCED_ID]: true,
   [REBRAND_ANNOUNCEMENT_STATUS_ID]: "pending",
+  [ETHENA_LAUNCH_PROMO_STATUS_ID]: "pending",
   isTestnet: true,
 };
 
@@ -293,10 +293,11 @@ describe("RESET_WALLET", () => {
       CACHED_SWAP_TOP_TOKENS_ID,
       COLLECTIBLES_ID,
       ETHENA_LAUNCH_BANNER_DISMISSED,
+      // Whether this wallet is still owed the launch promo. Like the rebrand
+      // status below, create and import mark it seen for the next wallet.
+      ETHENA_LAUNCH_PROMO_STATUS_ID,
       HAS_ACCOUNT_SUBSCRIPTION,
       HAS_SEEN_DISCOVER_WELCOME,
-      // Every wallet sees the launch promo once, so the next wallet does too.
-      HAS_SEEN_ETHENA_LAUNCH_PROMO,
       HIDDEN_ASSETS,
       HIDDEN_ASSET_LIST,
       HIDDEN_COLLECTIBLES,

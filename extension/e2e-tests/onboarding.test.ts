@@ -9,7 +9,6 @@ import {
 } from "./helpers/onboarding";
 import type { Page } from "@playwright/test";
 import { goToSettings } from "./helpers/network";
-import { closeEthenaLaunchPromo } from "./helpers/ethenaLaunch";
 
 const { generateMnemonic } = StellarHDWallet;
 
@@ -449,13 +448,11 @@ const expectOnlyNewWalletAccount = async (page: Page, extensionId: string) => {
 };
 
 // The page where the reset started is still on the lock screen; the new
-// wallet's password unlocks it. It's the new wallet's first unlock, so the
-// one-time Ethena launch promo comes first.
+// wallet's password unlocks it.
 const unlockOriginalPage = async (page: Page) => {
   await expect(page.getByText("Welcome back")).toBeVisible();
   await page.locator("#password-input").fill(PASSWORD);
   await page.getByRole("button", { name: "Unlock" }).click();
-  await closeEthenaLaunchPromo(page);
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
   });
@@ -545,11 +542,8 @@ test("Closing the Forgot password sheet keeps the wallet", async ({
   await page.getByTestId("forgot-password-sheet-close").click();
   await expect(page.getByTestId("forgot-password-sheet")).toBeHidden();
 
-  // The wallet's first unlock, so the one-time Ethena launch promo comes
-  // first.
   await page.locator("#password-input").fill(PASSWORD);
   await page.getByRole("button", { name: "Unlock" }).click();
-  await closeEthenaLaunchPromo(page);
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
   });

@@ -2,7 +2,6 @@ import type { BrowserContext, Page } from "@playwright/test";
 import { test, expect } from "./test-fixtures";
 import { loginToTestAccount, PASSWORD } from "./helpers/login";
 import { goToSettings } from "./helpers/network";
-import { closeEthenaLaunchPromo } from "./helpers/ethenaLaunch";
 
 const lockAndUnlock = async (page: Page) => {
   await goToSettings(page);
@@ -12,20 +11,42 @@ const lockAndUnlock = async (page: Page) => {
   await page.getByRole("button", { name: "Unlock" }).click();
 };
 
-test("every wallet sees the Ethena launch promo once, on its first unlock to Home", async ({
+test("a wallet set up on this install skips the Ethena launch promo, which Home's banner still opens", async ({
   page,
   extensionId,
   context,
 }) => {
   test.slow();
-  // A wallet set up just now, as on a new install. Onboarding ends on Home;
-  // the promo waits for an unlock.
   await loginToTestAccount({ page, extensionId, context });
-  await expect(page.getByTestId("account-view")).toBeVisible();
+
+  // Straight Home: only wallets that predate the launch get it by themselves.
+  await lockAndUnlock(page);
+  await expect(page.getByTestId("account-view")).toBeVisible({
+    timeout: 30000,
+  });
   await expect(page.getByTestId("ethena-launch")).toHaveCount(0);
 
+  await page.getByTestId("ethena-launch-banner-open").click();
+  await expect(page.getByTestId("ethena-launch")).toBeVisible();
+});
+
+test("a wallet that predates the launch sees the Ethena launch promo once, on its next unlock to Home", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  await loginToTestAccount({ page, extensionId, context });
+  // What installing the launch build over an existing wallet records.
+  await page.evaluate(() =>
+    chrome.storage.local.set({ ethenaLaunchPromoStatus: "pending" }),
+  );
+
   await lockAndUnlock(page);
-  await closeEthenaLaunchPromo(page);
+  await expect(page.getByTestId("ethena-launch")).toBeVisible({
+    timeout: 30000,
+  });
+  await page.getByTestId("ethena-launch-close").click();
   await expect(page.getByTestId("account-view")).toBeVisible();
 
   // Once only: the next unlock goes straight Home.
