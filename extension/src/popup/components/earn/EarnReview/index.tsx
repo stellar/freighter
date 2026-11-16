@@ -51,7 +51,7 @@ interface EarnReviewProps {
   assetCode: string;
   assetIssuer?: string;
   assetIcon?: string | null;
-  /** Human-readable deposit amount. */
+  /** Deposit amount in token units, unformatted ("1234.56"). */
   amount: string;
   /**
    * USD value of the deposit, unformatted ("1234.56"): it is added to the

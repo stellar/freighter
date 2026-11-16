@@ -161,12 +161,16 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
   const decimals = getAssetDecimals(asset, data.balances, true);
 
   const assetPrice = data.tokenPrices[asset]?.currentPrice;
+  // The input keeps the amount as typed, separators included ("1,000"), which
+  // BigNumber and parseTokenAmount read as NaN. Everything that uses it as a
+  // number takes this instead.
+  const depositAmount = cleanAmount(amount || "0");
   // Left unformatted ("1234.56") and formatted where it is shown: the review
   // also adds it to the position, which a thousands separator turns into NaN.
   const depositUsd = assetPrice
     ? roundUsdValue(
         new BigNumber(assetPrice)
-          .multipliedBy(new BigNumber(cleanAmount(amount || "0")))
+          .multipliedBy(new BigNumber(depositAmount))
           .toString(),
       )
     : null;
@@ -185,7 +189,7 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
 
   const isXlm = isNativeAssetId(asset);
 
-  const enteredAmount = new BigNumber(cleanAmount(amount || "0"));
+  const enteredAmount = new BigNumber(depositAmount);
   const isAmountTooHigh = enteredAmount.gt(new BigNumber(availableBalance));
   const cta = getEarnCtaState({
     availableBalanceIsZero: new BigNumber(availableBalance).lte(0),
@@ -243,7 +247,7 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
         simulate({
           publicKey: data.publicKey,
           assetId: selectedAssetId,
-          amount,
+          amount: depositAmount,
           decimals,
           networkDetails: data.networkDetails,
           transactionFee: recommendedFee,
@@ -440,7 +444,7 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
           // Without this the sheet builds an empty icon map, which AssetIcon
           // reads as a lookup in flight and answers with a spinner.
           assetIcon={data.balances.icons?.[asset]}
-          amount={amount}
+          amount={depositAmount}
           amountUsd={depositUsd}
           apy={selectedAssetApy}
           currentPosition={currentPositionTokens}

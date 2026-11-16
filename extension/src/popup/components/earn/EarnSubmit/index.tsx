@@ -11,7 +11,7 @@ import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
 import { RequestState } from "constants/request";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { isCustomNetwork } from "@shared/helpers/stellar";
-import { formatAmount } from "popup/helpers/formatters";
+import { cleanAmount, formatAmount } from "popup/helpers/formatters";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { openTab } from "popup/helpers/navigate";
 import {
@@ -210,7 +210,9 @@ export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
             </div>
             <Text as="div" size="sm">
               {t("{{amount}} {{code}} to {{pool}}", {
-                amount: formatAmount(amount),
+                // Stored as typed ("1,000"); formatAmount needs the plain
+                // number.
+                amount: formatAmount(cleanAmount(amount)),
                 code: srcAsset.code,
                 pool: formatPoolName(pool?.name, t),
               })}
