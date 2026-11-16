@@ -33,7 +33,10 @@ const makeSwapData = (tokenPrices: Record<string, unknown>) => ({
   tokenPrices,
 });
 
-const renderAmount = (transactionData: Record<string, unknown>) =>
+const renderAmount = (
+  transactionData: Record<string, unknown>,
+  inputType: "crypto" | "fiat" = "crypto",
+) =>
   render(
     <Wrapper
       state={
@@ -61,7 +64,7 @@ const renderAmount = (transactionData: Record<string, unknown>) =>
       routes={["/swap"]}
     >
       <SwapAmount
-        inputType="crypto"
+        inputType={inputType}
         setInputType={jest.fn()}
         goBack={jest.fn()}
         goToNext={jest.fn()}
@@ -165,5 +168,54 @@ describe("SwapAmount fiat label", () => {
     const receive = screen.getByTestId("swap-receive-card");
     expect(await within(receive).findByText(/^\$5/)).toBeInTheDocument();
     expect(within(receive).queryByText("--")).toBeNull();
+  });
+
+  describe("receive amount", () => {
+    const quoteDestinationAmount = (destinationAmount: string) =>
+      jest
+        .spyOn(SwapQuote, "getSwapQuote")
+        .mockImplementation(async (params) => ({
+          route: { sourceAmount: params.amount, destinationAmount, path: [] },
+          quotes: null,
+          key: SwapQuote.getSwapQuoteKey(params),
+        }));
+
+    it("drops the quote's trailing zeros on the receive card", async () => {
+      mockAmountData({});
+      quoteDestinationAmount("1.3746270");
+      renderAmount({ asset: "native", destinationAsset: USDC_CANONICAL });
+
+      const receive = screen.getByTestId("swap-receive-card");
+      expect(
+        await within(receive).findByDisplayValue("1.374627"),
+      ).toBeInTheDocument();
+      expect(within(receive).queryByDisplayValue("1.3746270")).toBeNull();
+    });
+
+    it("groups thousands and sizes the font from the displayed string", async () => {
+      mockAmountData({});
+      quoteDestinationAmount("1234.5670000");
+      renderAmount({ asset: "native", destinationAsset: USDC_CANONICAL });
+
+      const receive = screen.getByTestId("swap-receive-card");
+      const input = await within(receive).findByDisplayValue("1,234.567");
+      // 7 digits shown -> "med"; the raw 11-digit string would pick "small".
+      expect(input).toHaveClass("AmountCard__med");
+    });
+
+    it("formats the receive amount on the fiat-mode secondary line", async () => {
+      mockAmountData({});
+      quoteDestinationAmount("1.3746270");
+      renderAmount(
+        { asset: "native", destinationAsset: USDC_CANONICAL },
+        "fiat",
+      );
+
+      const receive = screen.getByTestId("swap-receive-card");
+      expect(
+        await within(receive).findByText("1.374627 USDC"),
+      ).toBeInTheDocument();
+      expect(within(receive).queryByText("1.3746270 USDC")).toBeNull();
+    });
   });
 });
