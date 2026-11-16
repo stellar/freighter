@@ -252,14 +252,15 @@ export const CreateWallet = () => {
           position, which the shared scroll container would otherwise keep. */}
         <View.Content hasNoTopPadding key="backup">
           <ScreenTitle
-            title={t("Back Up Your New Recovery Phrase")}
+            title={t("Back up your Recovery Phrase")}
             subtitle={
               <Trans
                 i18nKey="Your recovery phrase is the only way to restore your new wallet. <strong>Keep it safe.</strong>"
-                components={{ strong: <strong /> }}
+                components={{
+                  strong: <strong className="CreateWallet__keep-safe" />,
+                }}
               />
             }
-            isSubtitleSecondary
           />
           <div className="CreateWallet__backup">
             <div className="CreateWallet__backup__phrase">
@@ -304,7 +305,7 @@ export const CreateWallet = () => {
                 onClick={() => setStep("password")}
                 data-testid="create-wallet-phrase-create"
               >
-                {t("Create")}
+                {t("Create a wallet")}
               </Button>
             </>
           ) : (
@@ -339,6 +340,24 @@ export const CreateWallet = () => {
           {errorMessage ? (
             <Notification variant="error" title={errorMessage} />
           ) : null}
+          <button
+            type="button"
+            className="AddWallet__row"
+            onClick={() => startNaming({ kind: "newPhrase" })}
+            data-testid="create-wallet-generate"
+          >
+            <span className="AddWallet__row__icon">
+              <Icon.Plus />
+            </span>
+            <span className="AddWallet__row__text">
+              <span className="AddWallet__row__title">
+                {t("Generate new recovery phrase")}
+              </span>
+              <span className="AddWallet__row__description">
+                {t("Create a wallet with a new recovery phrase")}
+              </span>
+            </span>
+          </button>
           {phraseGroups.map((group) => (
             <section
               key={group.key}
@@ -377,24 +396,6 @@ export const CreateWallet = () => {
               </button>
             </section>
           ))}
-          <button
-            type="button"
-            className="AddWallet__row"
-            onClick={() => startNaming({ kind: "newPhrase" })}
-            data-testid="create-wallet-generate"
-          >
-            <span className="AddWallet__row__icon">
-              <Icon.Plus />
-            </span>
-            <span className="AddWallet__row__text">
-              <span className="AddWallet__row__title">
-                {t("New recovery phrase")}
-              </span>
-              <span className="AddWallet__row__description">
-                {t("Create a wallet with a new recovery phrase")}
-              </span>
-            </span>
-          </button>
         </div>
       </View.Content>
       <SlideupModal

@@ -28,14 +28,14 @@ export const AddWallet = () => {
       testId: "add-wallet-create",
     },
     {
-      icon: <Icon.Key01 />,
+      icon: <Icon.Key02 />,
       title: t("Import Secret Key"),
       description: t("Import a wallet using its secret key."),
       link: ROUTES.importAccount,
       testId: "add-wallet-import-secret-key",
     },
     {
-      icon: <Icon.UsbFlashDrive />,
+      icon: <Icon.HardDrive />,
       title: t("Connect Hardware Wallet"),
       description: t("Connect your hardware wallet."),
       link: ROUTES.connectWallet,
@@ -52,7 +52,7 @@ export const AddWallet = () => {
       />
       <View.Content hasNoTopPadding>
         <ScreenTitle
-          title={t("Add account")}
+          title={t("Add accounts")}
           subtitle={t("Choose how to add a wallet.")}
         />
         <div className="AddWallet">

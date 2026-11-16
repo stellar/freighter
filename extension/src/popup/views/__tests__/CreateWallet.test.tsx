@@ -151,7 +151,7 @@ describe("CreateWallet", () => {
     jest.restoreAllMocks();
   });
 
-  it("lists each recovery phrase with its accounts, then Generate", () => {
+  it("lists Generate first, then each recovery phrase with its accounts", () => {
     renderView({ accounts: twoPhraseAccounts, sources: phraseSources });
 
     const groups = screen.getAllByTestId("create-wallet-group");
@@ -164,7 +164,12 @@ describe("CreateWallet", () => {
     expect(within(groups[1]).getByText("Account 3")).toBeInTheDocument();
     // The imported key is not a phrase and has nothing to add under.
     expect(screen.queryByText("Account 2")).not.toBeInTheDocument();
-    expect(screen.getByTestId("create-wallet-generate")).toBeInTheDocument();
+    const generate = screen.getByTestId("create-wallet-generate");
+    expect(generate).toHaveTextContent("Generate new recovery phrase");
+    expect(
+      generate.compareDocumentPosition(groups[0]) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it("adds under the phrase the user picked, with the name they set", async () => {
@@ -251,12 +256,18 @@ describe("CreateWallet", () => {
 
     const grid = await screen.findByTestId("create-wallet-phrase");
     expect(grid).not.toHaveTextContent("bloom");
+    expect(
+      screen.getByText("Back up your Recovery Phrase"),
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId("create-wallet-phrase-reveal"));
     expect(screen.getByTestId("create-wallet-phrase")).toHaveTextContent(
       "bloom",
     );
 
+    expect(screen.getByTestId("create-wallet-phrase-create")).toHaveTextContent(
+      "Create a wallet",
+    );
     fireEvent.click(screen.getByTestId("create-wallet-phrase-create"));
     await enterPassword();
 
@@ -304,6 +315,7 @@ describe("AddWallet", () => {
       </Wrapper>,
     );
 
+    expect(screen.getByText("Add accounts")).toBeInTheDocument();
     expect(
       [
         "add-wallet-create",

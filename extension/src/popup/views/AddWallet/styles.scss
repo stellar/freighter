@@ -46,7 +46,7 @@
       color: var(--sds-clr-gray-12);
       font-size: pxToRem(14px);
       line-height: pxToRem(20px);
-      font-weight: var(--font-weight-semi-bold);
+      font-weight: var(--sds-fw-semi-bold);
     }
 
     &__description {
@@ -54,7 +54,7 @@
       color: var(--sds-clr-gray-11);
       font-size: pxToRem(12px);
       line-height: pxToRem(18px);
-      font-weight: var(--font-weight-medium);
+      font-weight: var(--sds-fw-medium);
     }
   }
 }
