@@ -634,3 +634,49 @@ describe("color_scheme common property (#18)", () => {
     expect(buildCommonContext({} as never).color_scheme).toBe("light");
   });
 });
+
+describe("syncPreferredThemeTrait", () => {
+  const load = () => {
+    let mod: typeof import("helpers/metrics");
+    let settingsMod: { settingsDataSharingSelector: jest.Mock };
+    let sdk: typeof amplitude;
+    jest.isolateModules(() => {
+      mod = require("helpers/metrics");
+      settingsMod = require("popup/ducks/settings");
+      sdk = require("@amplitude/analytics-browser");
+    });
+    return { mod: mod!, settingsMod: settingsMod!, sdk: sdk! };
+  };
+
+  it("sets preferred_theme once per change", async () => {
+    const { mod, settingsMod, sdk } = load();
+    settingsMod.settingsDataSharingSelector.mockReturnValue(true);
+    await mod.initAmplitude();
+    (sdk.identify as jest.Mock).mockClear();
+    const set = jest.fn();
+    (sdk.Identify as unknown as jest.Mock).mockImplementation(() => ({ set }));
+
+    mod.syncPreferredThemeTrait("dark");
+    mod.syncPreferredThemeTrait("dark");
+    expect(sdk.identify).toHaveBeenCalledTimes(1);
+    expect(set).toHaveBeenCalledWith("preferred_theme", "dark");
+
+    mod.syncPreferredThemeTrait("system");
+    expect(sdk.identify).toHaveBeenCalledTimes(2);
+  });
+
+  it("sends nothing while data sharing is off, then sends once allowed", async () => {
+    const { mod, settingsMod, sdk } = load();
+    settingsMod.settingsDataSharingSelector.mockReturnValue(true);
+    await mod.initAmplitude();
+    (sdk.identify as jest.Mock).mockClear();
+
+    settingsMod.settingsDataSharingSelector.mockReturnValue(false);
+    mod.syncPreferredThemeTrait("light");
+    expect(sdk.identify).not.toHaveBeenCalled();
+
+    settingsMod.settingsDataSharingSelector.mockReturnValue(true);
+    mod.syncPreferredThemeTrait("light");
+    expect(sdk.identify).toHaveBeenCalledTimes(1);
+  });
+});

@@ -15,7 +15,11 @@ import { BUNDLE_ID_USER_PROPERTY_KEY, getBundleId } from "helpers/analytics";
 import { isDev } from "@shared/helpers/dev";
 import { truncatedPublicKey } from "helpers/stellar";
 import { isSidebarMode } from "popup/helpers/isSidebarMode";
-import { getAppliedColorScheme } from "popup/helpers/systemTheme";
+import { ThemePreference } from "@shared/constants/theme";
+import {
+  getAppliedColorScheme,
+  getThemePreferenceInEffect,
+} from "popup/helpers/systemTheme";
 import {
   settingsDataSharingSelector,
   settingsNetworkDetailsSelector,
@@ -384,6 +388,32 @@ export const deriveIdentifyTraits = (allAccounts: Account[]) => {
 // Only re-send Identify when a durable trait actually changed.
 let lastIdentifiedTraits: string | null = null;
 
+let lastIdentifiedThemePreference: ThemePreference | null = null;
+
+/**
+ * Sends the Settings theme choice as the `preferred_theme` user property.
+ * Unlike `color_scheme` (event-level, flips with the device), this only changes
+ * when the user changes the setting. Same consent and dirty-check rules as
+ * syncIdentifyTraits.
+ */
+export const syncPreferredThemeTrait = (preference: ThemePreference): void => {
+  if (preference === lastIdentifiedThemePreference) return;
+  if (!AMPLITUDE_KEY || !hasInitialized) return;
+  if (!settingsDataSharingSelector(store.getState())) return;
+
+  try {
+    const identify = new amplitude.Identify();
+    identify.set("preferred_theme", preference);
+    amplitude.identify(identify);
+    lastIdentifiedThemePreference = preference;
+  } catch (e) {
+    console.error(
+      `${LOG_MESSAGES.AMPLITUDE_PREFIX} ${LOG_MESSAGES.IDENTIFY_FAILED}`,
+      e,
+    );
+  }
+};
+
 /** Sends durable wallet-composition traits to Amplitude Identify (dirty-checked). */
 export const syncIdentifyTraits = (allAccounts: Account[]): void => {
   const traits = deriveIdentifyTraits(allAccounts);
@@ -732,4 +762,5 @@ export const storeAccountMetricsData = (
   localStorage.setItem(METRICS_DATA, JSON.stringify(metricsData));
 
   syncIdentifyTraits(allAccounts);
+  syncPreferredThemeTrait(getThemePreferenceInEffect());
 };

@@ -13,6 +13,7 @@ import {
 } from "./types";
 import { AssetsListItem } from "@shared/constants/soroban/asset-list";
 import { AutoLockTimeoutMinutes } from "@shared/constants/autoLock";
+import { ThemePreference } from "@shared/constants/theme";
 
 export interface TokenToAdd {
   domain: string;
@@ -444,6 +445,15 @@ export interface DismissEthenaLaunchBannerMessage extends BaseMessage {
   type: SERVICE_TYPES.DISMISS_ETHENA_LAUNCH_BANNER;
 }
 
+export interface GetThemePreferenceMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_THEME_PREFERENCE;
+}
+
+export interface SaveThemePreferenceMessage extends BaseMessage {
+  type: SERVICE_TYPES.SAVE_THEME_PREFERENCE;
+  themePreference: ThemePreference;
+}
+
 export interface GetRecentProtocolsMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_RECENT_PROTOCOLS;
 }
@@ -596,6 +606,8 @@ export type ServiceMessageRequest =
   | GetHiddenAssetsMessage
   | GetEthenaLaunchBannerDismissedMessage
   | DismissEthenaLaunchBannerMessage
+  | GetThemePreferenceMessage
+  | SaveThemePreferenceMessage
   | GetRecentProtocolsMessage
   | AddRecentProtocolMessage
   | ClearRecentProtocolsMessage

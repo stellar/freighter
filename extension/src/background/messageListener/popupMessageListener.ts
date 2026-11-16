@@ -93,6 +93,8 @@ import { changeAssetVisibility } from "./handlers/changeAssetVisibility";
 import { getHiddenAssets } from "./handlers/getHiddenAssets";
 import { getEthenaLaunchBannerDismissed } from "./handlers/getEthenaLaunchBannerDismissed";
 import { dismissEthenaLaunchBanner } from "./handlers/dismissEthenaLaunchBanner";
+import { getThemePreference } from "./handlers/getThemePreference";
+import { saveThemePreference } from "./handlers/saveThemePreference";
 import { loadBackendSettings } from "./handlers/loadBackendSettings";
 import { saveBlockaidOverrideState } from "./handlers/saveDebugOverride";
 import { getBlockaidOverrideState } from "./handlers/getDebugOverride";
@@ -605,6 +607,12 @@ export const popupMessageListener = (
       return dismissEthenaLaunchBanner({
         localStore,
       });
+    }
+    case SERVICE_TYPES.GET_THEME_PREFERENCE: {
+      return getThemePreference({ localStore });
+    }
+    case SERVICE_TYPES.SAVE_THEME_PREFERENCE: {
+      return saveThemePreference({ request, localStore });
     }
     case SERVICE_TYPES.GET_BLOCKAID_DEBUG_OVERRIDE: {
       return getBlockaidOverrideState({

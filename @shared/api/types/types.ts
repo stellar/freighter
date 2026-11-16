@@ -14,6 +14,7 @@ import {
   AssetsListItem,
 } from "../../constants/soroban/asset-list";
 import { AutoLockTimeoutMinutes } from "../../constants/autoLock";
+import { ThemePreference } from "../../constants/theme";
 
 export enum ActionStatus {
   IDLE = "IDLE",
@@ -138,6 +139,7 @@ export interface Response {
   hiddenCollectibles: Record<CollectibleKey, AssetVisibility>;
   isOverwritingAccount: boolean;
   isDismissed: boolean;
+  themePreference: ThemePreference;
   collectiblesList: CollectibleContract[];
   overriddenBlockaidResponse: string | null;
   recentProtocols: RecentProtocolEntry[];
