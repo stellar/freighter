@@ -246,12 +246,21 @@
 
   &__chips {
     display: flex;
-    flex-wrap: wrap;
     gap: pxToRem(8px);
+    overflow-x: auto;
+    // Without this the row's full width counts toward the popup's width.
+    contain: inline-size;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
 
   &__chip {
     display: inline-flex;
+    flex-shrink: 0;
+    white-space: nowrap;
     align-items: center;
     gap: pxToRem(6px);
     padding: pxToRem(4px) pxToRem(10px) pxToRem(4px) pxToRem(4px);
