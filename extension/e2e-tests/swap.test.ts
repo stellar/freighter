@@ -444,13 +444,14 @@ test("search with a Soroban contract address lists the contract token", async ({
   test.slow();
 
   const stubOverrides = async () => {
-    await context.unroute(ASSET_SEARCH_ROUTE);
-    await context.route(ASSET_SEARCH_ROUTE, (route) =>
-      route.fulfill(
-        assetSearchResponse([
-          { asset: SOROBAN_CONTRACT_ADDRESS, code: "TKN", decimals: 18 },
-        ]),
-      ),
+    // A pasted contract ID is looked up through token-details, not the
+    // asset search.
+    await page.route(
+      `**/token-details/${SOROBAN_CONTRACT_ADDRESS}**`,
+      (route) =>
+        route.fulfill({
+          json: { name: "TKN", symbol: "TKN", decimals: 18 },
+        }),
     );
     await context.route(TRENDING_ASSETS_ROUTE, (route) =>
       route.fulfill(assetSearchResponse([])),

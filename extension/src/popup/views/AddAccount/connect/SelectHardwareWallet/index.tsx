@@ -21,6 +21,7 @@ const WalletOption = ({
 }: {
   walletType: ConfigurableWalletType;
 }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -33,12 +34,14 @@ const WalletOption = ({
     );
   };
 
+  const Logo = walletAssets[walletType].logo;
+
   return (
     <li
       className="SelectHardwareWallet__option"
       onClick={() => handleContinue(walletType)}
     >
-      <img src={walletAssets[walletType].logo} alt={`${walletType} logo`} />
+      <Logo role="img" aria-label={t("{{walletType}} logo", { walletType })} />
     </li>
   );
 };
