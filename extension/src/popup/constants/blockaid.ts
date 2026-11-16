@@ -7,6 +7,7 @@ export enum SecurityLevel {
   SUSPICIOUS = "SUSPICIOUS",
   MALICIOUS = "MALICIOUS",
   UNABLE_TO_SCAN = "UNABLE_TO_SCAN",
+  LIKELY_TO_FAIL = "LIKELY_TO_FAIL",
 }
 
 /**
@@ -28,8 +29,9 @@ export interface BlockaidWarning {
 const SECURITY_LEVEL_SEVERITY: Record<SecurityLevel, number> = {
   [SecurityLevel.SAFE]: 0,
   [SecurityLevel.UNABLE_TO_SCAN]: 1,
-  [SecurityLevel.SUSPICIOUS]: 2,
-  [SecurityLevel.MALICIOUS]: 3,
+  [SecurityLevel.LIKELY_TO_FAIL]: 2,
+  [SecurityLevel.SUSPICIOUS]: 3,
+  [SecurityLevel.MALICIOUS]: 4,
 };
 
 /**

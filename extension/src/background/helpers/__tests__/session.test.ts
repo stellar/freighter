@@ -219,7 +219,44 @@ describe("buildHasPrivateKeySelector", () => {
     } as any);
 
     await expect(
-      selector({ session: { isHardwareWalletLocked: false } } as any),
+      selector({
+        session: { isHardwareWalletLocked: false, publicKey: "G-HW-KEY" },
+      } as any),
     ).resolves.toBe(true);
+  });
+
+  it("returns false for idle-locked hardware-wallet sessions", async () => {
+    mockGetIsHardwareWalletActive.mockResolvedValue(true);
+    const selector = buildHasPrivateKeySelector({
+      getItem: jest.fn().mockResolvedValue(null),
+    } as any);
+
+    await expect(
+      selector({
+        session: { isHardwareWalletLocked: true, publicKey: "G-HW-KEY" },
+      } as any),
+    ).resolves.toBe(false);
+  });
+
+  // The browser wipes `storage.session` on restart and on extension
+  // reload/update. The rehydrated session has no public key and
+  // `isHardwareWalletLocked` falls back to `false`. That empty session
+  // must read as locked, or the unlock screen never navigates away.
+  it("returns false for a wiped hardware-wallet session with no public key", async () => {
+    mockGetIsHardwareWalletActive.mockResolvedValue(true);
+    const selector = buildHasPrivateKeySelector({
+      getItem: jest.fn().mockResolvedValue(null),
+    } as any);
+
+    await expect(
+      selector({
+        session: {
+          publicKey: "",
+          hashKey: { key: "" },
+          allAccounts: [],
+          isHardwareWalletLocked: false,
+        },
+      } as any),
+    ).resolves.toBe(false);
   });
 });
