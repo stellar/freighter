@@ -275,21 +275,40 @@ export const sortBalancesByValue = (
     .map((x) => x.b);
 };
 
-export const getTotalUsd = (prices: ApiTokenPrices, balances: AssetType[]) => {
-  return Object.keys(prices).reduce((prev, curr) => {
-    const asset = getAssetFromCanonical(curr);
-    const priceBalance = getBalanceByAsset(asset, balances);
-    if (!priceBalance) {
-      return prev;
-    }
-    const currentAssetBalance = getTotalInWholeUnits(priceBalance);
-    const currentPrice = prices[curr] ? prices[curr].currentPrice : "0";
-    const currentUsdBalance = new BigNumber(currentPrice).multipliedBy(
-      currentAssetBalance,
-    );
-    return currentUsdBalance.plus(prev);
-  }, new BigNumber(0));
-};
+/**
+ * Sums the USD value of the held balances, and reports whether any held
+ * balance has a price. One lookup gives both, so the label and the total
+ * always count the same prices.
+ *
+ * The price map can hold tokens the account does not hold, such as a swap
+ * destination in the price cache. Those do not count. A token with a null or
+ * empty price adds nothing.
+ */
+export const getTotalUsd = (prices: ApiTokenPrices, balances: AssetType[]) =>
+  Object.keys(prices).reduce(
+    (acc, canonical) => {
+      const currentPrice = prices[canonical]?.currentPrice;
+      if (!currentPrice) {
+        return acc;
+      }
+      const balance = getBalanceByAsset(
+        getAssetFromCanonical(canonical),
+        balances,
+      );
+      if (!balance) {
+        return acc;
+      }
+      return {
+        totalUsd: acc.totalUsd.plus(
+          new BigNumber(currentPrice).multipliedBy(
+            getTotalInWholeUnits(balance),
+          ),
+        ),
+        hasPrices: true,
+      };
+    },
+    { totalUsd: new BigNumber(0), hasPrices: false },
+  );
 
 /**
  * Picks what to show for an account's total USD value.
@@ -301,7 +320,7 @@ export const getTotalUsdLabel = ({
   hasError,
   hasPriceFeed,
   isFunded,
-  tokenPrices,
+  hasPrices = false,
   totalUsd,
 }: {
   /** Account data failed to load. */
@@ -309,7 +328,11 @@ export const getTotalUsdLabel = ({
   /** Whether the network prices tokens at all. */
   hasPriceFeed: boolean;
   isFunded: boolean;
-  tokenPrices?: ApiTokenPrices | null;
+  /**
+   * At least one held balance has a price. See {@link getTotalUsd}. Omit
+   * where no prices were fetched.
+   */
+  hasPrices?: boolean;
   /** Omit where no total was computed; the branches that ignore it win. */
   totalUsd?: BigNumber;
 }) => {
@@ -326,8 +349,9 @@ export const getTotalUsdLabel = ({
   }
 
   // A funded account on a network that prices tokens, yet nothing priced —
-  // the total exists but could not be read.
-  if (!tokenPrices || Object.keys(tokenPrices).length === 0) {
+  // the total exists but could not be read. One priced token is enough: the
+  // total is then a partial sum.
+  if (!hasPrices) {
     return NO_FIAT_VALUE;
   }
 

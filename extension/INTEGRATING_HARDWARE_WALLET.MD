@@ -79,11 +79,13 @@ export const createWalletConnection: CreateWalletConnection = {
    wallet. Next, we'll tell Freighter how to show information about your wallet.
    Scroll down to `walletAssets`. Here we'll set the key `logo` with your
    hardware wallet's logo. This will appear in a button when Freighter lists all
-   possible hardware wallets to connect with. Drop your assets into the
-   [src/popup/assets/](src/popup/assets/) folder. You can use almost any image
-   type, though SVG's are recommended. You can import image paths at the top of
-   file like you would any other TS file. Image dimensions are listed in the
-   `WalletAssets` type.
+   possible hardware wallets to connect with. Drop a single-color SVG into the
+   [src/popup/assets/](src/popup/assets/) folder with `fill="currentColor"` on
+   its root `<svg>` element, and import it as a React component with the
+   `?react` suffix (e.g.
+   `import MyWalletLogo from "popup/assets/my-wallet-logo.svg?react"`). The
+   logo then takes the theme's text color, so it stays visible in both light and
+   dark mode.
 
 7. Next we'll set a method on `pluginWalletInfo`. This will be general
    information that users will see when they choose to connect to your hardware
