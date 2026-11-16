@@ -1,6 +1,6 @@
 import type { BrowserContext, Page } from "@playwright/test";
 import { test, expect } from "./test-fixtures";
-import { loginToTestAccount, PASSWORD } from "./helpers/login";
+import { loginToTestAccount, PASSWORD, switchToMainnet } from "./helpers/login";
 import { goToSettings } from "./helpers/network";
 
 const lockAndUnlock = async (page: Page) => {
@@ -11,6 +11,9 @@ const lockAndUnlock = async (page: Page) => {
   await page.getByRole("button", { name: "Unlock" }).click();
 };
 
+// The launch shows only on Mainnet, and logging in leaves the wallet on
+// Testnet, so the tests below switch to Mainnet first.
+
 test("a wallet set up on this install skips the Ethena launch promo, which Home's banner still opens", async ({
   page,
   extensionId,
@@ -18,6 +21,7 @@ test("a wallet set up on this install skips the Ethena launch promo, which Home'
 }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId, context });
+  await switchToMainnet(page);
 
   // Straight Home: only wallets that predate the launch get it by themselves.
   await lockAndUnlock(page);
@@ -37,6 +41,7 @@ test("a wallet that predates the launch sees the Ethena launch promo once, on it
 }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId, context });
+  await switchToMainnet(page);
   // What installing the launch build over an existing wallet records.
   await page.evaluate(() =>
     chrome.storage.local.set({ ethenaLaunchPromoStatus: "pending" }),
@@ -57,6 +62,39 @@ test("a wallet that predates the launch sees the Ethena launch promo once, on it
   await expect(page.getByTestId("ethena-launch")).toHaveCount(0);
 });
 
+test("off Mainnet the Ethena launch stays hidden, and a wallet that predates it is still owed the promo", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  // Logging in leaves the wallet on Testnet.
+  await loginToTestAccount({ page, extensionId, context });
+  await page.evaluate(() =>
+    chrome.storage.local.set({ ethenaLaunchPromoStatus: "pending" }),
+  );
+
+  // Unlocking on Testnet goes straight Home.
+  await lockAndUnlock(page);
+  await expect(page.getByTestId("account-view")).toBeVisible({
+    timeout: 30000,
+  });
+  await expect(page.getByTestId("ethena-launch")).toHaveCount(0);
+  // The tokens load after the banner would have: by then it would be there.
+  await expect(page.getByTestId("account-assets-item").first()).toBeVisible({
+    timeout: 30000,
+  });
+  await expect(page.getByTestId("ethena-launch-banner")).toHaveCount(0);
+
+  // Still owed: the first unlock on Mainnet shows it.
+  await switchToMainnet(page);
+  await expect(page.getByTestId("ethena-launch-banner")).toBeVisible();
+  await lockAndUnlock(page);
+  await expect(page.getByTestId("ethena-launch")).toBeVisible({
+    timeout: 30000,
+  });
+});
+
 test("Ethena launch promo sits in Home's frame in a wide window, filling it", async ({
   page,
   extensionId,
@@ -64,6 +102,7 @@ test("Ethena launch promo sits in Home's frame in a wide window, filling it", as
 }) => {
   // The fixture's window is wide, like fullscreen mode's tab.
   await loginToTestAccount({ page, extensionId, context });
+  await switchToMainnet(page);
   const frameOf = (selector: string) =>
     page.locator(selector).evaluate((el) => {
       const { x, width, height } = el.getBoundingClientRect();
@@ -100,6 +139,7 @@ test("Ethena launch promo's token actions are all the same size", async ({
   context,
 }) => {
   await loginToTestAccount({ page, extensionId, context });
+  await switchToMainnet(page);
   await page.getByTestId("ethena-launch-banner-open").click();
   await expect(page.getByTestId("ethena-launch")).toBeVisible();
 
@@ -128,6 +168,7 @@ test("Ethena launch promo's scroll cue scrolls the tokens into view", async ({
   context,
 }) => {
   await loginToTestAccount({ page, extensionId, context });
+  await switchToMainnet(page);
   await page.getByTestId("ethena-launch-banner-open").click();
   const bar = page.getByTestId("ethena-launch-header");
   const cue = page.getByRole("button", { name: "Scroll to discover tokens" });
@@ -154,6 +195,7 @@ test("Ethena launch promo comes back from Receive as it was left", async ({
   context,
 }) => {
   await loginToTestAccount({ page, extensionId, context });
+  await switchToMainnet(page);
   await page.getByTestId("ethena-launch-banner-open").click();
   const promo = page.getByTestId("ethena-launch");
   await expect(promo).toBeVisible();
@@ -179,6 +221,7 @@ test("Esc closes the address screen, then the Ethena launch promo", async ({
   context,
 }) => {
   await loginToTestAccount({ page, extensionId, context });
+  await switchToMainnet(page);
   await page.getByTestId("ethena-launch-banner-open").click();
   await expect(page.getByTestId("ethena-launch")).toBeVisible();
 
@@ -199,6 +242,7 @@ test("Ethena launch promo keeps its close button on a bar as the page scrolls", 
   context,
 }) => {
   await loginToTestAccount({ page, extensionId, context });
+  await switchToMainnet(page);
   await page.getByTestId("ethena-launch-banner-open").click();
   const promo = page.getByTestId("ethena-launch");
   const close = page.getByTestId("ethena-launch-close");
@@ -259,6 +303,7 @@ for (const colorScheme of ["dark", "light"] as const) {
   }) => {
     await page.emulateMedia({ colorScheme });
     await loginToTestAccount({ page, extensionId, context });
+    await switchToMainnet(page);
     const banner = page.getByTestId("ethena-launch-banner");
     await expect(banner).toBeVisible();
     // Off the banner, so the shot isn't of its hover state.

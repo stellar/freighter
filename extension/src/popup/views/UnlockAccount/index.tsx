@@ -17,6 +17,8 @@ import {
   confirmPassword,
   hasPrivateKeySelector,
 } from "popup/ducks/accountServices";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { isEthenaLaunchNetwork } from "popup/helpers/ethenaLaunch";
 import {
   claimEthenaLaunchPromo,
   claimRebrandAnnouncement,
@@ -43,6 +45,9 @@ export const UnlockAccount = () => {
   const dispatch = useDispatch<AppDispatch>();
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
   const authError = useSelector(authErrorSelector);
+  const isLaunchNetwork = isEthenaLaunchNetwork(
+    useSelector(settingsNetworkDetailsSelector),
+  );
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   // Track the initial auth state so we don't auto-navigate if the
   // component happens to mount while the wallet is already unlocked
@@ -76,9 +81,10 @@ export const UnlockAccount = () => {
     // surfaces unlocked by the same broadcast only the first shows it.
     //
     // Wallets that pre-date the Ethena launch build get its one-time promo
-    // the same way, but only on the way Home: a dApp request isn't held up
-    // for it, and at most one takeover plays per unlock. Either way the
-    // promo stays owed until a later unlock claims it.
+    // the same way, but only on the way Home and only on Mainnet: a dApp
+    // request isn't held up for it, its tokens are Mainnet's, and at most one
+    // takeover plays per unlock. Either way the promo stays owed until a
+    // later unlock claims it.
     const continueToDestination = async () => {
       let shouldShowAnnouncement = false;
       try {
@@ -96,7 +102,7 @@ export const UnlockAccount = () => {
       }
 
       let shouldShowLaunchPromo = false;
-      if (destination === ROUTES.account) {
+      if (destination === ROUTES.account && isLaunchNetwork) {
         try {
           shouldShowLaunchPromo = await claimEthenaLaunchPromo();
         } catch {
@@ -116,7 +122,7 @@ export const UnlockAccount = () => {
     };
 
     void continueToDestination();
-  }, [hasPrivateKey, destination, queryParams, navigate]);
+  }, [hasPrivateKey, destination, queryParams, navigate, isLaunchNetwork]);
 
   return (
     <React.Fragment>

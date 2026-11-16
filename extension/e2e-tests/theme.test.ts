@@ -1,6 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { test, expect } from "./test-fixtures";
-import { loginToTestAccount } from "./helpers/login";
+import { loginToTestAccount, switchToMainnet } from "./helpers/login";
 import { goToSettings } from "./helpers/network";
 
 // Light/dark smoke (freighter-private#18): the UI follows the device color
@@ -147,6 +147,7 @@ test("Ethena launch banner only adds an outline in dark mode", async ({
 }) => {
   await page.emulateMedia({ colorScheme: "light" });
   await loginToTestAccount({ page, extensionId, context });
+  await switchToMainnet(page);
   const banner = page.getByTestId("ethena-launch-banner");
   await expect(banner).toBeVisible();
   // Off the banner, so neither render is of its hover state.
@@ -196,6 +197,7 @@ test("Ethena launch promo looks the same in both themes", async ({
 }) => {
   await page.emulateMedia({ colorScheme: "light" });
   await loginToTestAccount({ page, extensionId, context });
+  await switchToMainnet(page);
   await page.getByTestId("ethena-launch-banner-open").click();
   const promo = page.getByTestId("ethena-launch");
   await expect(promo).toBeVisible();

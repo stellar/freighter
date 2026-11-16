@@ -5,6 +5,13 @@ import { Route, Routes } from "react-router-dom";
 
 import * as ApiInternal from "@shared/api/internal";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import {
+  FUTURENET_NETWORK_DETAILS,
+  MAINNET_NETWORK_DETAILS,
+  NetworkDetails,
+  TESTNET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
+import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 import { TEST_PUBLIC_KEY, Wrapper, mockAccounts } from "popup/__testHelpers__";
 import { UnlockAccount } from "popup/views/UnlockAccount";
@@ -25,6 +32,14 @@ const unlockedResponse = {
   bipPath: "",
 };
 
+// A network the user added, pointed at Mainnet: still a custom network.
+const CUSTOM_MAINNET_NETWORK_DETAILS: NetworkDetails = {
+  ...MAINNET_NETWORK_DETAILS,
+  network: CUSTOM_NETWORK,
+  networkName: "My Mainnet node",
+  networkUrl: "https://horizon.example.com",
+};
+
 const renderLockScreen = (
   entry:
     | string
@@ -33,9 +48,13 @@ const renderLockScreen = (
         search?: string;
         state?: unknown;
       } = ROUTES.unlockAccount,
+  networkDetails: NetworkDetails = MAINNET_NETWORK_DETAILS,
 ) =>
   render(
-    <Wrapper routes={[entry]} state={{ auth: lockedAuth }}>
+    <Wrapper
+      routes={[entry]}
+      state={{ auth: lockedAuth, settings: { networkDetails } }}
+    >
       <Routes>
         <Route path={ROUTES.unlockAccount} element={<UnlockAccount />} />
         <Route
@@ -209,6 +228,34 @@ describe("UnlockAccount", () => {
     ).toBeInTheDocument();
     expect(claimPromo).not.toHaveBeenCalled();
   });
+
+  // USDe and sUSDe, and the pages the promo links to, are Mainnet's.
+  it.each([
+    ["Testnet", TESTNET_NETWORK_DETAILS],
+    ["Futurenet", FUTURENET_NETWORK_DETAILS],
+    [
+      "a custom network, even one pointing at Mainnet",
+      CUSTOM_MAINNET_NETWORK_DETAILS,
+    ],
+  ])(
+    "goes straight Home on %s, leaving the launch promo owed",
+    async (_networkName, networkDetails) => {
+      jest
+        .spyOn(ApiInternal, "confirmPassword")
+        .mockResolvedValue(unlockedResponse as any);
+      const claimPromo = jest
+        .spyOn(ApiInternal, "claimEthenaLaunchPromo")
+        .mockResolvedValue(true);
+      renderLockScreen(ROUTES.unlockAccount, networkDetails);
+
+      await typePasswordAndUnlock("my password");
+
+      expect(
+        await screen.findByTestId("account-view-stub"),
+      ).toBeInTheDocument();
+      expect(claimPromo).not.toHaveBeenCalled();
+    },
+  );
 
   it("shows Incorrect Password and stays locked on a wrong password", async () => {
     jest

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { captureException } from "@sentry/browser";
 
 import {
@@ -10,6 +11,8 @@ import {
 } from "@shared/api/internal";
 
 import { ROUTES } from "popup/constants/routes";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { isEthenaLaunchNetwork } from "popup/helpers/ethenaLaunch";
 import { navigateTo } from "popup/helpers/navigate";
 import { emitEthenaLaunchBannerDismissed } from "popup/metrics/ethenaLaunch";
 import EthenaLaunchBannerGlow from "popup/assets/ethena-launch-banner-glow.svg";
@@ -21,8 +24,16 @@ export const EthenaLaunchBanner = () => {
   const navigate = useNavigate();
   const [isDismissed, setIsDismissed] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const isLaunchNetwork = isEthenaLaunchNetwork(
+    useSelector(settingsNetworkDetailsSelector),
+  );
 
   useEffect(() => {
+    // Off Mainnet the banner stays hidden, so there's nothing to look up.
+    if (!isLaunchNetwork) {
+      return;
+    }
+
     const checkDismissedStatus = async () => {
       try {
         const dismissed = await getEthenaLaunchBannerDismissed();
@@ -38,7 +49,7 @@ export const EthenaLaunchBanner = () => {
     };
 
     checkDismissedStatus();
-  }, []);
+  }, [isLaunchNetwork]);
 
   const handleDismiss = async () => {
     try {
@@ -57,8 +68,8 @@ export const EthenaLaunchBanner = () => {
     navigateTo(ROUTES.ethenaLaunch, navigate);
   };
 
-  // Don't show banner if loading or if dismissed
-  if (isLoading || isDismissed) {
+  // Don't show banner off Mainnet, while loading, or once dismissed
+  if (!isLaunchNetwork || isLoading || isDismissed) {
     return null;
   }
 

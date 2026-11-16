@@ -5,6 +5,13 @@ import { Route, Routes } from "react-router-dom";
 import { captureException } from "@sentry/browser";
 
 import * as ApiInternal from "@shared/api/internal";
+import {
+  FUTURENET_NETWORK_DETAILS,
+  MAINNET_NETWORK_DETAILS,
+  NetworkDetails,
+  TESTNET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
+import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
 import { emitMetric } from "helpers/metrics";
 import { ROUTES } from "popup/constants/routes";
 import { Wrapper } from "popup/__testHelpers__";
@@ -20,9 +27,17 @@ jest.mock("helpers/metrics", () => ({
   emitMetric: jest.fn(),
 }));
 
-const renderBanner = () =>
+// A network the user added, pointed at Mainnet: still a custom network.
+const CUSTOM_MAINNET_NETWORK_DETAILS: NetworkDetails = {
+  ...MAINNET_NETWORK_DETAILS,
+  network: CUSTOM_NETWORK,
+  networkName: "My Mainnet node",
+  networkUrl: "https://horizon.example.com",
+};
+
+const renderBanner = (networkDetails = MAINNET_NETWORK_DETAILS) =>
   render(
-    <Wrapper state={{}} routes={[ROUTES.account]}>
+    <Wrapper state={{ settings: { networkDetails } }} routes={[ROUTES.account]}>
       <Routes>
         <Route path={ROUTES.account} element={<EthenaLaunchBanner />} />
         <Route
@@ -53,6 +68,27 @@ describe("EthenaLaunchBanner", () => {
       screen.getByText("USDe and sUSDe are now available."),
     ).toBeInTheDocument();
   });
+
+  // USDe and sUSDe, and the pages the promo links to, are Mainnet's.
+  it.each([
+    ["Testnet", TESTNET_NETWORK_DETAILS],
+    ["Futurenet", FUTURENET_NETWORK_DETAILS],
+    [
+      "a custom network, even one pointing at Mainnet",
+      CUSTOM_MAINNET_NETWORK_DETAILS,
+    ],
+  ])(
+    "stays hidden on %s, without looking up its dismissal",
+    (_networkName, networkDetails) => {
+      const lookup = jest
+        .spyOn(ApiInternal, "getEthenaLaunchBannerDismissed")
+        .mockResolvedValue(false);
+      renderBanner(networkDetails);
+
+      expect(lookup).not.toHaveBeenCalled();
+      expect(screen.queryByTestId("ethena-launch-banner")).toBeNull();
+    },
+  );
 
   it("stays hidden once dismissed", async () => {
     const lookup = jest
