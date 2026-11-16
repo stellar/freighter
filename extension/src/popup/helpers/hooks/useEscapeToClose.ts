@@ -17,6 +17,11 @@ export const useEscapeToClose = (onClose: () => void) => {
         return;
       }
       event.preventDefault();
+      // A held Esc closes one screen, not the ones under it too. Its repeats
+      // still need marking handled above, or Chrome closes the popup on them.
+      if (event.repeat) {
+        return;
+      }
       onCloseRef.current();
     };
 

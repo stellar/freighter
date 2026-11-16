@@ -14,6 +14,20 @@ describe("useEscapeToClose", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it("closes one screen per press: a held Esc's repeats stay handled but close nothing more", () => {
+    const onClose = jest.fn();
+    renderHook(() => useEscapeToClose(onClose));
+    // Holding the key, the browser repeats keydown with `repeat` set.
+    const holdEscape = () =>
+      fireEvent.keyDown(document, { key: "Escape", repeat: true });
+
+    expect(pressEscape()).toBe(false);
+    expect(holdEscape()).toBe(false);
+    expect(holdEscape()).toBe(false);
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it("ignores other keys", () => {
     const onClose = jest.fn();
     renderHook(() => useEscapeToClose(onClose));
