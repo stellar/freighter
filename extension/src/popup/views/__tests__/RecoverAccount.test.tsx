@@ -113,6 +113,13 @@ const fillPasswordForm = async () => {
     { target: { value: "Password1!" } },
   );
   fireEvent.click(screen.getByTestId("account-creator-termsOfUse-input"));
+  // Only the secret-key import asks for this.
+  const acknowledgement = screen.queryByTestId(
+    "account-creator-importAcknowledgement-input",
+  );
+  if (acknowledgement) {
+    fireEvent.click(acknowledgement);
+  }
   await waitFor(() =>
     expect(screen.getByTestId("account-creator-submit")).not.toBeDisabled(),
   );
@@ -233,6 +240,49 @@ describe("Recover Account View", () => {
       }),
     );
     expect(recoverSpy).not.toHaveBeenCalled();
+  });
+
+  it("requires the can't-be-recovered checkbox for a secret key", async () => {
+    renderView();
+
+    await enterSecret(SECRET_KEY);
+    fireEvent.change(
+      await screen.findByTestId("account-creator-password-input"),
+      { target: { value: "Password1!" } },
+    );
+    fireEvent.change(
+      screen.getByTestId("account-creator-confirm-password-input"),
+      { target: { value: "Password1!" } },
+    );
+    fireEvent.click(screen.getByTestId("account-creator-termsOfUse-input"));
+
+    const acknowledgement = screen.getByTestId(
+      "account-creator-importAcknowledgement-input",
+    );
+    expect(
+      screen.getByText(
+        "I understand imported secret keys can't be recovered and must be stored securely",
+      ),
+    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByTestId("account-creator-submit")).toBeDisabled(),
+    );
+
+    fireEvent.click(acknowledgement);
+    await waitFor(() =>
+      expect(screen.getByTestId("account-creator-submit")).not.toBeDisabled(),
+    );
+  });
+
+  it("doesn't ask a phrase import for the secret-key checkbox", async () => {
+    renderView();
+
+    await enterSecret(PHRASE);
+    await screen.findByTestId("account-creator-password-input");
+
+    expect(
+      screen.queryByTestId("account-creator-importAcknowledgement-input"),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps the input when going back from the password step", async () => {
