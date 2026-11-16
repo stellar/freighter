@@ -68,4 +68,18 @@ describe("ReviewTx swap rows", () => {
     );
     expect(screen.queryByTestId("review-tx-memo")).not.toBeInTheDocument();
   });
+
+  it("shows the receive amount without the quote's trailing zeros", () => {
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <ReviewTx
+          {...swapProps}
+          dstAsset={{ ...swapProps.dstAsset, amount: "1234.5670000" }}
+        />
+      </Wrapper>,
+    );
+    const destination = screen.getByTestId("review-tx-send-destination");
+    expect(destination).toHaveTextContent("1,234.567 AQUA");
+    expect(destination).not.toHaveTextContent("1234.5670000");
+  });
 });
