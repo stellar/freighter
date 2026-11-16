@@ -55,7 +55,13 @@ const openAndUnlock = async (session: ExtensionSession): Promise<Page> => {
  */
 const launchUpgradedFromFixture = async (profileDir: string) => {
   const fresh = await launchExtension(profileDir);
-  await replaceLocalStorage(fresh, preV2Storage);
+  try {
+    await replaceLocalStorage(fresh, preV2Storage);
+  } catch (error) {
+    // The caller never gets `fresh`, so close it here.
+    await fresh.context.close().catch(() => {});
+    throw error;
+  }
   return relaunchExtension(fresh, profileDir);
 };
 

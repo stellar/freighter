@@ -51,11 +51,26 @@ export const removeProfileDir = (profileDir: string) =>
  * The wait only proves this launch's pass finished when storage started
  * below `LATEST_STORAGE_VERSION`; otherwise it can return on the previous
  * launch's values. `relaunchExtension` guarantees that.
+ *
+ * If anything after the launch fails, the browser is closed before the error
+ * is rethrown: the caller never gets this session, so it couldn't close it,
+ * and would remove a profile Chromium still has open.
  */
 export const launchExtension = async (
   profileDir: string,
 ): Promise<ExtensionSession> => {
   const context = await launchExtensionContext(profileDir);
+  try {
+    return await waitForInstallPass(context);
+  } catch (error) {
+    await context.close().catch(() => {});
+    throw error;
+  }
+};
+
+const waitForInstallPass = async (
+  context: BrowserContext,
+): Promise<ExtensionSession> => {
   const serviceWorker = await getServiceWorker(context);
   const extensionId = serviceWorker.url().split("/")[2];
   const session = { context, extensionId, serviceWorker };
