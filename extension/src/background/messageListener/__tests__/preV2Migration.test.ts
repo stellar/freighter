@@ -24,6 +24,7 @@ import {
 } from "background/messageListener/helpers/test-helpers";
 import { migratePreV2Storage } from "background/helpers/pre-v2-migration";
 import { getAnalyticsUserId } from "background/helpers/analyticsUserId";
+import * as secretSources from "background/helpers/secret-sources";
 import {
   ACCOUNT_NAME_LIST_ID,
   ACCOUNT_PROVENANCE_ID,
@@ -507,6 +508,77 @@ describe("pre-V2 storage migration", () => {
         [PHRASE.userId]: [0, 1, 2],
       });
       expect(await mockDataStorage.getItem(PENDING_ATTRIBUTION_ID)).toEqual([]);
+    });
+
+    describe("when the identity phrase does not resolve", () => {
+      // The first getPhraseSourceId call of the pass is the identity's.
+      const failIdentityOnce = () =>
+        jest
+          .spyOn(secretSources, "getPhraseSourceId")
+          .mockRejectedValueOnce(new Error("derive failed"));
+
+      afterEach(() => {
+        jest.restoreAllMocks();
+      });
+
+      it("keeps the import pending and pins the phrase, even with the import first", async () => {
+        await mockDataStorage.setItem(KEY_ID_LIST, [
+          PRE_V2_IMPORTED_ID,
+          PRE_V2_DERIVED_0_ID,
+          PRE_V2_DERIVED_1_ID,
+          PRE_V2_HW_ID,
+        ]);
+        failIdentityOnce();
+
+        expect((await unlock()).error).toBeUndefined();
+
+        expect(await mockDataStorage.getItem(PINNED_SOURCE_ID)).toBe(
+          PRE_UPGRADE_METRICS_USER_ID,
+        );
+        expect(await mockDataStorage.getItem(PENDING_ATTRIBUTION_ID)).toEqual([
+          PRE_V2_IMPORTED_ID,
+        ]);
+        expect(
+          Object.keys(await mockDataStorage.getItem(SECRET_SOURCES_ID)),
+        ).toEqual([PHRASE.userId]);
+
+        // The next unlock resolves the phrase and attributes the import
+        // without moving the pin.
+        jest.restoreAllMocks();
+        mockSessionStore.dispatch(sessionSlice.actions.reset());
+        await unlock();
+
+        const sourceId = await importedSourceId();
+        expect(await mockDataStorage.getItem(PINNED_SOURCE_ID)).toBe(
+          PRE_UPGRADE_METRICS_USER_ID,
+        );
+        expect(
+          (await mockDataStorage.getItem(ACCOUNT_PROVENANCE_ID))[
+            PRE_V2_IMPORTED_ID
+          ],
+        ).toEqual({ type: AccountType.IMPORTED, sourceId });
+        expect(
+          (await mockDataStorage.getItem(SECRET_SOURCES_ID))[sourceId].label,
+        ).toBe("Secret Key 1");
+        expect(await mockDataStorage.getItem(PENDING_ATTRIBUTION_ID)).toEqual(
+          [],
+        );
+      });
+
+      it("writes no source or pin when only the import is pending", async () => {
+        await mockDataStorage.setItem(PENDING_ATTRIBUTION_ID, [
+          PRE_V2_IMPORTED_ID,
+        ]);
+        failIdentityOnce();
+
+        expect((await unlock()).error).toBeUndefined();
+
+        expect(await mockDataStorage.getItem(PINNED_SOURCE_ID)).toBeFalsy();
+        expect(await mockDataStorage.getItem(SECRET_SOURCES_ID)).toBeFalsy();
+        expect(await mockDataStorage.getItem(PENDING_ATTRIBUTION_ID)).toEqual([
+          PRE_V2_IMPORTED_ID,
+        ]);
+      });
     });
 
     describe("after a recovery before the first unlock", () => {

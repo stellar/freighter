@@ -76,6 +76,18 @@ const findDerivationIndex = (
   - Any other keystore with `extra.imported` set becomes its own "Secret Key
     N". The phrase older builds stamped into it is not its source.
 
+  Mobile's pass trusts its import flag and makes every flagged account a
+  "Secret Key N", even one the phrase derives. Mobile never flagged derived
+  accounts, so the flag is accurate there. Here a recovered account and a real
+  import look the same on disk, so derivation is the only way to tell them
+  apart.
+
+  If the wallet has an identity keystore whose phrase does not resolve, imports
+  stay pending until an unlock resolves it, so an import never takes the pin
+  that belongs to the phrase. Phrase accounts are still attributed: every
+  pre-V2 non-hardware keystore carries the same wallet phrase, so whichever
+  registers first pins it.
+
   Every write is idempotent and an id leaves the pending list only once its
   provenance is written, so an interrupted pass resumes on the next unlock. A
   hardware-only session never runs this; its accounts stay pending until the
@@ -172,6 +184,8 @@ export const attributePendingAccounts = async ({
     }
   }
 
+  const identityUnresolved = Boolean(identityKeyId) && !identityId;
+
   let attributed = false;
 
   // `keyIdList` order, so "Secret Key N" follows the order accounts were added.
@@ -184,6 +198,10 @@ export const attributePendingAccounts = async ({
         : null;
 
       if (key.extra?.imported && index === null) {
+        if (identityUnresolved) {
+          // Left pending: registering it now could pin the import.
+          continue;
+        }
         const sourceId = await getSecretKeySourceId(key.privateKey);
         await addSecretSource({
           localStore,
