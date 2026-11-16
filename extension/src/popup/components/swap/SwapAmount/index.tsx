@@ -28,6 +28,7 @@ import {
   cleanAmount,
   formatAmount,
   roundUsdValue,
+  trimTrailingZeros,
 } from "popup/helpers/formatters";
 import { useGetSwapAmountData } from "./hooks/useGetSwapAmountData";
 import { getAssetFromCanonical } from "helpers/stellar";
@@ -134,6 +135,10 @@ export const SwapAmount = ({
     transactionFee,
     transactionTimeout,
   } = transactionData;
+  // Display only: the stored string feeds the tx build and rate math.
+  const destinationAmountDisplay = destinationAmount
+    ? formatAmount(trimTrailingZeros(destinationAmount))
+    : "";
   // The source can be in the "(+) Select" (empty) state — e.g. after a
   // direction swap whose destination was unset or a non-held token.
   const srcAsset = asset ? getAssetFromCanonical(asset) : null;
@@ -857,12 +862,12 @@ export const SwapAmount = ({
                     availableBalanceText=""
                     availableBalanceFontSizePx={availableBalanceFontSizePx}
                     inputType={inputType}
-                    amount={destinationAmount}
+                    amount={destinationAmountDisplay}
                     amountUsd={dstPriceValueUsd || DEFAULT_AMOUNT_USD}
                     amountFontSizeClass={getAmountFontSizeClass(
                       inputType === "fiat"
                         ? dstPriceValueUsd || DEFAULT_AMOUNT_USD
-                        : destinationAmount,
+                        : destinationAmountDisplay,
                     )}
                     assetCode={dstAsset ? dstAsset.code : ""}
                     assetIcon={dstAssetIcon}
@@ -885,7 +890,7 @@ export const SwapAmount = ({
                       inputType,
                       price: dstAssetPrice,
                       priceUsd: dstPriceValueUsd,
-                      cryptoAmount: destinationAmount,
+                      cryptoAmount: destinationAmountDisplay,
                       code: dstAsset ? dstAsset.code : "",
                     })}
                     isAmountTooHigh={false}
