@@ -8,6 +8,7 @@ import {
   shouldTreatAssetAsUnableToScan,
   isTxSuspicious,
   useIsTxSuspicious,
+  getTransactionSecurityLevel,
   useShouldTreatTxAsUnableToScan,
   isBlockaidEnabled,
   getSiteSecurityStates,
@@ -222,7 +223,7 @@ describe("BlockAid Helper Functions", () => {
         expect(isTxSuspicious(null, null)).toBe(false);
       });
 
-      it("should return true when simulation has error", () => {
+      it("should return false when the only finding is a simulation error", () => {
         expect(
           isTxSuspicious(
             {
@@ -230,7 +231,7 @@ describe("BlockAid Helper Functions", () => {
             } as BlockAidScanTxResult,
             null,
           ),
-        ).toBe(true);
+        ).toBe(false);
       });
 
       it("should return true when validation result_type is not Benign", () => {
@@ -283,6 +284,47 @@ describe("BlockAid Helper Functions", () => {
           SecurityLevel.MALICIOUS,
         ),
       ).toBe(false);
+    });
+  });
+
+  describe("getTransactionSecurityLevel", () => {
+    it("classifies a simulation revert as likely to fail", () => {
+      expect(
+        getTransactionSecurityLevel(
+          {
+            simulation: { error: "insufficient balance for asset USDC" },
+            validation: null,
+          } as unknown as BlockAidScanTxResult,
+          false,
+          null,
+        ),
+      ).toBe(SecurityLevel.LIKELY_TO_FAIL);
+    });
+
+    it("keeps a malicious verdict when the simulation also reverted", () => {
+      expect(
+        getTransactionSecurityLevel(
+          {
+            simulation: { error: "insufficient balance for asset USDC" },
+            validation: { result_type: "Malicious" },
+          } as unknown as BlockAidScanTxResult,
+          false,
+          null,
+        ),
+      ).toBe(SecurityLevel.MALICIOUS);
+    });
+
+    it("keeps a warning verdict as suspicious", () => {
+      expect(
+        getTransactionSecurityLevel(
+          {
+            simulation: {},
+            validation: { result_type: "Warning" },
+          } as unknown as BlockAidScanTxResult,
+          false,
+          null,
+        ),
+      ).toBe(SecurityLevel.SUSPICIOUS);
     });
   });
 

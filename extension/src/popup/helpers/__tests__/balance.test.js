@@ -303,7 +303,7 @@ describe("SEP-41 balances are valued in whole units", () => {
   });
 
   it("sums the scaled value into the total", () => {
-    const total = getTotalUsd(prices, [SOLVBTC, USDC]);
+    const { totalUsd: total } = getTotalUsd(prices, [SOLVBTC, USDC]);
     expect(total.toNumber()).toBeCloseTo(100.18522526, 6);
   });
 });
