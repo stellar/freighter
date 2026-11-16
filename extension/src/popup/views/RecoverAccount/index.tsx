@@ -32,6 +32,7 @@ import {
   password as passwordValidator,
   confirmPassword as confirmPasswordValidator,
   termsOfUse as termsofUseValidator,
+  importAcknowledgement as importAcknowledgementValidator,
 } from "popup/helpers/validators";
 import {
   clearApiError,
@@ -57,6 +58,12 @@ const RecoverAccountSchema = YupObject().shape({
   password: passwordValidator,
   confirmPassword: confirmPasswordValidator,
   termsOfUse: termsofUseValidator,
+});
+
+// A secret key has no phrase to fall back on, so its import also asks the
+// user to confirm they've stored it.
+const RecoverFromSecretKeySchema = RecoverAccountSchema.shape({
+  importAcknowledgement: importAcknowledgementValidator,
 });
 
 /*
@@ -271,12 +278,16 @@ export const RecoverAccount = () => {
     }
   };
 
+  const isSecretKeyInput = parseImportSecret(secretInput).type === "secret_key";
+
   if (step === "password") {
     return (
       <View.Content alignment="center" hasNoTopPadding hasNoBottomPadding>
         <Formik
           initialValues={initialValues}
-          validationSchema={RecoverAccountSchema}
+          validationSchema={
+            isSecretKeyInput ? RecoverFromSecretKeySchema : RecoverAccountSchema
+          }
           onSubmit={handleImport}
         >
           {({ dirty, touched, isSubmitting, isValid, errors, values }) => (
@@ -288,6 +299,13 @@ export const RecoverAccount = () => {
               touched={touched}
               values={values}
               isShowingOverwriteWarning={isOverwritingAccount}
+              acknowledgement={
+                isSecretKeyInput
+                  ? t(
+                      "I understand imported secret keys can't be recovered and must be stored securely",
+                    )
+                  : undefined
+              }
             />
           )}
         </Formik>

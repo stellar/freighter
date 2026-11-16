@@ -343,6 +343,7 @@
   "Horizon is temporarily experiencing issues": "Horizon is temporarily experiencing issues",
   "HORIZON RPC URL": "HORIZON RPC URL",
   "I have read and agree to": "I have read and agree to",
+  "I understand imported secret keys can't be recovered and must be stored securely": "I understand imported secret keys can't be recovered and must be stored securely",
   "I understand that sharing my recovery phrase could result in <strong>permanent loss of funds</strong>.": "I understand that sharing my recovery phrase could result in <strong>permanent loss of funds</strong>.",
   "I understand that sharing my secret key could result in <strong>permanent loss of funds</strong>.": "I understand that sharing my secret key could result in <strong>permanent loss of funds</strong>.",
   "I understand, continue": "I understand, continue",

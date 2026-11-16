@@ -26,6 +26,7 @@ export interface FormValues {
   password: string;
   confirmPassword: string;
   termsOfUse: boolean;
+  importAcknowledgement?: boolean;
 }
 
 interface PasswordFormProps {
@@ -38,12 +39,16 @@ interface PasswordFormProps {
   handleSubmit?: (values: FormValues) => void;
   isShowingOverwriteWarning: boolean;
   isShowingOnboardingWarning?: boolean;
+  // Label for an extra required checkbox under the Terms of Use, e.g. the
+  // secret-key import's "can't be recovered" acknowledgement.
+  acknowledgement?: string;
 }
 
 export const initialValues: FormValues = {
   password: "",
   confirmPassword: "",
   termsOfUse: false,
+  importAcknowledgement: false,
 };
 
 export const PasswordForm = ({
@@ -56,6 +61,7 @@ export const PasswordForm = ({
   handleSubmit,
   isShowingOverwriteWarning,
   isShowingOnboardingWarning = false,
+  acknowledgement,
 }: PasswordFormProps) => {
   const authError = useSelector(authErrorSelector);
   const { t } = useTranslation();
@@ -172,6 +178,41 @@ export const PasswordForm = ({
                   </div>
                 )}
               </Field>
+
+              {/* OnboardingOneCol only takes elements, so the optional
+                  checkbox sits in a fragment. */}
+              <>
+                {acknowledgement && (
+                  <Field name="importAcknowledgement">
+                    {({ field, form }: FieldProps) => (
+                      <div className="PasswordForm__tos">
+                        <Checkbox
+                          data-testid="account-creator-importAcknowledgement-input"
+                          fieldSize="md"
+                          autoComplete="off"
+                          error={
+                            touched.importAcknowledgement
+                              ? errors.importAcknowledgement
+                              : null
+                          }
+                          id="importAcknowledgement-input"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              form.setFieldValue(
+                                "importAcknowledgement",
+                                !field.value,
+                              );
+                              e.currentTarget.checked = !field.value;
+                            }
+                          }}
+                          label={acknowledgement}
+                          {...field}
+                        />
+                      </div>
+                    )}
+                  </Field>
+                )}
+              </>
 
               <OnboardingButtons hasGoBackBtn>
                 <Button
