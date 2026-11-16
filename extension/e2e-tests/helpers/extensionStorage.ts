@@ -6,9 +6,11 @@ import { launchExtensionContext } from "./launch";
 
 /**
  * The last storage migration this build runs (`versionedMigration` in
- * `background/helpers/dataStorage.ts`). Bump it with the next migration.
+ * `background/helpers/dataStorage.ts`) and the one before it. Bump both with
+ * the next migration.
  */
 export const LATEST_STORAGE_VERSION = "5.50.0";
+export const PREVIOUS_STORAGE_VERSION = "5.33.5";
 
 export interface ExtensionSession {
   context: BrowserContext;
@@ -45,6 +47,10 @@ export const removeProfileDir = (profileDir: string) =>
  * at `LATEST_STORAGE_VERSION` and the rebrand status is recorded (the last
  * listener). Without this wait, a write right after launch races the
  * install pass, and a relaunch could be read before it has migrated.
+ *
+ * The wait only proves this launch's pass finished when storage started
+ * below `LATEST_STORAGE_VERSION`; otherwise it can return on the previous
+ * launch's values. `relaunchExtension` guarantees that.
  */
 export const launchExtension = async (
   profileDir: string,
@@ -77,11 +83,26 @@ export const launchExtension = async (
  * `runtime.onInstalled` and so runs the storage migrations.
  * `chrome.runtime.reload()` can't stand in for this: it unloads a
  * command-line extension and never brings it back.
+ *
+ * On an already-migrated wallet the multi-source pass is a no-op and leaves
+ * nothing in storage to wait on, so a storage version already at the latest
+ * is rewound to the previous migration first. `migrateToMultiSourceModel`
+ * reads the version only to decide whether to write it back after the pass,
+ * so the pass behaves the same, and the version reaching the latest again
+ * marks this launch's pass as finished. Any other version is left alone.
  */
 export const relaunchExtension = async (
   session: ExtensionSession,
   profileDir: string,
 ): Promise<ExtensionSession> => {
+  const { storageVersion } = await readLocalStorage(session, [
+    "storageVersion",
+  ]);
+  if (storageVersion === LATEST_STORAGE_VERSION) {
+    await mergeLocalStorage(session, {
+      storageVersion: PREVIOUS_STORAGE_VERSION,
+    });
+  }
   await session.context.close();
   return launchExtension(profileDir);
 };
@@ -119,6 +140,19 @@ export const readLocalStorage = (
     target,
     (k: string[] | null) => chrome.storage.local.get(k),
     keys ?? null,
+  );
+
+/**
+ * Writes `data` into `chrome.storage.local`, keeping other keys.
+ */
+export const mergeLocalStorage = (
+  target: ExtensionTarget,
+  data: Record<string, unknown>,
+): Promise<void> =>
+  inExtensionPage(
+    target,
+    (d: Record<string, unknown>) => chrome.storage.local.set(d),
+    data,
   );
 
 /**
