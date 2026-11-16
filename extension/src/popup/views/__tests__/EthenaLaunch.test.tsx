@@ -48,11 +48,26 @@ const ViewPublicKeyStub = () => {
   );
 };
 
-const renderView = (destination?: string) =>
+// Home, with the browser's Back button: shows where history leads from Home.
+const HomeStub = () => {
+  const navigate = useNavigate();
+  return (
+    <>
+      <div>account-home</div>
+      <button type="button" onClick={() => navigate(-1)}>
+        history-back
+      </button>
+    </>
+  );
+};
+
+// What sits in history before the promo, oldest first.
+const renderView = (destination?: string, history: string[] = []) =>
   render(
     <Wrapper
       state={{}}
       routes={[
+        ...history,
         {
           pathname: ROUTES.ethenaLaunch,
           state: destination ? { destination } : undefined,
@@ -61,12 +76,17 @@ const renderView = (destination?: string) =>
     >
       <Routes>
         <Route path={ROUTES.ethenaLaunch} element={<EthenaLaunch />} />
-        <Route path={ROUTES.account} element={<div>account-home</div>} />
+        <Route path={ROUTES.account} element={<HomeStub />} />
         <Route path={ROUTES.settings} element={<div>settings-home</div>} />
         <Route path={ROUTES.viewPublicKey} element={<ViewPublicKeyStub />} />
       </Routes>
     </Wrapper>,
   );
+
+// Home's banner opens the promo on top of Home, with no destination. Settings
+// sits before Home so that Back from Home has somewhere else to go.
+const renderFromBanner = () =>
+  renderView(undefined, [ROUTES.settings, ROUTES.account]);
 
 describe("EthenaLaunch", () => {
   beforeEach(() => {
@@ -264,7 +284,8 @@ describe("EthenaLaunch", () => {
   });
 
   it("closes to the destination it was given", async () => {
-    renderView(ROUTES.settings);
+    // Shown on unlock, with history behind it that closing doesn't go back to.
+    renderView(ROUTES.settings, [ROUTES.account]);
 
     await userEvent.click(screen.getByTestId("ethena-launch-close"));
 
@@ -281,7 +302,30 @@ describe("EthenaLaunch", () => {
     expect(await screen.findByText("settings-home")).toBeInTheDocument();
   });
 
-  it("closes to the account view when no destination was given", async () => {
+  it("closes back to Home when opened from the banner, leaving history as it was", async () => {
+    renderFromBanner();
+
+    await userEvent.click(screen.getByTestId("ethena-launch-close"));
+    expect(await screen.findByText("account-home")).toBeInTheDocument();
+
+    // Back from Home leads where it led before the promo, not to Home again.
+    await userEvent.click(screen.getByText("history-back"));
+    expect(await screen.findByText("settings-home")).toBeInTheDocument();
+  });
+
+  it("still closes back to Home after a trip to Receive when opened from the banner", async () => {
+    renderFromBanner();
+
+    await userEvent.click(screen.getByTestId("ethena-launch-receive-usde"));
+    await userEvent.click(await screen.findByText("view-public-key"));
+    await userEvent.click(await screen.findByTestId("ethena-launch-close"));
+    expect(await screen.findByText("account-home")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByText("history-back"));
+    expect(await screen.findByText("settings-home")).toBeInTheDocument();
+  });
+
+  it("closes to the account view when it has no destination and nothing to go back to", async () => {
     renderView();
 
     await userEvent.click(screen.getByTestId("ethena-launch-close"));

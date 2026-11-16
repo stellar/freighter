@@ -124,7 +124,8 @@ const EthenaTokenSection = ({
 };
 
 interface EthenaLaunchLocationState {
-  // Where closing goes: UnlockAccount's original destination, or Home.
+  // Where closing goes, set only by UnlockAccount: its original destination.
+  // Opened from Home's banner there is none, and closing goes back to Home.
   destination?: string;
   // How far the page was scrolled when it left for Receive.
   scrollTop?: number;
@@ -133,8 +134,8 @@ interface EthenaLaunchLocationState {
 /**
  * Full-screen "Meet Ethena on Stellar" launch promo. UnlockAccount routes here
  * once per eligible wallet (the background marks it seen as it hands it out),
- * and the Home banner opens it on demand. Closing returns to the destination
- * in location state, or Home.
+ * and the Home banner opens it on demand. Closing goes on to UnlockAccount's
+ * destination, or back to Home.
  */
 export const EthenaLaunch = () => {
   const { t } = useTranslation();
@@ -181,7 +182,17 @@ export const EthenaLaunch = () => {
   };
 
   const handleClose = () => {
-    navigate(destination, { replace: true });
+    // Opened from the unlock screen, the promo took that screen's place in
+    // history, so it hands it on to the destination. Opened from Home's
+    // banner, it sits on top of Home, so it goes back there instead of adding
+    // Home again. With none of the app's pages behind it (history's first
+    // entry, keyed "default"), it replaces itself with Home as well.
+    if (locationState.destination || location.key === "default") {
+      navigate(destination, { replace: true });
+      return;
+    }
+
+    navigate(-1);
   };
 
   // Esc closes the promo like the X does, rather than the popup.
