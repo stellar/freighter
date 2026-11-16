@@ -12,7 +12,7 @@ import { navigateTo } from "popup/helpers/navigate";
 import { AccountChip } from "popup/components/account/AccountChip";
 import { AccountSheet } from "popup/components/account/AccountSheet";
 import { ConnectedAppsSheet } from "popup/components/account/ConnectedAppsSheet";
-import { Usdt0LaunchBanner } from "popup/components/account/Usdt0LaunchBanner";
+import { EthenaLaunchBanner } from "popup/components/account/EthenaLaunchBanner";
 import { AccountTabs } from "popup/components/account/AccountTabs";
 import { MaintenanceBanner } from "popup/components/MaintenanceBanner";
 
@@ -128,7 +128,7 @@ export const AccountHeader = ({
               </NavLink>
             ))}
           </div>
-          <Usdt0LaunchBanner />
+          <EthenaLaunchBanner />
         </div>
         <AccountTabs />
       </View.Inset>

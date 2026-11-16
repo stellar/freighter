@@ -63,6 +63,18 @@ export const METRIC_NAMES = {
   // carries source (continue)
   rebrandAnnouncementDismissed: "rebrand.announcement_dismissed",
 
+  // Ethena launch promo (USDe and sUSDe), named like the mobile app's
+  // carries source (launch | banner)
+  ethenaLaunchPromoViewed: "ethena_launch.promo_viewed",
+  // carries token (USDe | sUSDe)
+  ethenaLaunchSwapTapped: "ethena_launch.swap_tapped",
+  // carries token (USDe | sUSDe); extension only, mobile has no Transfer
+  ethenaLaunchTransferTapped: "ethena_launch.transfer_tapped",
+  // carries token (USDe | sUSDe)
+  ethenaLaunchReceiveTapped: "ethena_launch.receive_tapped",
+  ethenaLaunchLearnMoreTapped: "ethena_launch.learn_more_tapped",
+  ethenaLaunchBannerDismissed: "ethena_launch.banner_dismissed",
+
   // -- Token price chart ----------------------------------------------------
   // Fired when the price-history fetch resolves (`has_data` known) — not a
   // screen view; `screen.viewed` (asset_detail) covers that. Props are a

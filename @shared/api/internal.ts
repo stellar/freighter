@@ -2587,10 +2587,10 @@ export const getTokenIds = async ({
   return tokenIdList;
 };
 
-export const getUsdt0LaunchBannerDismissed = async (): Promise<boolean> => {
+export const getEthenaLaunchBannerDismissed = async (): Promise<boolean> => {
   const { isDismissed, error } = await sendMessageToBackground({
     activePublicKey: null,
-    type: SERVICE_TYPES.GET_USDT0_LAUNCH_BANNER_DISMISSED,
+    type: SERVICE_TYPES.GET_ETHENA_LAUNCH_BANNER_DISMISSED,
   });
 
   if (error) {
@@ -2600,12 +2600,12 @@ export const getUsdt0LaunchBannerDismissed = async (): Promise<boolean> => {
   return !!isDismissed;
 };
 
-export const dismissUsdt0LaunchBanner = async (): Promise<{
+export const dismissEthenaLaunchBanner = async (): Promise<{
   isDismissed: boolean;
 }> => {
   const { isDismissed, error } = await sendMessageToBackground({
     activePublicKey: null,
-    type: SERVICE_TYPES.DISMISS_USDT0_LAUNCH_BANNER,
+    type: SERVICE_TYPES.DISMISS_ETHENA_LAUNCH_BANNER,
   });
 
   if (error) {
@@ -3184,6 +3184,21 @@ export const claimRebrandAnnouncement = async (): Promise<boolean> => {
   }
 
   return Boolean(shouldShowRebrandAnnouncement);
+};
+
+// True once per eligible wallet, like the rebrand announcement above: the
+// background flips pending to seen as it answers.
+export const claimEthenaLaunchPromo = async (): Promise<boolean> => {
+  const { shouldShowEthenaLaunchPromo, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.CLAIM_ETHENA_LAUNCH_PROMO,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return Boolean(shouldShowEthenaLaunchPromo);
 };
 
 export const getCachedSwapTopTokens = async (

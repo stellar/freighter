@@ -436,12 +436,12 @@ export interface GetHiddenAssetsMessage extends BaseMessage {
   network: string;
 }
 
-export interface GetUsdt0LaunchBannerDismissedMessage extends BaseMessage {
-  type: SERVICE_TYPES.GET_USDT0_LAUNCH_BANNER_DISMISSED;
+export interface GetEthenaLaunchBannerDismissedMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_ETHENA_LAUNCH_BANNER_DISMISSED;
 }
 
-export interface DismissUsdt0LaunchBannerMessage extends BaseMessage {
-  type: SERVICE_TYPES.DISMISS_USDT0_LAUNCH_BANNER;
+export interface DismissEthenaLaunchBannerMessage extends BaseMessage {
+  type: SERVICE_TYPES.DISMISS_ETHENA_LAUNCH_BANNER;
 }
 
 export interface GetRecentProtocolsMessage extends BaseMessage {
@@ -467,6 +467,10 @@ export interface DismissDiscoverWelcomeMessage extends BaseMessage {
 
 export interface ClaimRebrandAnnouncementMessage extends BaseMessage {
   type: SERVICE_TYPES.CLAIM_REBRAND_ANNOUNCEMENT;
+}
+
+export interface ClaimEthenaLaunchPromoMessage extends BaseMessage {
+  type: SERVICE_TYPES.CLAIM_ETHENA_LAUNCH_PROMO;
 }
 
 export interface GetBlockaidDebugOverrideMessage extends BaseMessage {
@@ -590,14 +594,15 @@ export type ServiceMessageRequest =
   | GetIsAccountMismatchMessage
   | ChangeAssetVisibilityMessage
   | GetHiddenAssetsMessage
-  | GetUsdt0LaunchBannerDismissedMessage
-  | DismissUsdt0LaunchBannerMessage
+  | GetEthenaLaunchBannerDismissedMessage
+  | DismissEthenaLaunchBannerMessage
   | GetRecentProtocolsMessage
   | AddRecentProtocolMessage
   | ClearRecentProtocolsMessage
   | GetDiscoverWelcomeSeenMessage
   | DismissDiscoverWelcomeMessage
   | ClaimRebrandAnnouncementMessage
+  | ClaimEthenaLaunchPromoMessage
   | GetBlockaidDebugOverrideMessage
   | AddCollectibleMessage
   | GetCollectiblesMessage
