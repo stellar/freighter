@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button, Heading, Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -7,6 +7,13 @@ import { View } from "popup/basics/layout/View";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 import { useEscapeToClose } from "popup/helpers/hooks/useEscapeToClose";
+import {
+  emitEthenaLaunchLearnMoreTapped,
+  emitEthenaLaunchPromoViewed,
+  emitEthenaLaunchReceiveTapped,
+  emitEthenaLaunchSwapTapped,
+  emitEthenaLaunchTransferTapped,
+} from "popup/metrics/ethenaLaunch";
 
 import EthenaLaunchWave from "popup/assets/ethena-launch-wave.svg";
 import EthenaCoinLight from "popup/assets/ethena-launch-coin-light.png";
@@ -66,11 +73,18 @@ const EthenaTokenSection = ({
   const { t } = useTranslation();
 
   const handleSwap = () => {
+    emitEthenaLaunchSwapTapped(code);
     openTab(swapUrl);
   };
 
   const handleTransfer = () => {
+    emitEthenaLaunchTransferTapped(code);
     openTab(transferUrl);
+  };
+
+  const handleReceive = () => {
+    emitEthenaLaunchReceiveTapped(code);
+    onReceive();
   };
 
   return (
@@ -104,7 +118,7 @@ const EthenaTokenSection = ({
           variant="tertiary"
           isFullWidth
           isRounded
-          onClick={onReceive}
+          onClick={handleReceive}
           data-testid={`ethena-launch-receive-${id}`}
         >
           {t("Receive {{code}}", { code })}
@@ -160,6 +174,17 @@ export const EthenaLaunch = () => {
     }
   }, [returnScrollTop]);
 
+  // One view per visit: coming back from Receive isn't another. Only
+  // UnlockAccount passes a destination, which tells the two sources apart.
+  const isReturning = returnScrollTop !== undefined;
+  const source = locationState.destination ? "launch" : "banner";
+
+  useEffect(() => {
+    if (!isReturning) {
+      emitEthenaLaunchPromoViewed(source);
+    }
+  }, [isReturning, source]);
+
   const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
     setIsScrolled(event.currentTarget.scrollTop > 0);
   };
@@ -212,6 +237,7 @@ export const EthenaLaunch = () => {
   };
 
   const handleLearnMore = () => {
+    emitEthenaLaunchLearnMoreTapped();
     openTab(ETHENA_DOCS_URL);
   };
 

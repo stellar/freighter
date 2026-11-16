@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes, useNavigate } from "react-router-dom";
 
+import { emitMetric } from "helpers/metrics";
 import { ROUTES } from "popup/constants/routes";
 import { Wrapper } from "popup/__testHelpers__";
 import { EthenaLaunch } from "popup/views/EthenaLaunch";
@@ -11,6 +12,17 @@ jest.mock("popup/helpers/navigate", () => ({
   ...jest.requireActual("popup/helpers/navigate"),
   openTab: jest.fn(),
 }));
+
+jest.mock("helpers/metrics", () => ({
+  ...jest.requireActual("helpers/metrics"),
+  emitMetric: jest.fn(),
+}));
+
+const mockEmitMetric = emitMetric as jest.Mock;
+
+// The calls that reported the named event, each as [name, properties?].
+const eventsNamed = (name: string) =>
+  mockEmitMetric.mock.calls.filter(([eventName]) => eventName === name);
 
 // The global mock returns keys verbatim; the per-token labels need their
 // {{code}} filled in to be told apart.
@@ -331,5 +343,69 @@ describe("EthenaLaunch", () => {
     await userEvent.click(screen.getByTestId("ethena-launch-close"));
 
     expect(await screen.findByText("account-home")).toBeInTheDocument();
+  });
+
+  // The mobile app reports the same events with the same properties, into the
+  // same project; `surface` tells the two apart.
+  describe("analytics", () => {
+    it("reports a promo shown on unlock as a launch view", () => {
+      renderView(ROUTES.account);
+
+      expect(eventsNamed("ethena_launch.promo_viewed")).toEqual([
+        ["ethena_launch.promo_viewed", { source: "launch" }],
+      ]);
+    });
+
+    it("reports a promo opened from Home's banner as a banner view", () => {
+      renderFromBanner();
+
+      expect(eventsNamed("ethena_launch.promo_viewed")).toEqual([
+        ["ethena_launch.promo_viewed", { source: "banner" }],
+      ]);
+    });
+
+    it("doesn't count coming back from Receive as another view", async () => {
+      renderFromBanner();
+
+      await userEvent.click(screen.getByTestId("ethena-launch-receive-usde"));
+      await userEvent.click(await screen.findByText("view-public-key"));
+      expect(await screen.findByTestId("ethena-launch")).toBeInTheDocument();
+
+      expect(eventsNamed("ethena_launch.promo_viewed")).toHaveLength(1);
+    });
+
+    it("reports Swap and Transfer with the token tapped", async () => {
+      renderView();
+
+      await userEvent.click(screen.getByTestId("ethena-launch-swap-usde"));
+      await userEvent.click(screen.getByTestId("ethena-launch-transfer-susde"));
+
+      expect(eventsNamed("ethena_launch.swap_tapped")).toEqual([
+        ["ethena_launch.swap_tapped", { token: "USDe" }],
+      ]);
+      expect(eventsNamed("ethena_launch.transfer_tapped")).toEqual([
+        ["ethena_launch.transfer_tapped", { token: "sUSDe" }],
+      ]);
+    });
+
+    it("reports Receive with the token tapped", async () => {
+      renderView();
+
+      await userEvent.click(screen.getByTestId("ethena-launch-receive-susde"));
+
+      expect(eventsNamed("ethena_launch.receive_tapped")).toEqual([
+        ["ethena_launch.receive_tapped", { token: "sUSDe" }],
+      ]);
+    });
+
+    it("reports Learn more", async () => {
+      renderView();
+
+      await userEvent.click(screen.getByTestId("ethena-launch-learn-more"));
+
+      expect(eventsNamed("ethena_launch.learn_more_tapped")).toEqual([
+        ["ethena_launch.learn_more_tapped"],
+      ]);
+    });
   });
 });

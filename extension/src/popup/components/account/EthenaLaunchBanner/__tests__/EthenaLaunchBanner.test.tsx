@@ -5,6 +5,7 @@ import { Route, Routes } from "react-router-dom";
 import { captureException } from "@sentry/browser";
 
 import * as ApiInternal from "@shared/api/internal";
+import { emitMetric } from "helpers/metrics";
 import { ROUTES } from "popup/constants/routes";
 import { Wrapper } from "popup/__testHelpers__";
 import { EthenaLaunchBanner } from "popup/components/account/EthenaLaunchBanner";
@@ -12,6 +13,11 @@ import { EthenaLaunchBanner } from "popup/components/account/EthenaLaunchBanner"
 jest.mock("@sentry/browser", () => ({
   ...jest.requireActual("@sentry/browser"),
   captureException: jest.fn(),
+}));
+
+jest.mock("helpers/metrics", () => ({
+  ...jest.requireActual("helpers/metrics"),
+  emitMetric: jest.fn(),
 }));
 
 const renderBanner = () =>
@@ -85,6 +91,45 @@ describe("EthenaLaunchBanner", () => {
     expect(dismiss).toHaveBeenCalled();
     await waitFor(() =>
       expect(screen.queryByTestId("ethena-launch-banner")).toBeNull(),
+    );
+  });
+
+  // The same event the mobile app reports, into the same project.
+  it("reports the dismissal once the background has recorded it", async () => {
+    jest
+      .spyOn(ApiInternal, "getEthenaLaunchBannerDismissed")
+      .mockResolvedValue(false);
+    jest
+      .spyOn(ApiInternal, "dismissEthenaLaunchBanner")
+      .mockResolvedValue({ isDismissed: true });
+    renderBanner();
+
+    await userEvent.click(
+      await screen.findByTestId("ethena-launch-banner-dismiss"),
+    );
+
+    await waitFor(() =>
+      expect(emitMetric).toHaveBeenCalledWith("ethena_launch.banner_dismissed"),
+    );
+  });
+
+  it("doesn't report a dismissal the background didn't record", async () => {
+    jest
+      .spyOn(ApiInternal, "getEthenaLaunchBannerDismissed")
+      .mockResolvedValue(false);
+    const error = new Error("no background");
+    jest
+      .spyOn(ApiInternal, "dismissEthenaLaunchBanner")
+      .mockRejectedValue(error);
+    renderBanner();
+
+    await userEvent.click(
+      await screen.findByTestId("ethena-launch-banner-dismiss"),
+    );
+
+    await waitFor(() => expect(captureException).toHaveBeenCalledWith(error));
+    expect(emitMetric).not.toHaveBeenCalledWith(
+      "ethena_launch.banner_dismissed",
     );
   });
 

@@ -11,6 +11,7 @@ import {
 
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
+import { emitEthenaLaunchBannerDismissed } from "popup/metrics/ethenaLaunch";
 import EthenaLaunchBannerGlow from "popup/assets/ethena-launch-banner-glow.svg";
 
 import "./styles.scss";
@@ -43,6 +44,10 @@ export const EthenaLaunchBanner = () => {
     try {
       const { isDismissed } = await dismissEthenaLaunchBanner();
       setIsDismissed(isDismissed);
+      // Only once the background has recorded it.
+      if (isDismissed) {
+        emitEthenaLaunchBannerDismissed();
+      }
     } catch (error) {
       captureException(error);
     }
