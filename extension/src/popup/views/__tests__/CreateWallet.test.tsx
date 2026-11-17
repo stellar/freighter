@@ -305,6 +305,18 @@ describe("CreateWallet", () => {
       return { clear, view };
     };
 
+    it("keeps the revealed phrase off the clipboard", async () => {
+      await toBackupStep();
+
+      fireEvent.click(screen.getByTestId("create-wallet-phrase-reveal"));
+
+      expect(screen.queryByText("Tap to copy")).toBeNull();
+      expect(screen.queryByTestId("create-wallet-phrase-copy")).toBeNull();
+      expect(fireEvent.copy(screen.getByTestId("create-wallet-phrase"))).toBe(
+        false,
+      );
+    });
+
     it("drops it on Back from the backup step", async () => {
       const { clear } = await toBackupStep();
 

@@ -127,10 +127,10 @@ export const METRIC_NAMES = {
   reauthFailed: "reauth.failed",
 
   // -- Recovery phrase (backup) -------------------------------------------
-  // Not emitted on extension: the mnemonic UI (MnemonicDisplay /
-  // DisplayBackupPhrase) has no copy or download affordance to instrument.
-  // Mobile emits `copied`; `downloaded` is reserved on both platforms. Kept for
-  // a shared catalog. Never attach the phrase itself.
+  // Not emitted on extension: the recovery phrase never goes on the
+  // clipboard, so there is no copy affordance to instrument, and copying the
+  // phrase grids is blocked. Mobile emits `copied`; `downloaded` is reserved on
+  // both platforms. Kept for a shared catalog. Never attach the phrase itself.
   recoveryPhraseCopied: "recovery_phrase.copied",
   recoveryPhraseDownloaded: "recovery_phrase.downloaded",
 
