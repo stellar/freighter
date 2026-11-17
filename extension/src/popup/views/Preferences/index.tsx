@@ -156,104 +156,133 @@ export const Preferences = () => {
         enableReinitialize
       >
         <View.Content hasNoTopPadding>
-          <div className="Preferences__section">
-            <div className="Preferences__section__label" id="theme-label">
-              {t("Display")}
-            </div>
-            <div
-              className="Preferences__card Preferences__card--row"
-              role="radiogroup"
-              aria-labelledby="theme-label"
-            >
-              {THEME_PREFERENCES.map((preference) => (
-                <RadioButton
-                  key={preference}
-                  id={`themeOption-${preference}`}
-                  data-testid={`themeOption-${preference}`}
-                  name="themePreference"
-                  value={preference}
-                  label={themeLabels[preference]}
-                  fieldSize="lg"
-                  checked={themePreference === preference}
-                  onChange={() => handleThemeChange(preference)}
-                />
-              ))}
-            </div>
-          </div>
-          <div className="Preferences__section">
-            <div className="Preferences__section__label">{t("Security")}</div>
-            <Form className="Preferences__card">
-              <AutoSaveFields />
-              <div className="Preferences__setting">
-                <div className="Preferences__setting__text">
-                  <div className="Preferences__setting__title">
-                    {t("Hide small payments")}
-                  </div>
-                  <div className="Preferences__setting__description">
-                    {t("Hide payments below 0.1 XLM.")}
-                  </div>
-                </div>
-                <Toggle
-                  fieldSize="sm"
-                  checked={initialValues.isHideDustEnabledValue}
-                  customInput={<Field />}
-                  id="isHideDustEnabledValue"
-                />
+          <Form>
+            <AutoSaveFields />
+            <div className="Preferences__section">
+              <div className="Preferences__section__label" id="theme-label">
+                {t("Display")}
               </div>
-
-              <div className="Preferences__divider" />
-
-              <div className="Preferences__setting">
-                <div className="Preferences__setting__text">
-                  <div className="Preferences__setting__title">
-                    {t("Verify addresses")}
-                  </div>
-                  <div className="Preferences__setting__description">
-                    {t("Check memo requirements with stellar.expert.")}
-                  </div>
+              <div className="Preferences__card">
+                <div
+                  className="Preferences__options"
+                  role="radiogroup"
+                  aria-labelledby="theme-label"
+                >
+                  {THEME_PREFERENCES.map((preference) => (
+                    <RadioButton
+                      key={preference}
+                      id={`themeOption-${preference}`}
+                      data-testid={`themeOption-${preference}`}
+                      name="themePreference"
+                      value={preference}
+                      label={themeLabels[preference]}
+                      fieldSize="lg"
+                      checked={themePreference === preference}
+                      onChange={() => handleThemeChange(preference)}
+                    />
+                  ))}
                 </div>
-                <div data-testid="isValidatingMemoValue">
+
+                {typeof globalThis.chrome?.sidePanel?.open === "function" && (
+                  <>
+                    <div className="Preferences__divider" />
+
+                    <div className="Preferences__setting">
+                      <div className="Preferences__setting__text">
+                        <div className="Preferences__setting__title">
+                          {t("Open in sidebar by default")}
+                        </div>
+                        <div className="Preferences__setting__description">
+                          {t(
+                            "Open Varial in the sidebar when clicking the extension icon.",
+                          )}
+                        </div>
+                      </div>
+                      <Toggle
+                        fieldSize="sm"
+                        checked={initialValues.isOpenSidebarByDefaultValue}
+                        customInput={<Field />}
+                        id="isOpenSidebarByDefaultValue"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="Preferences__section">
+              <div className="Preferences__section__label">{t("Security")}</div>
+              <div className="Preferences__card">
+                <div className="Preferences__setting">
+                  <div className="Preferences__setting__text">
+                    <div className="Preferences__setting__title">
+                      {t("Hide small payments")}
+                    </div>
+                    <div className="Preferences__setting__description">
+                      {t("Hide payments below 0.1 XLM.")}
+                    </div>
+                  </div>
                   <Toggle
                     fieldSize="sm"
-                    checked={initialValues.isValidatingMemoValue}
+                    checked={initialValues.isHideDustEnabledValue}
                     customInput={<Field />}
-                    id="isValidatingMemoValue"
+                    id="isHideDustEnabledValue"
+                  />
+                </div>
+
+                <div className="Preferences__divider" />
+
+                <div className="Preferences__setting">
+                  <div className="Preferences__setting__text">
+                    <div className="Preferences__setting__title">
+                      {t("Verify addresses")}
+                    </div>
+                    <div className="Preferences__setting__description">
+                      {t("Check memo requirements with stellar.expert.")}
+                    </div>
+                  </div>
+                  <div data-testid="isValidatingMemoValue">
+                    <Toggle
+                      fieldSize="sm"
+                      checked={initialValues.isValidatingMemoValue}
+                      customInput={<Field />}
+                      id="isValidatingMemoValue"
+                    />
+                  </div>
+                </div>
+
+                <div className="Preferences__divider" />
+
+                <div className="Preferences__setting">
+                  <div className="Preferences__setting__text">
+                    <div className="Preferences__setting__title">
+                      {t("Share analytics data")}
+                    </div>
+                    <div className="Preferences__setting__description">
+                      {t(
+                        "Help improve Varial by sharing usage and diagnostic data.",
+                      )}
+                    </div>
+                    <a
+                      className="Preferences__setting__link"
+                      href={PRIVACY_POLICY_URL}
+                      target="_blank"
+                      rel="noreferrer"
+                      data-testid="privacyPolicyLink"
+                    >
+                      {t("Learn more about data sharing")}
+                      <Icon.LinkExternal01 />
+                    </a>
+                  </div>
+                  <Toggle
+                    fieldSize="sm"
+                    checked={initialValues.isDataSharingAllowedValue}
+                    customInput={<Field />}
+                    id="isDataSharingAllowedValue"
                   />
                 </div>
               </div>
-
-              <div className="Preferences__divider" />
-
-              <div className="Preferences__setting">
-                <div className="Preferences__setting__text">
-                  <div className="Preferences__setting__title">
-                    {t("Share analytics data")}
-                  </div>
-                  <div className="Preferences__setting__description">
-                    {t(
-                      "Help improve Varial by sharing usage and diagnostic data.",
-                    )}
-                  </div>
-                  <a
-                    className="Preferences__setting__link"
-                    href={PRIVACY_POLICY_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                    data-testid="privacyPolicyLink"
-                  >
-                    {t("Learn more about data sharing")}
-                    <Icon.LinkExternal01 />
-                  </a>
-                </div>
-                <Toggle
-                  fieldSize="sm"
-                  checked={initialValues.isDataSharingAllowedValue}
-                  customInput={<Field />}
-                  id="isDataSharingAllowedValue"
-                />
-              </div>
-            </Form>
-          </div>
+            </div>
+          </Form>
         </View.Content>
       </Formik>
     </React.Fragment>

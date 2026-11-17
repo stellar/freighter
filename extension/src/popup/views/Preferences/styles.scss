@@ -25,12 +25,12 @@
     padding: pxToRem(16px);
     border-radius: pxToRem(16px);
     background-color: var(--sds-clr-gray-02);
+  }
 
-    &--row {
-      flex-direction: row;
-      flex-wrap: wrap;
-      gap: pxToRem(16px);
-    }
+  &__options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: pxToRem(16px);
   }
 
   &__divider {
