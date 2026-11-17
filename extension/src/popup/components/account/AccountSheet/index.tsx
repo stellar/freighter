@@ -264,7 +264,9 @@ export const AccountSheet = ({
                     openTab(
                       `${getStellarExpertUrl(networkDetails)}/account/${activePublicKey}`,
                     );
-                    emitMetric(METRIC_NAMES.accountStellarExpertOpened);
+                    emitMetric(METRIC_NAMES.accountStellarExpertOpened, {
+                      source: "wallets",
+                    });
                   }}
                   data-testid="wallets-header-explorer"
                   aria-label={t("View on stellar.expert")}

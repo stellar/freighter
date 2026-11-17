@@ -62,6 +62,12 @@ jest.mock("helpers/hooks/useGetAppData", () => {
   };
 });
 
+const mockOpenTab = jest.fn();
+jest.mock("popup/helpers/navigate", () => ({
+  ...jest.requireActual("popup/helpers/navigate"),
+  openTab: (url: string) => mockOpenTab(url),
+}));
+
 jest.mock("helpers/metrics", () => ({
   emitScreenViewed: jest.fn(),
   emitMetric: jest.fn(),
@@ -397,6 +403,20 @@ describe("EditAccount", () => {
     fireEvent.click(screen.getByTestId("edit-account-name"));
 
     expect(screen.getByTestId("rename-wallet-input")).toHaveValue("Account 2");
+  });
+
+  it("opens the account on stellar.expert and reports it", () => {
+    renderEditAccount(`?accountId=${OTHER_ID}`);
+
+    fireEvent.click(screen.getByTestId("edit-account-explorer"));
+
+    expect(mockOpenTab).toHaveBeenCalledWith(
+      expect.stringMatching(new RegExp(`/account/${OTHER_PUBLIC_KEY}$`)),
+    );
+    expect(emitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.accountStellarExpertOpened,
+      { source: "edit_account" },
+    );
   });
 
   it("reports a rename as coming from Edit account", async () => {

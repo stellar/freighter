@@ -25,6 +25,8 @@ import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { SheetLayout } from "popup/components/SheetLayout";
 import { RenameWallet } from "popup/components/account/RenameWallet";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { emitMetric } from "helpers/metrics";
 
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
 import { RequestState } from "constants/request";
@@ -196,11 +198,14 @@ export const EditAccount = () => {
               <Row
                 label={t("View on block explorer")}
                 trailingIcon={<Icon.LinkExternal01 />}
-                onClick={() =>
+                onClick={() => {
                   openTab(
                     `${getStellarExpertUrl(networkDetails)}/account/${publicKey}`,
-                  )
-                }
+                  );
+                  emitMetric(METRIC_NAMES.accountStellarExpertOpened, {
+                    source: "edit_account",
+                  });
+                }}
                 testId="edit-account-explorer"
               />
             </div>
