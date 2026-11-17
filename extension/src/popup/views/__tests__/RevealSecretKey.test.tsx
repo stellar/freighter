@@ -253,6 +253,11 @@ describe("RevealRecoveryPhrase", () => {
     expect(words[0]).toHaveTextContent("1gloom");
     expect(words[11]).toHaveTextContent("12erode");
     expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
+    // The phrase stays off the clipboard: no copy button, and copying the
+    // grid is blocked.
+    expect(screen.queryByText("Tap to copy")).toBeNull();
+    expect(screen.queryByTestId("reveal-recovery-phrase-copy")).toBeNull();
+    expect(fireEvent.copy(grid)).toBe(false);
     expect(mockShowBackupPhrase).toHaveBeenCalledWith({
       activePublicKey: TEST_PUBLIC_KEY,
       password: "hunter22",

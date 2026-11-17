@@ -56,11 +56,15 @@ const NeverShareBanner = ({
   </div>
 );
 
-/** The phrase as a numbered two-column grid. */
+/**
+ * The phrase as a numbered two-column grid. Copying is blocked, as in
+ * MnemonicDisplay: the phrase never goes on the clipboard.
+ */
 const PhraseGrid = ({ phrase }: { phrase: string }) => (
   <ol
     className="RevealSecretKey__phrase"
     data-testid="reveal-recovery-phrase-value"
+    onCopy={(e) => e.preventDefault()}
   >
     {phrase.split(" ").map((word, i) => (
       <li key={`${i}-${word}`} className="RevealSecretKey__phrase__word">
@@ -260,10 +264,8 @@ const RevealSecret = ({ kind }: { kind: SecretKind }) => {
           </div>
         </View.Content>
         {isPhrase ? (
-          // Twelve words don't leave room for Tap to copy in the 600px popup,
-          // so it sits above Done where it can't scroll out of view.
-          <View.Footer customHeight="auto" customGap="0.75rem">
-            {copyButton}
+          // No Tap to copy for the phrase: it stays off the clipboard.
+          <View.Footer customHeight="auto">
             <Button
               size="lg"
               isFullWidth
