@@ -52,7 +52,7 @@ type SheetBody = "list" | "add";
   sheet reopens the way they left it. Module scope rather than component
   state because Home unmounts the sheet whenever it navigates away.
 */
-const collapsedGroupKeys = new Set<string>();
+export const collapsedGroupKeys = new Set<string>();
 
 interface AccountSheetProps {
   isOpen: boolean;
