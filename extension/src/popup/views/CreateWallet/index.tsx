@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import { Button, CopyText, Icon, Notification } from "@stellar/design-system";
+import { Button, Icon, Notification } from "@stellar/design-system";
 import { Trans, useTranslation } from "react-i18next";
 
 import {
@@ -312,19 +312,7 @@ export const CreateWallet = () => {
         <View.Footer customHeight="auto" customGap="0.75rem">
           {isRevealed ? (
             <>
-              {/* Twelve words under the title don't leave room for Tap to
-                copy in the 600px popup, so it sits in the footer, as it
-                does on Reveal recovery phrase. */}
-              <CopyText textToCopy={phrase}>
-                <button
-                  type="button"
-                  className="CreateWallet__backup__copy"
-                  data-testid="create-wallet-phrase-copy"
-                >
-                  {t("Tap to copy")}
-                  <Icon.Copy01 />
-                </button>
-              </CopyText>
+              {/* No Tap to copy: the phrase stays off the clipboard. */}
               <div className="CreateWallet__backup__warning">
                 {t("Make sure you've saved it.")}{" "}
                 {t("You can't recover your wallet without it.")}
