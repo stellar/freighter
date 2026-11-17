@@ -7,6 +7,7 @@ import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { ROUTES } from "popup/constants/routes";
+import { emitScreenViewed } from "helpers/metrics";
 
 import { RevealRecoveryPhrase, RevealSecretKey } from "../RevealSecretKey";
 import { EditAccount } from "../EditAccount";
@@ -63,6 +64,13 @@ jest.mock("helpers/metrics", () => ({
   emitScreenViewed: jest.fn(),
   emitMetric: jest.fn(),
 }));
+
+const mockEmitScreenViewed = emitScreenViewed as jest.Mock;
+
+const expectScreens = (names: string[]) =>
+  expect(mockEmitScreenViewed.mock.calls).toEqual(
+    names.map((name) => [name, { flow: "security" }]),
+  );
 
 const LocationProbe = () => {
   const { pathname, search } = useLocation();
@@ -151,6 +159,7 @@ const submitPassword = async (
 describe("RevealSecretKey", () => {
   beforeEach(() => {
     mockRevealSecretKey.mockReset();
+    mockEmitScreenViewed.mockClear();
   });
 
   it("asks for consent, then the password, then shows the key", async () => {
@@ -176,6 +185,11 @@ describe("RevealSecretKey", () => {
       accountId: OTHER_ID,
       password: "hunter22",
     });
+    expectScreens([
+      "secret_key_warning",
+      "unlock_secret_key",
+      "show_secret_key",
+    ]);
   });
 
   it("reveals the active account's key when none is named", async () => {
@@ -212,6 +226,7 @@ describe("RevealSecretKey", () => {
 describe("RevealRecoveryPhrase", () => {
   beforeEach(() => {
     mockShowBackupPhrase.mockReset();
+    mockEmitScreenViewed.mockClear();
   });
 
   it("asks for consent, then the password, then shows the numbered words", async () => {
@@ -243,6 +258,11 @@ describe("RevealRecoveryPhrase", () => {
       password: "hunter22",
       sourceId: undefined,
     });
+    expectScreens([
+      "recovery_phrase_warning",
+      "unlock_recovery_phrase",
+      "show_recovery_phrase",
+    ]);
   });
 
   it("asks for the phrase Edit account names", async () => {

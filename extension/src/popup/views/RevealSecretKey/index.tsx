@@ -102,7 +102,11 @@ const RevealSecret = ({ kind }: { kind: SecretKind }) => {
         action: t("Reveal recovery phrase"),
         failure: t("Unable to reveal your recovery phrase"),
         testId: "reveal-recovery-phrase",
-        screens: ["unlock_recovery_phrase", "show_recovery_phrase"],
+        screens: {
+          consent: "recovery_phrase_warning",
+          password: "unlock_recovery_phrase",
+          revealed: "show_recovery_phrase",
+        } as Record<Step, string>,
       }
     : {
         title: t("Show secret key"),
@@ -122,13 +126,15 @@ const RevealSecret = ({ kind }: { kind: SecretKind }) => {
         action: t("Reveal secret key"),
         failure: t("Unable to reveal your secret key"),
         testId: "reveal-secret-key",
-        screens: ["unlock_secret_key", "show_secret_key"],
+        screens: {
+          consent: "secret_key_warning",
+          password: "unlock_secret_key",
+          revealed: "show_secret_key",
+        } as Record<Step, string>,
       };
 
   useEffect(() => {
-    emitScreenViewed(copy.screens[step === "revealed" ? 1 : 0], {
-      flow: "security",
-    });
+    emitScreenViewed(copy.screens[step], { flow: "security" });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 

@@ -190,7 +190,8 @@ export const ROUTES_WITHOUT_SCREEN_VIEW = new Set<string>([
   ROUTES.manageConnectedApps,
   ROUTES.wallets,
   // The reveal views emit their own screens from the step they're on (the
-  // password screen first, then the revealed secret after a correct password).
+  // warning, then the password screen, then the revealed secret after a
+  // correct password).
   // Emitting the route's show_* screen on navigate would count a reveal before
   // the password was checked.
   ROUTES.revealSecretKey,
