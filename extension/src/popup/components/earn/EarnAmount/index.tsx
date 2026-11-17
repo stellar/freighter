@@ -12,6 +12,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 
 import { View } from "popup/basics/layout/View";
+import { showToast } from "popup/basics/shadcn/Toast";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { AmountCard } from "popup/components/amount/AmountCard";
 import { PercentageButtons } from "popup/components/amount/PercentageButtons";
@@ -89,6 +90,16 @@ import { useSimulateEarnDeposit } from "./hooks/useSimulateEarnDeposit";
 
 import "./styles.scss";
 
+/**
+ * Why a build left nothing Review can sign: the field changed while it ran
+ * ("stale"), the XLM balance can't pay the fee ("needs_xlm", the fee sheet's
+ * remedy), or the reason in words.
+ */
+type BuildFailure =
+  | { kind: "stale" }
+  | { kind: "needs_xlm" }
+  | { kind: "message"; message: string };
+
 interface EarnAmountProps {
   /** Back to the token picker: the token pill. */
   goBack: () => void;
@@ -129,6 +140,10 @@ export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationError, setSimulationError] = useState("");
   const [isReviewOpen, setIsReviewOpen] = useState(false);
+  // Whether the staged deposit is the one Review shows, built with its amount
+  // and the saved settings. A settings save whose rebuild fails brings Review
+  // back with Confirm off until a build succeeds.
+  const [isBuildCurrent, setIsBuildCurrent] = useState(false);
   // Entry in tokens or in dollars. The token amount stays the one the deposit
   // is built from; dollars are converted into it as they are typed.
   const [inputType, setInputType] = useState<InputType>("crypto");
@@ -286,9 +301,10 @@ export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
 
   /**
    * Builds and simulates the deposit of `amountToReview` with the given fee and
-   * timeout, then runs the checks only a simulation can answer. Resolves true
+   * timeout, then runs the checks only a simulation can answer. Resolves null
    * when the staged deposit is ready for Review: it was built with
-   * `amountToReview`, and the field still says the same.
+   * `amountToReview`, and the field still says the same. Otherwise it resolves
+   * why not, and the caller shows it.
    */
   const buildDeposit = async ({
     amountToReview,
@@ -298,11 +314,12 @@ export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
     amountToReview: string;
     inclusionFee: string;
     timeout: number;
-  }): Promise<boolean> => {
+  }): Promise<BuildFailure | null> => {
     // Clear a previous failure so the banner does not persist into a retry the
     // user has already corrected.
     dispatch(setEarnSubmitFailed(false));
     setSimulationError("");
+    setIsBuildCurrent(false);
 
     const spendableXlm = getSpendableXlm(inclusionFee);
 
@@ -313,8 +330,7 @@ export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
         assetCode: selected?.code || "",
         reason: "no_xlm",
       });
-      setIsFeeSheetOpen(true);
-      return false;
+      return { kind: "needs_xlm" };
     }
 
     const assetToReview = asset;
@@ -358,7 +374,7 @@ export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
           amountToReview,
         )
       ) {
-        return false;
+        return { kind: "stale" };
       }
 
       dispatch(saveCurrentPositionTokens(position));
@@ -387,20 +403,20 @@ export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
         // Only an XLM deposit can trade amount for fee. For anything else the
         // deposit is not competing with the fee at all, so the remedy is more
         // XLM — the same sheet the pre-simulation gate opens.
-        if (isXlm) {
-          setSimulationError(
-            t(
-              "Not enough XLM left for the network fee. Reduce your deposit by at least {{amount}} XLM.",
-              { amount: formatAmount(shortfall) },
-            ),
-          );
-        } else {
-          setIsFeeSheetOpen(true);
+        if (!isXlm) {
+          return { kind: "needs_xlm" };
         }
-        return false;
+        return {
+          kind: "message",
+          message: t(
+            "Not enough XLM left for the network fee. Reduce your deposit by at least {{amount}} XLM.",
+            { amount: formatAmount(shortfall) },
+          ),
+        };
       }
 
-      return true;
+      setIsBuildCurrent(true);
+      return null;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       // A simulation failure is the deposit's own pre-flight rejection — the
@@ -414,14 +430,15 @@ export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
       // CTA already gates anything above the spendable balance, so what is left
       // is a deposit that cannot also pay for itself. Every other rejection is
       // the pool's own and reads better in its own words.
-      setSimulationError(
-        isXlm && isInsufficientBalanceFailure(message)
-          ? t(
-              "Not enough XLM to cover the network fee. Try depositing a smaller amount.",
-            )
-          : message,
-      );
-      return false;
+      return {
+        kind: "message",
+        message:
+          isXlm && isInsufficientBalanceFailure(message)
+            ? t(
+                "Not enough XLM to cover the network fee. Try depositing a smaller amount.",
+              )
+            : message,
+      };
     } finally {
       setIsSimulating(false);
     }
@@ -429,12 +446,19 @@ export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
 
   const handleContinue = async () => {
     const amountToReview = depositAmount;
-    const isReady = await buildDeposit({
+    const failure = await buildDeposit({
       amountToReview,
       inclusionFee: fee,
       timeout: transactionTimeout,
     });
-    if (!isReady) {
+    if (failure) {
+      // Said on this screen. A stale build says nothing: the CTA is back for
+      // the amount the field has now.
+      if (failure.kind === "needs_xlm") {
+        setIsFeeSheetOpen(true);
+      } else if (failure.kind === "message") {
+        setSimulationError(failure.message);
+      }
       return;
     }
     // Recorded with the build it describes, so Review and the deposit screens
@@ -445,8 +469,9 @@ export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
 
   // The review's gear: the same fee/timeout sheet Send and Swap use. Saving
   // rebuilds the deposit before Review comes back, so Confirm never signs the
-  // transaction built with the old settings; a rebuild that fails leaves Review
-  // closed and says why on this screen.
+  // transaction built with the old settings. Review comes back either way, as
+  // on Send and Swap; after a failed rebuild a toast says why and Confirm stays
+  // off.
   const handleSettingsSubmit = async ({
     fee: nextFee,
     timeout,
@@ -456,14 +481,19 @@ export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
     dispatch(saveTransactionTimeout(timeout));
     setIsEditingSettings(false);
     setDraftFee(null);
-    const isReady = await buildDeposit({
+    const failure = await buildDeposit({
       amountToReview: amountToShow,
       inclusionFee: savedFee,
       timeout,
     });
-    if (isReady) {
-      returnToReview();
+    if (failure && failure.kind !== "stale") {
+      const reason =
+        failure.kind === "needs_xlm"
+          ? t("Not enough XLM for network fees")
+          : failure.message;
+      showToast(() => <Notification variant="error" title={reason} />);
     }
+    returnToReview();
   };
 
   const closeSettingsSheet = () => {
@@ -637,6 +667,7 @@ export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
               : null
           }
           simulationState={simulationState}
+          isBuildCurrent={isBuildCurrent}
           networkDetails={data.networkDetails}
           onCancel={() => setIsReviewOpen(false)}
           onConfirm={() => {

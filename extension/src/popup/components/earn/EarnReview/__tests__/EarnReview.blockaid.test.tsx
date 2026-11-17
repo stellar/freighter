@@ -91,6 +91,7 @@ const renderReview = ({
             error: null,
           } as any
         }
+        isBuildCurrent
         networkDetails={MAINNET_NETWORK_DETAILS}
         onCancel={onCancel}
         onConfirm={onConfirm}

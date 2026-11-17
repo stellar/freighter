@@ -133,6 +133,7 @@ const renderReview = ({
           },
           error: null,
         }}
+        isBuildCurrent
         networkDetails={TESTNET_NETWORK_DETAILS}
         onCancel={onCancel}
         onConfirm={onConfirm}

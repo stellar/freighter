@@ -57,6 +57,11 @@ interface EarnReviewProps {
   /** USD value of the existing position; null when the asset has no price. */
   currentPositionUsd: string | null;
   simulationState: State<SimulateTxData, string>;
+  /**
+   * False after a settings save whose rebuild failed: the staged transaction
+   * was built with the old settings, so there is nothing to sign.
+   */
+  isBuildCurrent: boolean;
   networkDetails: NetworkDetails;
   onCancel: () => void;
   onConfirm: () => void;
@@ -83,6 +88,7 @@ export const EarnReview = ({
   currentPosition,
   currentPositionUsd,
   simulationState,
+  isBuildCurrent,
   networkDetails,
   onCancel,
   onConfirm,
@@ -112,11 +118,13 @@ export const EarnReview = ({
   }, [hwStatus]);
 
   const preparedXdr = simulationState.data?.transactionXdr;
-  // Nothing to sign unless the latest build succeeded. Review only opens on a
-  // successful build, so this is a backstop: it keeps Confirm from ever signing
-  // a transaction a rebuild is replacing.
+  // Nothing to sign unless the latest build succeeded. A settings save whose
+  // rebuild failed brings Review back with the old transaction still staged,
+  // and Confirm must not sign it.
   const canConfirm =
-    simulationState.state === RequestState.SUCCESS && !!preparedXdr;
+    isBuildCurrent &&
+    simulationState.state === RequestState.SUCCESS &&
+    !!preparedXdr;
 
   /*
    * The Blockaid verdict on the deposit the user is about to sign. Only the

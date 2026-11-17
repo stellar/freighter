@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import BigNumber from "bignumber.js";
 import { Account } from "stellar-sdk";
@@ -14,6 +15,7 @@ import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
 import { getBlendSuppliedTokens } from "@shared/api/helpers/blend";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { simulateTransaction } from "@shared/api/internal";
+import { showToast } from "popup/basics/shadcn/Toast";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { EarnAmount } from "popup/components/earn/EarnAmount";
@@ -44,6 +46,12 @@ jest.mock("@shared/api/helpers/stellarSdkServer", () => ({
 jest.mock("@shared/api/internal", () => ({
   ...jest.requireActual("@shared/api/internal"),
   simulateTransaction: jest.fn(),
+}));
+
+// The test Wrapper mounts no Toaster; the tests render what the toast would.
+jest.mock("popup/basics/shadcn/Toast", () => ({
+  ...jest.requireActual("popup/basics/shadcn/Toast"),
+  showToast: jest.fn(),
 }));
 
 jest.mock("helpers/metrics", () => ({
@@ -120,6 +128,39 @@ const isReviewOpen = () =>
       .closest(".SlideupModal")
       ?.classList.contains("open"),
   );
+
+/** Opens Review on a 100 USDC deposit, then its settings sheet. */
+const openSettingsFromReview = async () => {
+  renderAmount();
+  fireEvent.change(screen.getByTestId("send-amount-amount-input"), {
+    target: { value: "100" },
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByTestId("earn-amount-btn-continue"));
+  });
+  await waitFor(() => expect(isReviewOpen()).toBe(true));
+  expect(screen.getByTestId("earn-review-confirm")).not.toBeDisabled();
+
+  await act(async () => {
+    fireEvent.click(screen.getByTestId("earn-review-settings-btn"));
+  });
+  await waitFor(() => expect(isReviewOpen()).toBe(false));
+};
+
+const saveFee = async (fee: string) => {
+  const feeInput = await screen.findByTestId("edit-tx-settings-fee-input");
+  fireEvent.change(feeInput, { target: { value: fee } });
+  await act(async () => {
+    fireEvent.click(screen.getByText("Save"));
+  });
+};
+
+/** The title of the toast shown last. */
+const lastToastText = () => {
+  const calls = (showToast as jest.Mock).mock.calls;
+  const { container } = render(calls[calls.length - 1][0]("toast"));
+  return container.textContent;
+};
 
 /** A simulation the test resolves itself, to act while the build is in flight. */
 const deferSimulation = () => {
@@ -266,5 +307,53 @@ describe("EarnAmount reviewed amount", () => {
       getTestStore()!.getState().transactionSubmission.transactionData
         .transactionFee,
     ).toBe("0.01");
+    expect(screen.getByTestId("earn-review-confirm")).not.toBeDisabled();
+    expect(showToast).not.toHaveBeenCalled();
+  });
+
+  it("brings Review back with Confirm off when the settings rebuild fails", async () => {
+    await openSettingsFromReview();
+
+    // The pool rejects the rebuilt deposit.
+    (simulateTransaction as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      response: "Pool is frozen",
+    });
+    await saveFee("0.01");
+
+    // Review is back, but the deposit it shows was built with the old fee, so
+    // there is nothing to sign. A toast says why.
+    await waitFor(() => expect(isReviewOpen()).toBe(true));
+    expect(screen.getByTestId("earn-review-confirm")).toBeDisabled();
+    // The reason is the toast's; the amount screen behind Review stays clear.
+    expect(
+      within(screen.getByTestId("earn-amount")).queryByText("Pool is frozen"),
+    ).not.toBeInTheDocument();
+    expect(showToast).toHaveBeenCalledTimes(1);
+    expect(lastToastText()).toContain("Pool is frozen");
+
+    // A save that rebuilds cleanly turns Confirm back on.
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("earn-review-settings-btn"));
+    });
+    await waitFor(() => expect(isReviewOpen()).toBe(false));
+    await saveFee("0.001");
+    await waitFor(() => expect(isReviewOpen()).toBe(true));
+    await waitFor(() =>
+      expect(screen.getByTestId("earn-review-confirm")).not.toBeDisabled(),
+    );
+  });
+
+  it("says XLM can't pay a saved fee it can't cover", async () => {
+    await openSettingsFromReview();
+
+    // More than the 100 XLM the account holds.
+    await saveFee("150");
+
+    await waitFor(() => expect(isReviewOpen()).toBe(true));
+    expect(screen.getByTestId("earn-review-confirm")).toBeDisabled();
+    expect(lastToastText()).toContain("Not enough XLM for network fees");
+    // Nothing was simulated with a fee the account cannot pay.
+    expect(BlendDeposit.buildAndSimulateBlendDeposit).toHaveBeenCalledTimes(1);
   });
 });
