@@ -10,7 +10,6 @@
   "{{from}} has been swapped to {{to}}": "{{from}} has been swapped to {{to}}",
   "{{from}} swapped to {{amount}} {{to}}": "{{from}} swapped to {{amount}} {{to}}",
   "{{name}} Pool": "{{name}} Pool",
-  "{{name}} Pool {{version}}": "{{name}} Pool {{version}}",
   "{{rate}}% APY": "{{rate}}% APY",
   "{{rate}}% APY*": "{{rate}}% APY*",
   "{{walletType}} logo": "{{walletType}} logo",

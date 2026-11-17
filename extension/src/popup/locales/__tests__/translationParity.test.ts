@@ -59,7 +59,6 @@ const earnKeys = [
   "{{amount}} {{code}} available",
   "Current APY: {{rate}}",
   "{{name}} Pool",
-  "{{name}} Pool {{version}}",
   "by Blend",
   "Review deposit",
   "Insufficient funds",
