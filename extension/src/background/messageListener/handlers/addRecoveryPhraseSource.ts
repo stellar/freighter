@@ -5,7 +5,10 @@ import { captureException } from "@sentry/browser";
 
 import { AddRecoveryPhraseSourceMessage } from "@shared/api/types/message-request";
 import { SecretSourceType } from "@shared/api/types";
-import { ACCOUNT_ALREADY_EXISTS_ERROR } from "@shared/constants/errors";
+import {
+  ACCOUNT_ALREADY_EXISTS_ERROR,
+  PENDING_PHRASE_MISSING_ERROR,
+} from "@shared/constants/errors";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { linkWalletSources } from "background/helpers/link-sources";
 import {
@@ -37,8 +40,6 @@ import { storeAccount } from "../helpers/store-account";
 
 const { fromMnemonic } = StellarHDWallet;
 
-export const PENDING_PHRASE_MISSING_ERROR =
-  "The new recovery phrase is no longer available. Start again.";
 export const PHRASE_ALREADY_HELD_ERROR =
   "This recovery phrase is already in your wallet";
 export const NO_SOFTWARE_KEYSTORE_ERROR =

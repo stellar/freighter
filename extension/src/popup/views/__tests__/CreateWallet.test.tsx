@@ -11,6 +11,7 @@ import {
 import * as ApiInternal from "@shared/api/internal";
 import { Account, SecretSource, SecretSourceType } from "@shared/api/types";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { PENDING_PHRASE_MISSING_ERROR } from "@shared/constants/errors";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { ROUTES } from "popup/constants/routes";
@@ -283,6 +284,38 @@ describe("CreateWallet", () => {
     );
     expect(spy.mock.calls[0][0]).not.toHaveProperty("mnemonicPhrase");
     expect(await screen.findByTestId("location")).toHaveTextContent("/");
+  });
+
+  it("goes back to the chooser when the generated phrase is gone", async () => {
+    const generate = jest
+      .spyOn(ApiInternal, "generateRecoveryPhrase")
+      .mockResolvedValue({ mnemonicPhrase: PHRASE, pendingPhraseId: "gen-1" });
+    jest
+      .spyOn(ApiInternal, "addRecoveryPhraseSource")
+      .mockRejectedValue(new Error(PENDING_PHRASE_MISSING_ERROR));
+    renderView({ accounts: twoPhraseAccounts, sources: phraseSources });
+
+    fireEvent.click(screen.getByTestId("create-wallet-generate"));
+    fireEvent.click(await screen.findByTestId("set-account-name-submit"));
+    fireEvent.click(await screen.findByTestId("create-wallet-phrase-reveal"));
+    fireEvent.click(screen.getByTestId("create-wallet-phrase-create"));
+    await enterPassword();
+
+    expect(await screen.findByTestId("create-wallet")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "The new recovery phrase is no longer available. Start again.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("create-wallet-phrase"),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId("location")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("create-wallet-generate"));
+    fireEvent.click(await screen.findByTestId("set-account-name-submit"));
+    await screen.findByTestId("create-wallet-phrase");
+    expect(generate).toHaveBeenCalledTimes(2);
   });
 
   it("keeps the user on the password step when the add fails", async () => {

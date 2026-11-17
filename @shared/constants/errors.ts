@@ -14,3 +14,11 @@ export class SorobanRpcNotSupportedError extends Error {
  */
 export const ACCOUNT_ALREADY_EXISTS_ERROR =
   "This account is already in your wallet";
+
+/**
+ * Returned when Create is confirmed for a generated recovery phrase the
+ * background no longer holds: another window generated one since, so the
+ * phrase this window showed was never stored.
+ */
+export const PENDING_PHRASE_MISSING_ERROR =
+  "The new recovery phrase is no longer available. Start again.";
