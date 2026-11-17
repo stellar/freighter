@@ -223,9 +223,18 @@ export const popupMessageListener = (
       });
     }
     case SERVICE_TYPES.GENERATE_RECOVERY_PHRASE: {
+      // A new phrase is generated and held only for our own pages (and the
+      // dev-server popup, which relays through the content script).
+      if (!isFromExtensionPage && !isFromDevServer) {
+        return { error: "Unauthorized" };
+      }
       return generateRecoveryPhrase({ sessionStore });
     }
     case SERVICE_TYPES.ADD_RECOVERY_PHRASE_SOURCE: {
+      // Same gate as GENERATE_RECOVERY_PHRASE.
+      if (!isFromExtensionPage && !isFromDevServer) {
+        return { error: "Unauthorized" };
+      }
       return addRecoveryPhraseSource({
         request,
         localStore,
@@ -582,6 +591,12 @@ export const popupMessageListener = (
       });
     }
     case SERVICE_TYPES.GET_MIGRATED_MNEMONIC_PHRASE: {
+      // The migrated recovery phrase leaves the background only for our own
+      // pages (and the dev-server popup, which relays through the content
+      // script).
+      if (!isFromExtensionPage && !isFromDevServer) {
+        return { error: "Unauthorized" };
+      }
       return getMigratedMnemonicPhrase({
         sessionStore,
       });
