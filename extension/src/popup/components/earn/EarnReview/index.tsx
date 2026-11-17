@@ -1,39 +1,31 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import BigNumber from "bignumber.js";
-import { Button, Icon, Text } from "@stellar/design-system";
+import { Button, Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  Operation,
-  OperationRecord,
-  Transaction,
-  TransactionBuilder,
-} from "stellar-sdk";
+import { Transaction, TransactionBuilder } from "stellar-sdk";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { BlendCatalogPool } from "@shared/api/types/blend";
-import { OPERATION_TYPES } from "constants/transaction";
-import { State } from "constants/request";
+import { RequestState, State } from "constants/request";
 import { SimulateTxData } from "types/transactions";
 import { SecurityLevel } from "popup/constants/blockaid";
-import { AuthEntries } from "popup/components/AuthEntry";
 import { BlockaidBanner } from "popup/components/BlockaidBanner";
 import { BlockAidScanExpanded } from "popup/components/WarningMessages";
-import { FeesPane } from "popup/components/InternalTransaction/FeesPane";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
-import { Summary } from "popup/views/SignTransaction/Preview/Summary";
-import { Details } from "popup/views/SignTransaction/Preview/Details";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
+import { EarnTransactionDetails } from "popup/components/earn/EarnTransactionDetails";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import {
   getTransactionSecurityLevel,
   useBlockaidOverrideState,
   useShouldTreatTxAsUnableToScan,
 } from "popup/helpers/blockaid";
-import { getAuthEntryBoundAddress } from "popup/helpers/soroban";
 import { NO_FIAT_VALUE, formatAmount } from "popup/helpers/formatters";
 import { formatRate } from "popup/components/earn/helpers/formatPoolStats";
 import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
+import { formatEarnAmount } from "popup/components/earn/helpers/formatEarnAmount";
+import { SheetHeader, SheetHeaderLayout } from "popup/components/SheetHeader";
 import { StatRow } from "popup/components/earn/StatRow";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 import {
@@ -64,11 +56,12 @@ interface EarnReviewProps {
   currentPosition: string;
   /** USD value of the existing position; null when the asset has no price. */
   currentPositionUsd: string | null;
-  fee: string;
   simulationState: State<SimulateTxData, string>;
   networkDetails: NetworkDetails;
   onCancel: () => void;
   onConfirm: () => void;
+  /** Opens the fee/timeout settings sheet, which rebuilds the deposit. */
+  onEditSettings: () => void;
 }
 
 /**
@@ -89,17 +82,22 @@ export const EarnReview = ({
   apy,
   currentPosition,
   currentPositionUsd,
-  fee,
   simulationState,
   networkDetails,
   onCancel,
   onConfirm,
+  onEditSettings,
 }: EarnReviewProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const [isOnDetailsPane, setIsOnDetailsPane] = useState(false);
-  const [isOnFeesPane, setIsOnFeesPane] = useState(false);
   const [isOnBlockaidSheet, setIsOnBlockaidSheet] = useState(false);
+  // True from this review's Confirm until the device overlay closes. The
+  // overlay's status is global, and this sheet stays mounted behind the token
+  // picker, where the Earn swap's own review can start a signature: without
+  // this, both overlays would ask the device to sign, and this one would then
+  // advance the deposit with the swap's signed envelope.
+  const [isSigningOnDevice, setIsSigningOnDevice] = useState(false);
 
   const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
   const isHardwareWallet = !!hardwareWalletType;
@@ -107,7 +105,18 @@ export const EarnReview = ({
     hardwareWalletData: { status: hwStatus },
   } = useSelector(transactionSubmissionSelector);
 
+  useEffect(() => {
+    if (hwStatus !== ShowOverlayStatus.IN_PROGRESS) {
+      setIsSigningOnDevice(false);
+    }
+  }, [hwStatus]);
+
   const preparedXdr = simulationState.data?.transactionXdr;
+  // Nothing to sign unless the latest build succeeded. Review only opens on a
+  // successful build, so this is a backstop: it keeps Confirm from ever signing
+  // a transaction a rebuild is replacing.
+  const canConfirm =
+    simulationState.state === RequestState.SUCCESS && !!preparedXdr;
 
   /*
    * The Blockaid verdict on the deposit the user is about to sign. Only the
@@ -154,7 +163,11 @@ export const EarnReview = ({
    * where falling through would post an empty envelope instead.
    */
   const onConfirmTx = () => {
+    if (!canConfirm) {
+      return;
+    }
     if (isHardwareWallet) {
+      setIsSigningOnDevice(true);
       dispatch(
         startHwSign({
           transactionXDR: preparedXdr || "",
@@ -183,27 +196,12 @@ export const EarnReview = ({
     }
   }, [preparedXdr, networkDetails.networkPassphrase]);
 
-  const authEntries =
-    detailTx &&
-    (detailTx.operations[0] as Operation.InvokeHostFunction).auth?.length
-      ? (detailTx.operations[0] as Operation.InvokeHostFunction).auth!.map(
-          (authEntry) => ({
-            invocation: authEntry.rootInvocation,
-            boundAddress: getAuthEntryBoundAddress(authEntry),
-          }),
-        )
-      : [];
+  const positionAfter = new BigNumber(currentPosition)
+    .plus(amount || "0")
+    .toFixed();
 
-  const positionAfter = formatAmount(
-    new BigNumber(currentPosition).plus(amount || "0").toFixed(),
-  );
-
-  // Projections are shown as before -> after, so both sides are computed:
-  // "before" from the existing position, "after" from position plus deposit.
-  const currentEarnings = projectEarnings({
-    depositUsd: currentPositionUsd,
-    apy,
-  });
+  // What the whole position is projected to earn once the deposit lands, as on
+  // mobile: one estimate, not a before -> after pair.
   const { monthly, yearly } = projectEarnings({
     depositUsd:
       currentPositionUsd !== null && amountUsd !== null
@@ -211,63 +209,19 @@ export const EarnReview = ({
         : null,
     apy,
   });
+  // An unknown projection reads "--" rather than "≈ --". The sign needs no
+  // translation.
+  const formatEstimate = (value: string | null) =>
+    value === null ? NO_FIAT_VALUE : `≈ ${formatProjection(value)}`;
 
-  if (isOnFeesPane) {
+  if (isOnDetailsPane && detailTx && preparedXdr) {
     return (
-      <div className="EarnReview">
-        <FeesPane
-          fee={fee}
-          simulationState={simulationState}
-          isSoroban
-          onClose={() => setIsOnFeesPane(false)}
-        />
-      </div>
-    );
-  }
-
-  if (isOnDetailsPane && detailTx) {
-    return (
-      <div
-        className="EarnReview EarnReview--details"
-        data-testid="earn-review-details-pane"
-      >
-        <div className="EarnReview__details-header">
-          <Text as="div" size="md" weight="semi-bold">
-            {t("Transaction details")}
-          </Text>
-          <button
-            type="button"
-            className="EarnReview__close"
-            aria-label={t("Close")}
-            onClick={() => setIsOnDetailsPane(false)}
-          >
-            <Icon.XClose />
-          </button>
-        </div>
-        <div
-          className="EarnReview__details-body"
-          data-testid="earn-review-details-body"
-        >
-          <Summary
-            sequenceNumber={detailTx.sequence}
-            fee={detailTx.fee}
-            memo={undefined}
-            xdr={preparedXdr!}
-            operationNames={detailTx.operations.map(
-              (op) =>
-                OPERATION_TYPES[op.type as keyof typeof OPERATION_TYPES] ||
-                op.type,
-            )}
-          />
-          {authEntries.length > 0 && <AuthEntries entries={authEntries} />}
-          <Details
-            operations={detailTx.operations as unknown as OperationRecord[]}
-            flaggedKeys={{}}
-            isMemoRequired={false}
-            scanAssets={false}
-          />
-        </div>
-      </div>
+      <EarnTransactionDetails
+        transaction={detailTx}
+        xdr={preparedXdr}
+        onClose={() => setIsOnDetailsPane(false)}
+        testIdPrefix="earn-review"
+      />
     );
   }
 
@@ -276,8 +230,14 @@ export const EarnReview = ({
    * inside Send's review modal. HardwareSign writes the signed envelope back
    * over transactionSimulation.preparedTransaction and then calls onSubmit, so
    * the deposit terminal it advances to reads the signed XDR from redux.
+   *
+   * Only for a signature this review asked for (see isSigningOnDevice).
    */
-  if (hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType) {
+  if (
+    isSigningOnDevice &&
+    hwStatus === ShowOverlayStatus.IN_PROGRESS &&
+    hardwareWalletType
+  ) {
     return (
       <HardwareSign
         isInternal
@@ -313,9 +273,9 @@ export const EarnReview = ({
       <button
         type="button"
         className="EarnReview__settings"
-        aria-label={t("Fee settings")}
-        data-testid="earn-review-fees-btn"
-        onClick={() => setIsOnFeesPane(true)}
+        aria-label={t("Settings")}
+        data-testid="earn-review-settings-btn"
+        onClick={onEditSettings}
       >
         <Icon.Settings04 />
       </button>
@@ -331,7 +291,7 @@ export const EarnReview = ({
         }`}
       >
         <Button
-          size="md"
+          size="lg"
           variant={warningTone === "malicious" ? "destructive" : "tertiary"}
           isRounded
           isFullWidth
@@ -349,10 +309,11 @@ export const EarnReview = ({
         }`}
       >
         <Button
-          size="md"
+          size="lg"
           variant="secondary"
           isRounded
           isFullWidth
+          disabled={!canConfirm}
           onClick={onConfirmTx}
           data-testid="earn-review-confirm"
         >
@@ -366,135 +327,159 @@ export const EarnReview = ({
    * The "Do not proceed" detail sheet, listing Blockaid's reasons. Rendered
    * after the hardware check above so that confirming from this sheet with a
    * device connected swaps in HardwareSign instead of leaving the sheet up.
+   *
+   * Its actions mirror mobile's security detail sheet. Cancel returns to the
+   * review. On a malicious or suspicious verdict "Confirm anyway" signs from
+   * here, as the review's own Confirm would. When the scan could not run, there
+   * is no verdict to acknowledge, so "Continue" only returns to the review,
+   * whose Confirm stays the one way to sign.
    */
   if (isOnBlockaidSheet) {
+    const isUnableToScan = securityLevel === SecurityLevel.UNABLE_TO_SCAN;
+    const backToReview = () => setIsOnBlockaidSheet(false);
+
     return (
       <div className="EarnReview" data-testid="earn-review-blockaid-pane">
         <BlockAidScanExpanded
           scanResult={txScanResult}
-          onClose={() => setIsOnBlockaidSheet(false)}
+          onClose={backToReview}
         />
-        {actions}
+        <div className="EarnReview__blockaid-actions">
+          <Button
+            size="lg"
+            variant={isMalicious ? "destructive" : "secondary"}
+            isRounded
+            isFullWidth
+            onClick={backToReview}
+            data-testid="earn-review-blockaid-cancel"
+          >
+            {t("Cancel")}
+          </Button>
+          <button
+            type="button"
+            className={`EarnReview__text-action EarnReview__text-action--${
+              isMalicious ? "error" : "default"
+            }`}
+            disabled={!isUnableToScan && !canConfirm}
+            onClick={isUnableToScan ? backToReview : onConfirmTx}
+            data-testid="earn-review-blockaid-proceed"
+          >
+            {isUnableToScan ? t("Continue") : t("Confirm anyway")}
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="EarnReview" data-testid="earn-review">
-      <div className="EarnReview__group">
-        <Text as="div" size="sm">
-          {t("You are depositing")}
-        </Text>
-        <div className="EarnReview__asset">
-          <AssetIcon
-            assetIcons={assetIcon ? { [assetCode]: assetIcon } : {}}
-            code={assetCode}
-            issuerKey={assetIssuer}
-            icon={assetIcon || undefined}
+      <SheetHeader
+        layout={SheetHeaderLayout.Centered}
+        title={t("Review deposit")}
+      />
+
+      <div className="EarnReview__blocks">
+        <div className="EarnReview__group EarnReview__group--deposit">
+          <div className="EarnReview__group-title">
+            {t("You are depositing")}
+          </div>
+          <div className="EarnReview__flow">
+            <div className="EarnReview__asset">
+              <AssetIcon
+                assetIcons={assetIcon ? { [assetCode]: assetIcon } : {}}
+                code={assetCode}
+                issuerKey={assetIssuer}
+                icon={assetIcon || undefined}
+              />
+              <div>
+                <div
+                  className="EarnReview__primary"
+                  data-testid="earn-review-amount"
+                >
+                  {formatEarnAmount(amount)} {assetCode}
+                </div>
+                <div className="EarnReview__secondary">
+                  {amountUsd === null
+                    ? NO_FIAT_VALUE
+                    : `$${formatAmount(amountUsd)}`}
+                </div>
+              </div>
+            </div>
+
+            <div className="EarnReview__arrow">
+              <Icon.ArrowDown />
+            </div>
+
+            <div className="EarnReview__asset">
+              <PoolIcon />
+              <div>
+                <div className="EarnReview__secondary">{t("To")}</div>
+                <div
+                  className="EarnReview__primary"
+                  data-testid="earn-review-pool"
+                >
+                  {formatPoolName(pool?.name, t)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sits between the deposit card and the position rows rather than at
+            the top of the view, so the warning reads against the deposit it is
+            about — the same placement the swap review uses. */}
+        {securityLevel && shouldShowTxWarning ? (
+          <BlockaidBanner
+            securityLevel={securityLevel}
+            entity="transaction"
+            onClick={() => setIsOnBlockaidSheet(true)}
+            dataTestId="earn-review-blockaid-warning"
           />
-          <div>
-            <div
-              className="EarnReview__amount"
-              data-testid="earn-review-amount"
-            >
-              {formatAmount(amount)} {assetCode}
-            </div>
-            <Text as="div" size="sm">
-              {amountUsd === null
-                ? NO_FIAT_VALUE
-                : `$${formatAmount(amountUsd)}`}
-            </Text>
-          </div>
+        ) : null}
+
+        <div className="EarnReview__group EarnReview__group--rows">
+          <StatRow
+            label={t("Position")}
+            testId="earn-review-position"
+            value={
+              <>
+                <span className="EarnReview__before">
+                  {`${formatEarnAmount(currentPosition)} → `}
+                </span>
+                {formatEarnAmount(positionAfter)} {assetCode}
+              </>
+            }
+          />
+          <StatRow
+            label={t("Current APY")}
+            value={formatRate(apy)}
+            isPositive
+            testId="earn-review-apy"
+          />
+          <StatRow
+            label={t("Monthly earnings (est.)")}
+            testId="earn-review-monthly"
+            value={formatEstimate(monthly)}
+          />
+          <StatRow
+            label={t("Yearly earnings (est.)")}
+            testId="earn-review-yearly"
+            value={formatEstimate(yearly)}
+          />
         </div>
 
-        <div className="EarnReview__chevrons">
-          <Icon.ChevronDownDouble />
-        </div>
-
-        <div className="EarnReview__asset">
-          <PoolIcon />
-          <div>
-            <Text as="div" size="xs">
-              {t("To")}
-            </Text>
-            <div className="EarnReview__amount">
-              {formatPoolName(pool?.name, t)}
-            </div>
-          </div>
-        </div>
+        {detailTx && (
+          <button
+            type="button"
+            className="EarnReview__details-btn"
+            data-testid="earn-review-details-btn"
+            onClick={() => setIsOnDetailsPane(true)}
+          >
+            <Icon.List />
+            <span>{t("Transaction details")}</span>
+          </button>
+        )}
       </div>
-
-      {/* Sits between the deposit card and the position rows rather than at the
-          top of the view, so the warning reads against the deposit it is about
-          — the same placement the swap review uses. */}
-      {securityLevel && shouldShowTxWarning ? (
-        <BlockaidBanner
-          securityLevel={securityLevel}
-          entity="transaction"
-          onClick={() => setIsOnBlockaidSheet(true)}
-          dataTestId="earn-review-blockaid-warning"
-        />
-      ) : null}
-
-      <div className="EarnReview__group EarnReview__group--rows">
-        <StatRow
-          label={t("Position")}
-          testId="earn-review-position"
-          value={
-            <>
-              <span className="EarnReview__before">
-                {formatAmount(currentPosition)}
-              </span>
-              {" → "}
-              {positionAfter} {assetCode}
-            </>
-          }
-        />
-        <StatRow
-          label={t("Current APY")}
-          value={formatRate(apy)}
-          isPositive
-          testId="earn-review-apy"
-        />
-        <StatRow
-          label={t("Monthly earnings (est.)")}
-          testId="earn-review-monthly"
-          value={
-            <>
-              <span className="EarnReview__before">
-                {formatProjection(currentEarnings.monthly)}
-              </span>
-              {" → "}
-              {formatProjection(monthly)}
-            </>
-          }
-        />
-        <StatRow
-          label={t("Yearly earnings (est.)")}
-          testId="earn-review-yearly"
-          value={
-            <>
-              <span className="EarnReview__before">
-                {formatProjection(currentEarnings.yearly)}
-              </span>
-              {" → "}
-              {formatProjection(yearly)}
-            </>
-          }
-        />
-      </div>
-
-      {detailTx && (
-        <button
-          type="button"
-          className="EarnReview__details-btn"
-          data-testid="earn-review-details-btn"
-          onClick={() => setIsOnDetailsPane(true)}
-        >
-          <Icon.List />
-          <span>{t("Transaction details")}</span>
-        </button>
-      )}
 
       {actions}
     </div>

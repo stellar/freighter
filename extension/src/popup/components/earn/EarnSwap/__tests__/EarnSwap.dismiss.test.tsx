@@ -57,6 +57,7 @@ const renderSheet = ({
       }}
     >
       <EarnSwap
+        sourceAsset="native"
         destinationAsset={USDC}
         destinationTokenDetails={null}
         onDone={onDone}
@@ -90,11 +91,14 @@ describe("EarnSwap dismissal", () => {
       ActionStatus.SUCCESS,
     );
 
-    await userEvent.click(screen.getByTestId("earn-swap-close"));
+    // Escape is one of the sheet's own dismissals, open on every step.
+    await userEvent.keyboard("{Escape}");
 
     // The balance behind the sheet has changed. Treating this as a cancel is
     // what left the picker offering the token at its pre-swap balance.
-    expect(onDone).toHaveBeenCalledWith({ fromCode: "XLM", toCode: "USDC" });
+    expect(onDone).toHaveBeenCalledWith(
+      expect.objectContaining({ fromCode: "XLM", toCode: "USDC" }),
+    );
     expect(onCancel).not.toHaveBeenCalled();
   });
 
@@ -103,9 +107,17 @@ describe("EarnSwap dismissal", () => {
     const onCancel = jest.fn();
     renderSheet({ onDone, onCancel });
 
-    await userEvent.click(screen.getByTestId("earn-swap-close"));
+    await userEvent.keyboard("{Escape}");
 
     expect(onCancel).toHaveBeenCalled();
     expect(onDone).not.toHaveBeenCalled();
+  });
+
+  it("draws the sheet's own X only once the swap is submitted", () => {
+    // The amount step's header carries the X; a second one at the top right
+    // would sit where the design has nothing.
+    renderSheet({ onDone: jest.fn(), onCancel: jest.fn() });
+
+    expect(screen.queryByTestId("earn-swap-close")).not.toBeInTheDocument();
   });
 });

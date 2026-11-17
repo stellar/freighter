@@ -1,9 +1,10 @@
 import React from "react";
-import { Button, Icon, Text } from "@stellar/design-system";
+import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { BlendCatalogPool } from "@shared/api/types/blend";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
+import { AssetIcon } from "popup/components/account/AccountAssets";
 import { BLEND_LENDING_DOCS_URL } from "popup/constants/externalLinks";
 import { openTab } from "popup/helpers/navigate";
 import { StatRow } from "popup/components/earn/StatRow";
@@ -17,6 +18,14 @@ import "./styles.scss";
 
 interface PoolDetailsSheetProps {
   pool: BlendCatalogPool;
+  /** The token being deposited: badges the pool icon and sets the rate shown. */
+  token: {
+    code: string;
+    issuer?: string;
+    icon?: string | null;
+    /** Its headline rate in this pool; null when there is no fresh price. */
+    apy: number | null;
+  };
   onClose: () => void;
 }
 
@@ -34,20 +43,33 @@ interface PoolDetailsSheetProps {
  * specific deployment. "View pool details" carries the pool-specific detail out
  * to Blend's docs instead.
  */
-export const PoolDetailsSheet = ({ pool, onClose }: PoolDetailsSheetProps) => {
+export const PoolDetailsSheet = ({
+  pool,
+  token,
+  onClose,
+}: PoolDetailsSheetProps) => {
   const { t } = useTranslation();
 
   return (
     <div className="PoolDetailsSheet" data-testid="earn-pool-details-sheet">
       <div className="PoolDetailsSheet__header">
-        <PoolIcon />
+        <div className="PoolDetailsSheet__mark">
+          <PoolIcon size={40} />
+          {/* The token being deposited, badged onto the pool. */}
+          <div className="PoolDetailsSheet__token">
+            <AssetIcon
+              assetIcons={token.icon ? { [token.code]: token.icon } : {}}
+              code={token.code}
+              issuerKey={token.issuer}
+              icon={token.icon || undefined}
+            />
+          </div>
+        </div>
         <div className="PoolDetailsSheet__identity">
-          <Text as="div" size="md" weight="semi-bold">
+          <div className="PoolDetailsSheet__name">
             {formatPoolName(pool.name, t)}
-          </Text>
-          <Text as="div" size="sm">
-            {t("by Blend")}
-          </Text>
+          </div>
+          <div className="PoolDetailsSheet__provider">{t("by Blend")}</div>
         </div>
         <button
           type="button"
@@ -56,7 +78,7 @@ export const PoolDetailsSheet = ({ pool, onClose }: PoolDetailsSheetProps) => {
           aria-label={t("Close")}
           data-testid="earn-pool-details-close"
         >
-          <Icon.XClose />
+          <Icon.X />
         </button>
       </div>
 
@@ -64,25 +86,15 @@ export const PoolDetailsSheet = ({ pool, onClose }: PoolDetailsSheetProps) => {
         className="PoolDetailsSheet__body"
         data-testid="earn-pool-details-body"
       >
-        <div className="PoolDetailsSheet__description">
-          <Text
-            as="div"
-            size="sm"
-            weight="medium"
-            addlClassName="PoolDetailsSheet__section-title"
-          >
+        <div className="PoolDetailsSheet__block">
+          <div className="PoolDetailsSheet__section-title">
             {t("Description")}
-          </Text>
-          {/* A div, not a p: the SDS theme gives `p:not(:last-child)` a 1.5rem
-              bottom margin at a specificity that beats `.Text`, so the copy
-              grew a 24px gap the moment the link was added below it. The theme
-              also forces `p` to 16px/28px — `md` is the same 16px at the
-              design's 24px leading. */}
-          <Text as="div" size="md">
+          </div>
+          <div className="PoolDetailsSheet__description">
             {t(
-              "Deposit supported assets into this Blend pool to earn yield. APY may change over time. Withdraw anytime.",
+              "Deposit supported tokens into this Blend pool to earn yield. APY may change over time. Withdraw anytime.",
             )}
-          </Text>
+          </div>
           <button
             type="button"
             className="PoolDetailsSheet__docs-link"
@@ -94,57 +106,43 @@ export const PoolDetailsSheet = ({ pool, onClose }: PoolDetailsSheetProps) => {
           </button>
         </div>
 
-        <Text
-          as="div"
-          size="sm"
-          weight="medium"
-          addlClassName="PoolDetailsSheet__section-title"
-        >
-          {t("Pool Performance")}
-        </Text>
-
-        <div className="PoolDetailsSheet__group">
-          <StatRow
-            label={t("Interest")}
-            value={formatRate(pool.interestApy)}
-            testId="earn-pool-interest-apy"
-          />
-          <StatRow
-            label={t("Net APY")}
-            value={formatRate(pool.netApy)}
-            isPositive
-            testId="earn-pool-net-apy"
-          />
+        <div className="PoolDetailsSheet__block">
+          <div className="PoolDetailsSheet__section-title">
+            {t("Current yield")}
+          </div>
+          <div className="PoolDetailsSheet__group">
+            <StatRow
+              label={t("Deposit APY")}
+              value={formatRate(token.apy)}
+              isPositive
+              testId="earn-pool-deposit-apy"
+            />
+          </div>
         </div>
 
-        <div className="PoolDetailsSheet__group">
-          <StatRow
-            label={t("Supplied")}
-            value={formatCompactUsd(pool.suppliedUsd)}
-            testId="earn-pool-supplied"
-          />
-          <StatRow
-            label={t("Borrowed")}
-            value={formatCompactUsd(pool.borrowedUsd)}
-            testId="earn-pool-borrowed"
-          />
-          <StatRow
-            label={t("Backstop")}
-            value={formatCompactUsd(pool.backstopUsd)}
-            testId="earn-pool-backstop"
-          />
+        <div className="PoolDetailsSheet__block">
+          <div className="PoolDetailsSheet__section-title">
+            {t("Pool liquidity")}
+          </div>
+          <div className="PoolDetailsSheet__group">
+            <StatRow
+              label={t("Supplied")}
+              value={formatCompactUsd(pool.suppliedUsd)}
+              testId="earn-pool-supplied"
+            />
+            <StatRow
+              label={t("Borrowed")}
+              value={formatCompactUsd(pool.borrowedUsd)}
+              testId="earn-pool-borrowed"
+            />
+            <StatRow
+              label={t("Backstop")}
+              value={formatCompactUsd(pool.backstopUsd)}
+              testId="earn-pool-backstop"
+            />
+          </div>
         </div>
       </div>
-
-      <Button
-        size="md"
-        variant="tertiary"
-        isFullWidth
-        isRounded
-        onClick={onClose}
-      >
-        {t("Close")}
-      </Button>
     </div>
   );
 };

@@ -1,39 +1,22 @@
 @use "../../../styles/utils.scss" as *;
 
-// Figma: Freighter-Mobile 13717:332943 "Choose an asset". Structured like
-// EarnIntro rather than View/SubviewHeader — the design's header is a bare
-// close icon with the title in the body, which View's centred app header
-// cannot express.
+// Figma: Varial 4464:110863 "Choose a token". Structured like EarnIntro rather
+// than View/SubviewHeader — the design's header is a bare close icon with the
+// title in the body, which View's centred app header cannot express.
 .EarnTokenPicker {
   position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: pxToRem(24);
-  // Both axes, deliberately. The glow is absolutely positioned and its box runs
-  // past the bottom edge; with only `overflow-x: hidden`, `overflow-y` computes
-  // to `auto` and that bleed becomes phantom scroll under the pinned
-  // disclaimer. Nothing here scrolls but `&__content`.
+  padding: pxToRem(24) pxToRem(24) 0;
   overflow: hidden;
 
-  // The same glow EarnIntro uses (see EarnGlow), at the design's 0.7 alpha and
-  // anchored to the bottom of the screen instead of the top: its centre sits
-  // 115px above the frame's safe bottom in the mock.
-  &__glow {
-    position: absolute;
-    left: 50%;
-    bottom: pxToRem(115);
-    transform: translate(-50%, 50%);
-    opacity: 0.7;
-    z-index: 0;
-  }
-
+  // The X sits 16px in from the left edge.
   &__header {
-    position: relative;
-    z-index: 1;
     flex: 0 0 auto;
     display: flex;
     padding-bottom: pxToRem(24);
+    margin-left: pxToRem(-8);
   }
 
   &__close {
@@ -54,21 +37,16 @@
     }
   }
 
-  // Scrolls on its own so the disclaimer stays pinned, matching the mock where
-  // the footnote sits outside the list's frame.
+  // One column with 24px between its blocks, the footnote included, scrolling
+  // as a whole. The fade at the bottom stands in for View.Content's.
   &__content {
-    position: relative;
-    z-index: 1;
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: pxToRem(40);
-
-    // View.Content hid its scrollbar and faded its scroll edge; this screen no
-    // longer goes through it, so both come along by hand. A mask rather than a
-    // background gradient, which would wipe the glow sitting behind the fade.
+    gap: pxToRem(24);
+    padding-bottom: pxToRem(24);
     scrollbar-width: none;
     -webkit-mask-image: linear-gradient(
       to bottom,
@@ -86,46 +64,78 @@
     }
   }
 
-  &__intro {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: pxToRem(8);
-  }
-
-  &__protocol {
-    display: flex;
-    align-items: center;
-    gap: pxToRem(4);
-    height: pxToRem(32);
-    padding: pxToRem(4) pxToRem(10);
-    border-radius: pxToRem(8);
-    background: var(--sds-clr-gray-03);
-    color: var(--sds-clr-gray-12);
-  }
-
-  &__protocol-icon {
-    width: pxToRem(20);
-    height: pxToRem(20);
-    border-radius: pxToRem(4);
-    display: block;
-    flex: none;
-  }
-
   &__copy {
     display: flex;
     flex-direction: column;
     gap: pxToRem(4);
   }
 
-  &__subtitle {
-    color: var(--sds-clr-gray-11);
+  // Text/MD/500.
+  &__title {
+    margin: 0;
+    font-size: pxToRem(16);
+    line-height: pxToRem(24);
+    font-weight: 500;
+    color: var(--sds-clr-gray-12);
+  }
 
-    // Figma's Text/SM/400 is 14/20; SDS's Text--sm is 14/22. Outruns SDS's own
-    // rule, which inheritance cannot.
-    .Text {
-      line-height: pxToRem(20);
+  // Text/XS/400.
+  &__subtitle {
+    margin: 0;
+    font-size: pxToRem(12);
+    line-height: pxToRem(18);
+    font-weight: 400;
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__deposit-into {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: pxToRem(8);
+  }
+
+  // Text/XS/500.
+  &__label {
+    font-size: pxToRem(12);
+    line-height: pxToRem(18);
+    font-weight: 500;
+    color: var(--sds-clr-gray-11);
+  }
+
+  // The chip hugs its content: mark, "Blend · <pool>", then the external-link
+  // glyph 8px after the text.
+  &__protocol {
+    display: inline-flex;
+    align-items: center;
+    gap: pxToRem(4);
+    height: pxToRem(32);
+    padding: pxToRem(4) pxToRem(10);
+    border: none;
+    border-radius: pxToRem(8);
+    background: var(--sds-clr-gray-03);
+    color: var(--sds-clr-gray-12);
+    cursor: pointer;
+
+    .PoolIcon {
+      border-radius: pxToRem(4);
     }
+
+    svg {
+      width: pxToRem(14);
+      height: pxToRem(14);
+      margin-left: pxToRem(4);
+      color: var(--sds-clr-gray-09);
+      flex: none;
+    }
+  }
+
+  // Text/SM/500.
+  &__protocol-name {
+    font-size: pxToRem(14);
+    line-height: pxToRem(20);
+    font-weight: 500;
+    white-space: nowrap;
   }
 
   // Stands in for the held section when the account holds none of the pool's
@@ -154,46 +164,41 @@
   &__section {
     display: flex;
     flex-direction: column;
-    gap: pxToRem(12);
+    gap: pxToRem(8);
   }
 
+  // Text/SM/500.
   &__section-title {
+    margin: 0;
+    font-size: pxToRem(14);
+    line-height: pxToRem(20);
+    font-weight: 500;
     color: var(--sds-clr-gray-12);
   }
 
   &__rows {
     display: flex;
     flex-direction: column;
-    gap: pxToRem(12);
+    gap: pxToRem(8);
   }
 
-  // The shared row supplies the structure the mock draws — icon, code over
-  // balance, right slot — so only the card treatment and type scale differ.
+  // The shared row supplies the structure and type the mock draws — icon, name
+  // over balance, right slot — so only the card and spacing differ.
   .BalanceRow {
     padding: pxToRem(12) pxToRem(16);
     border-radius: pxToRem(16);
     background: var(--sds-clr-gray-03);
   }
 
-  .BalanceRow__code {
-    font-size: pxToRem(16);
-    line-height: pxToRem(24);
+  .BalanceRow__value {
+    gap: 0;
   }
 
-  .BalanceRow__amount {
-    font-size: pxToRem(14);
-    line-height: pxToRem(20);
-  }
+  // The shared 32px icon, 16px from the text, with the mock's 1px ring drawn
+  // over the artwork so the icon keeps its box.
+  .BalanceRow__left .AccountAssets__asset--logo {
+    margin-right: pxToRem(16);
 
-  // 40px in the mock, against the shared component's 32. Its 1rem margin-right
-  // is already the mock's 16px icon-to-text gap, so no gap is added here.
-  .AccountAssets__asset--logo {
-    width: pxToRem(40);
-    height: pxToRem(40);
-    min-width: pxToRem(40);
-
-    // The mock's 1px ring, drawn over the artwork rather than around it so the
-    // icon keeps its 40px box.
     &::after {
       content: "";
       position: absolute;
@@ -204,14 +209,15 @@
     }
   }
 
+  // Text/XS/500 on a pale green pill.
   &__apy {
-    background: var(--sds-clr-green-10);
-    color: var(--sds-clr-green-04);
+    background: var(--sds-clr-green-04);
+    color: var(--sds-clr-green-11);
     border-radius: pxToRem(100);
-    padding: pxToRem(6) pxToRem(12);
-    font-size: pxToRem(14);
-    line-height: pxToRem(20);
-    font-weight: var(--sds-fw-medium);
+    padding: pxToRem(4) pxToRem(6);
+    font-size: pxToRem(12);
+    line-height: pxToRem(18);
+    font-weight: 500;
     white-space: nowrap;
   }
 
@@ -221,52 +227,81 @@
     padding-top: pxToRem(48);
   }
 
+  // Text/XS/400, flowing after the last section.
   &__disclaimer {
-    position: relative;
-    z-index: 1;
-    flex: 0 0 auto;
-    padding-top: pxToRem(24);
-    text-align: center;
+    margin: 0;
+    font-size: pxToRem(12);
+    line-height: pxToRem(18);
+    font-weight: 400;
     color: var(--sds-clr-gray-11);
-
-    .Text {
-      line-height: pxToRem(20);
-    }
   }
 }
 
+// Figma: Varial 4478:115689 (and its variants 115752, 115815, 115883). The
+// network-fee sheet (EarnAmount/NetworkFeeSheet) shares this layout.
 .NotEnoughTokenSheet {
   padding: pxToRem(24);
   display: flex;
   flex-direction: column;
-  gap: pxToRem(8);
 
+  // The token at 40px with the design's ring, and a bare X at the top right.
   &__header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
+
+    .AccountAssets__asset--logo {
+      width: pxToRem(40);
+      height: pxToRem(40);
+      min-width: pxToRem(40);
+      margin: 0;
+
+      &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 1px solid var(--sds-clr-gray-06);
+        pointer-events: none;
+      }
+    }
   }
 
   &__close {
-    width: pxToRem(32);
-    height: pxToRem(32);
-    border-radius: 50%;
+    flex: none;
+    width: pxToRem(24);
+    height: pxToRem(24);
+    padding: 0;
     border: none;
     cursor: pointer;
-    background: var(--sds-clr-gray-04);
-    color: var(--sds-clr-gray-11);
+    background: none;
+    color: var(--sds-clr-gray-12);
     display: flex;
     align-items: center;
     justify-content: center;
+
+    svg {
+      width: pxToRem(24);
+      height: pxToRem(24);
+    }
   }
 
+  // Text/MD/600, 12px under the icon.
   &__title {
-    margin-top: pxToRem(8);
+    margin: pxToRem(12) 0 0;
+    font-size: pxToRem(16);
+    line-height: pxToRem(24);
+    font-weight: 600;
+    color: var(--sds-clr-gray-12);
   }
 
+  // Text/MD/400 in secondary, 12px under the title and 24px over the actions.
   &__body {
+    margin: pxToRem(12) 0 pxToRem(24);
+    font-size: pxToRem(16);
+    line-height: pxToRem(24);
+    font-weight: 400;
     color: var(--sds-clr-gray-11);
-    margin-bottom: pxToRem(12);
   }
 
   &__actions {
@@ -275,26 +310,19 @@
     gap: pxToRem(8);
   }
 
-  // Buy and Swap share the row evenly (152px each of 312 with an 8px gap in the
-  // design), so neither is sized by its label length.
   &__actions-row {
     display: flex;
     gap: pxToRem(8);
-
-    > * {
-      flex: 1;
-      min-width: 0;
-    }
   }
 
-  // A hairline either side of the word, matching the design's 20px divider row.
   &__or {
     display: flex;
     align-items: center;
     gap: pxToRem(8);
-    height: pxToRem(20);
     color: var(--sds-clr-gray-11);
     font-size: pxToRem(14);
+    line-height: pxToRem(20);
+    font-weight: 600;
 
     &::before,
     &::after {
@@ -305,15 +333,14 @@
     }
   }
 
-  // The transfer route under two equal options is a text button, not a pill.
   &__text-action {
     height: pxToRem(36);
-    padding: 0;
     border: none;
     background: none;
     cursor: pointer;
     color: var(--sds-clr-gray-11);
     font-size: pxToRem(14);
-    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(20);
+    font-weight: 600;
   }
 }

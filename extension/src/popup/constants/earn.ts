@@ -1,22 +1,4 @@
 /**
- * Marks a shared screen as having been reached from Earn, via
- * `?flow=<EARN_FLOW_PARAM>`. Lets the wallet-address screen carry the titled
- * chrome the Earn design asks for without changing its other five callers.
- *
- * The key is a constant so the screens that append it and the screens that read
- * it cannot drift apart — a renamed key would otherwise silently stop matching.
- */
-export const FLOW_QUERY_KEY = "flow";
-
-export const EARN_FLOW_PARAM = "earn";
-
-export const EARN_FLOW_QUERY = `?${FLOW_QUERY_KEY}=${EARN_FLOW_PARAM}`;
-
-/** Was this screen reached from the Earn flow? Takes a `location.search`. */
-export const isEarnFlowSearch = (search: string) =>
-  new URLSearchParams(search).get(FLOW_QUERY_KEY) === EARN_FLOW_PARAM;
-
-/**
  * Steps in the Earn deposit flow.
  *
  * Modelled on Send (`constants/send-payment.ts`) rather than Swap: every visited
@@ -54,9 +36,9 @@ export enum EARN_SWAP_STEPS {
 
 /**
  * Which button set the "Not enough X" sheet shows. Driven by whether the asset
- * can be bought via the onramp and whether the account holds anything swappable.
- * `TRANSFER_ONLY` is not in the designs but is reachable — a funded account with
- * only the target asset's siblings unavailable, on a non-onrampable asset.
+ * can be bought via the onramp and whether the account holds anything it could
+ * swap from. Each has its own frame in the design (Varial 4478:115689 and its
+ * siblings).
  */
 export enum NotEnoughVariant {
   SWAP_OR_TRANSFER = "swap-or-transfer",
@@ -71,7 +53,7 @@ export enum NotEnoughVariant {
  * `useGetOnrampToken` builds `pay.coinbase.com/buy/select-asset?...&defaultAsset=`
  * from the code, so an unlisted asset produces a dead-end page rather than an
  * error. Freighter only ever passed "XLM" before Earn. EURC is deliberately
- * absent — it is not Coinbase-listed, which is why the designs show no Buy
- * button on the EURC sheet.
+ * absent — it is not Coinbase-listed. (The designs use EURC as a placeholder
+ * token on every variant, Buy included.)
  */
 export const EARN_ONRAMP_ASSETS = new Set(["XLM", "USDC"]);

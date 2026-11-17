@@ -9,6 +9,7 @@ import { STEPS } from "popup/constants/earn";
 import { navigateTo } from "popup/helpers/navigate";
 import { emitScreenViewed, ScreenViewedProps } from "helpers/metrics";
 import { ActionStatus } from "@shared/api/types";
+import { resetSimulation } from "popup/ducks/token-payment";
 import {
   resetSubmission,
   resetSubmitStatus,
@@ -33,6 +34,7 @@ import {
   trackEarnTokenSelected,
 } from "popup/metrics/earn";
 import { showToast } from "popup/basics/shadcn/Toast";
+import { formatAmount } from "popup/helpers/formatters";
 import { getFailureReasonCode } from "popup/components/earn/helpers/failureReasonCode";
 import { EarnIntro } from "popup/components/earn/EarnIntro";
 import { useEarnIntroSeen } from "popup/components/earn/EarnIntro/hooks/useEarnIntroSeen";
@@ -40,6 +42,8 @@ import { EarnTokenPicker } from "popup/components/earn/EarnTokenPicker";
 import { EarnAmount } from "popup/components/earn/EarnAmount";
 import { EarnSubmit } from "popup/components/earn/EarnSubmit";
 import { EarnSwap } from "popup/components/earn/EarnSwap";
+import { pickSwapSource } from "popup/components/earn/EarnSwap/helpers/pickSwapSource";
+import { tokenPricesSelector } from "popup/ducks/cache";
 import { resolveSwapDestination } from "popup/components/earn/EarnTokenPicker/helpers/resolveSwapDestination";
 import {
   DestinationTokenDetails,
@@ -78,6 +82,7 @@ export const Earn = () => {
   const { hasSeenIntro, dismissIntro } = useEarnIntroSeen();
   const submission = useSelector(transactionSubmissionSelector);
   const { pool, selectedAssetId } = useSelector(earnSelector);
+  const tokenPrices = useSelector(tokenPricesSelector);
 
   // Start on CHOOSE_TOKEN and only fall back to the interstitial once the
   // persisted flag has actually resolved to false. Defaulting to INTRO instead
@@ -94,11 +99,18 @@ export const Earn = () => {
   const [swapTarget, setSwapTarget] = useState<{
     canonical: string;
     details: DestinationTokenDetails;
+    /** The token the swap starts from. */
+    source: string;
   } | null>(null);
 
   const hasResolvedIntro = useRef(false);
   const lastEmittedStep = useRef<STEPS | null>(null);
   const isFirstSubmitStatusRun = useRef(true);
+  // True while a submission the swap branch started is unsettled. The swap and
+  // the deposit share the submission slice, so this is how a swap's outcome is
+  // told apart from a deposit's, including a swap whose sheet was closed while
+  // it was still in flight.
+  const isSwapSubmitting = useRef(false);
 
   const goToStep = (next: STEPS, anim: EnterAnim | "dismiss") => {
     setEnterAnim(anim === "dismiss" ? "from-bottom" : anim);
@@ -150,6 +162,33 @@ export const Earn = () => {
       isFirstSubmitStatusRun.current = false;
       return;
     }
+
+    // A swap's outcome is the swap's to show: its sheet renders the success
+    // and failure screens itself. Treating it as a deposit failure would report
+    // earn.deposit_failed for a deposit nobody made and drop the user onto the
+    // amount screen.
+    const isSwapOpen = swapTarget !== null;
+    if (isSwapOpen && submission.submitStatus === ActionStatus.PENDING) {
+      isSwapSubmitting.current = true;
+    }
+    const isSettled =
+      submission.submitStatus === ActionStatus.SUCCESS ||
+      submission.submitStatus === ActionStatus.ERROR;
+    if (isSwapSubmitting.current && isSettled) {
+      isSwapSubmitting.current = false;
+      if (!isSwapOpen) {
+        // Closed while in flight, so nothing is showing this outcome. Clear
+        // it so the deposit doesn't start from it, and re-read balances in
+        // case the swap went through.
+        dispatch(resetSubmitStatus());
+        setPickerRefreshKey((key) => key + 1);
+      }
+      return;
+    }
+    if (isSwapOpen) {
+      return;
+    }
+
     if (submission.submitStatus !== ActionStatus.ERROR) {
       return;
     }
@@ -268,7 +307,19 @@ export const Earn = () => {
               }
               // No step change: the swap opens as a sheet over the picker, which
               // stays the active step underneath it.
-              setSwapTarget(target);
+              setSwapTarget({
+                ...target,
+                source: pickSwapSource({
+                  balances: resolved.balances.balances,
+                  // Whatever Home last fetched for this account; without any,
+                  // the swap starts from XLM.
+                  prices:
+                    tokenPrices[resolved.networkDetails.networkPassphrase]?.[
+                      resolved.publicKey
+                    ],
+                  destinationCanonical: target.canonical,
+                }),
+              });
             }}
           />
         );
@@ -276,7 +327,13 @@ export const Earn = () => {
         return (
           <EarnAmount
             goBack={() => goToStep(STEPS.CHOOSE_TOKEN, "from-left")}
-            onConfirm={() => goToStep(STEPS.DEPOSIT_CONFIRM, "from-right")}
+            onClose={closeEarnFlow}
+            onConfirm={() => {
+              // The deposit owns the next submission, even if a swap closed
+              // in flight has still not settled.
+              isSwapSubmitting.current = false;
+              goToStep(STEPS.DEPOSIT_CONFIRM, "from-right");
+            }}
           />
         );
       case STEPS.DEPOSIT_CONFIRM:
@@ -311,6 +368,8 @@ export const Earn = () => {
             className={`Earn__step ${
               isActive ? `Earn__step--${enterAnim}` : "Earn__step--hidden"
             }`}
+            // Lets a step restyle the shared View it renders.
+            data-step={step}
             aria-hidden={!isActive}
           >
             {renderStep(step)}
@@ -323,14 +382,19 @@ export const Earn = () => {
           a `display: none` step wrapper. */}
       {swapTarget && (
         <EarnSwap
+          sourceAsset={swapTarget.source}
           destinationAsset={swapTarget.canonical}
           destinationTokenDetails={swapTarget.details}
           onCancel={() => {
             setSwapTarget(null);
-            dispatch(saveDestinationAsset(""));
-            dispatch(saveDestinationTokenDetails(null));
+            // The swap replaced the deposit's transaction data with its own
+            // when it opened. Clear what it leaves behind (its amount, a failed
+            // status) so none of it carries into the deposit, as a completed
+            // swap's `finish` does.
+            dispatch(resetSubmission());
+            dispatch(resetSimulation());
           }}
-          onDone={({ fromCode, toCode }) => {
+          onDone={({ fromCode, toCode, toAmount }) => {
             trackEarnSwapCompleted({
               fromAssetCode: fromCode,
               toAssetCode: toCode,
@@ -344,8 +408,9 @@ export const Earn = () => {
             showToast(() => (
               <Notification
                 variant="success"
-                title={t("{{from}} has been swapped to {{to}}", {
+                title={t("{{from}} swapped to {{amount}} {{to}}", {
                   from: fromCode,
+                  amount: formatAmount(toAmount),
                   to: toCode,
                 })}
               />

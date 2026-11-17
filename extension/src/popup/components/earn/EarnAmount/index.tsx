@@ -1,6 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import BigNumber from "bignumber.js";
-import { Button, Loader, Notification, Text } from "@stellar/design-system";
+import {
+  Button,
+  Icon,
+  Loader,
+  Notification,
+  Text,
+} from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
@@ -9,12 +15,22 @@ import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { AmountCard } from "popup/components/amount/AmountCard";
 import { PercentageButtons } from "popup/components/amount/PercentageButtons";
-import { DEFAULT_AMOUNT } from "popup/components/amount/constants";
+import {
+  DEFAULT_AMOUNT,
+  DEFAULT_AMOUNT_USD,
+} from "popup/components/amount/constants";
 import {
   buildFiatLineText,
   getAmountFontSizeClass,
 } from "popup/components/amount/helpers/amountDisplay";
 import { SlideupModal } from "popup/components/SlideupModal";
+import { SheetLayout } from "popup/components/SheetLayout";
+import {
+  EditSettings,
+  EditSettingsFormValue,
+} from "popup/components/InternalTransaction/EditSettings";
+import { FeesPane } from "popup/components/InternalTransaction/FeesPane";
+import { useReviewSettingsHandoff } from "popup/helpers/useReviewSettingsHandoff";
 import { PoolDetailsSheet } from "popup/components/earn/PoolDetailsSheet";
 import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
 import { RequestState } from "constants/request";
@@ -32,6 +48,7 @@ import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { emitMetric, emitScreenViewed } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { scrubStrKeys } from "helpers/stellarStrKey";
+import { InputType } from "helpers/transaction";
 import {
   trackEarnPercentAmountSelected,
   trackEarnSimulationFailed,
@@ -39,12 +56,16 @@ import {
 } from "popup/metrics/earn";
 import {
   saveAmount,
+  saveAmountUsd,
+  saveTransactionFee,
+  saveTransactionTimeout,
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
 import { EarnReview } from "popup/components/earn/EarnReview";
 import {
   earnSelector,
   saveCurrentPositionTokens,
+  saveReviewedAmount,
   setEarnSubmitFailed,
 } from "popup/ducks/earn";
 import { getBlendSuppliedTokens } from "@shared/api/helpers/blend";
@@ -69,34 +90,70 @@ import { useSimulateEarnDeposit } from "./hooks/useSimulateEarnDeposit";
 import "./styles.scss";
 
 interface EarnAmountProps {
+  /** Back to the token picker: the token pill. */
   goBack: () => void;
+  /** Leaves the Earn flow: the header's X, as on mobile. */
+  onClose: () => void;
   /** Confirmed on the review sheet — hand off to the submit step. */
   onConfirm: () => void;
 }
 
-export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
+export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const { state, fetchData } = useGetEarnAmountData();
-  const { asset, amount, destination, transactionTimeout } = useSelector(
-    transactionDataSelector,
-  );
+  const {
+    asset,
+    amount,
+    amountUsd,
+    destination,
+    transactionFee,
+    transactionTimeout,
+  } = useSelector(transactionDataSelector);
   const {
     pool,
     selectedAssetApy,
     selectedAssetId,
     lastSubmitFailed,
     currentPositionTokens,
+    reviewedAmount,
   } = useSelector(earnSelector);
   const { state: simulationState, simulate } = useSimulateEarnDeposit();
-  const { recommendedFee } = useNetworkFees();
+  const { recommendedFee, networkCongestion } = useNetworkFees();
+  // The inclusion fee the deposit is built with: the one saved from the
+  // review's settings, else the network's recommendation.
+  const fee = transactionFee || recommendedFee;
 
   const [isPoolSheetOpen, setIsPoolSheetOpen] = useState(false);
   const [isFeeSheetOpen, setIsFeeSheetOpen] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationError, setSimulationError] = useState("");
   const [isReviewOpen, setIsReviewOpen] = useState(false);
+  // Entry in tokens or in dollars. The token amount stays the one the deposit
+  // is built from; dollars are converted into it as they are typed.
+  const [inputType, setInputType] = useState<InputType>("crypto");
+  const [isEditingSettings, setIsEditingSettings] = useState(false);
+  const [isShowingFeesPane, setIsShowingFeesPane] = useState(false);
+  // A fee typed into settings but not saved yet, kept while the fees pane
+  // covers the settings sheet so the input comes back with it.
+  const [draftFee, setDraftFee] = useState<string | null>(null);
   const hasEmittedReviewView = useRef(false);
+  // The handoff marks leaving the review for settings as "not a rejection".
+  // Earn's review reports no rejection, so nothing reads it here.
+  const skipRejectionRef = useRef(false);
+  const { openSettingsFromReview, closeSettings, returnToReview } =
+    useReviewSettingsHandoff({
+      setIsReviewingTx: setIsReviewOpen,
+      setIsEditingSettings,
+      skipRejectionRef,
+    });
+
+  // The field as it is now. A build reads it once it finishes, because the
+  // amount stays editable while the deposit is being built.
+  const latestFieldRef = useRef({ amount, asset });
+  useEffect(() => {
+    latestFieldRef.current = { amount, asset };
+  }, [amount, asset]);
 
   useEffect(() => {
     fetchData();
@@ -108,6 +165,7 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
   // stays mounted while the picker is up, so nothing tears this state down.
   useEffect(() => {
     setSimulationError("");
+    setInputType("crypto");
   }, [asset]);
 
   // The review sheet is the flow's `confirm` step — the last screen before a
@@ -126,6 +184,14 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
     emitScreenViewed("earn_review", { flow: "earn", step: "confirm" });
   }, [isReviewOpen]);
 
+  const header = (
+    <SubviewHeader
+      title={<span className="EarnAmount__title">{t("Deposit")}</span>}
+      customBackAction={onClose}
+      customBackIcon={<Icon.X />}
+    />
+  );
+
   if (state.data?.type === AppDataType.REROUTE) {
     if (state.data.shouldOpenTab) {
       openTab(newTabHref(state.data.routeTarget));
@@ -140,7 +206,7 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
   if (isLoading || state.state === RequestState.ERROR) {
     return (
       <View data-testid="earn-amount-loading">
-        <SubviewHeader title={t("Deposit")} customBackAction={goBack} />
+        {header}
         <View.Content>
           <div className="EarnAmount__loader">
             {isLoading ? (
@@ -167,23 +233,28 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
   const depositAmount = cleanAmount(amount || "0");
   // Left unformatted ("1234.56") and formatted where it is shown: the review
   // also adds it to the position, which a thousands separator turns into NaN.
-  const depositUsd = assetPrice
-    ? roundUsdValue(
-        new BigNumber(assetPrice)
-          .multipliedBy(new BigNumber(depositAmount))
-          .toString(),
-      )
-    : null;
+  const getUsdValue = (tokenAmount: string) =>
+    assetPrice
+      ? roundUsdValue(
+          new BigNumber(assetPrice)
+            .multipliedBy(new BigNumber(tokenAmount))
+            .toString(),
+        )
+      : null;
+  const depositUsd = getUsdValue(depositAmount);
+  // What Review shows: the amount the staged deposit was built with, which the
+  // field may no longer say.
+  const amountToShow = reviewedAmount ?? depositAmount;
 
   // Nets out the base reserve and the inclusion fee. A Blend submit's resource
   // fee is far larger, but nothing is held back for it here: the whole balance
-  // stays depositable and handleContinue checks the measured fee once simulation
+  // stays depositable and buildDeposit checks the measured fee once simulation
   // reports it.
   const availableBalance = asset
     ? getAvailableBalance({
         assetCanonical: asset,
         balances: data.balances.balances,
-        recommendedFee,
+        recommendedFee: fee,
       })
     : "0";
 
@@ -203,29 +274,50 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
     review: t("Review deposit"),
   }[cta.labelKey];
 
-  const spendableXlm = getAvailableBalance({
-    assetCanonical: "native",
-    balances: data.balances.balances,
-    recommendedFee,
-  });
+  // XLM left once the reserve and the given inclusion fee are netted out. Takes
+  // the fee rather than closing over it: a settings save rebuilds with a fee
+  // this render has not seen yet.
+  const getSpendableXlm = (inclusionFee: string) =>
+    getAvailableBalance({
+      assetCanonical: "native",
+      balances: data.balances.balances,
+      recommendedFee: inclusionFee,
+    });
 
-  const handleContinue = async () => {
+  /**
+   * Builds and simulates the deposit of `amountToReview` with the given fee and
+   * timeout, then runs the checks only a simulation can answer. Resolves true
+   * when the staged deposit is ready for Review: it was built with
+   * `amountToReview`, and the field still says the same.
+   */
+  const buildDeposit = async ({
+    amountToReview,
+    inclusionFee,
+    timeout,
+  }: {
+    amountToReview: string;
+    inclusionFee: string;
+    timeout: number;
+  }): Promise<boolean> => {
     // Clear a previous failure so the banner does not persist into a retry the
     // user has already corrected.
     dispatch(setEarnSubmitFailed(false));
     setSimulationError("");
 
+    const spendableXlm = getSpendableXlm(inclusionFee);
+
     // Checked after the CTA gate, so an unaffordable XLM deposit reads as
     // "Insufficient funds" rather than as a missing-fee problem.
-    if (needsXlmForFee({ spendableXlm, fee: recommendedFee })) {
+    if (needsXlmForFee({ spendableXlm, fee: inclusionFee })) {
       trackEarnXlmFeeInsufficientShown({
         assetCode: selected?.code || "",
         reason: "no_xlm",
       });
       setIsFeeSheetOpen(true);
-      return;
+      return false;
     }
 
+    const assetToReview = asset;
     setIsSimulating(true);
     try {
       // The existing position is the "before" half of Review's 0.00 -> N row,
@@ -247,14 +339,27 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
         simulate({
           publicKey: data.publicKey,
           assetId: selectedAssetId,
-          amount: depositAmount,
+          amount: amountToReview,
           decimals,
           networkDetails: data.networkDetails,
-          transactionFee: recommendedFee,
-          transactionTimeout,
+          transactionFee: inclusionFee,
+          transactionTimeout: timeout,
         }),
         positionPromise,
       ]);
+
+      // The field changed while the deposit was being built, so the build no
+      // longer matches it. Review stays closed and the CTA is back for the new
+      // amount; opening it would show one amount and sign another.
+      const latestField = latestFieldRef.current;
+      if (
+        latestField.asset !== assetToReview ||
+        !new BigNumber(cleanAmount(latestField.amount || "0")).eq(
+          amountToReview,
+        )
+      ) {
+        return false;
+      }
 
       dispatch(saveCurrentPositionTokens(position));
 
@@ -270,7 +375,7 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
       // non-XLM deposit is just as capable of being short here.
       const shortfall = getXlmFeeShortfall({
         spendableXlm,
-        amount: isXlm ? enteredAmount.toFixed() : "0",
+        amount: isXlm ? amountToReview : "0",
         resourceFee: simulation.resourceFee || "0",
       });
 
@@ -292,10 +397,10 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
         } else {
           setIsFeeSheetOpen(true);
         }
-        return;
+        return false;
       }
 
-      setIsReviewOpen(true);
+      return true;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       // A simulation failure is the deposit's own pre-flight rejection — the
@@ -316,14 +421,59 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
             )
           : message,
       );
+      return false;
     } finally {
       setIsSimulating(false);
     }
   };
 
+  const handleContinue = async () => {
+    const amountToReview = depositAmount;
+    const isReady = await buildDeposit({
+      amountToReview,
+      inclusionFee: fee,
+      timeout: transactionTimeout,
+    });
+    if (!isReady) {
+      return;
+    }
+    // Recorded with the build it describes, so Review and the deposit screens
+    // show the amount Confirm signs.
+    dispatch(saveReviewedAmount(amountToReview));
+    setIsReviewOpen(true);
+  };
+
+  // The review's gear: the same fee/timeout sheet Send and Swap use. Saving
+  // rebuilds the deposit before Review comes back, so Confirm never signs the
+  // transaction built with the old settings; a rebuild that fails leaves Review
+  // closed and says why on this screen.
+  const handleSettingsSubmit = async ({
+    fee: nextFee,
+    timeout,
+  }: EditSettingsFormValue) => {
+    const savedFee = nextFee.trim() || fee;
+    dispatch(saveTransactionFee(savedFee));
+    dispatch(saveTransactionTimeout(timeout));
+    setIsEditingSettings(false);
+    setDraftFee(null);
+    const isReady = await buildDeposit({
+      amountToReview: amountToShow,
+      inclusionFee: savedFee,
+      timeout,
+    });
+    if (isReady) {
+      returnToReview();
+    }
+  };
+
+  const closeSettingsSheet = () => {
+    setDraftFee(null);
+    closeSettings();
+  };
+
   return (
     <View data-testid="earn-amount">
-      <SubviewHeader title={t("Deposit")} customBackAction={goBack} />
+      {header}
       <View.Content
         contentFooter={
           <Button
@@ -360,14 +510,15 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
               code: selected?.code || "",
             })}
             availableBalanceFontSizePx={12}
-            // Fiat entry is not offered here: the deposit is denominated in the
-            // pool's asset, so a fiat-first input would only add rounding.
-            inputType="crypto"
-            supportsUsd={false}
+            inputType={inputType}
+            // Dollar entry needs a price to convert with.
+            supportsUsd={Boolean(assetPrice)}
             hasUsdPrice={Boolean(assetPrice)}
             amount={amount === DEFAULT_AMOUNT ? "" : amount}
-            amountUsd=""
-            amountFontSizeClass={getAmountFontSizeClass(amount)}
+            amountUsd={amountUsd === DEFAULT_AMOUNT_USD ? "" : amountUsd}
+            amountFontSizeClass={getAmountFontSizeClass(
+              inputType === "fiat" ? amountUsd : amount,
+            )}
             assetCode={selected?.code || ""}
             // The account's icon map, not an empty one: AssetIcon reads empty as
             // "lookup still in flight" and holds a loader, which only looked
@@ -377,7 +528,7 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
             assetIssuerKey={selected?.issuer}
             fiatLineText={buildFiatLineText({
               hasAsset: Boolean(asset),
-              inputType: "crypto",
+              inputType,
               price: assetPrice,
               priceUsd: depositUsd === null ? null : formatAmount(depositUsd),
               cryptoAmount: amount,
@@ -392,8 +543,35 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
             onAmountChange={({ amount: next }) =>
               dispatch(saveAmount(next === "" ? DEFAULT_AMOUNT : next))
             }
-            onAmountUsdChange={() => {}}
-            onToggleInputType={() => {}}
+            onAmountUsdChange={({ amount: nextUsd }) => {
+              const usd = nextUsd === "" ? DEFAULT_AMOUNT_USD : nextUsd;
+              dispatch(saveAmountUsd(usd));
+              // Keep the token amount, which the deposit is built from, in
+              // step with the dollars typed.
+              dispatch(
+                saveAmount(
+                  assetPrice
+                    ? new BigNumber(cleanAmount(usd))
+                        .dividedBy(assetPrice)
+                        .decimalPlaces(decimals, BigNumber.ROUND_DOWN)
+                        .toString()
+                    : DEFAULT_AMOUNT,
+                ),
+              );
+            }}
+            onToggleInputType={() => {
+              const next = inputType === "crypto" ? "fiat" : "crypto";
+              // Switching to dollars seeds them from the token amount. Back in
+              // tokens the amount is already the source of truth.
+              if (next === "fiat") {
+                dispatch(
+                  saveAmountUsd(
+                    depositUsd === null ? DEFAULT_AMOUNT_USD : depositUsd,
+                  ),
+                );
+              }
+              setInputType(next);
+            }}
             // The asset is fixed once chosen; changing it means going back to
             // the picker, where the pool's rate for it is also re-read.
             onSelectAsset={goBack}
@@ -418,15 +596,18 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
                 assetCode: selected?.code || "",
                 percent: pct,
               });
-              dispatch(
-                saveAmount(
-                  getPercentageAmount({
-                    availableBalance,
-                    pct,
-                    decimals,
-                  }),
-                ),
-              );
+              const pctAmount = getPercentageAmount({
+                availableBalance,
+                pct,
+                decimals,
+              });
+              dispatch(saveAmount(pctAmount));
+              // Always a share of the token balance; in dollar mode the dollar
+              // field mirrors it for display.
+              if (inputType === "fiat") {
+                const pctUsd = getUsdValue(pctAmount);
+                dispatch(saveAmountUsd(pctUsd ?? DEFAULT_AMOUNT_USD));
+              }
             }}
           />
         </div>
@@ -444,8 +625,8 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
           // Without this the sheet builds an empty icon map, which AssetIcon
           // reads as a lookup in flight and answers with a spinner.
           assetIcon={data.balances.icons?.[asset]}
-          amount={depositAmount}
-          amountUsd={depositUsd}
+          amount={amountToShow}
+          amountUsd={getUsdValue(amountToShow)}
           apy={selectedAssetApy}
           currentPosition={currentPositionTokens}
           currentPositionUsd={
@@ -455,7 +636,6 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
                   .toFixed(2)
               : null
           }
-          fee={recommendedFee}
           simulationState={simulationState}
           networkDetails={data.networkDetails}
           onCancel={() => setIsReviewOpen(false)}
@@ -463,7 +643,62 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
             setIsReviewOpen(false);
             onConfirm();
           }}
+          onEditSettings={openSettingsFromReview}
         />
+      </SlideupModal>
+
+      <SlideupModal
+        isModalOpen={isEditingSettings && !isShowingFeesPane}
+        setIsModalOpen={closeSettingsSheet}
+        ariaLabel={t("Settings")}
+      >
+        {isEditingSettings ? (
+          <EditSettings
+            fee={draftFee ?? fee}
+            defaultFee={recommendedFee}
+            timeout={transactionTimeout}
+            congestion={networkCongestion}
+            // A deposit is a Soroban transaction: the field is its inclusion
+            // fee, and the resource fee comes from simulation.
+            isSoroban
+            onFeeChange={setDraftFee}
+            onClose={closeSettingsSheet}
+            onShowFeesInfo={(currentDraftFee) => {
+              setDraftFee(currentDraftFee);
+              setIsShowingFeesPane(true);
+            }}
+            onSubmit={handleSettingsSubmit}
+          />
+        ) : (
+          <></>
+        )}
+      </SlideupModal>
+
+      {/* Mounted unconditionally with only its contents gated, as in Send: an
+          unmount on close would cut the slide-out short. */}
+      <SlideupModal
+        isModalOpen={isShowingFeesPane}
+        setIsModalOpen={() => setIsShowingFeesPane(false)}
+        ariaLabel={t("Fees")}
+      >
+        {isShowingFeesPane ? (
+          <SheetLayout>
+            <FeesPane
+              fee={new BigNumber(draftFee ?? fee)
+                .plus(
+                  simulationState.state === RequestState.ERROR
+                    ? 0
+                    : simulationState.data?.resourceFee || 0,
+                )
+                .toFixed()}
+              simulationState={simulationState}
+              isSoroban
+              onClose={() => setIsShowingFeesPane(false)}
+            />
+          </SheetLayout>
+        ) : (
+          <></>
+        )}
       </SlideupModal>
 
       <SlideupModal
@@ -474,6 +709,12 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
         {pool ? (
           <PoolDetailsSheet
             pool={pool}
+            token={{
+              code: selected?.code || "",
+              issuer: selected?.issuer,
+              icon: data.balances.icons?.[asset],
+              apy: selectedAssetApy,
+            }}
             onClose={() => setIsPoolSheetOpen(false)}
           />
         ) : (
@@ -484,7 +725,7 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
       <SlideupModal
         isModalOpen={isFeeSheetOpen}
         setIsModalOpen={setIsFeeSheetOpen}
-        ariaLabel={t("You need some XLM for the network fee")}
+        ariaLabel={t("You need XLM to pay fees")}
       >
         <NetworkFeeSheet
           canBuyXlm={isMainnet(data.networkDetails)}

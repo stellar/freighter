@@ -40,11 +40,18 @@ import {
 import "./styles.scss";
 
 interface EarnSwapProps {
+  /** Canonical of the token the swap starts from; the user can change it. */
+  sourceAsset: string;
   /** Canonical of the token the user needs, pinned as the receive side. */
   destinationAsset: string;
   destinationTokenDetails: DestinationTokenDetails | null;
   /** Swap settled — return to the token picker with a toast. */
-  onDone: (received: { fromCode: string; toCode: string }) => void;
+  onDone: (received: {
+    fromCode: string;
+    toCode: string;
+    /** The quoted amount received, unformatted. */
+    toAmount: string;
+  }) => void;
   /** Backed out without swapping. */
   onCancel: () => void;
 }
@@ -65,6 +72,7 @@ interface EarnSwapProps {
  * Views from 100dvh onto the sheet.
  */
 export const EarnSwap = ({
+  sourceAsset,
   destinationAsset,
   destinationTokenDetails,
   onDone,
@@ -82,13 +90,13 @@ export const EarnSwap = ({
     onRecover: () => setActiveStep(EARN_SWAP_STEPS.AMOUNT),
   });
 
-  // Seed the swap: source defaults to XLM (the most common), destination is
-  // pinned to what the deposit needs. Runs once on entry — re-running would
-  // stomp a source the user has since chosen.
+  // Seed the swap: the source the caller picked (see pickSwapSource), the
+  // destination pinned to what the deposit needs. Runs once on entry —
+  // re-running would stomp a source the user has since chosen.
   useEffect(() => {
     dispatch(resetSubmission());
     dispatch(resetSimulation());
-    dispatch(saveAsset("native"));
+    dispatch(saveAsset(sourceAsset));
     dispatch(saveIsToken(false));
     dispatch(saveAmount(DEFAULT_AMOUNT));
     dispatch(saveAmountUsd(DEFAULT_AMOUNT_USD));
@@ -101,9 +109,10 @@ export const EarnSwap = ({
   const finish = () => {
     const fromCode = getAssetFromCanonical(transactionData.asset).code;
     const toCode = getAssetFromCanonical(transactionData.destinationAsset).code;
+    const toAmount = transactionData.destinationAmount;
     dispatch(resetSubmission());
     dispatch(resetSimulation());
-    onDone({ fromCode, toCode });
+    onDone({ fromCode, toCode, toAmount });
   };
 
   // The sheet's X, its scrim and Escape are shared by every step, but the steps
@@ -173,8 +182,7 @@ export const EarnSwap = ({
             inputType={inputType}
             setInputType={setInputType}
             isDestinationLocked
-            // In the sheet the X dismisses the whole branch, so the header's
-            // left slot carries the settings control instead of a back button.
+            // The header's X dismisses the whole branch.
             isSheetLayout
             goBack={onCancel}
             goToEditSrc={() => setActiveStep(EARN_SWAP_STEPS.SET_FROM_ASSET)}
@@ -213,18 +221,21 @@ export const EarnSwap = ({
         <ScreenReaderOnly>
           <SheetTitle>{t("Swap")}</SheetTitle>
         </ScreenReaderOnly>
-        {/* Sheet-level rather than per-step: the submitting/success step has no
-            header of its own. What the X *means* is not the same on every step
-            though — see `dismiss`. */}
-        <button
-          type="button"
-          className="EarnSwapSheet__close"
-          onClick={dismiss}
-          aria-label={t("Close")}
-          data-testid="earn-swap-close"
-        >
-          <Icon.XClose />
-        </button>
+        {/* Only the submitting/success step, which has no header of its own,
+            needs the sheet's X: the amount step's header carries one on its
+            left, and the source picker steps back with its arrow. What the X
+            *means* is not the same on every step — see `dismiss`. */}
+        {activeStep === EARN_SWAP_STEPS.SWAP_CONFIRM && (
+          <button
+            type="button"
+            className="EarnSwapSheet__close"
+            onClick={dismiss}
+            aria-label={t("Close")}
+            data-testid="earn-swap-close"
+          >
+            <Icon.X />
+          </button>
+        )}
         <div className="EarnSwapSheet__body">{renderStep()}</div>
       </SheetContent>
     </Sheet>

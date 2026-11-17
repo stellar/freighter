@@ -79,7 +79,6 @@ const renderReview = ({
         apy={0.05}
         currentPosition="0"
         currentPositionUsd="0"
-        fee="0.001"
         simulationState={
           {
             state: RequestState.SUCCESS,
@@ -95,6 +94,7 @@ const renderReview = ({
         networkDetails={MAINNET_NETWORK_DETAILS}
         onCancel={onCancel}
         onConfirm={onConfirm}
+        onEditSettings={jest.fn()}
       />
     </Wrapper>,
   );
@@ -136,7 +136,7 @@ describe("EarnReview Blockaid transaction verdict", () => {
     ).toHaveTextContent("This transaction was flagged as malicious");
     // The row keeps all three slots in the warned state — only the colors
     // change, so Confirm stays a button rather than dropping to a text link.
-    expect(screen.getByTestId("earn-review-fees-btn")).toBeInTheDocument();
+    expect(screen.getByTestId("earn-review-settings-btn")).toBeInTheDocument();
     expect(screen.getByTestId("earn-review-cancel")).toHaveClass(
       "Button--destructive",
     );
@@ -211,22 +211,22 @@ describe("EarnReview Blockaid transaction verdict", () => {
     expect(onConfirm).toHaveBeenCalled();
   });
 
-  it("opens the reasons sheet from the banner and returns to the review", async () => {
-    renderReview({
-      scanResult: {
-        validation: {
-          result_type: "Malicious",
-          features: [
-            {
-              type: "Malicious",
-              feature_id: "known_malicious",
-              description:
-                "An identified malicious address is associated with the token.",
-            },
-          ],
+  const maliciousScan = {
+    validation: {
+      result_type: "Malicious",
+      features: [
+        {
+          type: "Malicious",
+          feature_id: "known_malicious",
+          description:
+            "An identified malicious address is associated with the token.",
         },
-      },
-    });
+      ],
+    },
+  };
+
+  it("opens the reasons sheet from the banner and returns to the review", async () => {
+    renderReview({ scanResult: maliciousScan });
 
     await userEvent.click(screen.getByTestId("earn-review-blockaid-warning"));
 
@@ -235,10 +235,57 @@ describe("EarnReview Blockaid transaction verdict", () => {
     expect(pane).toHaveTextContent(
       "An identified malicious address is associated with the token.",
     );
-    // The action row is reachable from the sheet too, not just the body.
-    expect(screen.getByTestId("earn-review-confirm")).toBeInTheDocument();
 
     await userEvent.click(screen.getByTestId("blockaid-details-close"));
     expect(await screen.findByTestId("earn-review")).toBeInTheDocument();
+  });
+
+  it("confirms anyway from the reasons sheet on a verdict, as mobile does", async () => {
+    const onConfirm = jest.fn();
+    const onCancel = jest.fn();
+    renderReview({ scanResult: maliciousScan, onConfirm, onCancel });
+
+    await userEvent.click(screen.getByTestId("earn-review-blockaid-warning"));
+    await screen.findByTestId("earn-review-blockaid-pane");
+
+    // Cancel is the recommended action and only leaves the sheet.
+    expect(screen.getByTestId("earn-review-blockaid-cancel")).toHaveClass(
+      "Button--destructive",
+    );
+    expect(screen.queryByTestId("earn-review-confirm")).not.toBeInTheDocument();
+
+    const proceed = screen.getByTestId("earn-review-blockaid-proceed");
+    expect(proceed).toHaveTextContent("Confirm anyway");
+    await userEvent.click(proceed);
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+    expect(onCancel).not.toHaveBeenCalled();
+  });
+
+  it("returns to the review from the reasons sheet's Cancel", async () => {
+    const onCancel = jest.fn();
+    renderReview({ scanResult: maliciousScan, onCancel });
+
+    await userEvent.click(screen.getByTestId("earn-review-blockaid-warning"));
+    await userEvent.click(
+      await screen.findByTestId("earn-review-blockaid-cancel"),
+    );
+
+    expect(await screen.findByTestId("earn-review")).toBeInTheDocument();
+    expect(onCancel).not.toHaveBeenCalled();
+  });
+
+  it("only continues back to the review when the scan could not complete", async () => {
+    // No verdict to acknowledge, so the sheet never signs: the review's own
+    // Confirm stays the one way to sign, as on mobile.
+    const onConfirm = jest.fn();
+    renderReview({ scanResult: null, onConfirm });
+
+    await userEvent.click(screen.getByTestId("earn-review-blockaid-warning"));
+    const proceed = await screen.findByTestId("earn-review-blockaid-proceed");
+    expect(proceed).toHaveTextContent("Continue");
+
+    await userEvent.click(proceed);
+    expect(await screen.findByTestId("earn-review")).toBeInTheDocument();
+    expect(onConfirm).not.toHaveBeenCalled();
   });
 });

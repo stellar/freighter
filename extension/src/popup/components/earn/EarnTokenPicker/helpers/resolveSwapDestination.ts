@@ -2,6 +2,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { getTokenDetails } from "@shared/api/internal";
 import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
+import { getAssetFromCanonical } from "helpers/stellar";
 import { DestinationTokenDetails } from "popup/ducks/transactionSubmission";
 import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
 
@@ -51,6 +52,13 @@ export const resolveSwapDestination = async ({
     canonical = tokenDetails.name;
     // "native" has no issuer half; everything else is CODE:ISSUER.
     issuer = canonical.includes(":") ? canonical.split(":")[1] : undefined;
+
+    // The swap has to buy the token the row shows. A name that resolves to
+    // another code describes some other asset, so decline rather than swap
+    // into it.
+    if (getAssetFromCanonical(canonical).code !== option.code) {
+      return null;
+    }
   }
 
   return {

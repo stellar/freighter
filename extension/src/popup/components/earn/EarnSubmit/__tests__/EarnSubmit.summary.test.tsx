@@ -34,7 +34,7 @@ jest.mock("helpers/metrics", () => ({
   emitScreenViewed: jest.fn(),
 }));
 
-const renderSubmit = (amount: string) =>
+const renderSubmit = (amount: string, reviewedAmount: string | null = null) =>
   render(
     <Wrapper
       routes={["/"]}
@@ -54,7 +54,7 @@ const renderSubmit = (amount: string) =>
             asset: TEST_USDC_CANONICAL,
           },
         },
-        earn: { ...earnInitialState, pool: null },
+        earn: { ...earnInitialState, pool: null, reviewedAmount },
       }}
     >
       <EarnSubmit xdr="AAAA" onExit={jest.fn()} />
@@ -77,6 +77,18 @@ describe("EarnSubmit summary", () => {
     renderSubmit("1,234.56");
 
     expect(screen.getByTestId("earn-submit")).not.toHaveTextContent("NaN");
-    expect(screen.getByText("1,234.56 USDC to Blend pool")).toBeInTheDocument();
+    expect(screen.getByTestId("earn-submit-caption")).toHaveTextContent(
+      "1,234.56 USDC to Blend pool",
+    );
+  });
+
+  it("shows the amount Review showed, not what the field says now", () => {
+    // The amount the deposit was built and signed with is recorded when Review
+    // opens; the field is only a fallback.
+    renderSubmit("999", "1234.56");
+
+    expect(screen.getByTestId("earn-submit-caption")).toHaveTextContent(
+      "1,234.56 USDC to Blend pool",
+    );
   });
 });

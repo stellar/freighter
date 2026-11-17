@@ -102,8 +102,8 @@ interface SwapAmountProps {
   isDestinationLocked?: boolean;
   /**
    * Laid out for a bottom sheet rather than a screen (the Earn swap branch):
-   * the host sheet owns the dismiss X, so the header's left slot carries the
-   * settings control that would otherwise sit above the CTA.
+   * the header's left slot is an X that dismisses the sheet. Settings stay
+   * where main Swap has them, above the CTA.
    */
   isSheetLayout?: boolean;
 }
@@ -546,43 +546,21 @@ export const SwapAmount = ({
     <>
       <SubviewHeader
         title={<span>{t("Swap")}</span>}
-        hasBackButton={!isSheetLayout}
         customBackAction={goBack}
-        leftButton={
-          isSheetLayout ? (
-            <button
-              type="button"
-              className="SwapAsset__header-settings"
-              onClick={() => setIsEditingSettings(true)}
-              aria-label={t("Swap Settings")}
-              data-testid="swap-amount-header-settings"
-            >
-              <Icon.Settings04 />
-            </button>
-          ) : undefined
-        }
+        customBackIcon={isSheetLayout ? <Icon.X /> : undefined}
       />
       <View.Content
         contentFooter={
           <div className="SwapAsset__btn-continue">
-            <div
-              className={`SwapAsset__settings-row ${
-                isSheetLayout ? "SwapAsset__settings-row--sheet" : ""
-              }`}
-            >
-              {/* In a sheet the fee readout and the settings button move out:
-                  the fee is shown on the review sheet and edited from the header,
-                  which leaves slippage as the only footer control. */}
-              {!isSheetLayout && (
-                <div className="SwapAsset__settings-fee-display">
-                  <span className="SwapAsset__settings-fee-display__label">
-                    {t("Fee")}:
-                  </span>
-                  {/* The network fee is always denominated in XLM, regardless of
-                      whether the amount is being entered in crypto or fiat. */}
-                  <span>{`${fee} XLM`}</span>
-                </div>
-              )}
+            <div className="SwapAsset__settings-row">
+              <div className="SwapAsset__settings-fee-display">
+                <span className="SwapAsset__settings-fee-display__label">
+                  {t("Fee")}:
+                </span>
+                {/* The network fee is always denominated in XLM, regardless of
+                    whether the amount is being entered in crypto or fiat. */}
+                <span>{`${fee} XLM`}</span>
+              </div>
               <div className="SwapAsset__settings-options">
                 <Button
                   type="button"
@@ -593,17 +571,15 @@ export const SwapAmount = ({
                 >
                   {`${t("Slippage")}: ${allowedSlippage}%`}
                 </Button>
-                {!isSheetLayout && (
-                  <Button
-                    type="button"
-                    size="md"
-                    isRounded
-                    variant="tertiary"
-                    onClick={() => setIsEditingSettings(true)}
-                  >
-                    <Icon.Settings01 />
-                  </Button>
-                )}
+                <Button
+                  type="button"
+                  size="md"
+                  isRounded
+                  variant="tertiary"
+                  onClick={() => setIsEditingSettings(true)}
+                >
+                  <Icon.Settings01 />
+                </Button>
               </div>
             </div>
             <Button

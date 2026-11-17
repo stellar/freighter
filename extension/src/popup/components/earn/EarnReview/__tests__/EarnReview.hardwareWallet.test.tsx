@@ -123,7 +123,6 @@ const renderReview = ({
         apy={0.05}
         currentPosition="0"
         currentPositionUsd="0"
-        fee="0.001"
         simulationState={{
           state: RequestState.SUCCESS,
           data: {
@@ -137,6 +136,7 @@ const renderReview = ({
         networkDetails={TESTNET_NETWORK_DETAILS}
         onCancel={onCancel}
         onConfirm={onConfirm}
+        onEditSettings={jest.fn()}
       />
     </Wrapper>,
   );
@@ -187,9 +187,9 @@ describe("EarnReview hardware wallet signing", () => {
     renderReview({
       preparedXdr,
       hardwareWalletType: WalletType.LEDGER,
-      hwStatus: ShowOverlayStatus.IN_PROGRESS,
       onConfirm,
     });
+    await userEvent.click(screen.getByTestId("earn-review-confirm"));
 
     await waitFor(() =>
       expect(screen.getByTestId("HardwareSign__connect-text")).toBeDefined(),
@@ -206,12 +206,32 @@ describe("EarnReview hardware wallet signing", () => {
     renderReview({
       preparedXdr: buildDepositXdr(),
       hardwareWalletType: WalletType.LEDGER,
-      hwStatus: ShowOverlayStatus.IN_PROGRESS,
       onConfirm: jest.fn(),
     });
+    await userEvent.click(screen.getByTestId("earn-review-confirm"));
 
     expect(await screen.findByTestId("HardwareSign__internal")).toBeDefined();
     expect(screen.queryByTestId("earn-review")).toBeNull();
+  });
+
+  it("ignores a device signature some other screen started", async () => {
+    // The review stays mounted behind the token picker, where the Earn swap's
+    // own review starts a device signature. Rendering the overlay for it would
+    // ask the device to sign twice, then advance the deposit with the swap's
+    // signed envelope.
+    const onConfirm = jest.fn();
+
+    renderReview({
+      preparedXdr: buildDepositXdr(),
+      hardwareWalletType: WalletType.LEDGER,
+      hwStatus: ShowOverlayStatus.IN_PROGRESS,
+      onConfirm,
+    });
+
+    expect(await screen.findByTestId("earn-review")).toBeDefined();
+    expect(screen.queryByTestId("HardwareSign__internal")).toBeNull();
+    expect(mockHardwareSign).not.toHaveBeenCalled();
+    expect(onConfirm).not.toHaveBeenCalled();
   });
 
   it("writes the signed envelope to redux, then advances the flow", async () => {
@@ -224,9 +244,9 @@ describe("EarnReview hardware wallet signing", () => {
     renderReview({
       preparedXdr,
       hardwareWalletType: WalletType.LEDGER,
-      hwStatus: ShowOverlayStatus.IN_PROGRESS,
       onConfirm,
     });
+    await userEvent.click(screen.getByTestId("earn-review-confirm"));
 
     await waitFor(() => expect(onConfirm).toHaveBeenCalledTimes(1));
 

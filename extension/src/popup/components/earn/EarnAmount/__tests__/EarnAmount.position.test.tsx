@@ -107,7 +107,11 @@ const renderAmount = () =>
       }
       routes={["/"]}
     >
-      <EarnAmount goBack={jest.fn()} onConfirm={jest.fn()} />
+      <EarnAmount
+        goBack={jest.fn()}
+        onClose={jest.fn()}
+        onConfirm={jest.fn()}
+      />
     </Wrapper>,
   );
 
@@ -162,7 +166,7 @@ describe("EarnAmount position lookup", () => {
     // then flip all three derived rows under the user.
     expect(reviewSheet()).toHaveClass("closed");
     expect(screen.getByTestId("earn-review-position")).toHaveTextContent(
-      "0 → 5 USDC",
+      "0.00 → 5.00 USDC",
     );
 
     await act(async () => {
@@ -171,7 +175,7 @@ describe("EarnAmount position lookup", () => {
 
     await waitFor(() => expect(reviewSheet()).toHaveClass("open"));
     expect(screen.getByTestId("earn-review-position")).toHaveTextContent(
-      "100 → 105 USDC",
+      "100.00 → 105.00 USDC",
     );
   });
 
@@ -188,7 +192,7 @@ describe("EarnAmount position lookup", () => {
 
     await waitFor(() => expect(reviewSheet()).toHaveClass("open"));
     expect(screen.getByTestId("earn-review-position")).toHaveTextContent(
-      "0 → 5 USDC",
+      "0.00 → 5.00 USDC",
     );
     // A failed before-value is not a failed deposit.
     expect(

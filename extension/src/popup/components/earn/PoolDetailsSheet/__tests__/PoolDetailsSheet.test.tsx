@@ -34,7 +34,11 @@ const renderSheet = (onClose = jest.fn()) =>
         settings: { networkDetails: TESTNET_NETWORK_DETAILS, assetsLists: {} },
       }}
     >
-      <PoolDetailsSheet pool={pool} onClose={onClose} />
+      <PoolDetailsSheet
+        pool={pool}
+        token={{ code: "USDC", issuer: undefined, icon: null, apy: 0.1694 }}
+        onClose={onClose}
+      />
     </Wrapper>,
   );
 
@@ -45,7 +49,7 @@ describe("PoolDetailsSheet", () => {
     renderSheet();
     expect(
       screen.getByText(
-        "Deposit supported assets into this Blend pool to earn yield. APY may change over time. Withdraw anytime.",
+        "Deposit supported tokens into this Blend pool to earn yield. APY may change over time. Withdraw anytime.",
       ),
     ).toBeInTheDocument();
   });
@@ -54,5 +58,16 @@ describe("PoolDetailsSheet", () => {
     renderSheet();
     fireEvent.click(screen.getByTestId("earn-pool-docs-link"));
     expect(openTab).toHaveBeenCalledWith(BLEND_LENDING_DOCS_URL);
+  });
+
+  it("shows the deposited token's rate as the current yield", () => {
+    // The pool's own net APY blends every reserve; the rate the user earns is
+    // the one for the token they deposit.
+    renderSheet();
+    expect(screen.getByTestId("earn-pool-deposit-apy")).toHaveTextContent(
+      "16.94%",
+    );
+    expect(screen.getByText("Current yield")).toBeInTheDocument();
+    expect(screen.getByText("Pool liquidity")).toBeInTheDocument();
   });
 });

@@ -1,0 +1,118 @@
+@use "../../../styles/utils.scss" as *;
+
+// Figma: Varial 4478:115461 "Deposited USDC".
+.EarnDepositDetailsSheet {
+  padding: pxToRem(24);
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(16);
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    gap: pxToRem(12);
+  }
+
+  // The deposited token at 40px with the design's 1px ring.
+  &__token {
+    flex: none;
+    align-self: center;
+
+    .AccountAssets__asset--logo {
+      width: pxToRem(40);
+      height: pxToRem(40);
+      min-width: pxToRem(40);
+      margin: 0;
+
+      &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 1px solid var(--sds-clr-gray-06);
+        pointer-events: none;
+      }
+    }
+  }
+
+  &__identity {
+    flex: 1;
+    min-width: 0;
+    align-self: center;
+  }
+
+  // Text/MD/600.
+  &__title {
+    font-size: pxToRem(16);
+    line-height: pxToRem(24);
+    font-weight: 600;
+    color: var(--sds-clr-gray-12);
+  }
+
+  // Text/XS/500.
+  &__date {
+    font-size: pxToRem(12);
+    line-height: pxToRem(18);
+    font-weight: 500;
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__close {
+    flex: none;
+    width: pxToRem(24);
+    height: pxToRem(24);
+    padding: 0;
+    border: none;
+    cursor: pointer;
+    background: none;
+    color: var(--sds-clr-gray-12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      width: pxToRem(24);
+      height: pxToRem(24);
+    }
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12);
+  }
+
+  &__group {
+    background: var(--sds-clr-gray-03);
+    border-radius: pxToRem(16);
+    padding: pxToRem(12) pxToRem(16);
+  }
+
+  &__protocol {
+    color: var(--sds-clr-gray-11);
+  }
+
+  // As on the review, filled here with the page colour.
+  &__details-btn {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(4);
+    width: 100%;
+    padding: pxToRem(8) pxToRem(10);
+    border: 1px solid var(--sds-clr-gray-05);
+    border-radius: pxToRem(16);
+    background: var(--sds-clr-gray-01);
+    cursor: pointer;
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(14);
+    line-height: pxToRem(20);
+    font-weight: 600;
+
+    svg {
+      width: pxToRem(14);
+      height: pxToRem(14);
+      color: var(--sds-clr-gray-09);
+      flex: none;
+    }
+  }
+}

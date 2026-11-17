@@ -10,6 +10,7 @@ import { initialState as earnInitialState } from "popup/ducks/earn";
 import {
   initialState as transactionSubmissionInitialState,
   submitFreighterSorobanTransaction,
+  submitFreighterTransaction,
 } from "popup/ducks/transactionSubmission";
 import { getTestStore, Wrapper } from "popup/__testHelpers__";
 
@@ -38,6 +39,7 @@ const mockPickerSelection = {
     pool: { id: POOL_ID },
     publicKey: TEST_PUBLIC_KEY,
     networkDetails: TESTNET_NETWORK_DETAILS,
+    balances: { balances: [] },
   },
 };
 
@@ -50,19 +52,52 @@ jest.mock("popup/components/earn/EarnIntro", () => ({
 }));
 
 jest.mock("popup/components/earn/EarnSwap", () => ({
-  EarnSwap: () => <div data-testid="stub-swap" />,
+  EarnSwap: ({ onCancel }: { onCancel: () => void }) => (
+    <div data-testid="stub-swap">
+      <button data-testid="stub-swap-cancel" onClick={onCancel}>
+        close swap
+      </button>
+    </div>
+  ),
 }));
 
+jest.mock(
+  "popup/components/earn/EarnTokenPicker/helpers/resolveSwapDestination",
+  () => ({
+    resolveSwapDestination: () =>
+      Promise.resolve({ canonical: "EURC:GEURC", details: null }),
+  }),
+);
+
 jest.mock("popup/components/earn/EarnTokenPicker", () => ({
-  EarnTokenPicker: ({ onSelect }: { onSelect: Function }) => (
-    <button
-      data-testid="stub-pick-token"
-      onClick={() =>
-        onSelect(mockPickerSelection.option, mockPickerSelection.resolved)
-      }
-    >
-      pick
-    </button>
+  EarnTokenPicker: ({
+    onSelect,
+    onSwapRequested,
+  }: {
+    onSelect: Function;
+    onSwapRequested: Function;
+  }) => (
+    <>
+      <button
+        data-testid="stub-pick-token"
+        onClick={() =>
+          onSelect(mockPickerSelection.option, mockPickerSelection.resolved)
+        }
+      >
+        pick
+      </button>
+      <button
+        data-testid="stub-request-swap"
+        onClick={() =>
+          onSwapRequested(
+            mockPickerSelection.option,
+            mockPickerSelection.resolved,
+          )
+        }
+      >
+        swap
+      </button>
+    </>
   ),
 }));
 
@@ -263,5 +298,113 @@ describe("Earn deposit failure", () => {
 
     expect(await screen.findByTestId("stub-deposit-terminal")).toBeDefined();
     expect(mockDepositMounts).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("Earn swap failure", () => {
+  const swapSubmitArgs = {
+    publicKey: TEST_PUBLIC_KEY,
+    signedXDR: "AAAA-swap",
+    networkDetails: TESTNET_NETWORK_DETAILS,
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("leaves a failed swap to the swap sheet", async () => {
+    // The regression: the deposit-failure effect read the swap's ERROR as a
+    // failed deposit, emitted earn.deposit_failed and jumped to the amount
+    // screen while the swap sheet was showing its own failure.
+    renderEarn();
+    await userEvent.click(screen.getByTestId("stub-request-swap"));
+    expect(await screen.findByTestId("stub-swap")).toBeDefined();
+
+    act(() => {
+      getTestStore()!.dispatch(
+        submitFreighterTransaction.pending("req-swap", swapSubmitArgs),
+      );
+    });
+    act(() => {
+      getTestStore()!.dispatch(
+        submitFreighterTransaction.rejected(null, "req-swap", swapSubmitArgs, {
+          errorMessage: "op_underfunded",
+        }),
+      );
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(trackEarnDepositFailed).not.toHaveBeenCalled();
+    expect(getTestStore()!.getState().earn.lastSubmitFailed).toBe(false);
+    // The sheet still shows the swap; the flow did not move to the amount step.
+    expect(screen.getByTestId("stub-swap")).toBeDefined();
+    expect(screen.queryByTestId("stub-confirm-amount")).toBeNull();
+    expect(getTestStore()!.getState().transactionSubmission.submitStatus).toBe(
+      ActionStatus.ERROR,
+    );
+  });
+
+  it("clears a swap that fails after its sheet was closed in flight", async () => {
+    renderEarn();
+    await userEvent.click(screen.getByTestId("stub-request-swap"));
+    await screen.findByTestId("stub-swap");
+
+    act(() => {
+      getTestStore()!.dispatch(
+        submitFreighterTransaction.pending("req-swap", swapSubmitArgs),
+      );
+    });
+    await userEvent.click(screen.getByTestId("stub-swap-cancel"));
+    await waitFor(() => expect(screen.queryByTestId("stub-swap")).toBeNull());
+
+    act(() => {
+      getTestStore()!.dispatch(
+        submitFreighterTransaction.rejected(null, "req-swap", swapSubmitArgs, {
+          errorMessage: "op_underfunded",
+        }),
+      );
+    });
+
+    // Nothing shows that outcome any more, so it is cleared rather than left
+    // for the deposit to trip over.
+    await waitFor(() =>
+      expect(
+        getTestStore()!.getState().transactionSubmission.submitStatus,
+      ).toBe(ActionStatus.IDLE),
+    );
+    expect(trackEarnDepositFailed).not.toHaveBeenCalled();
+    expect(getTestStore()!.getState().earn.lastSubmitFailed).toBe(false);
+    expect(screen.queryByTestId("stub-confirm-amount")).toBeNull();
+  });
+
+  it("starts the deposit clean after a cancelled swap", async () => {
+    // The swap replaced the deposit's transaction data when it opened; a
+    // cancel must not leave its amount or status behind for the deposit.
+    renderEarn();
+    await userEvent.click(screen.getByTestId("stub-request-swap"));
+    await screen.findByTestId("stub-swap");
+
+    act(() => {
+      getTestStore()!.dispatch(
+        submitFreighterTransaction.pending("req-swap", swapSubmitArgs),
+      );
+      getTestStore()!.dispatch(
+        submitFreighterTransaction.rejected(null, "req-swap", swapSubmitArgs, {
+          errorMessage: "op_underfunded",
+        }),
+      );
+    });
+    await userEvent.click(screen.getByTestId("stub-swap-cancel"));
+
+    await waitFor(() =>
+      expect(
+        getTestStore()!.getState().transactionSubmission.submitStatus,
+      ).toBe(ActionStatus.IDLE),
+    );
+
+    // A deposit after it reaches its terminal, which a lingering ERROR would
+    // have blanked.
+    await reachDepositTerminal();
+    expect(screen.getByTestId("stub-deposit-terminal")).toBeDefined();
   });
 });

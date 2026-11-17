@@ -1,13 +1,11 @@
-import React from "react";
-import { Button, Icon, Text } from "@stellar/design-system";
+import React, { useState } from "react";
+import { Button, Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 import { AssetIcon } from "popup/components/account/AccountAssets";
-import { ROUTES } from "popup/constants/routes";
-import { EARN_FLOW_QUERY, NotEnoughVariant } from "popup/constants/earn";
-import { navigateTo } from "popup/helpers/navigate";
+import { EarnReceiveSheet } from "popup/components/earn/EarnReceiveSheet";
+import { NotEnoughVariant } from "popup/constants/earn";
 import { useGetOnrampToken } from "helpers/hooks/useGetOnrampToken";
 import { trackEarnFundingActionSelected } from "popup/metrics/earn";
 
@@ -34,8 +32,9 @@ export const NotEnoughTokenSheet = ({
   onSwap,
 }: NotEnoughTokenSheetProps) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { fetchData: openOnramp } = useGetOnrampToken({ asset: option.code });
+  // Receive takes over this sheet, as on mobile; its back arrow returns here.
+  const [isReceiving, setIsReceiving] = useState(false);
 
   const showBuy =
     variant === NotEnoughVariant.BUY_OR_TRANSFER ||
@@ -44,42 +43,20 @@ export const NotEnoughTokenSheet = ({
     variant === NotEnoughVariant.SWAP_OR_TRANSFER ||
     variant === NotEnoughVariant.BUY_SWAP_OR_TRANSFER;
 
-  // The copy names only the routes actually offered, so it never points at an
-  // action the sheet does not show.
-  const body = () => {
-    if (showBuy && showSwap) {
-      return t(
-        "You’ll need {{code}} to deposit into this pool. Buy or swap for {{code}} to continue.",
-        { code: option.code },
-      );
+  // The design's second sentence names the routes on offer. With all three it
+  // still reads "Swap or transfer", as the design writes it.
+  const nextStep = () => {
+    if (showSwap) {
+      return t("Swap or transfer {{code}} to continue.", { code: option.code });
     }
     if (showBuy) {
-      return t(
-        "You’ll need {{code}} to deposit into this pool. Buy or transfer {{code}} to continue.",
-        { code: option.code },
-      );
+      return t("Buy or transfer {{code}} to continue.", { code: option.code });
     }
-    if (showSwap) {
-      return t(
-        "You’ll need {{code}} to deposit into this pool. Swap or transfer {{code}} to continue.",
-        { code: option.code },
-      );
-    }
-    return t(
-      "You’ll need {{code}} to deposit into this pool. Transfer {{code}} to continue.",
-      { code: option.code },
-    );
+    return t("Transfer {{code}} to continue.", { code: option.code });
   };
 
-  // Two routes of equal weight get the side-by-side treatment in the design,
-  // with the transfer route demoted to a text button under an "or". A single
-  // route keeps the stacked full-width pair.
-  const showBothPrimaries = showBuy && showSwap;
-  const transferLabel = t("Transfer from another account");
+  const receiveLabel = t("Receive {{code}}", { code: option.code });
 
-  // Each route reports itself before it leaves: Buy opens a tab, Transfer
-  // navigates away, and Swap replaces the sheet, so this is the last frame in
-  // which the choice is still attributable to the Earn funnel.
   const handleBuy = () => {
     trackEarnFundingActionSelected({ assetCode: option.code, action: "buy" });
     openOnramp();
@@ -88,21 +65,27 @@ export const NotEnoughTokenSheet = ({
     trackEarnFundingActionSelected({ assetCode: option.code, action: "swap" });
     onSwap();
   };
-  const goToTransfer = () => {
+  const handleReceive = () => {
     trackEarnFundingActionSelected({
       assetCode: option.code,
       action: "transfer",
     });
-    navigateTo(ROUTES.viewPublicKey, navigate, EARN_FLOW_QUERY);
+    setIsReceiving(true);
   };
+
+  if (isReceiving) {
+    return (
+      <EarnReceiveSheet
+        onBack={() => setIsReceiving(false)}
+        onClose={onClose}
+      />
+    );
+  }
 
   return (
     <div className="NotEnoughTokenSheet" data-testid="earn-not-enough-sheet">
       <div className="NotEnoughTokenSheet__header">
         <AssetIcon
-          // Keyed by canonical, which is how AssetIcon looks an asset up, and
-          // always populated: an empty map reads as "still fetching" there, so a
-          // token whose icon never resolved would spin instead of falling back.
           assetIcons={{
             [getCanonicalFromAsset(option.code, option.issuer)]:
               option.iconUrl ?? null,
@@ -118,38 +101,28 @@ export const NotEnoughTokenSheet = ({
           aria-label={t("Close")}
           data-testid="earn-not-enough-close"
         >
-          <Icon.XClose />
+          <Icon.X />
         </button>
       </div>
 
-      <div className="NotEnoughTokenSheet__title">
-        <Text as="h2" size="lg" weight="semi-bold">
-          {t("Not enough {{code}}", { code: option.code })}
-        </Text>
-      </div>
+      <h2 className="NotEnoughTokenSheet__title">
+        {t("Not enough {{code}}", { code: option.code })}
+      </h2>
 
+      {/* Two sentences on two lines, as the design breaks them. */}
       <div className="NotEnoughTokenSheet__body">
-        <Text as="p" size="sm">
-          {body()}
-        </Text>
+        <div>
+          {t("Get {{code}} to deposit into this pool.", { code: option.code })}
+        </div>
+        <div>{nextStep()}</div>
       </div>
 
       <div className="NotEnoughTokenSheet__actions">
-        {showBothPrimaries ? (
+        {showBuy && showSwap ? (
           <>
             <div className="NotEnoughTokenSheet__actions-row">
               <Button
-                size="md"
-                variant="secondary"
-                isFullWidth
-                isRounded
-                onClick={handleBuy}
-                data-testid="earn-not-enough-buy"
-              >
-                {t("Buy {{code}}", { code: option.code })}
-              </Button>
-              <Button
-                size="md"
+                size="lg"
                 variant="secondary"
                 isFullWidth
                 isRounded
@@ -157,6 +130,16 @@ export const NotEnoughTokenSheet = ({
                 data-testid="earn-not-enough-swap"
               >
                 {t("Swap for {{code}}", { code: option.code })}
+              </Button>
+              <Button
+                size="lg"
+                variant="tertiary"
+                isFullWidth
+                isRounded
+                onClick={handleBuy}
+                data-testid="earn-not-enough-buy"
+              >
+                {t("Buy {{code}}", { code: option.code })}
               </Button>
             </div>
 
@@ -167,17 +150,17 @@ export const NotEnoughTokenSheet = ({
             <button
               type="button"
               className="NotEnoughTokenSheet__text-action"
-              onClick={goToTransfer}
+              onClick={handleReceive}
               data-testid="earn-not-enough-transfer"
             >
-              {transferLabel}
+              {receiveLabel}
             </button>
           </>
         ) : (
           <>
             {showBuy && (
               <Button
-                size="md"
+                size="lg"
                 variant="secondary"
                 isFullWidth
                 isRounded
@@ -190,7 +173,7 @@ export const NotEnoughTokenSheet = ({
 
             {showSwap && (
               <Button
-                size="md"
+                size="lg"
                 variant="secondary"
                 isFullWidth
                 isRounded
@@ -201,17 +184,17 @@ export const NotEnoughTokenSheet = ({
               </Button>
             )}
 
-            {/* Outlined under a primary route; filled when transferring is the
+            {/* Outlined under a primary route; filled when receiving is the
                 only thing the account can do. */}
             <Button
-              size="md"
+              size="lg"
               variant={showBuy || showSwap ? "tertiary" : "secondary"}
               isFullWidth
               isRounded
-              onClick={goToTransfer}
+              onClick={handleReceive}
               data-testid="earn-not-enough-transfer"
             >
-              {transferLabel}
+              {receiveLabel}
             </Button>
           </>
         )}

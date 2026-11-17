@@ -1,5 +1,6 @@
 @use "../../../styles/utils.scss" as *;
 
+// Figma: Varial 4470:111555 (in progress) and 4470:111569 (complete).
 .EarnSubmit {
   display: flex;
   flex-direction: column;
@@ -7,17 +8,19 @@
   gap: pxToRem(24);
   padding-top: pxToRem(72);
 
+  // Text/LG/500 under a 28px spinner or check.
   &__title {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: pxToRem(12);
+    gap: pxToRem(8);
     color: var(--sds-clr-gray-12);
     font-size: pxToRem(18);
+    line-height: pxToRem(26);
     font-weight: 500;
 
     &-success {
-      color: var(--sds-clr-green-11);
+      color: var(--sds-clr-green-09);
       width: pxToRem(28);
       height: pxToRem(28);
     }
@@ -26,27 +29,53 @@
   &__summary {
     width: 100%;
     background: var(--sds-clr-gray-03);
-    border-radius: pxToRem(12);
-    padding: pxToRem(20) pxToRem(16);
+    border-radius: pxToRem(16);
+    padding: pxToRem(24);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: pxToRem(12);
-    color: var(--sds-clr-gray-11);
+    gap: pxToRem(24);
     text-align: center;
   }
 
   &__icons {
     display: flex;
     align-items: center;
-    gap: pxToRem(10);
-    color: var(--sds-clr-gray-09);
+    gap: pxToRem(16);
 
-    // Same as the review row: the gap owns the spacing, so AssetIcon's list-row
-    // margin would otherwise leave the chevron off-centre between the two icons.
+    // The gap owns the spacing, so AssetIcon's list-row margin would otherwise
+    // leave the arrow off-centre between the two icons. The ring is the
+    // design's 1px border.
     .AccountAssets__asset--logo {
       margin-right: 0;
+
+      &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 1px solid var(--sds-clr-gray-06);
+        pointer-events: none;
+      }
     }
+  }
+
+  &__arrow {
+    width: pxToRem(16);
+    height: pxToRem(16);
+    color: var(--sds-clr-gray-09);
+  }
+
+  // Text/SM/500: the amount and pool in primary, "to" in secondary.
+  &__caption {
+    font-size: pxToRem(14);
+    line-height: pxToRem(20);
+    font-weight: 500;
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__caption-verb {
+    color: var(--sds-clr-gray-11);
   }
 
   &__footer {
@@ -54,11 +83,14 @@
     flex-direction: column;
     gap: pxToRem(8);
 
+    // Text/SM/500 in secondary, 16px above Close.
     &-note {
-      color: var(--sds-clr-gray-10);
-      font-size: pxToRem(12);
+      color: var(--sds-clr-gray-11);
+      font-size: pxToRem(14);
+      line-height: pxToRem(20);
+      font-weight: 500;
       text-align: center;
-      padding-bottom: pxToRem(4);
+      padding-bottom: pxToRem(8);
     }
   }
 }

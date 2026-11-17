@@ -112,7 +112,11 @@ const renderAmount = () =>
       }
       routes={["/"]}
     >
-      <EarnAmount goBack={jest.fn()} onConfirm={jest.fn()} />
+      <EarnAmount
+        goBack={jest.fn()}
+        onClose={jest.fn()}
+        onConfirm={jest.fn()}
+      />
     </Wrapper>,
   );
 
@@ -171,24 +175,35 @@ describe("EarnAmount typed amount", () => {
     {
       typed: "1000",
       shown: "1,000",
+      reviewed: "1,000.00",
       stroops: "10000000000",
       usd: "$1,000.00",
-      position: "100 → 1,100 USDC",
-      monthly: "$0.42 → $4.58",
-      yearly: "$5.00 → $55.00",
+      position: "100.00 → 1,100.00 USDC",
+      monthly: "≈ $4.58",
+      yearly: "≈ $55.00",
     },
     {
       typed: "1234.56",
       shown: "1,234.56",
+      reviewed: "1,234.56",
       stroops: "12345600000",
       usd: "$1,234.56",
-      position: "100 → 1,334.56 USDC",
-      monthly: "$0.42 → $5.56",
-      yearly: "$5.00 → $66.73",
+      position: "100.00 → 1,334.56 USDC",
+      monthly: "≈ $5.56",
+      yearly: "≈ $66.73",
     },
   ])(
     "deposits $shown typed into the input as that number",
-    async ({ typed, shown, stroops, usd, position, monthly, yearly }) => {
+    async ({
+      typed,
+      shown,
+      reviewed,
+      stroops,
+      usd,
+      position,
+      monthly,
+      yearly,
+    }) => {
       renderAmount();
 
       const input = screen.getByTestId("send-amount-amount-input");
@@ -215,7 +230,7 @@ describe("EarnAmount typed amount", () => {
       );
       expect(review).not.toHaveTextContent("NaN");
       expect(screen.getByTestId("earn-review-amount")).toHaveTextContent(
-        `${shown} USDC`,
+        `${reviewed} USDC`,
       );
       expect(review).toHaveTextContent(usd);
       expect(screen.getByTestId("earn-review-position")).toHaveTextContent(

@@ -43,6 +43,12 @@ export interface EarnTokenOption {
   /** Raw total in display units, "0" when the account holds none. */
   total: string;
   /**
+   * Whether the account already has a balance entry (a trustline) for it. A
+   * swap into a token without one has to open it first, which locks another
+   * base reserve of XLM.
+   */
+  hasTrustline: boolean;
+  /**
    * Headline rate as a decimal fraction (0.1694 = 16.94%), or null when the
    * pool oracle has no fresh price and the rate is genuinely unknown.
    */
@@ -203,6 +209,7 @@ export function useGetEarnTokensData() {
           iconUrl: balances.icons?.[canonical],
           decimals: option.decimals ?? CLASSIC_ASSET_DECIMALS,
           total: total ? total.toFixed() : "0",
+          hasTrustline: Boolean(balance),
           apy: headlineApy(offer.supplyApy, offer.emissionsSupplyApr),
           poolId: offer.id,
         };

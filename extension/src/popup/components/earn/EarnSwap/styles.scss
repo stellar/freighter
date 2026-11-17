@@ -6,8 +6,14 @@
 // rather than take a solid background and a height.
 [data-slot="sheet-content"].EarnSwapSheet {
   background: var(--sds-clr-gray-01);
-  border-radius: 1.5rem 1.5rem 0 0;
-  box-shadow: 0 1rem 1.5rem rgba(0, 0, 0, 0.24);
+  // A floating card like the flow's other sheets (Varial 4478:116498): 8px off
+  // the sides and bottom, rounded all round.
+  left: pxToRem(8);
+  right: pxToRem(8);
+  bottom: pxToRem(8);
+  width: auto;
+  border-radius: 1.5rem;
+  box-shadow: none;
   // Deliberately not `overflow: hidden`. The slide-in animation transforms this
   // element, which makes it the containing block for the review SlideupModal
   // that SwapAmount nests inside it — clipping here would cut that sheet off.
@@ -48,28 +54,33 @@
     border-radius: 1.5rem 1.5rem 0 0;
   }
 
-  // Leave room for the sheet's own X so a long title cannot run under it.
+  // Balances the 24px X on the left so the title stays centred.
   .View__header__box--right {
-    min-width: pxToRem(32);
+    min-width: pxToRem(24);
   }
 }
 
+// The submitting/success step's X: bare, at the top right, 16px in.
 .EarnSwapSheet__close {
   position: absolute;
-  // Centred on the 56px header row, whether or not the step draws one.
-  top: pxToRem(12);
-  right: 1rem;
+  top: pxToRem(24);
+  right: pxToRem(16);
   z-index: 1;
-  width: pxToRem(32);
-  height: pxToRem(32);
-  border-radius: 50%;
+  width: pxToRem(24);
+  height: pxToRem(24);
+  padding: 0;
   border: none;
   cursor: pointer;
-  background: var(--sds-clr-gray-04);
-  color: var(--sds-clr-gray-11);
+  background: none;
+  color: var(--sds-clr-gray-12);
   display: flex;
   align-items: center;
   justify-content: center;
+
+  svg {
+    width: pxToRem(24);
+    height: pxToRem(24);
+  }
 }
 
 .EarnSwapSheet__body {
@@ -84,17 +95,116 @@
   // padding rules that reference them collapse to zero, which is what left the
   // CTA flush against the sheet's bottom edge.
   //
-  // Values are measured off the Figma sheet (node 9459:47811, 360x436): a 32px
-  // header row 24px below the top edge (56px total), a 12px gap from the header
-  // to the sell card, and 24px under the CTA.
-  --View-header-height: #{pxToRem(56)};
-  --View-inset-padding-top: #{pxToRem(12)};
+  // Values are measured off the Figma sheet (Varial 4478:116498): a 24px
+  // header row 24px below the top edge with 24px under it, so the sell card
+  // starts 72px down, and 24px under the CTA.
+  --View-header-height: #{pxToRem(72)};
+  --View-inset-padding-top: 0;
   --View-footer-padding-bottom: #{pxToRem(24)};
 }
 
-// The seam notch is 40px in this sheet (Figma node 9459:48064). The standalone
-// Swap route keeps the shared 30px until design confirms the two should match.
+// The steps' titles at Text/MD/600, over the app header's 14px.
+.EarnSwapSheet__body .View__header__box--center .Text {
+  font-size: pxToRem(16);
+  line-height: pxToRem(24);
+  font-weight: 600;
+}
+
+// The header's X and back arrow at the design's 24px, in primary.
+.EarnSwapSheet__body .View__header .BackButton svg {
+  width: pxToRem(24);
+  height: pxToRem(24);
+  color: var(--sds-clr-gray-12);
+}
+
+// The submitting/success step has no header, so it starts its own content
+// where the design does: 48px down, clear of the sheet's X.
+.EarnSwapSheet__body .SendingTransaction {
+  margin-top: pxToRem(48);
+}
+
+// The cards between the seam: 12px apart, with a 32px notch in the sheet's
+// colour carrying a 12px chevron.
+.EarnSwapSheet__body .SwapAsset__direction {
+  height: pxToRem(12);
+}
+
 .EarnSwapSheet__body .SwapAsset__direction-btn {
-  width: pxToRem(40);
-  height: pxToRem(40);
+  width: pxToRem(32);
+  height: pxToRem(32);
+  background: var(--sds-clr-gray-01);
+
+  svg {
+    width: pxToRem(12);
+    height: pxToRem(12);
+  }
+}
+
+// The shared amount cards and percentage pills, drawn as the deposit screen
+// draws them (see EarnAmount): a lighter fill, 12/18 labels, a 24/32 amount and
+// a compact token pill. Scoped to the sheet so main Swap keeps its own.
+.EarnSwapSheet__body {
+  .AmountCard {
+    margin: 0;
+    background-color: var(--sds-clr-gray-02);
+  }
+
+  .AmountCard__sending-label {
+    gap: pxToRem(12);
+    font-size: pxToRem(12);
+    line-height: pxToRem(18);
+    font-weight: 500;
+  }
+
+  .AmountCard__lg {
+    font-size: pxToRem(24);
+    line-height: pxToRem(32);
+    font-weight: 600;
+    letter-spacing: pxToRem(-0.96);
+  }
+
+  .AmountCard__asset-selector-inline {
+    min-height: pxToRem(28);
+    padding: pxToRem(4) pxToRem(8);
+
+    .AccountAssets__asset--logo {
+      width: pxToRem(16) !important;
+      height: pxToRem(16) !important;
+      min-width: pxToRem(16);
+      margin: 0;
+    }
+
+    > svg {
+      width: pxToRem(12);
+      height: pxToRem(12);
+      color: var(--sds-clr-gray-09);
+    }
+  }
+
+  .AmountCard__asset-code {
+    line-height: pxToRem(20);
+    font-weight: 600;
+  }
+
+  .AmountCard__balance-row {
+    margin-top: pxToRem(8);
+  }
+
+  .AmountCard__amount-price {
+    font-size: pxToRem(12);
+    line-height: pxToRem(18);
+    font-weight: 500;
+  }
+
+  .PercentageButtons {
+    gap: pxToRem(12);
+  }
+
+  .PercentageButtons__btn {
+    padding: pxToRem(6) pxToRem(10);
+    border-radius: pxToRem(100);
+    font-size: pxToRem(14);
+    line-height: pxToRem(20);
+    font-weight: 600;
+  }
 }

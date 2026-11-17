@@ -53,6 +53,14 @@ export interface EarnState {
    * emitted from the submit hook, two screens and one `resetSubmission()` apart.
    */
   didSwapInFlow: boolean;
+  /**
+   * The amount the staged deposit was built with, in display units
+   * ("1234.56"), recorded when Review opens. Review and the deposit screens show
+   * it rather than the amount field, which stays editable while a build runs,
+   * so what they show is always what Confirm signs. Null until a deposit has
+   * been reviewed.
+   */
+  reviewedAmount: string | null;
 }
 
 export const initialState: EarnState = {
@@ -63,6 +71,7 @@ export const initialState: EarnState = {
   hasSeenIntro: null,
   lastSubmitFailed: false,
   didSwapInFlow: false,
+  reviewedAmount: null,
 };
 
 const earnSlice = createSlice({
@@ -90,6 +99,9 @@ const earnSlice = createSlice({
     setDidSwapInFlow: (state, action: { payload: boolean }) => {
       state.didSwapInFlow = action.payload;
     },
+    saveReviewedAmount: (state, action: { payload: string | null }) => {
+      state.reviewedAmount = action.payload;
+    },
     /**
      * Resets everything except `hasSeenIntro` — that flag is persisted in the
      * background store and re-reading it on every flow entry would reintroduce
@@ -110,6 +122,7 @@ export const {
   setEarnIntroSeen,
   setEarnSubmitFailed,
   setDidSwapInFlow,
+  saveReviewedAmount,
   resetEarn,
 } = earnSlice.actions;
 

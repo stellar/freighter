@@ -93,7 +93,11 @@ const renderAmount = (amount: string) =>
       }
       routes={["/"]}
     >
-      <EarnAmount goBack={jest.fn()} onConfirm={jest.fn()} />
+      <EarnAmount
+        goBack={jest.fn()}
+        onClose={jest.fn()}
+        onConfirm={jest.fn()}
+      />
     </Wrapper>,
   );
 
@@ -152,10 +156,10 @@ describe("EarnAmount deposit USD value", () => {
     expect(within(review).getByText("$1,234.56")).toBeInTheDocument();
     // $100 already supplied, $1,334.56 after the deposit, both at 5%.
     expect(screen.getByTestId("earn-review-monthly")).toHaveTextContent(
-      "$0.42 → $5.56",
+      "≈ $5.56",
     );
     expect(screen.getByTestId("earn-review-yearly")).toHaveTextContent(
-      "$5.00 → $66.73",
+      "≈ $66.73",
     );
   });
 });

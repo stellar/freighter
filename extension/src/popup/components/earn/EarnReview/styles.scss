@@ -1,63 +1,132 @@
 @use "../../../styles/utils.scss" as *;
 
+// Figma: Varial 4470:111414 "Review deposit".
 .EarnReview {
-  padding: pxToRem(20);
+  padding: pxToRem(24);
   display: flex;
   flex-direction: column;
-  gap: pxToRem(12);
+  gap: pxToRem(24);
+
+  // The centred title sits 24px above the deposit card.
+  > .SheetHeader {
+    padding-bottom: 0;
+  }
+
+  &__blocks {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12);
+  }
 
   &__group {
     background: var(--sds-clr-gray-03);
-    border-radius: pxToRem(12);
+    border-radius: pxToRem(16);
     padding: pxToRem(16);
-    color: var(--sds-clr-gray-11);
 
     &--rows {
-      padding: 0 pxToRem(16);
+      padding: pxToRem(12) pxToRem(16);
     }
+  }
+
+  &__group--deposit {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(16);
+  }
+
+  // Text/SM/500 in primary.
+  &__group-title {
+    font-size: pxToRem(14);
+    line-height: pxToRem(20);
+    font-weight: 500;
+    color: var(--sds-clr-gray-12);
+  }
+
+  // The token, an arrow under its icon, then the pool.
+  &__flow {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12);
   }
 
   &__asset {
     display: flex;
     align-items: center;
-    gap: pxToRem(12);
-    padding-top: pxToRem(8);
+    gap: pxToRem(16);
 
-    // AssetIcon carries a 1rem right margin for the account's list rows. Here
-    // the row's own gap does the spacing, and leaving the margin in place pushes
-    // the amount 16px further right than the pool row below it.
+    // AssetIcon carries a 1rem right margin for the account's list rows; the
+    // row's own gap does the spacing here. The ring is the design's 1px border.
     .AccountAssets__asset--logo {
       margin-right: 0;
+
+      &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 1px solid var(--sds-clr-gray-06);
+        pointer-events: none;
+      }
     }
   }
 
-  &__amount {
-    color: var(--sds-clr-gray-12);
-    font-size: pxToRem(16);
+  // Text/SM/500 in primary.
+  &__primary {
+    font-size: pxToRem(14);
+    line-height: pxToRem(20);
     font-weight: 500;
+    color: var(--sds-clr-gray-12);
   }
 
-  &__chevrons {
+  // Text/XS/500 in secondary.
+  &__secondary {
+    font-size: pxToRem(12);
+    line-height: pxToRem(18);
+    font-weight: 500;
+    color: var(--sds-clr-gray-11);
+  }
+
+  // A 16px arrow, centred under the 32px icons.
+  &__arrow {
+    display: flex;
+    justify-content: center;
+    width: pxToRem(32);
     color: var(--sds-clr-gray-09);
-    padding: pxToRem(6) 0 0 pxToRem(10);
+
+    svg {
+      width: pxToRem(16);
+      height: pxToRem(16);
+    }
   }
 
-  // The "before" half of a before -> after pair is de-emphasised so the
-  // resulting value reads as the answer.
+  // The "before" half of the position, de-emphasised so the resulting value
+  // reads as the answer.
   &__before {
-    color: var(--sds-clr-gray-09);
-    font-weight: 400;
+    color: var(--sds-clr-gray-11);
   }
 
+  // An outlined row button: 36px, left-aligned, a 14px list glyph.
   &__details-btn {
     display: flex;
     align-items: center;
-    gap: pxToRem(8);
+    gap: pxToRem(4);
+    width: 100%;
+    padding: pxToRem(8) pxToRem(10);
+    border: 1px solid var(--sds-clr-gray-05);
+    border-radius: pxToRem(16);
     background: none;
-    border: none;
     cursor: pointer;
-    padding: pxToRem(12) pxToRem(4);
-    color: var(--sds-clr-lilac-11);
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(14);
+    line-height: pxToRem(20);
+    font-weight: 600;
+
+    svg {
+      width: pxToRem(14);
+      height: pxToRem(14);
+      color: var(--sds-clr-gray-09);
+      flex: none;
+    }
   }
 
   // The details pane carries the whole invocation — auth entries plus every
@@ -178,6 +247,7 @@
     --Button-box-shadow-color: var(--sds-clr-amber-06);
   }
 
+  // A circle as tall as the lg Cancel and Confirm beside it, with a 16px glyph.
   &__settings {
     flex: 0 0 auto;
     width: pxToRem(40);
@@ -186,9 +256,48 @@
     border: 1px solid var(--sds-clr-gray-06);
     cursor: pointer;
     background: none;
-    color: var(--sds-clr-gray-11);
+    color: var(--sds-clr-gray-09);
     display: flex;
     align-items: center;
     justify-content: center;
+
+    svg {
+      width: pxToRem(16);
+      height: pxToRem(16);
+    }
+  }
+}
+
+// The Blockaid detail pane's actions, laid out like the Send and Swap review's
+// own Blockaid pane: a full-width Cancel over a text-weight proceed action.
+.EarnReview__blockaid-actions {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(8);
+}
+
+.EarnReview__text-action {
+  width: 100%;
+  border: none;
+  background: none;
+  font-family: var(--sds-ff-base);
+  font-weight: 600;
+  font-size: pxToRem(14);
+  line-height: pxToRem(20);
+  padding: pxToRem(8) 0;
+  cursor: pointer;
+  text-align: center;
+
+  &--default {
+    color: var(--sds-clr-gray-09);
+  }
+
+  &--error {
+    color: var(--sds-clr-red-11);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
   }
 }
