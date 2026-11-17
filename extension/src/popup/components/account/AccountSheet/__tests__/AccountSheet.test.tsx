@@ -7,7 +7,10 @@ import { WalletType } from "@shared/constants/hardwareWallet";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
-import { AccountSheet } from "popup/components/account/AccountSheet";
+import {
+  AccountSheet,
+  collapsedGroupKeys,
+} from "popup/components/account/AccountSheet";
 import { Wrapper } from "popup/__testHelpers__";
 
 const DERIVED_1 = "GDVEU3DD4KOFECV66VIHWEZOYX4ZKR3WV27L464SIIPOU2IUI3JCZA57";
@@ -153,6 +156,11 @@ const groupNamed = (label: string) =>
     )!;
 
 describe("AccountSheet", () => {
+  // Collapsed groups live at module scope for the life of the popup.
+  afterEach(() => {
+    collapsedGroupKeys.clear();
+  });
+
   it("lists a single source flat, without group headers", () => {
     renderSheet(derived);
 
@@ -222,9 +230,8 @@ describe("AccountSheet", () => {
     expect(screen.queryByTestId("wallets-header-explorer")).toBeNull();
   });
 
-  // Collapsed groups are kept for the life of the popup, so this runs last.
   it("collapses a group and keeps it collapsed when the sheet reopens", () => {
-    const { reopen } = renderSheet(mixed);
+    const { reopen, unmount } = renderSheet(mixed);
 
     const toggle = within(groupNamed("Recovery phrase")).getByTestId(
       "account-sheet-group-toggle",
@@ -247,5 +254,21 @@ describe("AccountSheet", () => {
         "account-sheet-group-toggle",
       ),
     ).toHaveAttribute("aria-expanded", "false");
+
+    // Home unmounts the sheet when it navigates away; a fresh mount must
+    // still come back collapsed.
+    unmount();
+    renderSheet(mixed);
+    expect(
+      within(groupNamed("Recovery phrase")).getByTestId(
+        "account-sheet-group-toggle",
+      ),
+    ).toHaveAttribute("aria-expanded", "false");
+    expect(
+      within(groupNamed("Recovery phrase")).queryAllByTestId(
+        "wallet-row-select",
+      ),
+    ).toHaveLength(0);
+    expect(within(groupNamed("Ledger")).getByText("Account 4")).toBeVisible();
   });
 });

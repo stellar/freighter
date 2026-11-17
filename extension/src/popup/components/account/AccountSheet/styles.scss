@@ -51,14 +51,15 @@
       color: var(--sds-clr-gray-11);
     }
 
-    // The copy glyph sits inline after the address. The button gets a little
-    // padding so the target is bigger than the 14px glyph.
+    // The copy glyph sits inline after the address. Padding takes the target
+    // to 24px (WCAG 2.5.8) and the matching negative margin keeps the layout
+    // footprint at the 14px glyph.
     &__copy {
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: pxToRem(2px);
-      margin: pxToRem(-2px);
+      padding: pxToRem(5px);
+      margin: pxToRem(-5px);
       border: none;
       background: none;
       color: var(--sds-clr-gray-11);
