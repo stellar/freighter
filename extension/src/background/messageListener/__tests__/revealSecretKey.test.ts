@@ -74,6 +74,9 @@ const DERIVED_2 = ACCOUNT_SOURCE_VECTORS[1].accounts[0];
 const PASSWORD = "test-password";
 const extensionPage = {};
 const contentScript = { tab: { id: 1 }, url: "https://example.com" };
+// The webpack dev-server popup relays through the content script; jest sets
+// DEV_SERVER_URL to this origin.
+const devServerPopup = { tab: { id: 1 }, url: "http://localhost:9000/#/" };
 
 const testAlarm = new MockBrowserAlarm(() => {});
 
@@ -210,6 +213,11 @@ describe("REVEAL_SECRET_KEY", () => {
     const result = await reveal(importedId, PASSWORD, contentScript);
     expect(result).toEqual({ error: "Unauthorized" });
   });
+
+  it("reveals to the dev-server popup", async () => {
+    const result = await reveal(importedId, PASSWORD, devServerPopup);
+    expect(result).toEqual({ secretKey: imported.secret() });
+  });
 });
 
 describe("SHOW_BACKUP_PHRASE", () => {
@@ -225,6 +233,12 @@ describe("SHOW_BACKUP_PHRASE", () => {
   it("refuses a sender that isn't one of our pages", async () => {
     expect(await showPhrase({ sender: contentScript })).toEqual({
       error: "Unauthorized",
+    });
+  });
+
+  it("returns the phrase to the dev-server popup", async () => {
+    expect(await showPhrase({ sender: devServerPopup })).toEqual({
+      mnemonicPhrase: PHRASE_1.mnemonic,
     });
   });
 

@@ -328,8 +328,11 @@ export const popupMessageListener = (
       });
     }
     case SERVICE_TYPES.REVEAL_SECRET_KEY: {
-      // A secret key leaves the background only for our own pages.
-      if (!isFromExtensionPage) return { error: "Unauthorized" };
+      // A secret key leaves the background only for our own pages
+      // (and the dev-server popup, which relays through the content script).
+      if (!isFromExtensionPage && !isFromDevServer) {
+        return { error: "Unauthorized" };
+      }
       return revealSecretKey({
         request,
         localStore,
