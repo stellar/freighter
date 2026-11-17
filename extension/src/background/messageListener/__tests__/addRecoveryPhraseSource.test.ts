@@ -29,9 +29,9 @@ import {
   APPLICATION_ID,
   DERIVATION_INDICES_ID,
 } from "constants/localStorageTypes";
+import { PENDING_PHRASE_MISSING_ERROR } from "@shared/constants/errors";
 import {
   NO_SOFTWARE_KEYSTORE_ERROR,
-  PENDING_PHRASE_MISSING_ERROR,
   PHRASE_ALREADY_HELD_ERROR,
 } from "../handlers/addRecoveryPhraseSource";
 

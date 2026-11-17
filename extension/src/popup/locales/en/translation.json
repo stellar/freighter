@@ -699,6 +699,7 @@
   "The destination account doesn't exist": "The destination account doesn't exist.",
   "The destination account doesn’t exist": "The destination account doesn’t exist",
   "The destination account must opt to accept this asset before receiving it.": "The destination account must opt to accept this asset before receiving it.",
+  "The new recovery phrase is no longer available. Start again.": "The new recovery phrase is no longer available. Start again.",
   "The requester expects you to sign this message on": "The requester expects you to sign this message on",
   "The secret phrase you entered is incorrect.": "The secret phrase you entered is incorrect.",
   "The signature returned by your Ledger could not be verified. Disconnect any other devices and try again. If this keeps happening, update the Stellar app on your Ledger.": "The signature returned by your Ledger could not be verified. Disconnect any other devices and try again. If this keeps happening, update the Stellar app on your Ledger.",

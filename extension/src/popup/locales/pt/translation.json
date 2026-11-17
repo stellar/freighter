@@ -699,6 +699,7 @@
   "The destination account doesn't exist": "A conta de destino não existe",
   "The destination account doesn’t exist": "A conta de destino não existe",
   "The destination account must opt to accept this asset before receiving it.": "A conta de destino deve optar por aceitar este ativo antes de recebê-lo.",
+  "The new recovery phrase is no longer available. Start again.": "A nova frase de recuperação não está mais disponível. Comece novamente.",
   "The requester expects you to sign this message on": "O solicitante espera que você assine esta mensagem em",
   "The secret phrase you entered is incorrect.": "A frase secreta que você inseriu está incorreta.",
   "The signature returned by your Ledger could not be verified. Disconnect any other devices and try again. If this keeps happening, update the Stellar app on your Ledger.": "Não foi possível verificar a assinatura retornada pelo seu Ledger. Desconecte outros dispositivos e tente novamente. Se o problema persistir, atualize o app Stellar no seu Ledger.",

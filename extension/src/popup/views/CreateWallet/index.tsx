@@ -6,6 +6,7 @@ import { Trans, useTranslation } from "react-i18next";
 
 import { generateRecoveryPhrase } from "@shared/api/internal";
 import { getNextDefaultAccountName } from "@shared/helpers/accountName";
+import { PENDING_PHRASE_MISSING_ERROR } from "@shared/constants/errors";
 import { emitMetric } from "helpers/metrics";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
@@ -201,6 +202,20 @@ export const CreateWallet = () => {
       setPhrase("");
       setPendingPhraseId("");
       navigateTo(ROUTES.account, navigate);
+      return;
+    }
+
+    // Another window's generation replaced this one, so the phrase on the
+    // backup step was never stored. Drop it rather than let Back show it
+    // again, and start over from the chooser.
+    if (
+      addRecoveryPhraseSource.rejected.match(res) &&
+      res.payload?.errorMessage === PENDING_PHRASE_MISSING_ERROR
+    ) {
+      backToSelect();
+      setErrorMessage(
+        t("The new recovery phrase is no longer available. Start again."),
+      );
     }
   };
 
