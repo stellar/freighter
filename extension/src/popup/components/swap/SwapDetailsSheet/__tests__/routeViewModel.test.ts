@@ -164,6 +164,66 @@ describe("buildRouteView", () => {
     expect(view.to.code).toBe("USDC");
   });
 
+  it("gives each hop its estimated output in the token it buys", () => {
+    const route: SwapRoute = {
+      ...lifiRoute,
+      paths: [
+        {
+          share: "1",
+          hops: [
+            {
+              venue: "Soroswap",
+              from: "XLM",
+              to: EURC,
+              pool: "p1",
+              toAmount: "1032.5",
+            },
+            {
+              venue: "Aquarius",
+              from: EURC,
+              to: USDC,
+              pool: "p2",
+              toAmount: "24.4500000",
+            },
+          ],
+        },
+      ],
+    };
+    const view = buildRouteView({
+      route,
+      tokenContext: emptyContext,
+      protocols: PROTOCOLS,
+    })!;
+    expect(view.paths[0].amounts).toEqual(["1,032.5 EURC", "24.45 USDC"]);
+  });
+
+  it("shows no hop amounts on a path where any hop lacks one", () => {
+    const route: SwapRoute = {
+      ...lifiRoute,
+      paths: [
+        {
+          share: "1",
+          hops: [
+            {
+              venue: "Soroswap",
+              from: "XLM",
+              to: EURC,
+              pool: "p1",
+              toAmount: "10",
+            },
+            { venue: "Aquarius", from: EURC, to: USDC, pool: "p2" },
+          ],
+        },
+      ],
+    };
+    const view = buildRouteView({
+      route,
+      tokenContext: emptyContext,
+      protocols: PROTOCOLS,
+    })!;
+    expect(view.paths[0].amounts).toBeNull();
+  });
+
   it("drops the pool count on a classic route and shows its one path whole", () => {
     const view = buildRouteView({
       route: classicRoute,

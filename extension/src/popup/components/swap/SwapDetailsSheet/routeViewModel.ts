@@ -8,6 +8,7 @@ import { findTokenListIcon } from "@shared/api/helpers/getIconFromTokenList";
 import { getCanonicalFromAsset, splitCanonical } from "@shared/helpers/stellar";
 import { isNativeAssetPair } from "@shared/helpers/assetIdentity";
 import { truncateString } from "helpers/stellar";
+import { formatAmount, trimTrailingZeros } from "popup/helpers/formatters";
 import { isContractId } from "popup/helpers/soroban";
 import StellarLogo from "popup/assets/stellar-logo.png";
 
@@ -36,6 +37,8 @@ export interface RoutePathView {
   tokens: RouteToken[];
   /** null on classic routes, which don't report pools. */
   poolCount: number | null;
+  /** "24.45 USDC" per hop, its estimated output; null unless every hop has one. */
+  amounts: string[] | null;
 }
 
 export interface RouteView {
@@ -187,11 +190,18 @@ export const buildRouteView = ({
       ...path.hops.map((hop) => resolveRouteToken(hop.to, tokenContext)),
     ];
     const pools = path.hops.filter((h) => h.pool).length;
+    const amounts = path.hops.every((h) => h.toAmount)
+      ? path.hops.map(
+          (h, j) =>
+            `${formatAmount(trimTrailingZeros(h.toAmount!))} ${tokens[j + 1].code}`,
+        )
+      : null;
     return {
       share: formatShare(path.share),
       venues,
       tokens,
       poolCount: pools > 0 ? pools : null,
+      amounts,
     };
   });
 

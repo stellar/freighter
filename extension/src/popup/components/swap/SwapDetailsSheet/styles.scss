@@ -236,6 +236,18 @@
     font-size: pxToRem(12px);
   }
 
+  &__hop-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__hop-amount {
+    margin-left: auto;
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(14px);
+  }
+
   &__providers {
     display: flex;
     flex-direction: column;

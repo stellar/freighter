@@ -160,6 +160,8 @@ export interface SwapHop {
   from: string;
   to: string;
   pool?: string;
+  /** Estimated output of this hop, in `to`'s units. Set on every hop of a LI.FI route or on none. */
+  toAmount?: string;
 }
 
 export interface SwapPath {

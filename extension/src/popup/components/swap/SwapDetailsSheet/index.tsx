@@ -145,11 +145,25 @@ const RoutePane = ({ view }: { view: RouteView }) => {
                 >
                   {path.tokens.map((token, j) => (
                     <React.Fragment key={j}>
-                      <TokenLabel token={token} />
+                      {j === 0 && path.amounts ? (
+                        <div className="SwapDetails__hop-head">
+                          <TokenLabel token={token} />
+                          <span className="SwapDetails__muted">
+                            {t("Amount")}
+                          </span>
+                        </div>
+                      ) : (
+                        <TokenLabel token={token} />
+                      )}
                       {path.venues[j] ? (
                         <div className="SwapDetails__hop-venue">
                           <VenueIcon venue={path.venues[j]} />
                           <span>{path.venues[j].name}</span>
+                          {path.amounts ? (
+                            <span className="SwapDetails__hop-amount">
+                              {path.amounts[j]}
+                            </span>
+                          ) : null}
                         </div>
                       ) : null}
                     </React.Fragment>

@@ -156,6 +156,42 @@ describe("SwapDetailsSheet", () => {
     expect(screen.getByTestId("SwapRoute__hops-1")).toBeInTheDocument();
   });
 
+  it("lists each hop's estimated output under an Amount header", async () => {
+    await renderSheet({
+      ...lifiRoute,
+      paths: [
+        {
+          share: "1",
+          hops: [
+            {
+              venue: "Aquarius",
+              from: "XLM",
+              to: USDC,
+              pool: "p1",
+              toAmount: "24.45",
+            },
+          ],
+        },
+      ],
+    });
+    fireEvent.click(screen.getByTestId("SwapDetails__route"));
+    fireEvent.click(screen.getByTestId("SwapRoute__path-0"));
+
+    expect(screen.getByTestId("SwapRoute__hops-0")).toHaveTextContent(
+      "XLMAmountAquarius24.45 USDCUSDC",
+    );
+  });
+
+  it("leaves out the Amount header when hops carry no amounts", async () => {
+    await renderSheet(lifiRoute);
+    fireEvent.click(screen.getByTestId("SwapDetails__route"));
+    fireEvent.click(screen.getByTestId("SwapRoute__path-0"));
+
+    expect(screen.getByTestId("SwapRoute__hops-0")).toHaveTextContent(
+      "XLMAquariusUSDC",
+    );
+  });
+
   it("closes from the Route pane", async () => {
     const onClose = jest.fn();
     await renderSheet(lifiRoute, onClose);
