@@ -73,14 +73,19 @@ if (!global.crypto.randomUUID) {
 }
 
 const testAlarm = new MockBrowserAlarm(() => {});
-const send = (request: object) =>
+// An extension page sender. `webextension-polyfill` is mocked to undefined, so
+// a sender without an id and without a tab passes `isFromExtensionPage`.
+const extensionPage = {};
+const contentScript = { tab: { id: 1 }, url: "https://example.com" };
+
+const send = (request: object, sender: object = extensionPage) =>
   popupMessageListener(
     request as any,
     mockSessionStore,
     mockDataStorage,
     mockKeyManager,
     testAlarm as any,
-    { id: "fake-extension-id" },
+    sender as any,
   ) as Promise<any>;
 
 const createWallet = () => {
@@ -351,6 +356,58 @@ describe("adding a generated recovery phrase source", () => {
 
     expect(await mockDataStorage.getItem(APPLICATION_ID)).toBe(
       APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+    );
+  });
+
+  it("refuses to generate a phrase for a web page", async () => {
+    await createWallet();
+    const res = await generate(PHRASE_2.mnemonic);
+    mockGenerated.push(PHRASE_2.mnemonic);
+
+    const fromPage = await send(
+      { type: SERVICE_TYPES.GENERATE_RECOVERY_PHRASE },
+      contentScript,
+    );
+
+    expect(fromPage).toEqual({ error: "Unauthorized" });
+    expect(pendingPhrase()).toBe(PHRASE_2.mnemonic);
+    expect(pendingPhraseId()).toBe(res.pendingPhraseId);
+  });
+
+  it("refuses to store a phrase for a web page", async () => {
+    await createWallet();
+    await generate(PHRASE_2.mnemonic);
+
+    const fromPage = await send(
+      {
+        type: SERVICE_TYPES.ADD_RECOVERY_PHRASE_SOURCE,
+        password: PASSWORD,
+        pendingPhraseId: lastPendingPhraseId,
+      },
+      contentScript,
+    );
+
+    expect(fromPage).toEqual({ error: "Unauthorized" });
+    expect(allAccounts()).toHaveLength(1);
+    expect(pendingPhrase()).toBe(PHRASE_2.mnemonic);
+  });
+
+  it("refuses to replace the migration phrase for a web page", async () => {
+    mockGenerated.push(PHRASE_2.mnemonic);
+    const fromExtension = await send({
+      type: SERVICE_TYPES.GET_MIGRATED_MNEMONIC_PHRASE,
+    });
+    mockGenerated.push(PHRASE_1.mnemonic);
+
+    const fromPage = await send(
+      { type: SERVICE_TYPES.GET_MIGRATED_MNEMONIC_PHRASE },
+      contentScript,
+    );
+
+    expect(fromExtension).toEqual({ mnemonicPhrase: PHRASE_2.mnemonic });
+    expect(fromPage).toEqual({ error: "Unauthorized" });
+    expect(mockSessionStore.getState().session.migratedMnemonicPhrase).toBe(
+      PHRASE_2.mnemonic,
     );
   });
 });
