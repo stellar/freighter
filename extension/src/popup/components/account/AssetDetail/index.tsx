@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { Asset } from "stellar-sdk";
@@ -19,7 +19,6 @@ import {
   isNativeBalance,
 } from "@shared/helpers/assetIdentity";
 import IconEllipsis from "popup/assets/icon-ellipsis.svg";
-import IconSoroban from "popup/assets/icon-soroban.svg?react";
 import {
   getAvailableBalance,
   getIssuerFromBalance,
@@ -66,13 +65,9 @@ import { Loading } from "popup/components/Loading";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { title } from "helpers/transaction";
 import { getTokenType, TokenType } from "popup/helpers/token";
-import {
-  PriceDirection,
-  TokenChartSource,
-} from "popup/components/account/TokenPriceChart/constants";
+import { TokenChartSource } from "popup/components/account/TokenPriceChart/constants";
 import {
   getBalanceByAsset,
-  getPriceDeltaColor,
   getTotalInWholeUnits,
   isSorobanBalance,
 } from "popup/helpers/balance";
@@ -89,25 +84,13 @@ import { AccountHistoryData } from "popup/views/Account/hooks/useGetAccountHisto
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { iconsSelector, tokenPricesSelector } from "popup/ducks/cache";
 import { tokenPriceHistoryEnabledSelector } from "popup/ducks/remoteConfig";
-import {
-  RangeDeltaState,
-  TokenPriceChart,
-  formatInspectedPriceLabel,
-} from "popup/components/account/TokenPriceChart";
-import { AssetAbout } from "popup/components/account/AssetAbout";
-import { TokenStats } from "popup/components/account/TokenStats";
 import { AppDataType } from "helpers/hooks/useGetAppData";
+
+import { AssetDetailBody } from "./AssetDetailBody";
 
 import "./styles.scss";
 
 // §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
-
-const LOADING_DELTA: RangeDeltaState = {
-  isLoading: true,
-  text: "",
-  colorClass: PriceDirection.Neutral,
-  inspectedPrice: null,
-};
 
 // One shared empty list, so the operations memo keeps its identity for an
 // asset with no history instead of recomputing on every render.
@@ -163,6 +146,8 @@ interface AssetDetailProps {
   handleClose: () => void;
   /** The account history request failed; shows an error, not a skeleton. */
   hasHistoryError?: boolean;
+  /** Where the sheet was opened from; only Balances offers Send, Swap, Hide and Remove. */
+  source?: TokenChartSource;
 }
 
 export const AssetDetail = ({
@@ -171,6 +156,7 @@ export const AssetDetail = ({
   selectedAsset,
   handleClose,
   hasHistoryError = false,
+  source = TokenChartSource.Balances,
 }: AssetDetailProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -181,22 +167,7 @@ export const AssetDetail = ({
   const isPriceHistoryEnabled = useSelector(tokenPriceHistoryEnabledSelector);
   const { isHideDustEnabled } = useSelector(settingsSelector);
   const [optionsOpen, setOptionsOpen] = React.useState(false);
-  // The chart section owns the range and the fetch; it reports the selected
-  // range's delta up. The report is tagged with the (network, token) it was
-  // made for: this instance outlives a scope change that remounts the chart,
-  // and until the new chart reports, a delta from another scope must read as
-  // the placeholder rather than the previous token's number.
-  const scopeKey = `${networkDetails.networkPassphrase}/${selectedAsset}`;
-  const [rangeDelta, setRangeDelta] = useState<{
-    scope: string;
-    delta: RangeDeltaState;
-  }>({ scope: scopeKey, delta: LOADING_DELTA });
-  const handleDeltaChange = useCallback(
-    (delta: RangeDeltaState) => setRangeDelta({ scope: scopeKey, delta }),
-    [scopeKey],
-  );
-  const shownDelta =
-    rangeDelta.scope === scopeKey ? rangeDelta.delta : LOADING_DELTA;
+  const isBalancesSource = source === TokenChartSource.Balances;
   const isNative = isNativeAssetId(selectedAsset);
   const canonical = getAssetFromCanonical(selectedAsset);
 
@@ -316,19 +287,8 @@ export const AssetDetail = ({
   // LP shares are excluded: `<pool-id>:lp` is not priceable (getTokenPrices
   // strips it), so the section would fire seven doomed requests and the About
   // card would misclassify it as classic.
-  // Remount the scoped sections when the token or network changes in place,
-  // so no render carries the previous scope's series, stats or delta under
-  // the new identity (and `token_chart.viewed` cannot fire for the old data).
-  // Prefixed per child: identical keys on siblings send React's reconciler
-  // into a loop.
   const isChartShown =
     isPriceHistoryEnabled && isMainnet(networkDetails) && !isLpShare;
-  // The scope tag cannot tell a remount from a return: hiding the chart and
-  // showing it again for the same scope would revive the delta under the
-  // remounted chart's default range. Drop it while the chart is hidden.
-  if (!isChartShown && rangeDelta.delta !== LOADING_DELTA) {
-    setRangeDelta({ scope: scopeKey, delta: LOADING_DELTA });
-  }
 
   // Narrowed by hand rather than by the `REROUTE` early return below: this has
   // to sit above it to be a hook, and a reroute has no operations anyway.
@@ -421,18 +381,37 @@ export const AssetDetail = ({
   const isShowingSwap = !isLpShare;
   const isShowingSend = hasBalance;
 
-  // See the `AssetDetail__price` div below for why this falls back to spot.
-  // The guard mirrors the render-time `LOADING_DELTA` reset above: either
-  // alone keeps an inspected price off a hidden chart's header.
-  const inspectedHeaderPrice = isChartShown ? shownDelta.inspectedPrice : null;
-  const headerPrice = inspectedHeaderPrice ?? assetPrice?.currentPrice;
-  const isPricePlaceholder = !headerPrice && isSorobanAsset;
+  // Spot only; the body also drops it while an inspected price fills the header.
+  const isPricePlaceholder = !assetPrice?.currentPrice && !!isSorobanAsset;
+
+  const titleNode = (
+    <>
+      {/* The native asset shows its NAME here, not its code — the
+        balance list (BalanceRow) and the token picker (TokenList)
+        both already do, and this header was the one place still
+        reading "XLM". `title()` cannot own this: it is a plain
+        helper with no access to `t`, and the name is translatable. */}
+      {isLpShare && "liquidityPoolId" in selectedBalance
+        ? `LP: ${truncateString(selectedBalance.liquidityPoolId as string, 12)}`
+        : isCustomToken && isSorobanBalance(selectedBalance)
+          ? selectedBalance.name
+          : (getTokenType(selectedAsset, networkDetails.networkPassphrase) ===
+            TokenType.Native
+              ? t("Stellar Lumens")
+              : title(
+                  selectedBalance as Exclude<
+                    AssetType,
+                    LiquidityPoolShareAsset
+                  >,
+                )) || assetDomain}
+    </>
+  );
 
   // Only issued tokens can be hidden. XLM pays every transaction fee, so
   // hiding it would make Send and Swap report insufficient XLM; the Hidden
   // tokens sheet doesn't list LP shares, so a hidden one could never be
   // unhidden. Same as mobile, where neither opens token details' Hide.
-  const canOfferHide = isIssuedToken;
+  const canOfferHide = isIssuedToken && isBalancesSource;
 
   return (
     <React.Fragment>
@@ -501,7 +480,7 @@ export const AssetDetail = ({
                     </button>
                   </div>
                 ) : null}
-                {isRemovable ? (
+                {isRemovable && isBalancesSource ? (
                   <div className="AssetDetail__options-actions__row AssetDetail__options-actions__row--destructive">
                     <button
                       type="button"
@@ -532,144 +511,50 @@ export const AssetDetail = ({
         />
         <View.Content>
           <div className="AssetDetail__wrapper" data-testid="AssetDetail">
-            <div className="AssetDetail__network-icon">
-              {assetIconUrl ? (
-                <img
-                  src={assetIconUrl}
-                  alt={t("Network icon")}
-                  data-testid="AssetDetail__icon"
-                />
-              ) : isSorobanAsset ? (
-                <IconSoroban data-testid="AssetDetail__soroban-icon" />
-              ) : null}
-            </div>
-            <div className="AssetDetail__title">
-              {/* The native asset shows its NAME here, not its code — the
-                  balance list (BalanceRow) and the token picker (TokenList)
-                  both already do, and this header was the one place still
-                  reading "XLM". `title()` cannot own this: it is a plain
-                  helper with no access to `t`, and the name is translatable. */}
-              {isLpShare && "liquidityPoolId" in selectedBalance
-                ? `LP: ${truncateString(selectedBalance.liquidityPoolId as string, 12)}`
-                : isCustomToken && isSorobanBalance(selectedBalance)
-                  ? selectedBalance.name
-                  : (getTokenType(
-                      selectedAsset,
-                      networkDetails.networkPassphrase,
-                    ) === TokenType.Native
-                      ? t("Stellar Lumens")
-                      : title(
-                          selectedBalance as Exclude<
-                            AssetType,
-                            LiquidityPoolShareAsset
-                          >,
-                        )) || assetDomain}
-            </div>
-            {/* Spot, or the inspected point's close while a drag-to-inspect is
-                in progress. Inspecting describes a chart point, so it uses
-                the chart's precision, as the delta already does. */}
-            <div
-              className={`AssetDetail__price${
-                isPricePlaceholder ? " AssetDetail__price--placeholder" : ""
-              }`}
-              data-testid="AssetDetail__price"
+            <AssetDetailBody
+              token={selectedAsset}
+              networkDetails={networkDetails}
+              source={source}
+              title={titleNode}
+              iconUrl={assetIconUrl}
+              isSorobanAsset={!!isSorobanAsset}
+              spotPrice={assetPrice}
+              isPricePlaceholder={isPricePlaceholder}
+              assetDomain={assetDomain}
+              isChartShown={isChartShown}
             >
-              {inspectedHeaderPrice
-                ? formatInspectedPriceLabel(inspectedHeaderPrice)
-                : headerPrice
-                  ? `$${formatAmount(
-                      roundUsdValue(new BigNumber(headerPrice).toString()),
-                    )}`
-                  : isPricePlaceholder
-                    ? `$${NO_FIAT_VALUE}`
-                    : null}
-            </div>
-            {isChartShown ? (
-              /* The view's one delta, reported by the chart section. Rendered in
-                 every state so the price and chart never shift. */
-              <div
-                className={`AssetDetail__delta AssetDetail__delta--range ${shownDelta.colorClass}`}
-                data-testid="AssetDetail__delta"
-              >
-                {shownDelta.isLoading ? (
-                  <Shimmer
-                    className="AssetDetail__delta-ghost"
-                    width="9.5rem"
-                    height="1.25rem"
-                  />
-                ) : (
-                  shownDelta.text
-                )}
-              </div>
-            ) : assetPrice && assetPrice.percentagePriceChange24h ? (
-              <div
-                className={`AssetDetail__delta ${getPriceDeltaColor(
-                  new BigNumber(
-                    roundUsdValue(assetPrice.percentagePriceChange24h),
-                  ),
-                )}`}
-                data-testid="AssetDetail__delta"
-              >
-                {formatAmount(
-                  roundUsdValue(assetPrice.percentagePriceChange24h),
-                )}
-                %
-              </div>
-            ) : null}
-            {isChartShown ? (
-              <TokenPriceChart
-                key={`chart-${scopeKey}`}
-                token={selectedAsset}
-                networkDetails={networkDetails}
-                fallback24hPercent={assetPrice?.percentagePriceChange24h}
-                onDeltaChange={handleDeltaChange}
-                source={TokenChartSource.Balances}
-              />
-            ) : null}
-            <div className="AssetDetail__balance-info">
-              <div
-                className="AssetDetail__balance"
-                data-testid="asset-detail-available-copy"
-              >
-                <div className="AssetDetail__balance-label">
-                  <Icon.Coins01 />
-                  {t("Balance")}
+              <div className="AssetDetail__balance-info">
+                <div
+                  className="AssetDetail__balance"
+                  data-testid="asset-detail-available-copy"
+                >
+                  <div className="AssetDetail__balance-label">
+                    <Icon.Coins01 />
+                    {t("Balance")}
+                  </div>
+                  <div>{displayTotal}</div>
                 </div>
-                <div>{displayTotal}</div>
-              </div>
-              <div className="AssetDetail__balance-value">
-                <div className="AssetDetail__balance-label">
-                  <Icon.BankNote02 />
-                  {t("Value")}
-                </div>
-                <div>
-                  {assetPrice && assetPrice.currentPrice
-                    ? `$${formatAmount(
-                        roundUsdValue(
-                          new BigNumber(assetPrice.currentPrice)
-                            .multipliedBy(getTotalInWholeUnits(selectedBalance))
-                            .toString(),
-                        ),
-                      )}`
-                    : NO_FIAT_VALUE}
+                <div className="AssetDetail__balance-value">
+                  <div className="AssetDetail__balance-label">
+                    <Icon.BankNote02 />
+                    {t("Value")}
+                  </div>
+                  <div>
+                    {assetPrice && assetPrice.currentPrice
+                      ? `$${formatAmount(
+                          roundUsdValue(
+                            new BigNumber(assetPrice.currentPrice)
+                              .multipliedBy(
+                                getTotalInWholeUnits(selectedBalance),
+                              )
+                              .toString(),
+                          ),
+                        )}`
+                      : NO_FIAT_VALUE}
+                  </div>
                 </div>
               </div>
-            </div>
-            {isChartShown ? (
-              <AssetAbout
-                key={`about-${scopeKey}`}
-                token={selectedAsset}
-                assetDomain={assetDomain}
-                networkPassphrase={networkDetails.networkPassphrase}
-              />
-            ) : null}
-            {isChartShown ? (
-              <TokenStats
-                key={`stats-${scopeKey}`}
-                token={selectedAsset}
-                networkDetails={networkDetails}
-              />
-            ) : null}
+            </AssetDetailBody>
             {filteredAssetOperations === null && hasHistoryError ? (
               <div
                 className="AssetDetail__empty"
@@ -704,7 +589,7 @@ export const AssetDetail = ({
             )}
           </div>
         </View.Content>
-        {(isShowingSwap || isShowingSend) && (
+        {isBalancesSource && (isShowingSwap || isShowingSend) && (
           <div className="AssetDetail__actions-container">
             {isShowingSend && (
               <Button

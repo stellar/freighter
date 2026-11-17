@@ -32,7 +32,10 @@ import {
   mockChartRect,
 } from "popup/__testHelpers__/pointerEvents";
 import { resetCacheWriteClaims } from "helpers/cacheWrites";
-import { RANGE_SWITCH_DEBOUNCE_MS } from "popup/components/account/TokenPriceChart/constants";
+import {
+  RANGE_SWITCH_DEBOUNCE_MS,
+  TokenChartSource,
+} from "popup/components/account/TokenPriceChart/constants";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { AccountHistoryData } from "popup/views/Account/hooks/useGetAccountHistoryData";
 
@@ -246,6 +249,60 @@ describe("AssetDetail", () => {
     await waitFor(() => {
       expect(handleClose).toHaveBeenCalled();
     });
+  });
+
+  it("hides Send, Swap, Hide and Remove when opened from the swap picker", async () => {
+    jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockBalances));
+    // A held classic asset with a balance: under the Balances source this
+    // fixture shows all four affordances.
+    const props = {
+      handleClose: jest.fn(),
+      accountBalances: {
+        balances: [
+          {
+            available: new BigNumber(100),
+            token: {
+              code: "USDC",
+              issuer: {
+                key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+              },
+            },
+            total: new BigNumber(100),
+          },
+        ],
+      } as any,
+      selectedAsset:
+        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      historyData: mockHistoryData,
+    };
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+          },
+        }}
+      >
+        <AssetDetail {...props} source={TokenChartSource.SwapPicker} />
+      </Wrapper>,
+    );
+    await screen.findByTestId("AssetDetail");
+    expect(screen.queryByTestId("asset-detail-send-button")).toBeNull();
+    expect(screen.queryByTestId("asset-detail-swap-button")).toBeNull();
+    await userEvent.click(screen.getByAltText("asset options"));
+    expect(screen.queryByTestId("AssetDetail__hide")).toBeNull();
+    expect(screen.queryByTestId("asset-detail-remove-button")).toBeNull();
+    expect(screen.getByText("Copy address")).toBeInTheDocument();
   });
 
   describe("hide outcome", () => {
