@@ -229,6 +229,24 @@ describe("RevealSecretKey", () => {
     );
     expect(screen.queryByTestId("reveal-secret-key-value")).toBeNull();
   });
+
+  it("shows the generic failure for an error it doesn't know", async () => {
+    mockRevealSecretKey.mockResolvedValue({
+      secretKey: "",
+      error: "Something unexpected",
+    });
+    renderReveal();
+
+    acknowledgeAndContinue();
+    await submitPassword("hunter22");
+
+    await waitFor(() =>
+      expect(
+        screen.getByText("Unable to reveal your secret key"),
+      ).toBeInTheDocument(),
+    );
+    expect(screen.queryByText("Something unexpected")).toBeNull();
+  });
 });
 
 describe("RevealRecoveryPhrase", () => {
@@ -317,7 +335,7 @@ describe("RevealRecoveryPhrase", () => {
     await submitPassword("wrong", "Reveal recovery phrase");
 
     await waitFor(() =>
-      expect(screen.getByText("Incorrect Password")).toBeInTheDocument(),
+      expect(screen.getByText("Incorrect password")).toBeInTheDocument(),
     );
     expect(screen.queryByTestId("reveal-recovery-phrase-value")).toBeNull();
   });

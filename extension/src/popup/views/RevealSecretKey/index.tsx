@@ -197,6 +197,23 @@ const RevealSecret = ({ kind }: { kind: SecretKind }) => {
     params.get("accountId") || state.data.account.activeAccountId;
   const sourceId = params.get("sourceId") || undefined;
 
+  // The background answers in English. Show the errors it can send in the
+  // user's language, and anything else as the generic failure.
+  const translateRevealError = (error: string) => {
+    switch (error.toLowerCase()) {
+      case "incorrect password":
+        return t("Incorrect password");
+      case "account not found":
+        return t("Account not found");
+      case "recovery phrase not found":
+        return t("Recovery phrase not found");
+      case "no secret key is held for a hardware account":
+        return t("No secret key is held for a hardware account");
+      default:
+        return "";
+    }
+  };
+
   const handleSubmit = async ({ password }: { password: string }) => {
     let revealed = "";
     let error = "";
@@ -220,7 +237,7 @@ const RevealSecret = ({ kind }: { kind: SecretKind }) => {
     }
 
     if (error || !revealed) {
-      setErrorMessage(error || copy.failure);
+      setErrorMessage(translateRevealError(error) || copy.failure);
     } else {
       setSecret(revealed);
       setErrorMessage("");
