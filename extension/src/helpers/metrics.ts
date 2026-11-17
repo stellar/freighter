@@ -400,9 +400,16 @@ let lastIdentifiedThemePreference: ThemePreference | null = null;
  * Unlike `color_scheme` (event-level, flips with the device), this only changes
  * when the user changes the setting. Same consent and dirty-check rules as
  * syncIdentifyTraits.
+ *
+ * `force` skips the dirty-check. The check only knows what this page sent,
+ * while every open extension page shares one Amplitude profile, so a pick
+ * must always send: another page may have changed the profile since.
  */
-export const syncPreferredThemeTrait = (preference: ThemePreference): void => {
-  if (preference === lastIdentifiedThemePreference) return;
+export const syncPreferredThemeTrait = (
+  preference: ThemePreference,
+  { force = false }: { force?: boolean } = {},
+): void => {
+  if (!force && preference === lastIdentifiedThemePreference) return;
   if (!AMPLITUDE_KEY || !hasInitialized) return;
   if (!settingsDataSharingSelector(store.getState())) return;
 

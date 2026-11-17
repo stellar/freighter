@@ -25,9 +25,13 @@ test("Preferences shows Display and Security sections and saves toggles", async 
   await expect(link).toHaveAttribute("target", "_blank");
 
   // One toggle from each card, since both cards share one autosaved form.
-  const toggleIds = ["isOpenSidebarByDefaultValue", "isHideDustEnabledValue"];
+  // Form field id → chrome.storage.local key.
+  const toggles: Record<string, string> = {
+    isOpenSidebarByDefaultValue: "isOpenSidebarByDefault",
+    isHideDustEnabledValue: "isHideDustEnabled",
+  };
   const expected: Record<string, string> = {};
-  for (const id of toggleIds) {
+  for (const id of Object.keys(toggles)) {
     const input = page.locator(`#${id}`);
     const before = await input.inputValue();
     await page.locator(`label[for="${id}"]`).click();
@@ -35,18 +39,28 @@ test("Preferences shows Display and Security sections and saves toggles", async 
     expected[id] = await input.inputValue();
   }
 
-  // Checked from a second page: reloading this one could cancel AutoSave's
-  // debounced save before it runs.
-  const second = await context.newPage();
-  await expect(async () => {
-    await second.goto(
-      `chrome-extension://${extensionId}/index.html#/settings/preferences`,
+  // Wait for AutoSave's debounced save to land before opening or reloading
+  // any extension page: either can drop a save that hasn't run yet.
+  const storageKeys = Object.values(toggles);
+  await expect
+    .poll(() =>
+      page.evaluate((keys) => chrome.storage.local.get(keys), storageKeys),
+    )
+    .toEqual(
+      Object.fromEntries(
+        Object.entries(toggles).map(([id, key]) => [
+          key,
+          expected[id] === "true",
+        ]),
+      ),
     );
-    for (const id of toggleIds) {
-      await expect(second.locator(`#${id}`)).toHaveValue(expected[id], {
-        timeout: 2000,
-      });
-    }
-  }).toPass({ timeout: 15000 });
+
+  const second = await context.newPage();
+  await second.goto(
+    `chrome-extension://${extensionId}/index.html#/settings/preferences`,
+  );
+  for (const id of Object.keys(toggles)) {
+    await expect(second.locator(`#${id}`)).toHaveValue(expected[id]);
+  }
   await second.close();
 });

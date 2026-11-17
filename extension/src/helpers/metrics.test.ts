@@ -692,6 +692,36 @@ describe("syncPreferredThemeTrait", () => {
     expect(sdk.identify).toHaveBeenCalledTimes(2);
   });
 
+  it("re-sends a value this page already sent when forced, since another page may have changed the shared profile", async () => {
+    const { mod, settingsMod, sdk } = load();
+    settingsMod.settingsDataSharingSelector.mockReturnValue(true);
+    await mod.initAmplitude();
+    (sdk.identify as jest.Mock).mockClear();
+    const set = jest.fn();
+    (sdk.Identify as unknown as jest.Mock).mockImplementation(() => ({ set }));
+
+    // initAmplitude already sent "system". Suppose another page then sent
+    // "dark", which this page can't see: an unforced repeat is skipped...
+    mod.syncPreferredThemeTrait("system");
+    expect(sdk.identify).not.toHaveBeenCalled();
+
+    // ...while a forced one restores the profile.
+    mod.syncPreferredThemeTrait("system", { force: true });
+    expect(sdk.identify).toHaveBeenCalledTimes(1);
+    expect(set).toHaveBeenCalledWith("preferred_theme", "system");
+  });
+
+  it("still respects consent when forced", async () => {
+    const { mod, settingsMod, sdk } = load();
+    settingsMod.settingsDataSharingSelector.mockReturnValue(true);
+    await mod.initAmplitude();
+    (sdk.identify as jest.Mock).mockClear();
+
+    settingsMod.settingsDataSharingSelector.mockReturnValue(false);
+    mod.syncPreferredThemeTrait("dark", { force: true });
+    expect(sdk.identify).not.toHaveBeenCalled();
+  });
+
   it("sends nothing while data sharing is off, then sends once allowed", async () => {
     const { mod, settingsMod, sdk } = load();
     settingsMod.settingsDataSharingSelector.mockReturnValue(true);

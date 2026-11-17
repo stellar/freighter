@@ -1,6 +1,7 @@
 import * as internal from "@shared/api/internal";
 import * as metrics from "helpers/metrics";
 import {
+  THEME_PREFERENCE_MIRROR_KEY,
   getThemePreferenceInEffect,
   initColorScheme,
   setThemePreference,
@@ -107,6 +108,7 @@ describe("themePreference", () => {
       });
       expect(mockedMetrics.syncPreferredThemeTrait).toHaveBeenCalledWith(
         "dark",
+        { force: true },
       );
     });
 
@@ -145,7 +147,33 @@ describe("themePreference", () => {
       expect(mockedMetrics.syncPreferredThemeTrait).toHaveBeenCalledTimes(1);
       expect(mockedMetrics.syncPreferredThemeTrait).toHaveBeenCalledWith(
         "light",
+        { force: true },
       );
+    });
+
+    it("doesn't overwrite a newer pick from another page when its save finishes late", async () => {
+      const pending = deferSaves();
+      const dark = selectThemePreference("dark");
+
+      // Another page picks Light: it writes the shared mirror, and the
+      // browser notifies this page.
+      localStorage.setItem(THEME_PREFERENCE_MIRROR_KEY, "light");
+      window.dispatchEvent(
+        new StorageEvent("storage", {
+          key: THEME_PREFERENCE_MIRROR_KEY,
+          newValue: "light",
+        }),
+      );
+
+      pending[0]();
+      await dark;
+
+      expect(mockedThemeMetrics.emitThemeChanged).toHaveBeenCalledWith({
+        preference: "dark",
+        previous: "system",
+        colorScheme: "dark",
+      });
+      expect(mockedMetrics.syncPreferredThemeTrait).not.toHaveBeenCalled();
     });
   });
 });

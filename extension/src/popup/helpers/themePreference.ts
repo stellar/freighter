@@ -34,8 +34,6 @@ export const syncThemePreferenceFromStorage = async (): Promise<void> => {
   }
 };
 
-let latestSelection = 0;
-
 /**
  * Handles a pick in the theme picker: applies it immediately, persists it to
  * chrome.storage, then reports it. Throws if the save fails, in which case
@@ -48,7 +46,6 @@ export const selectThemePreference = async (
   if (preference === previous) {
     return;
   }
-  const selection = ++latestSelection;
   setThemePreference(preference);
   // Captured now: a quicker second pick can change the page before this
   // save resolves.
@@ -57,9 +54,9 @@ export const selectThemePreference = async (
   await saveThemePreference(preference);
 
   emitThemeChanged({ preference, previous, colorScheme });
-  // A newer pick reports its own value; an older save finishing later must
-  // not overwrite it.
-  if (selection === latestSelection) {
-    syncPreferredThemeTrait(preference);
+  // A newer pick, here or in another open page, has replaced this one and
+  // reports its own value; this late save must not overwrite it.
+  if (preference === getThemePreferenceInEffect()) {
+    syncPreferredThemeTrait(preference, { force: true });
   }
 };
