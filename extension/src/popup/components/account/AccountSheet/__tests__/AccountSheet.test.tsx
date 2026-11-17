@@ -155,6 +155,15 @@ const groupNamed = (label: string) =>
         .textContent?.startsWith(label),
     )!;
 
+const groupAt = (index: number) =>
+  screen.getAllByTestId("account-sheet-group")[index];
+
+const toggleOf = (group: HTMLElement) =>
+  within(group).getByTestId("account-sheet-group-toggle");
+
+const rowsIn = (group: HTMLElement) =>
+  within(group).queryAllByTestId("wallet-row-select");
+
 describe("AccountSheet", () => {
   // Collapsed groups live at module scope for the life of the popup.
   afterEach(() => {
@@ -231,44 +240,65 @@ describe("AccountSheet", () => {
   });
 
   it("collapses a group and keeps it collapsed when the sheet reopens", () => {
+    // The active account (Account 2) is in the first phrase group, which
+    // always reopens expanded, so collapse the secret key group instead.
     const { reopen, unmount } = renderSheet(mixed);
 
-    const toggle = within(groupNamed("Recovery phrase")).getByTestId(
-      "account-sheet-group-toggle",
-    );
+    const toggle = toggleOf(groupNamed("Secret key"));
     expect(toggle).toHaveAttribute("aria-expanded", "true");
 
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "false");
-    expect(
-      within(groupNamed("Recovery phrase")).queryAllByTestId(
-        "wallet-row-select",
-      ),
-    ).toHaveLength(0);
+    expect(rowsIn(groupNamed("Secret key"))).toHaveLength(0);
     // The other groups stay open.
     expect(within(groupNamed("Ledger")).getByText("Account 4")).toBeVisible();
 
     reopen();
-    expect(
-      within(groupNamed("Recovery phrase")).getByTestId(
-        "account-sheet-group-toggle",
-      ),
-    ).toHaveAttribute("aria-expanded", "false");
+    expect(toggleOf(groupNamed("Secret key"))).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
 
     // Home unmounts the sheet when it navigates away; a fresh mount must
     // still come back collapsed.
     unmount();
     renderSheet(mixed);
-    expect(
-      within(groupNamed("Recovery phrase")).getByTestId(
-        "account-sheet-group-toggle",
-      ),
-    ).toHaveAttribute("aria-expanded", "false");
-    expect(
-      within(groupNamed("Recovery phrase")).queryAllByTestId(
-        "wallet-row-select",
-      ),
-    ).toHaveLength(0);
+    expect(toggleOf(groupNamed("Secret key"))).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+    expect(rowsIn(groupNamed("Secret key"))).toHaveLength(0);
     expect(within(groupNamed("Ledger")).getByText("Account 4")).toBeVisible();
+  });
+
+  it("lets the active group collapse while open but reopens it expanded", () => {
+    const { reopen } = renderSheet(mixed);
+
+    // Account 2, the active account, is in the first phrase group.
+    const toggle = toggleOf(groupAt(0));
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(rowsIn(groupAt(0))).toHaveLength(0);
+
+    reopen();
+    expect(toggleOf(groupAt(0))).toHaveAttribute("aria-expanded", "true");
+    expect(rowsIn(groupAt(0))).toHaveLength(2);
+  });
+
+  it("expands a collapsed group when an account in it becomes active", () => {
+    const { unmount } = renderSheet(mixed);
+
+    // Collapse the second phrase group, which holds Account 5.
+    fireEvent.click(toggleOf(groupAt(1)));
+    expect(rowsIn(groupAt(1))).toHaveLength(0);
+
+    // E.g. a wallet added under that phrase is now active.
+    unmount();
+    renderSheet(mixed, DERIVED_3);
+
+    expect(toggleOf(groupAt(1))).toHaveAttribute("aria-expanded", "true");
+    const [row] = rowsIn(groupAt(1));
+    expect(row).toHaveTextContent("Account 5");
+    expect(row).toHaveAttribute("aria-current", "true");
   });
 });

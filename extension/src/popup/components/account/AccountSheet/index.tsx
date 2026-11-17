@@ -50,7 +50,9 @@ type SheetBody = "list" | "add";
 /*
   Groups the user collapsed, kept for as long as the popup stays open so the
   sheet reopens the way they left it. Module scope rather than component
-  state because Home unmounts the sheet whenever it navigates away.
+  state because Home unmounts the sheet whenever it navigates away. The
+  active account's group is the exception: it is expanded again each time the
+  sheet opens, so the active row is never hidden.
 */
 export const collapsedGroupKeys = new Set<string>();
 
@@ -130,6 +132,26 @@ export const AccountSheet = ({
   const activeAccountName =
     allAccounts.find((account) => account.id === activeAccountId)?.name || "";
 
+  const groups = groupAccountsBySource({
+    accounts: allAccounts,
+    sources: secretSources,
+    t,
+  });
+  const activeGroupKey = groups.find((group) =>
+    group.accounts.some((account) => account.id === activeAccountId),
+  )?.key;
+
+  // Open on the active account's group even if it was collapsed, e.g. after
+  // adding a wallet under a collapsed phrase. Collapsing it while the sheet is
+  // open changes neither dep, so this doesn't undo the click.
+  useEffect(() => {
+    if (!isOpen || !activeGroupKey || !collapsedGroupKeys.has(activeGroupKey)) {
+      return;
+    }
+    collapsedGroupKeys.delete(activeGroupKey);
+    setCollapsed(new Set(collapsedGroupKeys));
+  }, [isOpen, activeGroupKey]);
+
   const copyAddress = async () => {
     try {
       await navigator.clipboard.writeText(activePublicKey);
@@ -192,12 +214,6 @@ export const AccountSheet = ({
     ));
 
   const renderGroups = () => {
-    const groups = groupAccountsBySource({
-      accounts: allAccounts,
-      sources: secretSources,
-      t,
-    });
-
     // One source has nothing to tell apart, and collapsing it would only hide
     // the whole list, so a single group renders flat.
     if (groups.length <= 1) {
