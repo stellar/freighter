@@ -150,6 +150,16 @@ export interface AddRecoveryPhraseSourceMessage extends BaseMessage {
   pendingPhraseId: string;
 }
 
+/**
+ * Drops the phrase `GENERATE_RECOVERY_PHRASE` is holding, when the window that
+ * showed it backs out or closes. Only the named generation is dropped: a newer
+ * one from another window is left alone.
+ */
+export interface ClearPendingRecoveryPhraseMessage extends BaseMessage {
+  type: SERVICE_TYPES.CLEAR_PENDING_RECOVERY_PHRASE;
+  pendingPhraseId: string;
+}
+
 export interface ImportAccountMessage extends BaseMessage {
   type: SERVICE_TYPES.IMPORT_ACCOUNT;
   password: string;
@@ -588,6 +598,7 @@ export type ServiceMessageRequest =
   | AddAccountMessage
   | GenerateRecoveryPhraseMessage
   | AddRecoveryPhraseSourceMessage
+  | ClearPendingRecoveryPhraseMessage
   | ImportAccountMessage
   | ImportHardWareWalletMessage
   | MakeAccountActiveMessage
