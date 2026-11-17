@@ -53,17 +53,15 @@ export const getSecretSources = async ({
   ((await localStore.getItem(SECRET_SOURCES_ID)) as SecretSourceMap) || {};
 
 /**
- * The wallet's sources as a list, oldest first: the order the popup groups
- * accounts in. Labels are numbered in the same order within each type.
+ * The wallet's sources as a list, in no particular order; the popup sorts
+ * them for display.
  */
 export const listSecretSources = async ({
   localStore,
 }: {
   localStore: DataStorageAccess;
 }): Promise<SecretSource[]> =>
-  Object.values(await getSecretSources({ localStore })).sort(
-    (a, b) => a.createdAt - b.createdAt,
-  );
+  Object.values(await getSecretSources({ localStore }));
 
 /**
  * Allocates the next label number for `type`: one past the highest number

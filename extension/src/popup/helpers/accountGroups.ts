@@ -53,6 +53,7 @@ export const groupAccountsBySource = ({
   sources: SecretSource[];
   t: Translate;
 }): AccountGroup[] => {
+  // The background sends sources unordered; display order is set here.
   const byAge = [...sources].sort((a, b) => a.createdAt - b.createdAt);
   const ordered = [
     ...byAge.filter((s) => s.type === SecretSourceType.PHRASE),
