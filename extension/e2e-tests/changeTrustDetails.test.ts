@@ -64,7 +64,7 @@ test.describe("Add-a-token transaction details", () => {
       timeout: 30000,
     });
 
-    await page.getByText("Transaction details").click({ force: true });
+    await page.getByText("Transaction details").click();
 
     await expect(page.getByText("Token Code")).toBeVisible({ timeout: 10000 });
     await expect(page.getByText("Token Issuer")).toBeVisible();
