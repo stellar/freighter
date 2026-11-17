@@ -243,7 +243,10 @@
   }
 
   &__hop-amount {
+    min-width: 0;
     margin-left: auto;
+    overflow-wrap: anywhere;
+    text-align: right;
     color: var(--sds-clr-gray-12);
     font-size: pxToRem(14px);
   }
