@@ -17,6 +17,7 @@ import {
   mockStorageApi,
   MockBrowserAlarm,
 } from "background/messageListener/helpers/test-helpers";
+import * as storeAccountModule from "background/messageListener/helpers/store-account";
 import { storeAccount } from "background/messageListener/helpers/store-account";
 import { storeHardwareWalletAccount } from "background/messageListener/helpers/store-hardware-wallet";
 import { WalletType } from "@shared/constants/hardwareWallet";
@@ -323,6 +324,38 @@ describe("adding a generated recovery phrase source", () => {
     expect(res.error).toBe(NO_SOFTWARE_KEYSTORE_ERROR);
     expect(allAccounts()).toHaveLength(1);
     expect(await mockDataStorage.getItem(DERIVATION_INDICES_ID)).toBeFalsy();
+  });
+
+  it("completes on retry when the account write fails after the source is registered", async () => {
+    await createWallet();
+    await generate(PHRASE_2.mnemonic);
+    const storeSpy = jest
+      .spyOn(storeAccountModule, "storeAccount")
+      .mockRejectedValueOnce(new Error("storage write failed"));
+
+    const failed = await addPhraseSource("Savings");
+
+    expect(failed.error).toBe("Error adding recovery phrase");
+    expect(allAccounts()).toHaveLength(1);
+    expect(pendingPhrase()).toBe(PHRASE_2.mnemonic);
+
+    const retried = await addPhraseSource("Savings");
+    storeSpy.mockRestore();
+
+    expect(retried.error).toBeUndefined();
+    expect(retried.publicKey).toBe(ROWS_2[0].publicKey);
+    expect(
+      allAccounts().find(({ publicKey }) => publicKey === ROWS_2[0].publicKey),
+    ).toMatchObject({ sourceId: PHRASE_2.userId, name: "Savings" });
+    expect(
+      (retried.secretSources as SecretSource[]).map(({ id, label }) => [
+        id,
+        label,
+      ]),
+    ).toEqual([
+      [PHRASE_1.userId, "Seed Phrase 1"],
+      [PHRASE_2.userId, "Seed Phrase 2"],
+    ]);
   });
 
   it("refuses when no phrase was generated", async () => {

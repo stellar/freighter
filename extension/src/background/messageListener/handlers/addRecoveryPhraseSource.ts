@@ -15,7 +15,6 @@ import {
 import {
   addSecretSource,
   getPhraseSourceId,
-  getSecretSources,
   listSecretSources,
 } from "background/helpers/secret-sources";
 import {
@@ -134,19 +133,27 @@ export const addRecoveryPhraseSource = async ({
   }
 
   // A generated phrase colliding is not a real case, but the checks are what
-  // keep two sources or two accounts from sharing an id or an address.
-  if ((await getSecretSources({ localStore }))[sourceId]) {
+  // keep two sources or two accounts from sharing an id or an address. A
+  // phrase counts as held once an account uses it: a source registered by an
+  // earlier attempt whose account write failed is empty, and a retry fills it.
+  const allAccounts = allAccountsSelector(sessionStore.getState());
+  if (allAccounts.some((account) => account.sourceId === sourceId)) {
     return { error: PHRASE_ALREADY_HELD_ERROR };
   }
-  if (
-    allAccountsSelector(sessionStore.getState()).some(
-      ({ publicKey }) => publicKey === keyPair.publicKey,
-    )
-  ) {
+  if (allAccounts.some(({ publicKey }) => publicKey === keyPair.publicKey)) {
     return { error: ACCOUNT_ALREADY_EXISTS_ERROR };
   }
 
+  // The source is registered before its account. Registration is idempotent
+  // and an empty source shows as nothing, so if the account write fails a
+  // retry completes. The other order would leave an account under a source
+  // nothing knows about, which no retry or repair can fix.
   try {
+    await addSecretSource({
+      localStore,
+      id: sourceId,
+      type: SecretSourceType.PHRASE,
+    });
     await storeAccount({
       password,
       keyPair,
@@ -158,11 +165,6 @@ export const addRecoveryPhraseSource = async ({
       sessionStore,
       keyManager,
       localStore,
-    });
-    await addSecretSource({
-      localStore,
-      id: sourceId,
-      type: SecretSourceType.PHRASE,
     });
   } catch (e) {
     captureException(`Error adding recovery phrase: ${JSON.stringify(e)}`);

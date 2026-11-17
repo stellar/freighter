@@ -106,6 +106,13 @@ export const importAccount = async ({
 
   try {
     const sourceId = await getSecretKeySourceId(privateKey);
+    // Source first, so a failed account write leaves an empty source a retry
+    // fills rather than an account under an unregistered source.
+    await addSecretSource({
+      localStore,
+      id: sourceId,
+      type: SecretSourceType.SECRET_KEY,
+    });
     await storeAccount({
       password,
       keyPair,
@@ -114,11 +121,6 @@ export const importAccount = async ({
       sessionStore,
       localStore,
       keyManager,
-    });
-    await addSecretSource({
-      localStore,
-      id: sourceId,
-      type: SecretSourceType.SECRET_KEY,
     });
   } catch (e) {
     captureException(`Error importing account: ${JSON.stringify(e)}`);
