@@ -144,6 +144,7 @@ export interface Response {
   hasSeenDiscoverWelcome: boolean;
   hasSeenEarnIntro: boolean;
   shouldShowRebrandAnnouncement: boolean;
+  shouldShowEthenaLaunchPromo: boolean;
   cachedSwapTopTokens: { tokens: TrendingAsset[]; updatedAt: number } | null;
 }
 

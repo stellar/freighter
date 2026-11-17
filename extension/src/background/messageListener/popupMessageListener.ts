@@ -91,8 +91,8 @@ import { modifyAssetsList } from "./handlers/modifyAssetsList";
 import { getIsAccountMismatch } from "./handlers/getIsAccountMismatch";
 import { changeAssetVisibility } from "./handlers/changeAssetVisibility";
 import { getHiddenAssets } from "./handlers/getHiddenAssets";
-import { getUsdt0LaunchBannerDismissed } from "./handlers/getUsdt0LaunchBannerDismissed";
-import { dismissUsdt0LaunchBanner } from "./handlers/dismissUsdt0LaunchBanner";
+import { getEthenaLaunchBannerDismissed } from "./handlers/getEthenaLaunchBannerDismissed";
+import { dismissEthenaLaunchBanner } from "./handlers/dismissEthenaLaunchBanner";
 import { loadBackendSettings } from "./handlers/loadBackendSettings";
 import { saveBlockaidOverrideState } from "./handlers/saveDebugOverride";
 import { getBlockaidOverrideState } from "./handlers/getDebugOverride";
@@ -108,6 +108,7 @@ import { dismissDiscoverWelcome } from "./handlers/dismissDiscoverWelcome";
 import { getEarnIntroSeen } from "./handlers/getEarnIntroSeen";
 import { dismissEarnIntro } from "./handlers/dismissEarnIntro";
 import { claimRebrandAnnouncement } from "./handlers/claimRebrandAnnouncement";
+import { claimEthenaLaunchPromo } from "./handlers/claimEthenaLaunchPromo";
 import { callBackendV2 } from "background/helpers/callBackendV2";
 import { getCachedSwapTopTokens } from "./handlers/getCachedSwapTopTokens";
 import { cacheSwapTopTokens } from "./handlers/cacheSwapTopTokens";
@@ -597,13 +598,13 @@ export const popupMessageListener = (
         sessionStore,
       });
     }
-    case SERVICE_TYPES.GET_USDT0_LAUNCH_BANNER_DISMISSED: {
-      return getUsdt0LaunchBannerDismissed({
+    case SERVICE_TYPES.GET_ETHENA_LAUNCH_BANNER_DISMISSED: {
+      return getEthenaLaunchBannerDismissed({
         localStore,
       });
     }
-    case SERVICE_TYPES.DISMISS_USDT0_LAUNCH_BANNER: {
-      return dismissUsdt0LaunchBanner({
+    case SERVICE_TYPES.DISMISS_ETHENA_LAUNCH_BANNER: {
+      return dismissEthenaLaunchBanner({
         localStore,
       });
     }
@@ -661,6 +662,9 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.CLAIM_REBRAND_ANNOUNCEMENT: {
       return claimRebrandAnnouncement({ localStore });
+    }
+    case SERVICE_TYPES.CLAIM_ETHENA_LAUNCH_PROMO: {
+      return claimEthenaLaunchPromo({ localStore });
     }
     case SERVICE_TYPES.GET_CACHED_SWAP_TOP_TOKENS: {
       return getCachedSwapTopTokens({ request, localStore });

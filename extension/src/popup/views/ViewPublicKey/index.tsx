@@ -9,6 +9,7 @@ import { emitMetric } from "helpers/metrics";
 import { truncatedPublicKey } from "helpers/stellar";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { closeWindow, openTab } from "popup/helpers/navigate";
+import { useEscapeToClose } from "popup/helpers/hooks/useEscapeToClose";
 import { View } from "popup/basics/layout/View";
 import { showToast } from "popup/basics/shadcn/Toast";
 import { isEarnFlowSearch } from "popup/constants/earn";
@@ -33,6 +34,9 @@ export const ViewPublicKey = () => {
   const isEarnFlow = isEarnFlowSearch(location.search);
   const accountName = useSelector(accountNameSelector);
   const { state, fetchData } = useGetAppData();
+
+  // Esc goes back like the X does, rather than closing the popup.
+  useEscapeToClose(() => navigate(-1));
 
   useEffect(() => {
     const getData = async () => {

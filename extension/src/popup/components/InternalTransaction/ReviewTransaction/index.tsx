@@ -233,10 +233,11 @@ export const ReviewTx = ({
   const isMalicious = securityLevel === SecurityLevel.MALICIOUS;
   const isSuspicious = securityLevel === SecurityLevel.SUSPICIOUS;
 
-  // Determine if a security warning should be shown (tx- or token-driven)
+  // Determine if a warning should be shown (tx risk, a revert, or a token).
   const shouldShowTxWarning =
     isMalicious ||
     isSuspicious ||
+    securityLevel === SecurityLevel.LIKELY_TO_FAIL ||
     securityLevel === SecurityLevel.UNABLE_TO_SCAN;
 
   // Banner copy for a flagged destination token (null when the token is clean
@@ -289,10 +290,9 @@ export const ReviewTx = ({
 
   // Which single Blockaid banner to render, by priority cascade:
   // tx-malicious > tx-suspicious > token-malicious > token-suspicious >
-  // any unable-to-scan. A flagged TOKEN outranks a tx that merely couldn't be
-  // scanned (common on mainnet), so a malicious-token warning is never
-  // downgraded to the soft "proceed with caution". Only the tx banner opens
-  // the expandable pane.
+  // tx likely-to-fail > any unable-to-scan. A flagged token outranks a revert
+  // and a tx that merely couldn't be scanned, so a malicious-token warning is
+  // never downgraded. Only the tx banner opens the expandable pane.
   const blockaidBannerKind: "tx" | "token" | null = (() => {
     if (
       txSecurityLevel === SecurityLevel.MALICIOUS ||
@@ -305,6 +305,9 @@ export const ReviewTx = ({
       tokenWarningLevel === SecurityLevel.SUSPICIOUS
     ) {
       return "token";
+    }
+    if (txSecurityLevel === SecurityLevel.LIKELY_TO_FAIL) {
+      return "tx";
     }
     if (txSecurityLevel && shouldShowTxWarning) {
       return "tx"; // tx unable-to-scan

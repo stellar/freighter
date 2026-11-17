@@ -24,6 +24,7 @@ export enum ROUTES {
   mnemonicPhraseConfirmed = "/mnemonic-phrase-confirmed",
   unlockAccount = "/unlock-account",
   rebrandAnnouncement = "/rebrand-announcement",
+  ethenaLaunch = "/ethena-launch",
   verifyAccount = "/verify-account",
   accountCreator = "/account-creator",
   recoverAccount = "/recover-account",
