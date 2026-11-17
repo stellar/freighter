@@ -31,6 +31,17 @@ const mockMatchMedia = ({ prefersDark }: { prefersDark: boolean }) => {
   };
 };
 
+// Another page writes the shared mirror, then the browser notifies this one.
+const writeFromOtherPage = (value: string) => {
+  localStorage.setItem(THEME_PREFERENCE_MIRROR_KEY, value);
+  window.dispatchEvent(
+    new StorageEvent("storage", {
+      key: THEME_PREFERENCE_MIRROR_KEY,
+      newValue: value,
+    }),
+  );
+};
+
 describe("systemTheme", () => {
   afterEach(() => {
     document.body.className = "";
@@ -205,14 +216,24 @@ describe("systemTheme", () => {
       initColorScheme();
       expect(isLight()).toBe(true);
 
+      writeFromOtherPage("dark");
+      expect(getThemePreferenceInEffect()).toBe("dark");
+      expect(isDark()).toBe(true);
+    });
+
+    it("ignores a late event older than this page's own write", () => {
+      mockMatchMedia({ prefersDark: false });
+      initColorScheme();
+      setThemePreference("light");
+
       window.dispatchEvent(
         new StorageEvent("storage", {
           key: THEME_PREFERENCE_MIRROR_KEY,
           newValue: "dark",
         }),
       );
-      expect(getThemePreferenceInEffect()).toBe("dark");
-      expect(isDark()).toBe(true);
+      expect(getThemePreferenceInEffect()).toBe("light");
+      expect(isLight()).toBe(true);
     });
   });
 
@@ -224,12 +245,7 @@ describe("systemTheme", () => {
       const unsubscribe = subscribeToThemePreference(listener);
 
       setThemePreference("dark");
-      window.dispatchEvent(
-        new StorageEvent("storage", {
-          key: THEME_PREFERENCE_MIRROR_KEY,
-          newValue: "light",
-        }),
-      );
+      writeFromOtherPage("light");
       expect(listener).toHaveBeenCalledTimes(2);
 
       unsubscribe();

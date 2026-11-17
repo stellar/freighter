@@ -8,7 +8,6 @@
 import {
   DEFAULT_THEME_PREFERENCE,
   ThemePreference,
-  coerceThemePreference,
   isThemePreference,
 } from "@shared/constants/theme";
 
@@ -137,7 +136,9 @@ export const initColorScheme = (): boolean => {
     if (e.key !== THEME_PREFERENCE_MIRROR_KEY) {
       return;
     }
-    updatePreference(coerceThemePreference(e.newValue));
+    // Events can arrive after this page wrote a newer value, so read the
+    // mirror (always the latest write) rather than e.newValue.
+    updatePreference(readMirror() ?? DEFAULT_THEME_PREFERENCE);
   });
 
   return mirrored !== null;

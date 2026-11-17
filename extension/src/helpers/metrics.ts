@@ -347,7 +347,12 @@ export const initAmplitude = async () => {
       if (allowed !== lastDataSharingAllowed) {
         lastDataSharingAllowed = allowed;
         amplitude.setOptOut(!allowed);
-        if (allowed) emitAppOpenedOnce();
+        if (allowed) {
+          emitAppOpenedOnce();
+          // Account-load sends run before settings hydrate, so consent is
+          // still false there; this is where the trait first gets through.
+          syncPreferredThemeTrait(getThemePreferenceInEffect());
+        }
       }
     };
     store.subscribe(syncDataSharing);

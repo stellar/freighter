@@ -29,8 +29,7 @@ import {
   getThemePreferenceInEffect,
   subscribeToThemePreference,
 } from "popup/helpers/systemTheme";
-import { changeThemePreference } from "popup/helpers/themePreference";
-import { emitThemeChanged } from "popup/metrics/theme";
+import { selectThemePreference } from "popup/helpers/themePreference";
 import { PRIVACY_POLICY_URL } from "popup/constants/externalLinks";
 
 import "./styles.scss";
@@ -53,14 +52,8 @@ export const Preferences = () => {
   };
 
   const handleThemeChange = async (preference: ThemePreference) => {
-    if (preference === themePreference) {
-      return;
-    }
-    const previous = themePreference;
     try {
-      await changeThemePreference(preference);
-      // After the theme is applied, so the event's color_scheme is the new one.
-      emitThemeChanged(preference, previous);
+      await selectThemePreference(preference);
     } catch (e) {
       console.error("Failed to save theme preference:", e);
     }

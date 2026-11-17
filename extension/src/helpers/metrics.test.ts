@@ -441,6 +441,33 @@ describe("consent hydration (startup)", () => {
     );
   });
 
+  it("sends preferred_theme once consent hydrates to allowed", async () => {
+    let mod: typeof import("helpers/metrics");
+    let store: { subscribe: jest.Mock };
+    let settingsMod: { settingsDataSharingSelector: jest.Mock };
+    let sdk: typeof amplitude;
+    jest.isolateModules(() => {
+      mod = require("helpers/metrics");
+      store = require("popup/App").store;
+      settingsMod = require("popup/ducks/settings");
+      sdk = require("@amplitude/analytics-browser");
+    });
+    const set = jest.fn();
+    (sdk!.Identify as unknown as jest.Mock).mockImplementation(() => ({ set }));
+
+    settingsMod!.settingsDataSharingSelector.mockReturnValue(false);
+    store!.subscribe.mockClear();
+    await mod!.initAmplitude();
+    expect(set).not.toHaveBeenCalledWith("preferred_theme", expect.anything());
+
+    settingsMod!.settingsDataSharingSelector.mockReturnValue(true);
+    const subCb =
+      store!.subscribe.mock.calls[store!.subscribe.mock.calls.length - 1][0];
+    subCb();
+
+    expect(set).toHaveBeenCalledWith("preferred_theme", "system");
+  });
+
   it("does not send or cache Identify while data-sharing is disallowed, then sends once allowed", async () => {
     let mod: typeof import("helpers/metrics");
     let settingsMod: { settingsDataSharingSelector: jest.Mock };
