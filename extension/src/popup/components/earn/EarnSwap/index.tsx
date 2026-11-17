@@ -182,7 +182,8 @@ export const EarnSwap = ({
             inputType={inputType}
             setInputType={setInputType}
             isDestinationLocked
-            // The header's X dismisses the whole branch.
+            // No back button in the header: the sheet's X, at the top right,
+            // dismisses the whole branch.
             isSheetLayout
             goBack={onCancel}
             goToEditSrc={() => setActiveStep(EARN_SWAP_STEPS.SET_FROM_ASSET)}
@@ -221,11 +222,11 @@ export const EarnSwap = ({
         <ScreenReaderOnly>
           <SheetTitle>{t("Swap")}</SheetTitle>
         </ScreenReaderOnly>
-        {/* Only the submitting/success step, which has no header of its own,
-            needs the sheet's X: the amount step's header carries one on its
-            left, and the source picker steps back with its arrow. What the X
-            *means* is not the same on every step — see `dismiss`. */}
-        {activeStep === EARN_SWAP_STEPS.SWAP_CONFIRM && (
+        {/* The sheet's X, always at the top right: on the amount step, and on
+            the submitting/success step, which has no header of its own. The
+            source picker steps back with its arrow instead. What the X *means*
+            is not the same on every step — see `dismiss`. */}
+        {activeStep !== EARN_SWAP_STEPS.SET_FROM_ASSET && (
           <button
             type="button"
             className="EarnSwapSheet__close"

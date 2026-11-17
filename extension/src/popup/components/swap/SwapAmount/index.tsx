@@ -102,8 +102,8 @@ interface SwapAmountProps {
   isDestinationLocked?: boolean;
   /**
    * Laid out for a bottom sheet rather than a screen (the Earn swap branch):
-   * the header's left slot is an X that dismisses the sheet. Settings stay
-   * where main Swap has them, above the CTA.
+   * the header has no back button, because the sheet draws its own X at the
+   * top right. Settings stay where main Swap has them, above the CTA.
    */
   isSheetLayout?: boolean;
 }
@@ -547,7 +547,7 @@ export const SwapAmount = ({
       <SubviewHeader
         title={<span>{t("Swap")}</span>}
         customBackAction={goBack}
-        customBackIcon={isSheetLayout ? <Icon.X /> : undefined}
+        hasBackButton={!isSheetLayout}
       />
       <View.Content
         contentFooter={

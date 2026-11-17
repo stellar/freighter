@@ -60,7 +60,8 @@
   }
 }
 
-// The submitting/success step's X: bare, at the top right, 16px in.
+// The sheet's X: bare, at the top right, 16px in, level with the amount step's
+// title.
 .EarnSwapSheet__close {
   position: absolute;
   top: pxToRem(24);

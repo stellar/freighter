@@ -21,7 +21,10 @@ jest.mock("popup/components/InternalTransaction/SubmitTransaction", () => ({
 }));
 
 jest.mock("popup/components/swap/SwapAmount", () => ({
-  SwapAmount: () => <div data-testid="stub-amount" />,
+  // Its token pill opens the source picker.
+  SwapAmount: ({ goToEditSrc }: { goToEditSrc: () => void }) => (
+    <button type="button" data-testid="stub-amount" onClick={goToEditSrc} />
+  ),
 }));
 
 jest.mock("popup/components/swap/SwapAsset", () => ({
@@ -113,11 +116,23 @@ describe("EarnSwap dismissal", () => {
     expect(onDone).not.toHaveBeenCalled();
   });
 
-  it("draws the sheet's own X only once the swap is submitted", () => {
-    // The amount step's header carries the X; a second one at the top right
-    // would sit where the design has nothing.
+  it("closes the amount step from the X at the top right", async () => {
+    const onDone = jest.fn();
+    const onCancel = jest.fn();
+    renderSheet({ onDone, onCancel });
+
+    await userEvent.click(screen.getByTestId("earn-swap-close"));
+
+    expect(onCancel).toHaveBeenCalled();
+    expect(onDone).not.toHaveBeenCalled();
+  });
+
+  it("steps back from the source picker with its arrow, not an X", async () => {
     renderSheet({ onDone: jest.fn(), onCancel: jest.fn() });
 
+    await userEvent.click(screen.getByTestId("stub-amount"));
+
+    expect(screen.getByTestId("stub-asset")).toBeInTheDocument();
     expect(screen.queryByTestId("earn-swap-close")).not.toBeInTheDocument();
   });
 });
