@@ -87,6 +87,7 @@ import { removeTokenId } from "./handlers/removeTokenId";
 import { getMigratableAccounts } from "./handlers/getMigratableAccounts";
 import { getMigratedMnemonicPhrase } from "./handlers/getMigratedMnemonicPhrase";
 import { generateRecoveryPhrase } from "./handlers/generateRecoveryPhrase";
+import { clearPendingRecoveryPhrase } from "./handlers/clearPendingRecoveryPhrase";
 import { addRecoveryPhraseSource } from "./handlers/addRecoveryPhraseSource";
 import { migrateAccounts } from "./handlers/migrateAccounts";
 import { addAssetsList } from "./handlers/addAssetsList";
@@ -242,6 +243,13 @@ export const popupMessageListener = (
         keyManager,
         sessionTimer,
       });
+    }
+    case SERVICE_TYPES.CLEAR_PENDING_RECOVERY_PHRASE: {
+      // Same gate as GENERATE_RECOVERY_PHRASE.
+      if (!isFromExtensionPage && !isFromDevServer) {
+        return { error: "Unauthorized" };
+      }
+      return clearPendingRecoveryPhrase({ request, sessionStore });
     }
     case SERVICE_TYPES.IMPORT_ACCOUNT: {
       return importAccount({

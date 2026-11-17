@@ -263,6 +263,25 @@ export const generateRecoveryPhrase = async (): Promise<{
   return response;
 };
 
+/**
+ * Drops a generated phrase the user backed out of; see
+ * `ClearPendingRecoveryPhraseMessage`. Best effort: it runs from cleanup, so it
+ * never throws.
+ */
+export const clearPendingRecoveryPhrase = async (
+  pendingPhraseId: string,
+): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      activePublicKey: null,
+      pendingPhraseId,
+      type: SERVICE_TYPES.CLEAR_PENDING_RECOVERY_PHRASE,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 /** Stores the generated phrase; see `AddRecoveryPhraseSourceMessage`. */
 export const addRecoveryPhraseSource = async ({
   activePublicKey,

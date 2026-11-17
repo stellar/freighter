@@ -392,6 +392,53 @@ describe("adding a generated recovery phrase source", () => {
     );
   });
 
+  it("drops the held phrase when its window clears it", async () => {
+    await createWallet();
+    const { pendingPhraseId: id } = await generate(PHRASE_2.mnemonic);
+
+    const res = await send({
+      type: SERVICE_TYPES.CLEAR_PENDING_RECOVERY_PHRASE,
+      pendingPhraseId: id,
+    });
+
+    expect(res).toEqual({});
+    expect(pendingPhrase()).toBe("");
+    expect(pendingPhraseId()).toBe("");
+    expect((await addPhraseSource(undefined, PASSWORD, id)).error).toBe(
+      PENDING_PHRASE_MISSING_ERROR,
+    );
+  });
+
+  it("keeps a newer generation when an older window clears", async () => {
+    await createWallet();
+    const windowA = await generate(PHRASE_2.mnemonic);
+    const windowB = await generate(PHRASE_1.mnemonic);
+
+    await send({
+      type: SERVICE_TYPES.CLEAR_PENDING_RECOVERY_PHRASE,
+      pendingPhraseId: windowA.pendingPhraseId,
+    });
+
+    expect(pendingPhrase()).toBe(PHRASE_1.mnemonic);
+    expect(pendingPhraseId()).toBe(windowB.pendingPhraseId);
+  });
+
+  it("refuses to clear the held phrase for a web page", async () => {
+    await createWallet();
+    const { pendingPhraseId: id } = await generate(PHRASE_2.mnemonic);
+
+    const res = await send(
+      {
+        type: SERVICE_TYPES.CLEAR_PENDING_RECOVERY_PHRASE,
+        pendingPhraseId: id,
+      },
+      contentScript,
+    );
+
+    expect(res).toEqual({ error: "Unauthorized" });
+    expect(pendingPhrase()).toBe(PHRASE_2.mnemonic);
+  });
+
   it("refuses to generate a phrase for a web page", async () => {
     await createWallet();
     const res = await generate(PHRASE_2.mnemonic);

@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Button, CopyText, Icon, Notification } from "@stellar/design-system";
 import { Trans, useTranslation } from "react-i18next";
 
-import { generateRecoveryPhrase } from "@shared/api/internal";
+import {
+  clearPendingRecoveryPhrase,
+  generateRecoveryPhrase,
+} from "@shared/api/internal";
 import { getNextDefaultAccountName } from "@shared/helpers/accountName";
 import { PENDING_PHRASE_MISSING_ERROR } from "@shared/constants/errors";
 import { emitMetric } from "helpers/metrics";
@@ -75,17 +78,26 @@ export const CreateWallet = () => {
   const [isNaming, setIsNaming] = useState(false);
   const [accountName, setAccountName] = useState("");
   const [phrase, setPhrase] = useState("");
-  // Names this window's generation; see `AddRecoveryPhraseSourceMessage`.
-  const [pendingPhraseId, setPendingPhraseId] = useState("");
+  // Names this window's generation; see `AddRecoveryPhraseSourceMessage`. A
+  // ref, so the unmount cleanup sees the current id.
+  const pendingPhraseIdRef = useRef("");
   const [isRevealed, setIsRevealed] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  // The background holds the generated phrase until it's stored. Tell it to
+  // drop this window's generation when the user backs out or leaves.
+  const dropPendingPhrase = () => {
+    const id = pendingPhraseIdRef.current;
+    pendingPhraseIdRef.current = "";
+    if (id) {
+      void clearPendingRecoveryPhrase(id);
+    }
+  };
 
   useEffect(() => {
     fetchData(true);
     return () => {
-      // Drop the phrase from memory when the screen goes away.
-      setPhrase("");
-      setPendingPhraseId("");
+      dropPendingPhrase();
       dispatch(clearApiError());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -158,7 +170,7 @@ export const CreateWallet = () => {
         const { mnemonicPhrase, pendingPhraseId: id } =
           await generateRecoveryPhrase();
         setPhrase(mnemonicPhrase);
-        setPendingPhraseId(id);
+        pendingPhraseIdRef.current = id;
         setIsRevealed(false);
         setIsNaming(false);
         setStep("backup");
@@ -181,7 +193,11 @@ export const CreateWallet = () => {
     const res =
       target.kind === "newPhrase"
         ? await dispatch(
-            addRecoveryPhraseSource({ password, accountName, pendingPhraseId }),
+            addRecoveryPhraseSource({
+              password,
+              accountName,
+              pendingPhraseId: pendingPhraseIdRef.current,
+            }),
           )
         : await dispatch(
             addAccount({
@@ -199,8 +215,9 @@ export const CreateWallet = () => {
         number_of_accounts: res.payload.allAccounts.length,
         source: target.kind === "newPhrase" ? "new_phrase" : "existing_phrase",
       });
+      // Stored, so the background has already dropped it.
+      pendingPhraseIdRef.current = "";
       setPhrase("");
-      setPendingPhraseId("");
       navigateTo(ROUTES.account, navigate);
       return;
     }
@@ -220,8 +237,8 @@ export const CreateWallet = () => {
   };
 
   const backToSelect = () => {
+    dropPendingPhrase();
     setPhrase("");
-    setPendingPhraseId("");
     setIsRevealed(false);
     dispatch(clearApiError());
     setStep("select");

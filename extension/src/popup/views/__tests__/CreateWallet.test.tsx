@@ -286,6 +286,72 @@ describe("CreateWallet", () => {
     expect(await screen.findByTestId("location")).toHaveTextContent("/");
   });
 
+  describe("dropping the held phrase", () => {
+    const toBackupStep = async () => {
+      jest.spyOn(ApiInternal, "generateRecoveryPhrase").mockResolvedValue({
+        mnemonicPhrase: PHRASE,
+        pendingPhraseId: "gen-1",
+      });
+      const clear = jest
+        .spyOn(ApiInternal, "clearPendingRecoveryPhrase")
+        .mockResolvedValue();
+      const view = renderView({
+        accounts: twoPhraseAccounts,
+        sources: phraseSources,
+      });
+      fireEvent.click(screen.getByTestId("create-wallet-generate"));
+      fireEvent.click(await screen.findByTestId("set-account-name-submit"));
+      await screen.findByTestId("create-wallet-phrase");
+      return { clear, view };
+    };
+
+    it("drops it on Back from the backup step", async () => {
+      const { clear } = await toBackupStep();
+
+      fireEvent.click(screen.getByTestId("BackButton"));
+
+      expect(await screen.findByTestId("create-wallet")).toBeInTheDocument();
+      expect(clear).toHaveBeenCalledTimes(1);
+      expect(clear).toHaveBeenCalledWith("gen-1");
+    });
+
+    it("drops it when the screen goes away", async () => {
+      const { clear, view } = await toBackupStep();
+
+      view.unmount();
+
+      expect(clear).toHaveBeenCalledTimes(1);
+      expect(clear).toHaveBeenCalledWith("gen-1");
+    });
+
+    it("leaves it to the background once it's stored", async () => {
+      const { clear, view } = await toBackupStep();
+      jest.spyOn(ApiInternal, "addRecoveryPhraseSource").mockResolvedValue(
+        added(
+          [
+            ...twoPhraseAccounts,
+            {
+              id: "k9",
+              sourceId: "phrase-new",
+              publicKey: DERIVED_1,
+              name: "Account 4",
+              imported: false,
+            },
+          ],
+          phraseSources,
+        ),
+      );
+
+      fireEvent.click(screen.getByTestId("create-wallet-phrase-reveal"));
+      fireEvent.click(screen.getByTestId("create-wallet-phrase-create"));
+      await enterPassword();
+      expect(await screen.findByTestId("location")).toHaveTextContent("/");
+      view.unmount();
+
+      expect(clear).not.toHaveBeenCalled();
+    });
+  });
+
   it("goes back to the chooser when the generated phrase is gone", async () => {
     const generate = jest
       .spyOn(ApiInternal, "generateRecoveryPhrase")
