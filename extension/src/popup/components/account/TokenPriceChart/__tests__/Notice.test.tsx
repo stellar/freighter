@@ -17,6 +17,7 @@ import {
   getFirstTradeLowerBound,
   getNoticeVariant,
 } from "popup/components/account/TokenPriceChart/Notice";
+import { TokenChartSource } from "popup/components/account/TokenPriceChart/constants";
 
 // §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
 
@@ -39,6 +40,7 @@ const renderChartWith = async (history: ApiTokenPriceHistory) => {
         token="native"
         networkDetails={MAINNET_NETWORK_DETAILS}
         onDeltaChange={() => {}}
+        source={TokenChartSource.Balances}
       />
     </Provider>,
   );
@@ -503,6 +505,7 @@ describe("newly-traded notice from the warmed cache", () => {
           token="native"
           networkDetails={MAINNET_NETWORK_DETAILS}
           onDeltaChange={() => {}}
+          source={TokenChartSource.Balances}
         />
       </Provider>,
     );

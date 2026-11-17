@@ -25,7 +25,10 @@ import {
   TokenPriceChart,
   formatInspectedTimestamp,
 } from "popup/components/account/TokenPriceChart";
-import { RANGE_SWITCH_DEBOUNCE_MS } from "popup/components/account/TokenPriceChart/constants";
+import {
+  RANGE_SWITCH_DEBOUNCE_MS,
+  TokenChartSource,
+} from "popup/components/account/TokenPriceChart/constants";
 
 // §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
 
@@ -81,6 +84,7 @@ const renderChart = () =>
         networkDetails={MAINNET_NETWORK_DETAILS}
         fallback24hPercent="1.09"
         onDeltaChange={() => {}}
+        source={TokenChartSource.Balances}
       />
     </Provider>,
   );

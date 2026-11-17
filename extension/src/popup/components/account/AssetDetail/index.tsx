@@ -66,7 +66,10 @@ import { Loading } from "popup/components/Loading";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { title } from "helpers/transaction";
 import { getTokenType, TokenType } from "popup/helpers/token";
-import { PriceDirection } from "popup/components/account/TokenPriceChart/constants";
+import {
+  PriceDirection,
+  TokenChartSource,
+} from "popup/components/account/TokenPriceChart/constants";
 import {
   getBalanceByAsset,
   getPriceDeltaColor,
@@ -620,6 +623,7 @@ export const AssetDetail = ({
                 networkDetails={networkDetails}
                 fallback24hPercent={assetPrice?.percentagePriceChange24h}
                 onDeltaChange={handleDeltaChange}
+                source={TokenChartSource.Balances}
               />
             ) : null}
             <div className="AssetDetail__balance-info">

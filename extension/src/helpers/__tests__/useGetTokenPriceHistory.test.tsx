@@ -14,6 +14,7 @@ import { PRICE_HISTORY_STALE_MS } from "popup/ducks/cache";
 import { makeHistory } from "@shared/api/__tests__/fixtures/tokenPriceHistory";
 import { emitMetric } from "helpers/metrics";
 import { useGetTokenPriceHistory } from "../hooks/useGetTokenPriceHistory";
+import { TokenChartSource } from "popup/components/account/TokenPriceChart/constants";
 
 // The v2 calls go through the FETCH_BACKEND_V2 background chokepoint, so the
 // messaging layer (not fetch) is what gets mocked.
@@ -37,7 +38,10 @@ const renderTestHook = (preloadedCache = {}) => {
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <Provider store={store}>{children}</Provider>
   );
-  const rendered = renderHook(() => useGetTokenPriceHistory(), { wrapper });
+  const rendered = renderHook(
+    () => useGetTokenPriceHistory(TokenChartSource.Balances),
+    { wrapper },
+  );
   return { store, rendered };
 };
 

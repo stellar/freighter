@@ -17,7 +17,10 @@ import {
   RangeDeltaState,
   TokenPriceChart,
 } from "popup/components/account/TokenPriceChart";
-import { RANGE_SWITCH_DEBOUNCE_MS } from "popup/components/account/TokenPriceChart/constants";
+import {
+  RANGE_SWITCH_DEBOUNCE_MS,
+  TokenChartSource,
+} from "popup/components/account/TokenPriceChart/constants";
 import { emitMetric } from "helpers/metrics";
 
 // §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
@@ -151,6 +154,7 @@ const renderChart = (preloadedCache: Record<string, unknown> = {}) => {
         networkDetails={MAINNET_NETWORK_DETAILS}
         fallback24hPercent="1.09"
         onDeltaChange={handleDelta}
+        source={TokenChartSource.Balances}
       />
     </Provider>
   );
@@ -418,7 +422,12 @@ describe("TokenPriceChart deferred range warming", () => {
     expect(mockedEmitMetric.mock.calls).toEqual([
       [
         "token_chart.loaded",
-        { token_type: "native", has_data: true, range: "1D" },
+        {
+          token_type: "native",
+          has_data: true,
+          range: "1D",
+          source: "balances",
+        },
       ],
       [
         "token_chart.viewed",

@@ -52,6 +52,7 @@ import {
   RANGE_SWITCH_DEBOUNCE_MS,
   SUB_CENT_SIGNIFICANT_DIGITS,
   SUB_CENT_THRESHOLD,
+  TokenChartSource,
   WARM_ORDER,
 } from "./constants";
 
@@ -306,6 +307,8 @@ interface TokenPriceChartProps {
   fallback24hPercent?: string | null;
   /** Must be referentially stable — it is an effect dependency. */
   onDeltaChange: (delta: RangeDeltaState) => void;
+  /** The surface the chart was opened from; tags `token_chart.loaded`. */
+  source: TokenChartSource;
 }
 
 /**
@@ -318,6 +321,7 @@ export const TokenPriceChart = ({
   networkDetails,
   fallback24hPercent,
   onDeltaChange,
+  source,
 }: TokenPriceChartProps) => {
   const { t, i18n } = useTranslation();
   // Stable per-instance ids for the tabs<->panel association. `useId` rather
@@ -342,7 +346,7 @@ export const TokenPriceChart = ({
   // press.
   const brushedThisActivationRef = useRef(false);
   const { state, fetchData, warmRange, isRangeCached, startLoading } =
-    useGetTokenPriceHistory();
+    useGetTokenPriceHistory(source);
   const isFirstFetchRef = useRef(true);
   // The last range `token_chart.range_changed` was reported for, so a range
   // passed through mid-debounce is never counted as one the user settled on.
