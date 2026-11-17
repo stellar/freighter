@@ -105,30 +105,6 @@
     color: var(--sds-clr-gray-11);
   }
 
-  // An outlined row button: 36px, left-aligned, a 14px list glyph.
-  &__details-btn {
-    display: flex;
-    align-items: center;
-    gap: pxToRem(4);
-    width: 100%;
-    padding: pxToRem(8) pxToRem(10);
-    border: 1px solid var(--sds-clr-gray-05);
-    border-radius: pxToRem(16);
-    background: none;
-    cursor: pointer;
-    color: var(--sds-clr-gray-12);
-    font-size: pxToRem(14);
-    line-height: pxToRem(20);
-    font-weight: 600;
-
-    svg {
-      width: pxToRem(14);
-      height: pxToRem(14);
-      color: var(--sds-clr-gray-09);
-      flex: none;
-    }
-  }
-
   // The details pane carries the whole invocation — auth entries plus every
   // contract parameter — so it routinely outgrows the popup. SlideupModal sizes
   // itself to its content's scrollHeight, so without a cap here the sheet runs

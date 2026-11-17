@@ -14,6 +14,7 @@ import { BlockaidBanner } from "popup/components/BlockaidBanner";
 import { BlockAidScanExpanded } from "popup/components/WarningMessages";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
+import { TransactionDetailsButton } from "popup/components/InternalTransaction/TransactionDetailsButton";
 import { EarnTransactionDetails } from "popup/components/earn/EarnTransactionDetails";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import {
@@ -477,15 +478,10 @@ export const EarnReview = ({
         </div>
 
         {detailTx && (
-          <button
-            type="button"
-            className="EarnReview__details-btn"
-            data-testid="earn-review-details-btn"
+          <TransactionDetailsButton
+            testId="earn-review-details-btn"
             onClick={() => setIsOnDetailsPane(true)}
-          >
-            <Icon.List />
-            <span>{t("Transaction details")}</span>
-          </button>
+          />
         )}
       </div>
 

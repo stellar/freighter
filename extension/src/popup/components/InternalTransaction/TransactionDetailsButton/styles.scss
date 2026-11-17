@@ -1,0 +1,26 @@
+@use "../../../styles/utils.scss" as *;
+
+// Figma: Varial 4478:116835 "Review swap". An outlined full-width row,
+// left-aligned, with a 14px list glyph.
+.TransactionDetailsButton {
+  display: flex;
+  align-items: center;
+  gap: pxToRem(4);
+  width: 100%;
+  padding: pxToRem(8) pxToRem(10);
+  border: 1px solid var(--sds-clr-gray-05);
+  border-radius: pxToRem(16);
+  background: var(--sds-clr-gray-01);
+  cursor: pointer;
+  color: var(--sds-clr-gray-12);
+  font-size: pxToRem(14);
+  line-height: pxToRem(20);
+  font-weight: 600;
+
+  svg {
+    width: pxToRem(14);
+    height: pxToRem(14);
+    color: var(--sds-clr-gray-09);
+    flex: none;
+  }
+}

@@ -13,6 +13,7 @@ import { EarnTransactionDetails } from "popup/components/earn/EarnTransactionDet
 import { formatEarnAmount } from "popup/components/earn/helpers/formatEarnAmount";
 import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
 import { StatRow } from "popup/components/earn/StatRow";
+import { TransactionDetailsButton } from "popup/components/InternalTransaction/TransactionDetailsButton";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { NO_FIAT_VALUE } from "popup/helpers/formatters";
 import { openTab } from "popup/helpers/navigate";
@@ -195,15 +196,10 @@ export const EarnDepositDetailsSheet = ({
         </div>
 
         {transaction && (
-          <button
-            type="button"
-            className="EarnDepositDetailsSheet__details-btn"
-            data-testid="earn-deposit-details-btn"
+          <TransactionDetailsButton
+            testId="earn-deposit-details-btn"
             onClick={() => setIsOnDetailsPane(true)}
-          >
-            <Icon.List />
-            <span>{t("Transaction details")}</span>
-          </button>
+          />
         )}
       </div>
 
