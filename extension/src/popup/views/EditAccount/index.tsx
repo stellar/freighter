@@ -217,6 +217,7 @@ export const EditAccount = () => {
             <RenameWallet
               allAccounts={allAccounts}
               accountId={account.id}
+              source="edit_account"
               onSubmit={() => {}}
               onClose={() => setIsRenaming(false)}
             />

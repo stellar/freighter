@@ -155,6 +155,7 @@ export const AccountSheet = ({
           <RenameWallet
             allAccounts={allAccounts}
             accountId={renameKey}
+            source="wallets"
             onSubmit={() => fetchData(true)}
             onClose={() => setBody("list")}
           />

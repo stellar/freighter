@@ -23,10 +23,14 @@ interface FormValue {
 const ACCOUNT_NAME_MIN_LENGTH = 1;
 const ACCOUNT_NAME_MAX_LENGTH = 24;
 
+/** Where the rename was opened from; matches that screen's name. */
+export type RenameSource = "wallets" | "edit_account";
+
 interface RenameWalletProps {
   allAccounts: Account[];
   /** `Account.id`: two accounts can share a public key. */
   accountId: string;
+  source: RenameSource;
   onClose: () => void;
   onSubmit: () => void;
 }
@@ -34,6 +38,7 @@ interface RenameWalletProps {
 export const RenameWallet = ({
   allAccounts,
   accountId,
+  source,
   onClose,
   onSubmit,
 }: RenameWalletProps) => {
@@ -52,7 +57,7 @@ export const RenameWallet = ({
       await dispatch(
         updateAccountName({ accountName: newAccountName, id: accountId }),
       );
-      emitMetric(METRIC_NAMES.accountRenamed, { source: "wallets" });
+      emitMetric(METRIC_NAMES.accountRenamed, { source });
       onSubmit();
     }
     onClose();

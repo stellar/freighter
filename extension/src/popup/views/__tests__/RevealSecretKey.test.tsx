@@ -7,7 +7,8 @@ import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { ROUTES } from "popup/constants/routes";
-import { emitScreenViewed } from "helpers/metrics";
+import { emitMetric, emitScreenViewed } from "helpers/metrics";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { RevealRecoveryPhrase, RevealSecretKey } from "../RevealSecretKey";
 import { EditAccount } from "../EditAccount";
@@ -30,6 +31,7 @@ const mockShowBackupPhrase = jest.fn();
 jest.mock("@shared/api/internal", () => ({
   revealSecretKey: (...args: unknown[]) => mockRevealSecretKey(...args),
   showBackupPhrase: (...args: unknown[]) => mockShowBackupPhrase(...args),
+  updateAccountName: () => Promise.resolve({ allAccounts: [] }),
 }));
 
 jest.mock("helpers/hooks/useGetAppData", () => {
@@ -395,5 +397,23 @@ describe("EditAccount", () => {
     fireEvent.click(screen.getByTestId("edit-account-name"));
 
     expect(screen.getByTestId("rename-wallet-input")).toHaveValue("Account 2");
+  });
+
+  it("reports a rename as coming from Edit account", async () => {
+    renderEditAccount(`?accountId=${OTHER_ID}`);
+    fireEvent.click(screen.getByTestId("edit-account-name"));
+
+    fireEvent.change(screen.getByTestId("rename-wallet-input"), {
+      target: { value: "Savings" },
+    });
+    const save = screen.getByRole("button", { name: "Set name" });
+    await waitFor(() => expect(save).not.toBeDisabled());
+    fireEvent.click(save);
+
+    await waitFor(() =>
+      expect(emitMetric).toHaveBeenCalledWith(METRIC_NAMES.accountRenamed, {
+        source: "edit_account",
+      }),
+    );
   });
 });
