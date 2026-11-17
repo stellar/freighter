@@ -182,6 +182,7 @@ test("zero-balance EURC offers swap and transfer but not buy", async ({
   const sheet = page.getByTestId("earn-not-enough-sheet");
   await expect(sheet).toBeVisible();
   await expect(sheet).toContainText("Not enough EURC");
+  await expect(sheet).toContainText("Swap or transfer EURC to continue.");
   await expect(page.getByTestId("earn-not-enough-swap")).toBeVisible();
   await expect(page.getByTestId("earn-not-enough-transfer")).toBeVisible();
   await expect(page.getByTestId("earn-not-enough-buy")).toBeHidden();
@@ -220,6 +221,9 @@ test("zero-balance USDC offers buy, swap and transfer", async ({
 
   await expect(page.getByTestId("earn-not-enough-sheet")).toContainText(
     "Not enough USDC",
+  );
+  await expect(page.getByTestId("earn-not-enough-sheet")).toContainText(
+    "Swap, buy or transfer USDC to continue.",
   );
   await expect(page.getByTestId("earn-not-enough-buy")).toBeVisible();
   await expect(page.getByTestId("earn-not-enough-swap")).toBeVisible();

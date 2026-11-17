@@ -46,6 +46,7 @@ const earnKeys = [
   "Manage and withdraw your supplied tokens from your wallet.",
   "Not enough {{code}}",
   "Get {{code}} to deposit into this pool.",
+  "Swap, buy or transfer {{code}} to continue.",
   "Swap or transfer {{code}} to continue.",
   "Buy or transfer {{code}} to continue.",
   "Transfer {{code}} to continue.",

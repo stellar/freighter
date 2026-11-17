@@ -43,9 +43,13 @@ export const NotEnoughTokenSheet = ({
     variant === NotEnoughVariant.SWAP_OR_TRANSFER ||
     variant === NotEnoughVariant.BUY_SWAP_OR_TRANSFER;
 
-  // The design's second sentence names the routes on offer. With all three it
-  // still reads "Swap or transfer", as the design writes it.
+  // The second sentence names the routes on offer.
   const nextStep = () => {
+    if (showSwap && showBuy) {
+      return t("Swap, buy or transfer {{code}} to continue.", {
+        code: option.code,
+      });
+    }
     if (showSwap) {
       return t("Swap or transfer {{code}} to continue.", { code: option.code });
     }
