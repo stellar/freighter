@@ -290,12 +290,12 @@ export const AmountCard = ({
             {assetCode ? (
               <>
                 {assetPill}
-                <Icon.ChevronDown />
+                <Icon.ChevronRight />
               </>
             ) : (
               <>
                 <span className="AmountCard__asset-code">{t("Select")}</span>
-                <Icon.ChevronDown />
+                <Icon.ChevronRight />
               </>
             )}
           </button>
@@ -329,7 +329,7 @@ export const AmountCard = ({
                 onToggleInputType();
               }}
             >
-              <Icon.RefreshCw03 />
+              <Icon.SwitchVertical01 />
             </Button>
           )}
         </div>
