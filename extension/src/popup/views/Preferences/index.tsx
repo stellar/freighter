@@ -255,11 +255,11 @@ export const Preferences = () => {
                 <div className="Preferences__setting">
                   <div className="Preferences__setting__text">
                     <div className="Preferences__setting__title">
-                      {t("Share analytics data")}
+                      {t("Usage data sharing")}
                     </div>
                     <div className="Preferences__setting__description">
                       {t(
-                        "Help improve Varial by sharing usage and diagnostic data.",
+                        "Help us improve Varial by sharing usage, device, and activity data, including your public keys, IP address, and a persistent ID that links your wallet across extension and mobile, with our analytics and crash-reporting providers. You can turn this off at any time. See our Privacy Policy for details.",
                       )}
                     </div>
                     <a
