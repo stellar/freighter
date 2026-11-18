@@ -56,6 +56,11 @@ import {
   trackEarnXlmFeeInsufficientShown,
 } from "popup/metrics/earn";
 import {
+  emitSigningRejected,
+  SigningKind,
+  SigningSource,
+} from "popup/metrics/signing";
+import {
   saveAmount,
   saveAmountUsd,
   saveTransactionFee,
@@ -153,8 +158,9 @@ export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
   // covers the settings sheet so the input comes back with it.
   const [draftFee, setDraftFee] = useState<string | null>(null);
   const hasEmittedReviewView = useRef(false);
-  // The handoff marks leaving the review for settings as "not a rejection".
-  // Earn's review reports no rejection, so nothing reads it here.
+  // Leaving the review without approving reports a rejection, as on Send and
+  // Swap. Set when it leaves for something else: its settings sheet (the
+  // handoff sets it) or Confirm.
   const skipRejectionRef = useRef(false);
   const { openSettingsFromReview, closeSettings, returnToReview } =
     useReviewSettingsHandoff({
@@ -186,16 +192,26 @@ export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
   // The review sheet is the flow's `confirm` step — the last screen before a
   // signature. It is a sheet rather than a step, so the Earn view's step effect
   // never sees it. The ref clears on close so correcting the amount and
-  // reviewing again counts as a second view, but a re-render does not.
+  // reviewing again counts as a second view, but a re-render does not. Closing
+  // it without approving is the signing rejection Send and Swap report too.
   useEffect(() => {
     if (!isReviewOpen) {
+      if (!hasEmittedReviewView.current) {
+        return;
+      }
       hasEmittedReviewView.current = false;
+      if (!skipRejectionRef.current) {
+        emitSigningRejected(SigningKind.Transaction, {
+          source: SigningSource.Internal,
+        });
+      }
       return;
     }
     if (hasEmittedReviewView.current) {
       return;
     }
     hasEmittedReviewView.current = true;
+    skipRejectionRef.current = false;
     emitScreenViewed("earn_review", { flow: "earn", step: "confirm" });
   }, [isReviewOpen]);
 
@@ -671,6 +687,7 @@ export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
           networkDetails={data.networkDetails}
           onCancel={() => setIsReviewOpen(false)}
           onConfirm={() => {
+            skipRejectionRef.current = true;
             setIsReviewOpen(false);
             onConfirm();
           }}

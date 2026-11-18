@@ -12,6 +12,12 @@ import {
   trackEarnDepositFailed,
 } from "popup/metrics/earn";
 import { getFailureReasonCode } from "popup/components/earn/helpers/failureReasonCode";
+import {
+  emitSigningApproved,
+  emitSigningFailed,
+  SigningKind,
+  SigningSource,
+} from "popup/metrics/signing";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import {
   signFreighterSorobanTransaction,
@@ -110,16 +116,32 @@ export function useSubmitEarnTxData({
           // submitStatus to ERROR and the flow has already stepped back to the
           // amount screen, so the late submit rejection would report a second
           // earn.deposit_failed for one attempt.
-          trackDepositFailed(
-            signFreighterSorobanTransaction.rejected.match(res)
-              ? res.payload
-              : undefined,
+          const signingError = signFreighterSorobanTransaction.rejected.match(
+            res,
+          )
+            ? res.payload
+            : undefined;
+          // The signature failing is always a fault: the user already
+          // approved on the review, as on Send and Swap.
+          emitSigningFailed(
+            SigningKind.Transaction,
+            signingError?.errorMessage,
+            {
+              source: SigningSource.Internal,
+            },
           );
+          trackDepositFailed(signingError);
           dispatch({ type: "FETCH_DATA_ERROR", payload: res.payload });
           return res.payload;
         }
 
         signedXDR = res.payload.signedTransaction;
+        // The same event a dApp request and Send and Swap report; `source`
+        // separates them. Software keys only: the HardwareSign overlay reports
+        // a device's signature itself.
+        emitSigningApproved(SigningKind.Transaction, {
+          source: SigningSource.Internal,
+        });
       }
 
       const submitResp = await reduxDispatch(

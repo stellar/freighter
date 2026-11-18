@@ -16,6 +16,7 @@ import { getBlendSuppliedTokens } from "@shared/api/helpers/blend";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { simulateTransaction } from "@shared/api/internal";
 import { showToast } from "popup/basics/shadcn/Toast";
+import { emitMetric } from "helpers/metrics";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { EarnAmount } from "popup/components/earn/EarnAmount";
@@ -127,6 +128,23 @@ const isReviewOpen = () =>
       .getByTestId("earn-review")
       .closest(".SlideupModal")
       ?.classList.contains("open"),
+  );
+
+/** Opens Review on a 100 USDC deposit. */
+const openReview = async () => {
+  renderAmount();
+  fireEvent.change(screen.getByTestId("send-amount-amount-input"), {
+    target: { value: "100" },
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByTestId("earn-amount-btn-continue"));
+  });
+  await waitFor(() => expect(isReviewOpen()).toBe(true));
+};
+
+const rejections = () =>
+  (emitMetric as jest.Mock).mock.calls.filter(
+    ([name]) => name === "signing.transaction_rejected",
   );
 
 /** Opens Review on a 100 USDC deposit, then its settings sheet. */
@@ -355,5 +373,49 @@ describe("EarnAmount reviewed amount", () => {
     expect(lastToastText()).toContain("Not enough XLM for network fees");
     // Nothing was simulated with a fee the account cannot pay.
     expect(BlendDeposit.buildAndSimulateBlendDeposit).toHaveBeenCalledTimes(1);
+  });
+
+  describe("leaving Review", () => {
+    // The signing rejection Send and Swap report for a wallet-composed
+    // transaction the user walks away from.
+    it("reports a rejection when the user cancels", async () => {
+      await openReview();
+
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("earn-review-cancel"));
+      });
+
+      await waitFor(() => expect(isReviewOpen()).toBe(false));
+      expect(rejections()).toEqual([
+        [
+          "signing.transaction_rejected",
+          expect.objectContaining({ source: "internal" }),
+        ],
+      ]);
+    });
+
+    it("reports none when the user confirms", async () => {
+      await openReview();
+
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("earn-review-confirm"));
+      });
+
+      await waitFor(() => expect(isReviewOpen()).toBe(false));
+      expect(rejections()).toEqual([]);
+    });
+
+    it("reports none for a trip to its settings and back", async () => {
+      await openReview();
+
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("earn-review-settings-btn"));
+      });
+      await waitFor(() => expect(isReviewOpen()).toBe(false));
+      await saveFee("0.01");
+      await waitFor(() => expect(isReviewOpen()).toBe(true));
+
+      expect(rejections()).toEqual([]);
+    });
   });
 });

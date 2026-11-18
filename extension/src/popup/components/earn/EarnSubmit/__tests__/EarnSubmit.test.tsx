@@ -179,6 +179,46 @@ describe("EarnSubmit", () => {
     expect(mockSignSoroban).toHaveBeenCalledTimes(1);
   });
 
+  it("reports the signature as an internal signing approval", async () => {
+    // The same event Send and Swap report for a wallet-composed transaction.
+    renderSubmit({ xdr: "AAAA-unsigned" });
+
+    await waitFor(() =>
+      expect(emitMetric).toHaveBeenCalledWith(
+        "signing.transaction_approved",
+        expect.objectContaining({ source: "internal" }),
+      ),
+    );
+  });
+
+  it("reports a signature that failed", async () => {
+    mockSignSoroban.mockRejectedValue(new Error("key locked"));
+    renderSubmit({ xdr: "AAAA-unsigned" });
+
+    await waitFor(() =>
+      expect(emitMetric).toHaveBeenCalledWith(
+        "signing.transaction_failed",
+        expect.objectContaining({ source: "internal" }),
+      ),
+    );
+    expect(emittedMetricNames()).not.toContain("signing.transaction_approved");
+    expect(submittedXdrs()).toEqual([]);
+  });
+
+  it("leaves a device signature to the device overlay to report", async () => {
+    renderSubmit({
+      xdr: HW_SIGNED_XDR,
+      hardwareWalletType: WalletType.LEDGER,
+    });
+
+    await waitFor(() => expect(submittedXdrs()).toEqual([HW_SIGNED_XDR]));
+    expect(
+      emittedMetricNames().filter((name: string) =>
+        name.startsWith("signing."),
+      ),
+    ).toEqual([]);
+  });
+
   it("submits the device-signed envelope without signing again", async () => {
     // The signed envelope arrives through transactionSimulation, written there
     // by the review's HardwareSign overlay. Re-signing it in the popup is
