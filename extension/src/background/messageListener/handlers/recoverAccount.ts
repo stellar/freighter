@@ -148,7 +148,9 @@ export const recoverAccount = async ({
 
     // lets check first couple of accounts and pre-load them if funded on mainnet
 
-    const fundedIndices = await discoverFundedIndices({
+    // Lookups that fail are skipped: the wallet is already wiped by now, and
+    // recovering again rescans.
+    const { funded: fundedIndices } = await discoverFundedIndices({
       wallet,
       from: 1,
       to: numOfPublicKeysToCheck,

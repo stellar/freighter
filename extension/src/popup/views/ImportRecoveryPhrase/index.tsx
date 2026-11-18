@@ -10,6 +10,7 @@ import {
 } from "@shared/api/helpers/mnemonic";
 import {
   ACCOUNT_ALREADY_EXISTS_ERROR,
+  ACCOUNT_DISCOVERY_FAILED_ERROR,
   IMPORT_PHRASE_FAILED_ERROR,
   INCORRECT_PASSWORD_ERROR,
   NO_SOFTWARE_KEYSTORE_ERROR,
@@ -77,6 +78,10 @@ export const ImportRecoveryPhrase = () => {
         return t("This recovery phrase is already in your wallet.");
       case IMPORT_PHRASE_FAILED_ERROR:
         return t("Error adding recovery phrase");
+      case ACCOUNT_DISCOVERY_FAILED_ERROR:
+        return t(
+          "Couldn't check this phrase's accounts. Check your connection and try again.",
+        );
       case NO_SOFTWARE_KEYSTORE_ERROR:
         return t("This wallet has no password to check against");
       case INCORRECT_PASSWORD_ERROR:

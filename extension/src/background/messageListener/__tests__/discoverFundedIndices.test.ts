@@ -11,10 +11,21 @@ const wallet = {
   getSecret: (i: number) => `SK${i}`,
 } as any;
 
-const mockFetch = (handler: (publicKey: string) => Promise<unknown>) => {
+const notFound = { ok: false, status: 404, body: { status: 404 } };
+const found = (publicKey: string) => ({
+  ok: true,
+  status: 200,
+  body: { account_id: publicKey },
+});
+
+type MockResponse = { ok: boolean; status: number; body: unknown };
+
+const mockFetch = (handler: (publicKey: string) => Promise<MockResponse>) => {
   const fn = jest.fn((url: string) => {
     const publicKey = url.split("/accounts/")[1];
-    return handler(publicKey).then((body) => ({
+    return handler(publicKey).then(({ ok, status, body }) => ({
+      ok,
+      status,
       json: () => Promise.resolve(body),
     }));
   });
@@ -37,43 +48,60 @@ describe("discoverFundedIndices", () => {
       (publicKey) =>
         new Promise((resolve) =>
           setTimeout(
-            () =>
-              resolve(
-                publicKey in delays
-                  ? { account_id: publicKey }
-                  : { status: 404 },
-              ),
+            () => resolve(publicKey in delays ? found(publicKey) : notFound),
             delays[publicKey] ?? 0,
           ),
         ),
     );
 
-    expect(await discoverFundedIndices({ wallet, from: 1, to: 49 })).toEqual([
-      2, 7, 49,
-    ]);
+    expect(await discoverFundedIndices({ wallet, from: 1, to: 49 })).toEqual({
+      funded: [2, 7, 49],
+      failedCount: 0,
+    });
   });
 
-  it("treats a 404 body as not funded", async () => {
-    mockFetch(async () => ({ status: 404 }));
+  it("treats a 404 as not funded", async () => {
+    mockFetch(async () => notFound);
 
-    expect(await discoverFundedIndices({ wallet, from: 1, to: 5 })).toEqual([]);
+    expect(await discoverFundedIndices({ wallet, from: 1, to: 5 })).toEqual({
+      funded: [],
+      failedCount: 0,
+    });
     expect(captureException).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["a 429", { ok: false, status: 429, body: { status: 429 } }],
+    ["a 500", { ok: false, status: 500, body: { status: 500 } }],
+    ["a 200 without an account id", { ok: true, status: 200, body: {} }],
+  ])("counts %s as a failed lookup and reports it", async (_, response) => {
+    mockFetch(async (publicKey) => {
+      if (publicKey === pk(2)) return response;
+      return publicKey === pk(4) ? found(publicKey) : notFound;
+    });
+
+    expect(await discoverFundedIndices({ wallet, from: 1, to: 5 })).toEqual({
+      funded: [4],
+      failedCount: 1,
+    });
+    expect(captureException).toHaveBeenCalledTimes(1);
   });
 
   it("skips an index whose lookup throws and reports it", async () => {
     mockFetch(async (publicKey) => {
       if (publicKey === pk(3)) throw new Error("network down");
-      return publicKey === pk(4) ? { account_id: publicKey } : { status: 404 };
+      return publicKey === pk(4) ? found(publicKey) : notFound;
     });
 
-    expect(await discoverFundedIndices({ wallet, from: 1, to: 5 })).toEqual([
-      4,
-    ]);
+    expect(await discoverFundedIndices({ wallet, from: 1, to: 5 })).toEqual({
+      funded: [4],
+      failedCount: 1,
+    });
     expect(captureException).toHaveBeenCalledTimes(1);
   });
 
   it("queries mainnet Horizon", async () => {
-    const fetchMock = mockFetch(async () => ({ status: 404 }));
+    const fetchMock = mockFetch(async () => notFound);
 
     await discoverFundedIndices({ wallet, from: 1, to: 10 });
 
@@ -93,7 +121,7 @@ describe("discoverFundedIndices", () => {
       peak = Math.max(peak, inFlight);
       await new Promise((r) => setTimeout(r, 2));
       inFlight -= 1;
-      return { status: 404 };
+      return notFound;
     });
 
     await discoverFundedIndices({ wallet, from: 1, to: 49 });
@@ -130,13 +158,14 @@ describe("discoverFundedIndices", () => {
             stalled();
           });
         }
+        const { ok, status, body } =
+          publicKey === pk(1) || publicKey === pk(3)
+            ? found(publicKey)
+            : notFound;
         return Promise.resolve({
-          json: () =>
-            Promise.resolve(
-              publicKey === pk(1) || publicKey === pk(3)
-                ? { account_id: publicKey }
-                : { status: 404 },
-            ),
+          ok,
+          status,
+          json: () => Promise.resolve(body),
         });
       },
     ) as unknown as typeof fetch;
@@ -148,7 +177,7 @@ describe("discoverFundedIndices", () => {
       // Fire the timeouts. Only index 2's lookup is still waiting on one.
       controllers.forEach((controller) => controller.abort());
 
-      expect(await result).toEqual([1, 3]);
+      expect(await result).toEqual({ funded: [1, 3], failedCount: 1 });
       expect(captureException).toHaveBeenCalledTimes(1);
     } finally {
       timeoutSpy.mockRestore();

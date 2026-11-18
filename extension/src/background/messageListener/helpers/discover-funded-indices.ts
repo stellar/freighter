@@ -9,9 +9,11 @@ const MAX_IN_FLIGHT = 10;
 const LOOKUP_TIMEOUT_MS = 5_000;
 
 /*
-  Checks derivation indices `from` to `to` (inclusive) on mainnet and returns
-  the funded ones in ascending order. A lookup that throws, or takes longer
-  than LOOKUP_TIMEOUT_MS, counts as not found and is reported.
+  Checks derivation indices `from` to `to` (inclusive) on mainnet. `funded`
+  lists the funded ones in ascending order. Only a 404 counts as unfunded:
+  any other status, a response without an account id, a thrown fetch or a
+  lookup slower than LOOKUP_TIMEOUT_MS is a failed lookup, counted in
+  `failedCount` and reported. Callers decide what a failed lookup means.
 */
 export const discoverFundedIndices = async ({
   wallet,
@@ -21,13 +23,14 @@ export const discoverFundedIndices = async ({
   wallet: ReturnType<typeof StellarHDWallet.fromMnemonic>;
   from: number;
   to: number;
-}): Promise<number[]> => {
+}): Promise<{ funded: number[]; failedCount: number }> => {
   const indices: number[] = [];
   for (let i = from; i <= to; i += 1) {
     indices.push(i);
   }
 
   const funded = new Set<number>();
+  let failedCount = 0;
   let next = 0;
 
   const worker = async () => {
@@ -40,13 +43,21 @@ export const discoverFundedIndices = async ({
           `${MAINNET_NETWORK_DETAILS.networkUrl}/accounts/${publicKey}`,
           { signal: AbortSignal.timeout(LOOKUP_TIMEOUT_MS) },
         );
-        const j = await resp.json();
-        if (j.account_id) {
-          funded.add(i);
+        if (resp.status === 404) {
+          continue;
         }
+        if (!resp.ok) {
+          throw new Error(`Unexpected status ${resp.status}`);
+        }
+        const j = await resp.json();
+        if (!j.account_id) {
+          throw new Error("Response has no account id");
+        }
+        funded.add(i);
       } catch (e) {
+        failedCount += 1;
         captureException(
-          `Error preloading account: ${JSON.stringify(e)} - ${i}`,
+          `Error discovering account: ${e instanceof Error ? e.message : JSON.stringify(e)} - ${i}`,
         );
       }
     }
@@ -56,5 +67,5 @@ export const discoverFundedIndices = async ({
     Array.from({ length: Math.min(MAX_IN_FLIGHT, indices.length) }, worker),
   );
 
-  return indices.filter((i) => funded.has(i));
+  return { funded: indices.filter((i) => funded.has(i)), failedCount };
 };

@@ -109,9 +109,12 @@ jest.mock("background/helpers/link-sources", () => ({
 }));
 
 // StellarHDWallet.fromMnemonic cannot run under jest (bip39 CJS interop), so
-// derive from the pinned (mnemonic, index) rows.
+// derive from the pinned (mnemonic, index) rows, and past them from a
+// deterministic seed per (mnemonic, index). Only the pinned phrases resolve.
 const mockGenerated: string[] = [];
 jest.mock("stellar-hd-wallet", () => {
+  const { createHash } = jest.requireActual("crypto");
+  const { Keypair: MockKeypair } = jest.requireActual("stellar-sdk");
   const { ACCOUNT_SOURCE_VECTORS: vectors } = jest.requireActual(
     "@shared/api/helpers/authKeypairVectors",
   );
@@ -119,13 +122,35 @@ jest.mock("stellar-hd-wallet", () => {
     generateMnemonic: () => mockGenerated.shift(),
     fromMnemonic: (mnemonic: string) => {
       const rows = vectors.find((v: any) => v.mnemonic === mnemonic).accounts;
+      const keypair = (i: number) =>
+        MockKeypair.fromRawEd25519Seed(
+          createHash("sha256").update(`${mnemonic}:${i}`).digest(),
+        );
       return {
-        getPublicKey: (i: number) => rows[i].publicKey,
-        getSecret: (i: number) => rows[i].secret,
+        getPublicKey: (i: number) =>
+          rows[i] ? rows[i].publicKey : keypair(i).publicKey(),
+        getSecret: (i: number) =>
+          rows[i] ? rows[i].secret : keypair(i).secret(),
       };
     },
   };
 });
+
+// Only the pinned rows are funded, so a phrase import stores just those.
+const PINNED_KEYS = new Set<string>(
+  ACCOUNT_SOURCE_VECTORS.flatMap(({ accounts }) =>
+    accounts.map(({ publicKey }) => publicKey),
+  ),
+);
+const horizonResponse = (url: string) => {
+  const isFunded = PINNED_KEYS.has(String(url).split("/accounts/")[1]);
+  return {
+    ok: isFunded,
+    status: isFunded ? 200 : 404,
+    json: () =>
+      Promise.resolve(isFunded ? { account_id: "funded" } : { status: 404 }),
+  };
+};
 
 if (!global.crypto.randomUUID) {
   Object.defineProperty(global.crypto, "randomUUID", { value: randomUUID });
@@ -222,10 +247,8 @@ describe("concurrent account-mutating messages", () => {
     await mockSession.clear();
     mockGenerated.length = 0;
     mockAlarms.clear();
-    global.fetch = jest.fn(() =>
-      Promise.resolve({
-        json: () => Promise.resolve({ account_id: "funded" }),
-      }),
+    global.fetch = jest.fn((url: string) =>
+      Promise.resolve(horizonResponse(url)),
     ) as unknown as typeof fetch;
     await createWallet();
   });
@@ -327,11 +350,11 @@ describe("concurrent account-mutating messages", () => {
     });
     const releaseTimer = setTimeout(() => release(), 1_000);
     let pending = 0;
-    global.fetch = jest.fn(async () => {
+    global.fetch = jest.fn(async (url: string) => {
       pending += 1;
       if (pending >= 20) release();
       await gate;
-      return { json: async () => ({ account_id: "funded" }) };
+      return horizonResponse(url);
     }) as unknown as typeof fetch;
     const active = activeKey();
 

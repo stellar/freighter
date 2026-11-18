@@ -7,6 +7,7 @@ import { ImportRecoveryPhraseMessage } from "@shared/api/types/message-request";
 import { SecretSourceType } from "@shared/api/types";
 import {
   ACCOUNT_ALREADY_EXISTS_ERROR,
+  ACCOUNT_DISCOVERY_FAILED_ERROR,
   IMPORT_PHRASE_FAILED_ERROR,
   PHRASE_ALREADY_HELD_ERROR,
 } from "@shared/constants/errors";
@@ -103,11 +104,16 @@ export const importRecoveryPhrase = async ({
     return { error: PHRASE_ALREADY_HELD_ERROR };
   }
 
-  const fundedIndices = await discoverFundedIndices({
+  const { funded: fundedIndices, failedCount } = await discoverFundedIndices({
     wallet,
     from: 1,
     to: discoveryDepth - 1,
   });
+  // A held phrase is refused on retry, so importing with gaps would leave
+  // the missed accounts out for good. Fail before writing anything instead.
+  if (failedCount > 0) {
+    return { error: ACCOUNT_DISCOVERY_FAILED_ERROR };
+  }
   const indices = [0, ...fundedIndices];
 
   // Checked again after discovery: another import of the same phrase may

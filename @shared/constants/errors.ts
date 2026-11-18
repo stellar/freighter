@@ -30,6 +30,10 @@ export const PHRASE_ALREADY_HELD_ERROR =
 /** Returned when storing a phrase being added to a live wallet fails. */
 export const IMPORT_PHRASE_FAILED_ERROR = "Error adding recovery phrase";
 
+/** Returned when a phrase import can't check every derived account on mainnet. */
+export const ACCOUNT_DISCOVERY_FAILED_ERROR =
+  "Unable to check this recovery phrase's accounts";
+
 /** Returned when an add needs a password but the wallet has no software keystore to check it against. */
 export const NO_SOFTWARE_KEYSTORE_ERROR =
   "This wallet has no password to check against";
