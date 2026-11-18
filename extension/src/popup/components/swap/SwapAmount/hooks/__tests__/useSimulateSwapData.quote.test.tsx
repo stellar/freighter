@@ -473,7 +473,9 @@ describe("useSimulateTxData quote when no live quote exists", () => {
         return respond(req);
       }
       txCalls += 1;
-      const reply = await (txCalls === 1 ? moved(req) : respond(req));
+      // The older build (amount 10) is the one whose quote moved.
+      const isOlder = JSON.parse(req.body).amount === "10";
+      const reply = await (isOlder ? moved(req) : respond(req));
       return new Promise((resolve) => builds.push(() => resolve(reply)));
     });
     const onQuoteMoved = jest.fn();

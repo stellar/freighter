@@ -126,6 +126,7 @@ const renderSimulate = (
           transactionTimeout: 180,
           destRequiresTrustline: false,
         },
+        onQuoteMoved: jest.fn(),
       }),
     {
       wrapper: ({ children }) => (
