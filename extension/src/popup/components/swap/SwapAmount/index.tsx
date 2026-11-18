@@ -719,6 +719,7 @@ export const SwapAmount = ({
                   size="md"
                   isRounded
                   variant="tertiary"
+                  data-testid="swap-amount-settings-btn"
                   onClick={() => {
                     setIsSettingsFromReview(false);
                     setIsEditingSettings(true);
@@ -1083,12 +1084,14 @@ export const SwapAmount = ({
               setIsEditingSettings(false);
               // Rebuild the quote with the new fee before the review comes
               // back, so Confirm never submits the old XDR.
-              await buildReview({
-                amount,
-                destinationRate: dstAssetPrice,
-                customFee: fee,
-                transactionTimeout: timeout,
-              });
+              if (new BigNumber(amount || "0").gt(0)) {
+                await buildReview({
+                  amount,
+                  destinationRate: dstAssetPrice,
+                  customFee: fee,
+                  transactionTimeout: timeout,
+                });
+              }
               returnToReview();
             }}
           />
