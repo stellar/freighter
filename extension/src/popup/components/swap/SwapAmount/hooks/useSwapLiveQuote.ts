@@ -173,10 +173,10 @@ export const useSwapLiveQuote = ({
   const cryptoAmountRef = useRef(cryptoAmount);
   cryptoAmountRef.current = cryptoAmount;
 
-  // One fresh quote after a build found the quote moved (409). Called once
-  // per failed build, never from an effect, so a backend that keeps
-  // answering 409 costs one quote per Review press. It lands even behind the
-  // review sheet: that sheet is only showing the build's error.
+  // One fresh quote after the current build found the quote moved (409).
+  // Called once per such build (a Review press or a settings save), never
+  // from an effect, so a backend that keeps answering 409 can't loop. It
+  // lands even behind the review sheet: that sheet only shows the error.
   const requote = useCallback(() => {
     debouncedQuote.cancel();
     if (new BigNumber(cryptoAmountRef.current || "0").isGreaterThan(0)) {

@@ -470,20 +470,29 @@ describe("SwapAmount live receive-amount quote", () => {
         .destinationAmount;
 
     describe("after the backend says the quote moved (409)", () => {
-      const quoteMoved = () =>
+      // Each build 409s, which the real hook reports through onQuoteMoved.
+      const mockQuoteMovedBuilds = () => {
+        const fetchData = jest.fn();
         jest
-          .fn()
-          .mockResolvedValue(
-            new Error(UseSimulateSwapData.ERROR_TO_DISPLAY.QUOTE_EXPIRED),
-          );
+          .spyOn(UseSimulateSwapData, "useSimulateTxData")
+          .mockImplementation(({ onQuoteMoved }: any) => {
+            fetchData.mockImplementation(async () => {
+              onQuoteMoved();
+              return new Error(
+                UseSimulateSwapData.ERROR_TO_DISPLAY.QUOTE_EXPIRED,
+              );
+            });
+            return {
+              state: { state: RequestState.IDLE, data: null, error: null },
+              isQuoteExpired: true,
+              fetchData,
+            } as any;
+          });
+        return fetchData;
+      };
 
       it("fetches one new quote, and builds again only on the next Review press", async () => {
-        const fetchData = quoteMoved();
-        jest.spyOn(UseSimulateSwapData, "useSimulateTxData").mockReturnValue({
-          state: { state: RequestState.IDLE, data: null, error: null },
-          isQuoteExpired: true,
-          fetchData,
-        } as any);
+        const fetchData = mockQuoteMovedBuilds();
         renderSwapAmount({ amount: "5", destinationAsset: AQUA });
         await settle();
         expect(fetchBackendV2).toHaveBeenCalledTimes(1);
@@ -511,11 +520,7 @@ describe("SwapAmount live receive-amount quote", () => {
       });
 
       it("stores the new quote even with the review sheet showing the error", async () => {
-        jest.spyOn(UseSimulateSwapData, "useSimulateTxData").mockReturnValue({
-          state: { state: RequestState.IDLE, data: null, error: null },
-          isQuoteExpired: true,
-          fetchData: quoteMoved(),
-        } as any);
+        mockQuoteMovedBuilds();
         renderSwapAmount({ amount: "5", destinationAsset: AQUA });
         await settle();
         expect(storedDestinationAmount()).toBe("50");

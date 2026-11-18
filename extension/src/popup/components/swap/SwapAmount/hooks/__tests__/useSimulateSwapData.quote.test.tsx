@@ -163,6 +163,7 @@ const renderSimulate = (
     path: [],
   },
   simParams: Partial<Parameters<typeof useSimulateTxData>[0]["simParams"]> = {},
+  onQuoteMoved: () => void = jest.fn(),
 ) =>
   renderHook(
     () =>
@@ -180,6 +181,7 @@ const renderSimulate = (
           destRequiresTrustline: false,
           ...simParams,
         },
+        onQuoteMoved,
       }),
     {
       wrapper: ({ children }) => (
@@ -447,6 +449,56 @@ describe("useSimulateTxData quote when no live quote exists", () => {
       getTestStore()!.getState().transactionSubmission.transactionData
         .swapQuoteKey,
     ).toBeNull();
+  });
+
+  it("tells the screen once when the current build's quote moved", async () => {
+    fetchBackendV2.mockImplementation(answer(quotes, { status: 409 }));
+    const onQuoteMoved = jest.fn();
+    const { result } = renderSimulate(storedQuote, {}, onQuoteMoved);
+
+    await act(async () => {
+      await result.current.fetchData({ amount: "10" });
+    });
+
+    expect(onQuoteMoved).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not tell the screen when a superseded build's quote moved", async () => {
+    const builds: Array<() => void> = [];
+    const respond = answer(quotes);
+    const moved = answer(quotes, { status: 409 });
+    let txCalls = 0;
+    fetchBackendV2.mockImplementation(async (req: any) => {
+      if (!req.path.startsWith("/swap/tx")) {
+        return respond(req);
+      }
+      txCalls += 1;
+      const reply = await (txCalls === 1 ? moved(req) : respond(req));
+      return new Promise((resolve) => builds.push(() => resolve(reply)));
+    });
+    const onQuoteMoved = jest.fn();
+    const { result } = renderSimulate(undefined, {}, onQuoteMoved);
+
+    let older: Promise<unknown>;
+    let newer: Promise<unknown>;
+    await act(async () => {
+      older = result.current.fetchData({ amount: "10" });
+      newer = result.current.fetchData({ amount: "20" });
+      await Promise.resolve();
+    });
+    await act(async () => {
+      while (builds.length < 2) {
+        // eslint-disable-next-line no-await-in-loop
+        await Promise.resolve();
+      }
+      builds[1]();
+      await newer;
+      builds[0]();
+      await older;
+    });
+
+    expect(txCalls).toBe(2);
+    expect(onQuoteMoved).not.toHaveBeenCalled();
   });
 
   it("keeps the newest build when an older one lands after it", async () => {
