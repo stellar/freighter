@@ -1,3 +1,5 @@
+import { Asset } from "stellar-sdk";
+
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { getTokenDetails } from "@shared/api/internal";
 
@@ -9,8 +11,12 @@ jest.mock("@shared/api/internal", () => ({
   getTokenDetails: jest.fn(),
 }));
 
+const { networkPassphrase } = TESTNET_NETWORK_DETAILS;
 const EURC_ISSUER = "GDHU6WRG4IEQXM5NZ4BMPKOXHW76MZM4Y2IEMFDVXBSDP6SJY4ITNPP2";
-const EURC_SAC = "CDTKPWPLOURQA2SGTKTUQOWRCBZEORB4BWBOMJ3D3ZTQQSGE5F6JBQLV";
+// Another account issuing a token under the same code.
+const OTHER_ISSUER = "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
+const EURC_SAC = new Asset("EURC", EURC_ISSUER).contractId(networkPassphrase);
+const XLM_SAC = Asset.native().contractId(networkPassphrase);
 
 const eurc: EarnTokenOption = {
   assetId: EURC_SAC,
@@ -24,9 +30,9 @@ const eurc: EarnTokenOption = {
   poolId: "CPOOL",
 };
 
-const resolve = () =>
+const resolve = (option: EarnTokenOption = eurc) =>
   resolveSwapDestination({
-    option: eurc,
+    option,
     publicKey: "GPUBLIC",
     networkDetails: TESTNET_NETWORK_DETAILS,
   });
@@ -45,10 +51,44 @@ describe("resolveSwapDestination", () => {
   });
 
   it("declines a name that resolves to another token", async () => {
-    // The swap buys what the row shows, or nothing.
+    // The swap buys what the pool takes, or nothing.
     (getTokenDetails as jest.Mock).mockResolvedValue({ name: "native" });
 
     expect(await resolve()).toBeNull();
+  });
+
+  it("declines the same code from another issuer", async () => {
+    (getTokenDetails as jest.Mock).mockResolvedValue({
+      name: `EURC:${OTHER_ISSUER}`,
+    });
+
+    expect(await resolve()).toBeNull();
+  });
+
+  it("declines a name that is not an asset's", async () => {
+    (getTokenDetails as jest.Mock).mockResolvedValue({ name: "Euro Coin" });
+
+    expect(await resolve()).toBeNull();
+  });
+
+  it("resolves XLM from its SAC", async () => {
+    (getTokenDetails as jest.Mock).mockResolvedValue({ name: "native" });
+
+    expect(await resolve({ ...eurc, assetId: XLM_SAC, code: "XLM" })).toEqual(
+      expect.objectContaining({
+        canonical: "native",
+        details: expect.objectContaining({ requiresTrustline: false }),
+      }),
+    );
+  });
+
+  it("checks a known issuer against the pool's token too", async () => {
+    expect(await resolve({ ...eurc, issuer: EURC_ISSUER })).toEqual(
+      expect.objectContaining({ canonical: `EURC:${EURC_ISSUER}` }),
+    );
+    expect(await resolve({ ...eurc, issuer: OTHER_ISSUER })).toBeNull();
+    // Known issuers need no lookup.
+    expect(getTokenDetails).not.toHaveBeenCalled();
   });
 
   it("declines when the token has no name", async () => {

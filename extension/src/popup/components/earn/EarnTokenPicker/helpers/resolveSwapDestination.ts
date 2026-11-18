@@ -1,8 +1,10 @@
+import { Asset, Networks } from "stellar-sdk";
+
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getTokenDetails } from "@shared/api/internal";
 import { isNativeAssetId } from "@shared/helpers/assetIdentity";
+import { getAssetSacAddress } from "@shared/helpers/soroban/token";
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
-import { getAssetFromCanonical } from "helpers/stellar";
 import { DestinationTokenDetails } from "popup/ducks/transactionSubmission";
 import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
 
@@ -18,9 +20,24 @@ import { EarnTokenOption } from "../hooks/useGetEarnTokensData";
  * canonical form (`USDC:GA5ZSEJY…`, or `native` for XLM), which is what
  * `isSacContract` already relies on to match a SAC to its classic asset.
  *
- * Returns null when the lookup fails, so callers can decline to start a swap
- * rather than send the user somewhere with a half-filled destination.
+ * Returns null when the lookup fails, or when the asset found is not the one
+ * the pool takes, so callers can decline to start a swap rather than send the
+ * user somewhere with a half-filled or different destination.
  */
+/**
+ * The address of the Stellar Asset Contract for `canonical`, or null when it
+ * names no classic asset (a malformed name, or a contract-issued token).
+ */
+const getSacAddress = (canonical: string, networkPassphrase: string) => {
+  try {
+    return isNativeAssetId(canonical)
+      ? Asset.native().contractId(networkPassphrase)
+      : getAssetSacAddress(canonical, networkPassphrase as Networks);
+  } catch {
+    return null;
+  }
+};
+
 export const resolveSwapDestination = async ({
   option,
   publicKey,
@@ -52,13 +69,16 @@ export const resolveSwapDestination = async ({
     canonical = tokenDetails.name;
     // "native" has no issuer half; everything else is CODE:ISSUER.
     issuer = canonical.includes(":") ? canonical.split(":")[1] : undefined;
+  }
 
-    // The swap has to buy the token the row shows. A name that resolves to
-    // another code describes some other asset, so decline rather than swap
-    // into it.
-    if (getAssetFromCanonical(canonical).code !== option.code) {
-      return null;
-    }
+  // The swap has to buy the token the pool takes. A SAC's address is derived
+  // from its asset, so the asset found is that token only when its contract is
+  // the one the pool lists; anything else is some other asset.
+  if (
+    getSacAddress(canonical, networkDetails.networkPassphrase) !==
+    option.assetId
+  ) {
+    return null;
   }
 
   return {
