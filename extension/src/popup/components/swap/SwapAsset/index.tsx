@@ -159,6 +159,8 @@ export const SwapAsset = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     formik.setFieldValue("searchTerm", val);
+    // A failed read is about a row from the previous results.
+    setPickError(null);
     // The destination lookup is async (debounced + network); show the loader
     // immediately so stale results clear at once. It's handed off to isLoading
     // once the debounced lookup starts. The source filter is synchronous, so it
