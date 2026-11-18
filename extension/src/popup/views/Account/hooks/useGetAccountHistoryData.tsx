@@ -38,7 +38,13 @@ function useGetAccountHistoryData() {
   const homeDomains = useSelector(homeDomainsSelector);
   const cachedTokenLists = useSelector(tokensListsSelector);
   const reduxDispatch = useDispatch<AppDispatch>();
-  const fetchData = async ({ balances }: { balances: AccountBalances }) => {
+  const fetchData = async ({
+    balances,
+    useCache = false,
+  }: {
+    balances: AccountBalances;
+    useCache?: boolean;
+  }) => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const appData = await fetchAppData(true);
@@ -54,7 +60,7 @@ function useGetAccountHistoryData() {
       const publicKey = appData.account.publicKey;
       const networkDetails = appData.settings.networkDetails;
 
-      const history = await fetchHistory(publicKey, networkDetails);
+      const history = await fetchHistory(publicKey, networkDetails, useCache);
 
       if (isError<HistoryResponse>(history)) {
         throw new Error(history.message);
