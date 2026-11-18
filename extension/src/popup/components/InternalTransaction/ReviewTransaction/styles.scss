@@ -115,10 +115,6 @@
     flex-direction: column;
   }
 
-  // The purple "Transaction details" banner shown above the confirm buttons,
-  // opening the full operation breakdown in-flow.
-  // The purple "Transaction details" trigger above the confirm buttons, as on
-  // mobile, opening the full operation breakdown in-flow.
   // The shared TransactionDetailsButton, 12px under the details card.
   &__TxDetailsBtn {
     margin-top: pxToRem(12px);

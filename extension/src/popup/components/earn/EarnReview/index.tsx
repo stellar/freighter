@@ -14,7 +14,7 @@ import { BlockaidBanner } from "popup/components/BlockaidBanner";
 import { BlockAidScanExpanded } from "popup/components/WarningMessages";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
-import { TransactionDetailsButton } from "popup/components/InternalTransaction/TransactionDetailsButton";
+import { TransactionDetailsButton } from "popup/components/TransactionDetailsButton";
 import { EarnTransactionDetails } from "popup/components/earn/EarnTransactionDetails";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import {

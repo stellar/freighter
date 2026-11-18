@@ -47,7 +47,7 @@ import {
   publicKeySelector,
 } from "popup/ducks/accountServices";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
-import { TransactionDetailsButton } from "popup/components/InternalTransaction/TransactionDetailsButton";
+import { TransactionDetailsButton } from "popup/components/TransactionDetailsButton";
 import { useValidateTransactionMemo } from "popup/helpers/useValidateTransactionMemo";
 import {
   BlockaidWarning,

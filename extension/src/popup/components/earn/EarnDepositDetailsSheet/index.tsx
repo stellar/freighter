@@ -13,7 +13,7 @@ import { EarnTransactionDetails } from "popup/components/earn/EarnTransactionDet
 import { formatEarnAmount } from "popup/components/earn/helpers/formatEarnAmount";
 import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
 import { StatRow } from "popup/components/earn/StatRow";
-import { TransactionDetailsButton } from "popup/components/InternalTransaction/TransactionDetailsButton";
+import { TransactionDetailsButton } from "popup/components/TransactionDetailsButton";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { NO_FIAT_VALUE } from "popup/helpers/formatters";
 import { openTab } from "popup/helpers/navigate";
