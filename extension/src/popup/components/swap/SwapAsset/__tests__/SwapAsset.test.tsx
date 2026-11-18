@@ -379,14 +379,17 @@ describe("SwapAsset destination: a contract token the account doesn't hold", () 
     const tapThenSearch = async () => {
       let settle: { resolve: (n: number) => void; reject: (e: Error) => void } =
         { resolve: () => {}, reject: () => {} };
-      jest.spyOn(Soroban, "getDecimalsForAsset").mockImplementation(
-        () =>
-          new Promise<number>((resolve, reject) => {
-            settle = { resolve, reject };
-          }),
-      );
+      const getDecimals = jest
+        .spyOn(Soroban, "getDecimalsForAsset")
+        .mockImplementation(
+          () =>
+            new Promise<number>((resolve, reject) => {
+              settle = { resolve, reject };
+            }),
+        );
       const onClickAsset = renderPicker();
       fireEvent.click(screen.getByTestId("SwapTokenRow-TKN-body"));
+      expect(getDecimals).toHaveBeenCalledTimes(1);
       fireEvent.change(screen.getByTestId("swap-from-search"), {
         target: { value: "USDC" },
       });
