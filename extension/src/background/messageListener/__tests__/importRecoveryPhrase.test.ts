@@ -3,7 +3,10 @@ import { markDerivationIndexUsed } from "background/helpers/derivation-indices";
 import { popupMessageListener } from "background/messageListener/popupMessageListener";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { ACCOUNT_ALREADY_EXISTS_ERROR } from "@shared/constants/errors";
+import {
+  ACCOUNT_ALREADY_EXISTS_ERROR,
+  ACCOUNT_DISCOVERY_FAILED_ERROR,
+} from "@shared/constants/errors";
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import {
   ACCOUNT_SOURCE_VECTORS,
@@ -198,10 +201,13 @@ describe("importing an additional recovery phrase", () => {
       const publicKey = String(url).startsWith(HORIZON_ACCOUNTS)
         ? String(url).slice(HORIZON_ACCOUNTS.length)
         : "";
+      const isFunded = funded.has(publicKey);
       return Promise.resolve({
+        ok: isFunded,
+        status: isFunded ? 200 : 404,
         json: () =>
           Promise.resolve(
-            funded.has(publicKey) ? { account_id: publicKey } : {},
+            isFunded ? { account_id: publicKey } : { status: 404 },
           ),
       });
     }) as unknown as typeof fetch;
@@ -463,6 +469,41 @@ describe("importing an additional recovery phrase", () => {
     const retry = await importPhrase(PHRASE_2.mnemonic);
     expect(retry.error).toBeUndefined();
     expect(newAccounts()).toHaveLength(1);
+  });
+
+  it("refuses with ACCOUNT_DISCOVERY_FAILED_ERROR when a lookup fails, writes nothing, and a retry imports", async () => {
+    fund(3);
+    const writes = await snapshotWrites();
+    const accountsBefore = allAccounts();
+    const realFetch = global.fetch as jest.Mock;
+    global.fetch = jest.fn((url: string) =>
+      String(url) === `${HORIZON_ACCOUNTS}${wallet2.getPublicKey(7)}`
+        ? Promise.resolve({
+            ok: false,
+            status: 429,
+            json: () => Promise.resolve({ status: 429 }),
+          })
+        : realFetch(url),
+    ) as unknown as typeof fetch;
+
+    const res = await importPhrase(PHRASE_2.mnemonic);
+
+    expect(res.error).toBe(ACCOUNT_DISCOVERY_FAILED_ERROR);
+    expect(
+      (await getSecretSources({ localStore: mockDataStorage }))[
+        PHRASE_2.userId
+      ],
+    ).toBeUndefined();
+    expect(await snapshotWrites()).toEqual(writes);
+    expect(allAccounts()).toEqual(accountsBefore);
+
+    global.fetch = realFetch;
+    const retry = await importPhrase(PHRASE_2.mnemonic);
+    expect(retry.error).toBeUndefined();
+    expect(newAccounts().map(({ publicKey }) => publicKey)).toEqual([
+      wallet2.getPublicKey(0),
+      wallet2.getPublicKey(3),
+    ]);
   });
 
   it("refuses with PHRASE_ALREADY_HELD_ERROR when the phrase is registered while discovery runs", async () => {

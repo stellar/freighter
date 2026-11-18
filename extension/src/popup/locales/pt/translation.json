@@ -185,6 +185,7 @@
   "Copy my wallet address": "Copiar o endereço da minha carteira",
   "Copy wallet address": "Copiar endereço da carteira",
   "Cost to migrate": "Custo para migrar",
+  "Couldn't check this phrase's accounts. Check your connection and try again.": "Não foi possível verificar as contas desta frase. Verifique sua conexão e tente novamente.",
   "Couldn’t clear recent dApps": "Não foi possível limpar os dApps recentes",
   "Couldn’t copy your wallet address": "Não foi possível copiar o endereço da sua carteira",
   "Couldn’t disconnect {{appName}}": "Não foi possível desconectar {{appName}}",

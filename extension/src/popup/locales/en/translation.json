@@ -185,6 +185,7 @@
   "Copy my wallet address": "Copy my wallet address",
   "Copy wallet address": "Copy wallet address",
   "Cost to migrate": "Cost to migrate",
+  "Couldn't check this phrase's accounts. Check your connection and try again.": "Couldn't check this phrase's accounts. Check your connection and try again.",
   "Couldn’t clear recent dApps": "Couldn’t clear recent dApps",
   "Couldn’t copy your wallet address": "Couldn’t copy your wallet address",
   "Couldn’t disconnect {{appName}}": "Couldn’t disconnect {{appName}}",
