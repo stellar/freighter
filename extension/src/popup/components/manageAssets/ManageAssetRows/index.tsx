@@ -161,8 +161,9 @@ export const ManageAssetRows = ({
                             canonical: getCanonicalFromAsset(code, issuer),
                             code,
                             issuer,
-                            contractId: contract || undefined,
-                            name,
+                            contractId:
+                              contract && !isSac ? contract : undefined,
+                            name: contract && !isSac ? name : undefined,
                             iconUrl: image,
                             domain,
                             isSuspicious,

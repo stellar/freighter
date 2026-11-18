@@ -27,7 +27,9 @@ jest.mock("popup/components/account/TokenPriceChart", () => ({
   TokenPriceChart: () => <div data-testid="TokenPriceChart" />,
 }));
 jest.mock("popup/components/account/AssetAbout", () => ({
-  AssetAbout: () => <div data-testid="AssetAbout" />,
+  AssetAbout: ({ assetDomain }: { assetDomain?: string }) => (
+    <div data-testid="AssetAbout" data-domain={assetDomain} />
+  ),
 }));
 jest.mock("popup/components/account/TokenStats", () => ({
   TokenStats: () => <div data-testid="TokenStats" />,
@@ -142,6 +144,22 @@ describe("NonHeldAssetDetail", () => {
     );
     fireEvent.click(screen.getByText("Copy address"));
     await waitFor(() => expect(mockCopy).toHaveBeenCalledWith(CONTRACT_ID));
+  });
+
+  it("falls back to the fetched domain when the descriptor carries an empty one", async () => {
+    jest
+      .spyOn(ApiInternal, "getAssetDomains")
+      .mockImplementation(() =>
+        Promise.resolve({ home_domain: "stronghold.co" } as any),
+      );
+    renderDetail({ ...shx, domain: "" });
+
+    await waitFor(() =>
+      expect(screen.getByTestId("AssetAbout")).toHaveAttribute(
+        "data-domain",
+        "stronghold.co",
+      ),
+    );
   });
 
   it("shows the malicious warning only for a flagged descriptor", async () => {

@@ -60,7 +60,7 @@ export const NonHeldAssetDetail = ({
   const { assetDomain: fetchedDomain } = useAssetDomain({
     assetIssuer: asset.domain ? undefined : classicIssuer,
   });
-  const assetDomain = asset.domain ?? fetchedDomain;
+  const assetDomain = asset.domain || fetchedDomain;
 
   const { canonical } = asset;
   const { networkPassphrase } = networkDetails;

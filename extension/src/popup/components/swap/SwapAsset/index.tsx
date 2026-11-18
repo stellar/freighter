@@ -69,7 +69,7 @@ const toDescriptor = (r: SwapTokenRecord): NonHeldAssetDescriptor => ({
   code: r.code ?? "",
   issuer: r.issuer,
   contractId: r.isContract ? r.issuer : undefined,
-  name: r.name,
+  name: r.isContract ? r.name : undefined,
   iconUrl: r.image ?? r.icon,
   domain: r.domain,
   isSuspicious: r.securityLevel === SecurityLevel.SUSPICIOUS,

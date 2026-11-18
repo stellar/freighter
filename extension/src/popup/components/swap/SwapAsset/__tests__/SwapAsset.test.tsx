@@ -20,9 +20,15 @@ import { SwapAsset } from "popup/components/swap/SwapAsset";
 jest.mock("@sentry/browser", () => ({ captureException: jest.fn() }));
 
 jest.mock("popup/components/account/AssetDetail/AssetDetailSheet", () => ({
-  AssetDetailSheet: ({ asset }: { asset: { canonical: string } | null }) =>
+  AssetDetailSheet: ({
+    asset,
+  }: {
+    asset: { canonical: string; name?: string } | null;
+  }) =>
     asset ? (
-      <div data-testid="asset-detail-sheet">{asset.canonical}</div>
+      <div data-testid="asset-detail-sheet" data-name={asset.name}>
+        {asset.canonical}
+      </div>
     ) : null,
 }));
 
@@ -633,7 +639,7 @@ describe("SwapAsset destination: View details", () => {
     requiresTrustline: true,
   };
 
-  beforeEach(() => {
+  const mockLookup = (popular: any[]) => {
     jest.spyOn(UseSwapFromData, "useGetSwapFromData").mockReturnValue({
       state: resolvedFromState,
       fetchData: jest.fn().mockResolvedValue(undefined),
@@ -646,8 +652,8 @@ describe("SwapAsset destination: View details", () => {
         data: {
           sections: {
             yourTokens: [],
-            popular: [usdcRecord],
-            verified: [usdcRecord],
+            popular,
+            verified: popular,
             unverified: [],
           },
           isSearch: false,
@@ -656,7 +662,9 @@ describe("SwapAsset destination: View details", () => {
         error: null,
       },
     } as any);
-  });
+  };
+
+  beforeEach(() => mockLookup([usdcRecord]));
 
   afterEach(() => jest.restoreAllMocks());
 
@@ -712,5 +720,42 @@ describe("SwapAsset destination: View details", () => {
 
     expect(screen.queryByTestId("SwapTokenRow-USDC-view-details")).toBeNull();
     expect(screen.getByTestId("SwapTokenRow-USDC-copy")).toBeInTheDocument();
+  });
+
+  it("titles a classic record by code: a non-contract record's name is dropped", async () => {
+    mockLookup([{ ...usdcRecord, name: `USDC:${USDC_ISSUER}` }]);
+    renderPicker(true);
+
+    fireEvent.click(await screen.findByTestId("SwapTokenRow-USDC-menu"));
+    fireEvent.click(screen.getByTestId("SwapTokenRow-USDC-view-details"));
+
+    expect(screen.getByTestId("asset-detail-sheet")).not.toHaveAttribute(
+      "data-name",
+    );
+  });
+
+  it("keeps a contract record's name", async () => {
+    const KALE_ID = "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4";
+    mockLookup([
+      {
+        canonical: `KALE:${KALE_ID}`,
+        code: "KALE",
+        issuer: KALE_ID,
+        name: "Kale",
+        image: "",
+        isHeld: false,
+        isContract: true,
+        requiresTrustline: false,
+      },
+    ]);
+    renderPicker(true);
+
+    fireEvent.click(await screen.findByTestId("SwapTokenRow-KALE-menu"));
+    fireEvent.click(screen.getByTestId("SwapTokenRow-KALE-view-details"));
+
+    expect(screen.getByTestId("asset-detail-sheet")).toHaveAttribute(
+      "data-name",
+      "Kale",
+    );
   });
 });
