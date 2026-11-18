@@ -100,6 +100,32 @@ describe("AssetDetailSheet", () => {
     });
   });
 
+  it("fetches cached history once when held-ness resolves after the sheet opened", () => {
+    const onClose = jest.fn();
+    const asset = descriptor("native");
+    const ui = (balances: any) => (
+      <Wrapper routes={[ROUTES.account]} state={{}}>
+        <AssetDetailSheet
+          asset={asset}
+          accountBalances={balances}
+          source={TokenChartSource.SwapPicker}
+          onClose={onClose}
+        />
+      </Wrapper>
+    );
+    const { rerender } = render(ui({ balances: [] }));
+    expect(screen.getByTestId("non-held-detail")).toBeInTheDocument();
+    expect(mockFetchData).not.toHaveBeenCalled();
+
+    rerender(ui(accountBalances));
+    expect(screen.getByTestId("asset-detail")).toBeInTheDocument();
+    expect(mockFetchData).toHaveBeenCalledTimes(1);
+    expect(mockFetchData).toHaveBeenCalledWith({
+      balances: accountBalances,
+      useCache: true,
+    });
+  });
+
   it("renders the non-held detail for an unknown canonical", () => {
     renderSheet(
       descriptor(

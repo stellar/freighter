@@ -155,7 +155,7 @@ export const ManageAssetRows = ({
                   // assets and SAC-wrapped tokens display their code.
                   displayCode={name && contract && !isSac ? name : code}
                   onClick={
-                    isDetailsOffered
+                    isDetailsOffered && (issuer || contract)
                       ? () =>
                           setDetailsAsset({
                             canonical: getCanonicalFromAsset(code, issuer),

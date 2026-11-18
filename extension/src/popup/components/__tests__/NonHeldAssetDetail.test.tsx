@@ -5,6 +5,7 @@ import {
   NonHeldAssetDescriptor,
   NonHeldAssetDetail,
 } from "popup/components/account/AssetDetail/NonHeldAssetDetail";
+import { truncateString } from "helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
@@ -129,6 +130,20 @@ describe("NonHeldAssetDetail", () => {
       MAINNET_NETWORK_DETAILS,
       expect.any(AbortSignal),
     );
+  });
+
+  it("titles the header with the truncated contract id for a token with no code or name", async () => {
+    renderDetail({
+      canonical: `:${CONTRACT_ID}`,
+      code: "",
+      issuer: CONTRACT_ID,
+      contractId: CONTRACT_ID,
+    });
+
+    await waitFor(() => screen.getByTestId("AssetDetail__price"));
+    expect(
+      screen.getAllByText(truncateString(CONTRACT_ID)).length,
+    ).toBeGreaterThanOrEqual(2);
   });
 
   it("copies a contract token's contract id and links to its contract page", async () => {

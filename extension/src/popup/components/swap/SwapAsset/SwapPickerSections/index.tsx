@@ -164,7 +164,9 @@ export const SwapPickerSections = ({
               code={code}
               issuerKey={r.issuer}
               stellarExpertUrl={stellarExpertUrl}
-              onViewDetails={onViewDetails ? () => onViewDetails(r) : undefined}
+              onViewDetails={
+                onViewDetails && r.issuer ? () => onViewDetails(r) : undefined
+              }
             />
           }
         />

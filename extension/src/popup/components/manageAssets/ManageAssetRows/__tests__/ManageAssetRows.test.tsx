@@ -101,6 +101,17 @@ describe("ManageAssetRows row tap", () => {
   });
 });
 
+describe("ManageAssetRows row without an issuer or contract", () => {
+  it("renders a non-clickable body and opens nothing", () => {
+    renderRows(true, true, [{ code: "FOO", issuer: "", domain: null }]);
+
+    const body = screen.getByTestId("ManageAssetRow-FOO-body");
+    expect(body).not.toHaveAttribute("role", "button");
+    fireEvent.click(body);
+    expect(screen.queryByTestId("asset-detail-sheet")).toBeNull();
+  });
+});
+
 describe("ManageAssetRows descriptor for contract-id rows", () => {
   const USDC_SAC = new Asset("USDC", ISSUER).contractId(
     MAINNET_NETWORK_DETAILS.networkPassphrase,

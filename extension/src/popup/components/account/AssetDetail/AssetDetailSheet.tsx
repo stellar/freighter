@@ -40,14 +40,14 @@ export const AssetDetailSheet = ({
       accountBalances.balances,
     );
 
-  // Keyed on the canonical only: refetching on every balances change would
-  // re-fire the history request while the sheet is open.
+  // Keyed on the canonical and held-ness only: refetching on every balances
+  // change would re-fire the history request while the sheet is open.
   useEffect(() => {
     if (isHeld) {
       void fetchData({ balances: accountBalances, useCache: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canonical]);
+  }, [canonical, isHeld]);
 
   return (
     <Sheet

@@ -11,7 +11,7 @@ import {
 } from "@shared/helpers/assetIdentity";
 import IconEllipsis from "popup/assets/icon-ellipsis.svg";
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
-import { isMainnet, isTestnet } from "helpers/stellar";
+import { isMainnet, isTestnet, truncateString } from "helpers/stellar";
 import {
   Popover,
   PopoverTrigger,
@@ -102,7 +102,11 @@ export const NonHeldAssetDetail = ({
       ? "asset/native"
       : `asset/${asset.code}-${asset.issuer}`;
 
-  const title = isNative ? t("Stellar Lumens") : (asset.name ?? asset.code);
+  const fallbackTitle =
+    asset.code ||
+    asset.name ||
+    (asset.contractId ? truncateString(asset.contractId) : "");
+  const title = isNative ? t("Stellar Lumens") : asset.name || fallbackTitle;
   const flaggedWarning = asset.isMalicious
     ? {
         variant: "error" as const,
@@ -118,7 +122,7 @@ export const NonHeldAssetDetail = ({
   return (
     <View>
       <SubviewHeader
-        title={asset.code}
+        title={fallbackTitle}
         customBackIcon={<Icon.X />}
         customBackAction={handleClose}
         rightButton={

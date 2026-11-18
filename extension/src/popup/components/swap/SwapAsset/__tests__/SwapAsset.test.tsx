@@ -722,6 +722,24 @@ describe("SwapAsset destination: View details", () => {
     expect(screen.getByTestId("SwapTokenRow-USDC-copy")).toBeInTheDocument();
   });
 
+  it("offers View details only for a record that has an issuer", async () => {
+    const { issuer: _issuer, ...noIssuer } = usdcRecord;
+    mockLookup([
+      usdcRecord,
+      { ...noIssuer, canonical: "FOO", code: "FOO", issuer: undefined },
+    ]);
+    renderPicker(true);
+
+    fireEvent.click(await screen.findByTestId("SwapTokenRow-FOO-menu"));
+    expect(screen.queryByTestId("SwapTokenRow-FOO-view-details")).toBeNull();
+    expect(screen.getByTestId("SwapTokenRow-FOO-copy")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("SwapTokenRow-USDC-menu"));
+    expect(
+      screen.getByTestId("SwapTokenRow-USDC-view-details"),
+    ).toBeInTheDocument();
+  });
+
   it("titles a classic record by code: a non-contract record's name is dropped", async () => {
     mockLookup([{ ...usdcRecord, name: `USDC:${USDC_ISSUER}` }]);
     renderPicker(true);
