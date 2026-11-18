@@ -196,7 +196,8 @@ export const EarnSwap = ({
               emitMetric(METRIC_NAMES.swapSourceSelected, {
                 asset_code: getAssetFromCanonical(canonical).code,
                 asset_issuer: getAssetFromCanonical(canonical).issuer,
-                source: "balances",
+                list: "balances",
+                ...swapSourceProps(SwapSource.Earn),
               });
               setActiveStep(EARN_SWAP_STEPS.AMOUNT);
             }}

@@ -230,8 +230,10 @@ describe("Swap selectionType wiring", () => {
     expect(sourceCall).toBeDefined();
     expect(sourceCall![1]).toMatchObject({
       asset_code: "USDC",
-      source: "balances",
+      list: "balances",
     });
+    // Opened from Home: no entry source.
+    expect(sourceCall![1]).not.toHaveProperty("source");
   });
 
   it("resets the source to (+) Select when the destination picker picks the current source token", async () => {

@@ -614,7 +614,8 @@ export const SwapAmount = ({
                   const side = !asset ? "from" : "to";
                   emitMetric(METRIC_NAMES.swapPickerOpened, {
                     side,
-                    source: "cta",
+                    trigger: "cta",
+                    ...swapSourceProps(transactionData.swapSource),
                   });
                   if (!asset) {
                     goToEditSrc();
@@ -735,7 +736,8 @@ export const SwapAmount = ({
                     onSelectAsset={() => {
                       emitMetric(METRIC_NAMES.swapPickerOpened, {
                         side: "from",
-                        source: "dropdown",
+                        trigger: "dropdown",
+                        ...swapSourceProps(transactionData.swapSource),
                       });
                       goToEditSrc();
                     }}
@@ -842,7 +844,8 @@ export const SwapAmount = ({
                     onSelectAsset={() => {
                       emitMetric(METRIC_NAMES.swapPickerOpened, {
                         side: "to",
-                        source: "dropdown",
+                        trigger: "dropdown",
+                        ...swapSourceProps(transactionData.swapSource),
                       });
                       goToEditDst();
                     }}

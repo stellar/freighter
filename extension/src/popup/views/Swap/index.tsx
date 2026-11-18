@@ -221,7 +221,8 @@ export const Swap = () => {
                 asset_code: details?.tokenCode,
                 asset_issuer: details?.issuer,
                 requires_trustline: details?.requiresTrustline,
-                source: details?.source,
+                list: details?.source,
+                ...swapSourceProps(swapSource),
               });
               setActiveStep(STEPS.AMOUNT);
             }}
@@ -277,7 +278,8 @@ export const Swap = () => {
               emitMetric(METRIC_NAMES.swapSourceSelected, {
                 asset_code: getAssetFromCanonical(canonical).code,
                 asset_issuer: getAssetFromCanonical(canonical).issuer,
-                source: "balances",
+                list: "balances",
+                ...swapSourceProps(swapSource),
               });
               setActiveStep(STEPS.AMOUNT);
             }}

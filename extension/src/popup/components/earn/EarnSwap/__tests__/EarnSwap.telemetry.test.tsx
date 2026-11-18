@@ -3,7 +3,7 @@ import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
-import { emitScreenViewed } from "helpers/metrics";
+import { emitMetric, emitScreenViewed } from "helpers/metrics";
 import { EarnSwap } from "popup/components/earn/EarnSwap";
 import {
   initialState as transactionSubmissionInitialState,
@@ -28,7 +28,18 @@ jest.mock("popup/components/swap/SwapAmount", () => ({
 }));
 
 jest.mock("popup/components/swap/SwapAsset", () => ({
-  SwapAsset: () => <div data-testid="stub-asset" />,
+  // A row for XLM, the token the user picks.
+  SwapAsset: ({
+    onClickAsset,
+  }: {
+    onClickAsset: (canonical: string, isContract: boolean) => void;
+  }) => (
+    <button
+      type="button"
+      data-testid="stub-asset"
+      onClick={() => onClickAsset("native", false)}
+    />
+  ),
 }));
 
 jest.mock("helpers/metrics", () => ({
@@ -103,6 +114,20 @@ describe("EarnSwap telemetry", () => {
 
     expect(emitScreenViewedMock).toHaveBeenCalledWith("swap_from_asset", {
       flow: "swap",
+      source: "earn",
+    });
+  });
+
+  it("reports the token picked, from which list, as Earn's", async () => {
+    renderSheet();
+
+    await userEvent.click(screen.getByTestId("stub-amount"));
+    await userEvent.click(screen.getByTestId("stub-asset"));
+
+    expect(emitMetric).toHaveBeenCalledWith("swap.source_selected", {
+      asset_code: "XLM",
+      asset_issuer: undefined,
+      list: "balances",
       source: "earn",
     });
   });
