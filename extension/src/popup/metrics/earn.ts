@@ -73,24 +73,6 @@ export const trackEarnFundingActionSelected = ({
 };
 
 /**
- * The swap branch settled and returned to the picker. Distinct from
- * `swap.completed`, which the reused Swap components emit for every swap and
- * cannot attribute to Earn.
- */
-export const trackEarnSwapCompleted = ({
-  fromAssetCode,
-  toAssetCode,
-}: {
-  fromAssetCode: string;
-  toAssetCode: string;
-}) => {
-  emitMetric(METRIC_NAMES.earnSwapCompleted, {
-    from_asset_code: fromAssetCode,
-    to_asset_code: toAssetCode,
-  });
-};
-
-/**
  * The deposit could not cover its own network fee. Two shapes, told apart by
  * `reason`: `no_xlm` is an account with no spendable XLM at all, which gets the
  * buy/swap sheet; `fee_not_covered` is an amount that leaves less XLM than the

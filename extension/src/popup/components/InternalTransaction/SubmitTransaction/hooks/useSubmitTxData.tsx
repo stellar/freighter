@@ -23,6 +23,7 @@ import {
   SigningKind,
   SigningSource,
 } from "popup/metrics/signing";
+import { swapSourceProps } from "popup/metrics/swap";
 import {
   getAssetFromCanonical,
   getCanonicalFromAsset,
@@ -260,6 +261,7 @@ function useSubmitTxData({
               from_asset_code: getAssetFromCanonical(asset).code,
               to_asset_code: getAssetFromCanonical(destinationAsset).code,
               reason_code: PRE_SUBMISSION_REASON_CODE,
+              ...swapSourceProps(swapSource),
             });
           } else {
             emitMetric(METRIC_NAMES.paymentFailed, {
@@ -441,9 +443,7 @@ function useSubmitTxData({
                 ? { execution_slippage_pct: executionSlippagePct }
                 : {}),
               ...sourceUsd.usdProps,
-              // Entry-point tag, present only when the swap flow was entered
-              // from the token detail view (`source: "token_details"`).
-              ...(swapSource ? { source: swapSource } : {}),
+              ...swapSourceProps(swapSource),
             });
             // Trustline added only once the combined changeTrust +
             // pathPaymentStrictSend transaction confirmed it. Gate on the
@@ -459,6 +459,7 @@ function useSubmitTxData({
               emitMetric(METRIC_NAMES.swapTrustlineAdded, {
                 asset_code: "code" in line ? line.code : undefined,
                 asset_issuer: "issuer" in line ? line.issuer : undefined,
+                ...swapSourceProps(swapSource),
               });
             }
           }
@@ -601,6 +602,7 @@ function useSubmitTxData({
               reason_code: reasonCode,
               failure_category: failureCategory,
               ...sourceUsd.usdProps,
+              ...swapSourceProps(swapSource),
             });
           } else {
             if (!sourceIdentity || !snapshotHandle) {

@@ -52,9 +52,8 @@ export const METRIC_NAMES = {
   earnBalanceInsufficientShown: "earn.balance_insufficient_shown",
   // Which remedy was chosen on that sheet: buy | swap | transfer.
   earnFundingActionSelected: "earn.funding_action_selected",
-  // The swap-within-earn branch settled. Distinct from `swap.completed`, which
-  // the reused Swap components emit and cannot attribute to Earn.
-  earnSwapCompleted: "earn.swap_completed",
+  // The swap inside Earn reports the regular swap events, tagged
+  // `source: "earn"` (popup/metrics/swap.ts).
   earnPoolDetailsOpened: "earn.pool_details_opened",
   // The Max tap on the amount screen, and only that tap — the 25/50/75
   // shortcuts emit nothing, matching Send, Swap and mobile (RFC #2883, D5).

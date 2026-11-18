@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -24,6 +24,9 @@ import { TransactionConfirm } from "popup/components/InternalTransaction/SubmitT
 import { SwapAsset } from "popup/components/swap/SwapAsset";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
 import { useSwapSubmitQuoteExpiry } from "popup/components/swap/hooks/useSwapSubmitQuoteExpiry";
+import { useSwapSubmitScreenViews } from "popup/components/swap/hooks/useSwapSubmitScreenViews";
+import { SwapSource } from "popup/constants/swap";
+import { swapSourceProps } from "popup/metrics/swap";
 import { resetSimulation } from "popup/ducks/token-payment";
 import {
   DestinationTokenDetails,
@@ -34,6 +37,7 @@ import {
   saveDestinationAsset,
   saveDestinationTokenDetails,
   saveIsToken,
+  saveSwapSource,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 
@@ -90,6 +94,30 @@ export const EarnSwap = ({
     onRecover: () => setActiveStep(EARN_SWAP_STEPS.AMOUNT),
   });
 
+  // The same screen views the Swap route reports, tagged as opened from Earn:
+  // one per step the user reaches, then processing and success as the
+  // submission advances. The submitting step reports only those two, as on the
+  // Swap route.
+  const lastEmittedStep = useRef<EARN_SWAP_STEPS | null>(null);
+  useEffect(() => {
+    if (activeStep === lastEmittedStep.current) {
+      return;
+    }
+    lastEmittedStep.current = activeStep;
+    const screenName = {
+      [EARN_SWAP_STEPS.AMOUNT]: "swap_amount",
+      [EARN_SWAP_STEPS.SET_FROM_ASSET]: "swap_from_asset",
+      [EARN_SWAP_STEPS.SWAP_CONFIRM]: null,
+    }[activeStep];
+    if (screenName) {
+      emitScreenViewed(screenName, {
+        flow: "swap",
+        ...swapSourceProps(SwapSource.Earn),
+      });
+    }
+  }, [activeStep]);
+  useSwapSubmitScreenViews(SwapSource.Earn);
+
   // Seed the swap: the source the caller picked (see pickSwapSource), the
   // destination pinned to what the deposit needs. Runs once on entry —
   // re-running would stomp a source the user has since chosen.
@@ -102,7 +130,8 @@ export const EarnSwap = ({
     dispatch(saveAmountUsd(DEFAULT_AMOUNT_USD));
     dispatch(saveDestinationAsset(destinationAsset));
     dispatch(saveDestinationTokenDetails(destinationTokenDetails));
-    emitScreenViewed("earn_swap_amount", { flow: "earn" });
+    // Tags the swap's own events (confirm, quote expiry, outcome) as Earn's.
+    dispatch(saveSwapSource(SwapSource.Earn));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

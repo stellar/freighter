@@ -48,6 +48,7 @@ import {
   SigningKind,
   SigningSource,
 } from "popup/metrics/signing";
+import { swapSourceProps } from "popup/metrics/swap";
 import { InputType } from "helpers/transaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { XLM_RESERVE_HELP_URL } from "popup/constants/externalLinks";
@@ -228,7 +229,11 @@ export const SwapAmount = ({
     if (isReviewingTx) {
       wasReviewingRef.current = true;
       skipRejectionRef.current = false;
-      emitScreenViewed("swap_confirm", { flow: "swap", step: "confirm" });
+      emitScreenViewed("swap_confirm", {
+        flow: "swap",
+        step: "confirm",
+        ...swapSourceProps(transactionData.swapSource),
+      });
       return;
     }
     if (!wasReviewingRef.current) {
@@ -241,6 +246,9 @@ export const SwapAmount = ({
     emitSigningRejected(SigningKind.Transaction, {
       source: SigningSource.Internal,
     });
+    // Keyed on the review opening and closing only; the swap's source is fixed
+    // for the life of the flow.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isReviewingTx]);
   const [isXlmReserveOpen, setIsXlmReserveOpen] = useState(false);
   // Tracks focus on the sell input so the "Enter an amount" CTA can disable
@@ -278,7 +286,10 @@ export const SwapAmount = ({
       }),
     });
     if (needsReserve) {
-      emitMetric(METRIC_NAMES.swapXlmReserveInsufficientShown);
+      emitMetric(
+        METRIC_NAMES.swapXlmReserveInsufficientShown,
+        swapSourceProps(transactionData.swapSource),
+      );
       setIsXlmReserveOpen(true);
       return;
     }
@@ -354,6 +365,7 @@ export const SwapAmount = ({
     isSwapQuoteExpired,
     asset,
     destinationAsset,
+    swapSource: transactionData.swapSource,
   });
 
   const sellInputRef = useRef<HTMLInputElement>(null);
@@ -750,7 +762,10 @@ export const SwapAmount = ({
                       aria-label={t("Swap direction")}
                       onClick={(e) => {
                         e.preventDefault();
-                        emitMetric(METRIC_NAMES.swapDirectionToggled);
+                        emitMetric(
+                          METRIC_NAMES.swapDirectionToggled,
+                          swapSourceProps(transactionData.swapSource),
+                        );
                         const prevSrc = asset;
                         // A non-held destination can't become the source, so reset
                         // it to "(+) Select" instead of moving it into the sell

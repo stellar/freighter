@@ -51,7 +51,6 @@ describe("METRIC_NAMES domain-event catalog", () => {
     expect(METRIC_NAMES.earnFundingActionSelected).toBe(
       "earn.funding_action_selected",
     );
-    expect(METRIC_NAMES.earnSwapCompleted).toBe("earn.swap_completed");
     expect(METRIC_NAMES.earnPoolDetailsOpened).toBe("earn.pool_details_opened");
     expect(METRIC_NAMES.earnMaxAmountSelected).toBe("earn.max_amount_selected");
     expect(METRIC_NAMES.earnXlmFeeInsufficientShown).toBe(

@@ -12,7 +12,6 @@ import {
   trackEarnFundingActionSelected,
   trackEarnPercentAmountSelected,
   trackEarnSimulationFailed,
-  trackEarnSwapCompleted,
   trackEarnTokenSelected,
   trackEarnXlmFeeInsufficientShown,
 } from "./earn";
@@ -83,18 +82,6 @@ describe("Earn funnel metrics", () => {
       );
     },
   );
-
-  it("reports an in-earn swap separately from swap.completed", () => {
-    trackEarnSwapCompleted({ fromAssetCode: "XLM", toAssetCode: "USDC" });
-
-    expect(mockEmitMetric).toHaveBeenCalledWith(
-      METRIC_NAMES.earnSwapCompleted,
-      {
-        from_asset_code: "XLM",
-        to_asset_code: "USDC",
-      },
-    );
-  });
 
   it("tells the two XLM-fee shortfalls apart", () => {
     // Same drop-off, different remedy: one account has no XLM at all and gets

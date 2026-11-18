@@ -11,6 +11,8 @@ describe("SwapSource", () => {
     expect(isSwapSource("token_details_evil")).toBe(false);
     expect(isSwapSource("__proto__")).toBe(false);
     expect(isSwapSource("")).toBe(false);
+    // Earn's swap is a sheet inside Earn, never the route.
+    expect(isSwapSource(SwapSource.Earn)).toBe(false);
     expect(isSwapSource(null)).toBe(false);
   });
 });

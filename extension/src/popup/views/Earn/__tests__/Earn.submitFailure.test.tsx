@@ -130,7 +130,6 @@ jest.mock("popup/metrics/earn", () => ({
   ...jest.requireActual("popup/metrics/earn"),
   trackEarnDepositFailed: jest.fn(),
   trackEarnTokenSelected: jest.fn(),
-  trackEarnSwapCompleted: jest.fn(),
 }));
 
 const { trackEarnDepositFailed } =

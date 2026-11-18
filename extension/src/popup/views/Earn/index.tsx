@@ -30,7 +30,6 @@ import {
 } from "popup/ducks/earn";
 import {
   trackEarnDepositFailed,
-  trackEarnSwapCompleted,
   trackEarnTokenSelected,
 } from "popup/metrics/earn";
 import { showToast } from "popup/basics/shadcn/Toast";
@@ -395,10 +394,6 @@ export const Earn = () => {
             dispatch(resetSimulation());
           }}
           onDone={({ fromCode, toCode, toAmount }) => {
-            trackEarnSwapCompleted({
-              fromAssetCode: fromCode,
-              toAssetCode: toCode,
-            });
             // Read back at deposit time as `via_swap`, which is how we tell a
             // deposit the swap branch made possible from one that needed nothing.
             dispatch(setDidSwapInFlow(true));

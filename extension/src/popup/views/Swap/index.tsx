@@ -1,7 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ActionStatus } from "@shared/api/types";
 import { STEPS, isSwapSource } from "popup/constants/swap";
 import {
   emitMetric,
@@ -13,6 +12,8 @@ import { TransactionConfirm } from "popup/components/InternalTransaction/SubmitT
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SwapAsset } from "popup/components/swap/SwapAsset";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
+import { useSwapSubmitScreenViews } from "popup/components/swap/hooks/useSwapSubmitScreenViews";
+import { swapSourceProps } from "popup/metrics/swap";
 import { useSwapSubmitQuoteExpiry } from "popup/components/swap/hooks/useSwapSubmitQuoteExpiry";
 import { AppDispatch, AppState } from "popup/App";
 import {
@@ -62,13 +63,13 @@ export const Swap = () => {
   const location = useLocation();
   const [activeStep, setActiveStep] = useState(STEPS.AMOUNT);
   const lastEmittedStep = useRef<STEPS | null>(null);
-  const hasEmittedProcessing = useRef(false);
-  const hasEmittedSuccess = useRef(false);
-  // The submission status lives in the store, so it outlives this component.
-  // A mount that finds a stale terminal status would report a stage the user
-  // never reached, so wait until the status has been seen idle. The reset
-  // this component dispatches on mount guarantees that happens.
-  const hasSeenIdle = useRef(false);
+  // Where the swap was opened from, read off the URL rather than the store:
+  // the first screen view fires before the mount effect saves it there.
+  // Whitelisted so arbitrary query values never reach analytics.
+  const swapSource = useMemo(() => {
+    const sourceParam = new URLSearchParams(location.search).get("source");
+    return isSwapSource(sourceParam) ? sourceParam : null;
+  }, [location.search]);
 
   // Emit a screen-view metric only once per step transition.
   useEffect(() => {
@@ -78,8 +79,12 @@ export const Swap = () => {
     const screen = SWAP_SCREEN_BY_STEP[activeStep];
     if (screen) {
       const { screen_name, ...props } = screen;
-      emitScreenViewed(screen_name, props);
+      emitScreenViewed(screen_name, {
+        ...props,
+        ...swapSourceProps(swapSource),
+      });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeStep]);
 
   const submission = useSelector(transactionSubmissionSelector);
@@ -123,10 +128,8 @@ export const Swap = () => {
       dispatch(saveIsToken(false));
     }
 
-    // Whitelisted so arbitrary query values never reach analytics.
-    const sourceParam = params.get("source");
-    if (isSwapSource(sourceParam)) {
-      dispatch(saveSwapSource(sourceParam));
+    if (swapSource) {
+      dispatch(saveSwapSource(swapSource));
     }
 
     // Pre-populate destination asset if provided and valid; otherwise default
@@ -177,40 +180,10 @@ export const Swap = () => {
     return () => {
       isCancelled = true;
     };
-  }, [dispatch, location.search, networkDetails.network, store]);
+  }, [dispatch, location.search, networkDetails.network, store, swapSource]);
 
-  // The in-flight submission and its terminal success are internal states of
-  // the submitting screen rather than distinct steps/routes, so emit their
-  // `screen.viewed` here as the submission status advances. Mirrors the send
-  // flow's effect so both internal flows report the same stages. Each emits
-  // once per submission; the guards reset on IDLE and on ERROR, so a retry
-  // after a failure re-emits.
-  useEffect(() => {
-    if (!hasSeenIdle.current && submission.submitStatus !== ActionStatus.IDLE) {
-      return;
-    }
-    if (submission.submitStatus === ActionStatus.PENDING) {
-      if (!hasEmittedProcessing.current) {
-        hasEmittedProcessing.current = true;
-        emitScreenViewed("swap_processing", {
-          flow: "swap",
-          step: "processing",
-        });
-      }
-    } else if (submission.submitStatus === ActionStatus.SUCCESS) {
-      if (!hasEmittedSuccess.current) {
-        hasEmittedSuccess.current = true;
-        emitScreenViewed("swap_success", { flow: "swap", step: "success" });
-      }
-    } else if (
-      submission.submitStatus === ActionStatus.IDLE ||
-      submission.submitStatus === ActionStatus.ERROR
-    ) {
-      hasSeenIdle.current = true;
-      hasEmittedProcessing.current = false;
-      hasEmittedSuccess.current = false;
-    }
-  }, [submission.submitStatus]);
+  // The submission's processing and success screen views.
+  useSwapSubmitScreenViews(swapSource);
 
   const renderStep = (step: STEPS) => {
     switch (step) {

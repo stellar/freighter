@@ -139,6 +139,21 @@ describe("swap.completed source property", () => {
     );
   });
 
+  it("carries source: earn when the swap was opened inside Earn", async () => {
+    renderSwapSubmit("earn");
+
+    await waitFor(() =>
+      expect(mockedEmitMetric).toHaveBeenCalledWith(
+        "swap.completed",
+        expect.objectContaining({
+          from_asset_code: "XLM",
+          to_asset_code: "USDC",
+          source: "earn",
+        }),
+      ),
+    );
+  });
+
   it("omits source entirely for swaps entered elsewhere", async () => {
     renderSwapSubmit(null);
 
