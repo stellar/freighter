@@ -113,12 +113,39 @@ const send = (request: object) =>
     { id: "fake-extension-id" },
   ) as Promise<any>;
 
-const importPhrase = (mnemonicPhrase: string, password = PASSWORD) =>
+// One of our own pages: no tab and no foreign extension id. (`browser` is
+// an empty mock here, so `runtime.id` is undefined.)
+const discover = (mnemonicPhrase: string) =>
+  popupMessageListener(
+    { type: SERVICE_TYPES.DISCOVER_PHRASE_ACCOUNTS, mnemonicPhrase } as any,
+    mockSessionStore,
+    mockDataStorage,
+    mockKeyManager,
+    testAlarm as any,
+    {},
+  ) as Promise<any>;
+
+/** The import message alone, with the indices discovery would pass. */
+const importWithIndices = (
+  mnemonicPhrase: string,
+  fundedIndices: unknown,
+  password = PASSWORD,
+) =>
   send({
     type: SERVICE_TYPES.IMPORT_RECOVERY_PHRASE,
     password,
     mnemonicPhrase,
+    fundedIndices,
   });
+
+/** What the popup does: discover, then import with the result. */
+const importPhrase = async (mnemonicPhrase: string, password = PASSWORD) => {
+  const discovered = await discover(mnemonicPhrase);
+  if (discovered.error) {
+    return discovered;
+  }
+  return importWithIndices(mnemonicPhrase, discovered.fundedIndices, password);
+};
 
 /** Funded addresses for the mocked Horizon. */
 let funded = new Set<string>();
@@ -360,7 +387,7 @@ describe("importing an additional recovery phrase", () => {
     const writes = await snapshotWrites();
     mockSessionStore.dispatch(sessionSlice.actions.reset());
 
-    const res = await importPhrase(PHRASE_2.mnemonic, "wrong");
+    const res = await importWithIndices(PHRASE_2.mnemonic, [], "wrong");
 
     expect(res.error).toBe("Unable to login");
     expect(await snapshotWrites()).toEqual(writes);
@@ -506,23 +533,19 @@ describe("importing an additional recovery phrase", () => {
     ]);
   });
 
-  it("refuses with PHRASE_ALREADY_HELD_ERROR when the phrase is registered while discovery runs", async () => {
+  it("refuses with PHRASE_ALREADY_HELD_ERROR when the phrase is registered between discovery and import", async () => {
     fund(3, 10);
     const writes = await snapshotWrites();
     mockStoreAccount.mockClear();
-    const realFetch = global.fetch as jest.Mock;
-    let registered: Promise<void> | undefined;
-    global.fetch = jest.fn((url: string) => {
-      // Another window finishes importing the same phrase mid-discovery.
-      registered ??= addSecretSource({
-        localStore: mockDataStorage,
-        id: PHRASE_2.userId,
-        type: SecretSourceType.PHRASE,
-      }).then(() => undefined);
-      return registered.then(() => realFetch(url));
-    }) as unknown as typeof fetch;
 
-    const res = await importPhrase(PHRASE_2.mnemonic);
+    const { fundedIndices } = await discover(PHRASE_2.mnemonic);
+    // Another window finishes importing the same phrase in between.
+    await addSecretSource({
+      localStore: mockDataStorage,
+      id: PHRASE_2.userId,
+      type: SecretSourceType.PHRASE,
+    });
+    const res = await importWithIndices(PHRASE_2.mnemonic, fundedIndices);
 
     expect(res.error).toBe(PHRASE_ALREADY_HELD_ERROR);
     expect(newAccounts()).toHaveLength(0);
@@ -531,6 +554,67 @@ describe("importing an additional recovery phrase", () => {
     expect(after.keyIdList).toEqual(writes.keyIdList);
     expect(after.names).toEqual(writes.names);
     expect(after.keyId).toEqual(writes.keyId);
+  });
+
+  it("makes no Horizon request during the import itself", async () => {
+    fund(3, 10);
+    const { fundedIndices } = await discover(PHRASE_2.mnemonic);
+    (global.fetch as jest.Mock).mockClear();
+
+    const res = await importWithIndices(PHRASE_2.mnemonic, fundedIndices);
+
+    expect(res.error).toBeUndefined();
+    expect(horizonLookups()).toHaveLength(0);
+    expect(await indicesOf(PHRASE_2.userId)).toEqual([0, 3, 10]);
+  });
+
+  it("sorts the indices it is given", async () => {
+    const res = await importWithIndices(PHRASE_2.mnemonic, [10, 3]);
+
+    expect(res.error).toBeUndefined();
+    expect(await indicesOf(PHRASE_2.userId)).toEqual([0, 3, 10]);
+  });
+
+  it.each([
+    ["missing", undefined],
+    ["index 0", [0]],
+    ["past the discovery depth", [DEPTH]],
+    ["negative", [-1]],
+    ["fractional", [1.5]],
+    ["a string", ["3"]],
+    ["duplicated", [3, 3]],
+  ])(
+    "refuses %s indices with IMPORT_PHRASE_FAILED_ERROR and writes nothing",
+    async (_, fundedIndices) => {
+      const writes = await snapshotWrites();
+
+      const res = await importWithIndices(PHRASE_2.mnemonic, fundedIndices);
+
+      expect(res.error).toBe(IMPORT_PHRASE_FAILED_ERROR);
+      expect(await snapshotWrites()).toEqual(writes);
+      expect(newAccounts()).toHaveLength(0);
+    },
+  );
+
+  it("refuses discovery from a web page", async () => {
+    const res = await popupMessageListener(
+      {
+        type: SERVICE_TYPES.DISCOVER_PHRASE_ACCOUNTS,
+        mnemonicPhrase: PHRASE_2.mnemonic,
+      } as any,
+      mockSessionStore,
+      mockDataStorage,
+      mockKeyManager,
+      testAlarm as any,
+      {
+        id: "fake-extension-id",
+        tab: {},
+        url: "https://evil.example",
+      },
+    );
+
+    expect((res as { error?: string }).error).toBe("Unauthorized");
+    expect(horizonLookups()).toHaveLength(0);
   });
 
   it("does not touch application state or the rebrand announcement status", async () => {
