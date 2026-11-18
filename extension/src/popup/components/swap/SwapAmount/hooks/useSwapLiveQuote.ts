@@ -80,65 +80,76 @@ export const useSwapLiveQuote = ({
   const isReviewingRef = useRef(isReviewingTx);
   isReviewingRef.current = isReviewingTx;
 
-  const debouncedQuote = useMemo(
-    () =>
-      debounce((quoteAmount: string) => {
-        const reqId = ++liveQuoteReqRef.current;
-        const {
-          asset: src,
-          destinationAsset: dst,
-          networkDetails: net,
-          publicKey: account,
-        } = liveQuoteArgsRef.current;
-        const quoteParams = {
-          mode: "send" as const,
-          amount: quoteAmount,
-          sourceAsset: src,
-          destAsset: dst,
-          networkDetails: net,
-          publicKey: account,
-        };
-        (async () => {
-          try {
-            const { route, quotes, key } = await getSwapQuote(quoteParams);
-            if (liveQuoteReqRef.current !== reqId || isReviewingRef.current) {
-              return; // superseded by a newer quote, or frozen for review
-            }
-            lastReportedRef.current = null;
-            dispatch(
-              saveSwapBestPath({
-                path: route?.path ?? [],
-                destinationAmount: route?.destinationAmount ?? "0",
-                quotes,
-                key,
-              }),
-            );
-          } catch (e) {
-            if (liveQuoteReqRef.current !== reqId || isReviewingRef.current) {
-              return;
-            }
-            // A 400 here is the user's state (an unfunded account, an
-            // unsupported token); the review path reports those.
-            if (!(e instanceof SwapQuotesError && e.kind === "badRequest")) {
-              const message = e instanceof Error ? e.message : String(e);
-              if (message !== lastReportedRef.current) {
-                lastReportedRef.current = message;
-                captureException(message);
-              }
-            }
-            // No path / bad input / network error: clear the stale amount.
-            dispatch(
-              saveSwapBestPath({
-                path: [],
-                destinationAmount: "0",
-                key: getSwapQuoteKey(quoteParams),
-              }),
-            );
+  const runQuote = useCallback(
+    (quoteAmount: string, ignoreFreeze = false) => {
+      const reqId = ++liveQuoteReqRef.current;
+      const isDiscarded = () =>
+        liveQuoteReqRef.current !== reqId ||
+        (isReviewingRef.current && !ignoreFreeze);
+      const {
+        asset: src,
+        destinationAsset: dst,
+        networkDetails: net,
+        publicKey: account,
+      } = liveQuoteArgsRef.current;
+      const quoteParams = {
+        mode: "send" as const,
+        amount: quoteAmount,
+        sourceAsset: src,
+        destAsset: dst,
+        networkDetails: net,
+        publicKey: account,
+      };
+      (async () => {
+        try {
+          const { route, quotes, key } = await getSwapQuote(quoteParams);
+          if (isDiscarded()) {
+            return; // superseded by a newer quote, or frozen for review
           }
-        })();
-      }, LIVE_QUOTE_DEBOUNCE_MS),
+          lastReportedRef.current = null;
+          dispatch(
+            saveSwapBestPath({
+              path: route?.path ?? [],
+              destinationAmount: route?.destinationAmount ?? "0",
+              quotes,
+              key,
+            }),
+          );
+        } catch (e) {
+          if (isDiscarded()) {
+            return;
+          }
+          // A 400 here is the user's state (an unfunded account, an
+          // unsupported token); the review path reports those.
+          if (!(e instanceof SwapQuotesError && e.kind === "badRequest")) {
+            const message = e instanceof Error ? e.message : String(e);
+            if (message !== lastReportedRef.current) {
+              lastReportedRef.current = message;
+              captureException(message);
+            }
+          }
+          // No path / bad input / network error: clear the stale amount.
+          dispatch(
+            saveSwapBestPath({
+              path: [],
+              destinationAmount: "0",
+              key: getSwapQuoteKey(quoteParams),
+            }),
+          );
+        }
+      })();
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- created once; reads the latest asset/destination/network via liveQuoteArgsRef so it stays stable across renders
     [],
+  );
+
+  const debouncedQuote = useMemo(
+    () =>
+      debounce(
+        (quoteAmount: string) => runQuote(quoteAmount),
+        LIVE_QUOTE_DEBOUNCE_MS,
+      ),
+    [runQuote],
   );
 
   const cancelLiveQuote = useCallback(() => {
@@ -159,6 +170,19 @@ export const useSwapLiveQuote = ({
   // so Review committing "1,000" as "1000" is not a change and cannot re-arm
   // a quote behind the review sheet.
   const cryptoAmount = cleanAmount(amount || "0");
+  const cryptoAmountRef = useRef(cryptoAmount);
+  cryptoAmountRef.current = cryptoAmount;
+
+  // One fresh quote after a build found the quote moved (409). Called once
+  // per failed build, never from an effect, so a backend that keeps
+  // answering 409 costs one quote per Review press. It lands even behind the
+  // review sheet: that sheet is only showing the build's error.
+  const requote = useCallback(() => {
+    debouncedQuote.cancel();
+    if (new BigNumber(cryptoAmountRef.current || "0").isGreaterThan(0)) {
+      runQuote(cryptoAmountRef.current, true);
+    }
+  }, [debouncedQuote, runQuote]);
 
   useEffect(() => {
     if (
@@ -194,5 +218,5 @@ export const useSwapLiveQuote = ({
     networkDetails.networkUrl,
   ]);
 
-  return { cancelLiveQuote };
+  return { cancelLiveQuote, requote };
 };

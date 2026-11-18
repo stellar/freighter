@@ -422,6 +422,7 @@ describe("SwapAmount live receive-amount quote", () => {
     it("shows loading when the stored quote is for other inputs, with no quote in flight", () => {
       jest.spyOn(UseSwapLiveQuote, "useSwapLiveQuote").mockReturnValue({
         cancelLiveQuote: jest.fn(),
+        requote: jest.fn(),
       });
       renderSwapAmount({
         amount: "6",
@@ -491,6 +492,79 @@ describe("SwapAmount live receive-amount quote", () => {
     const storedDestinationAmount = () =>
       getTestStore()!.getState().transactionSubmission.transactionData
         .destinationAmount;
+
+    describe("after the backend says the quote moved (409)", () => {
+      const quoteMoved = () =>
+        jest
+          .fn()
+          .mockResolvedValue(
+            new Error(UseSimulateSwapData.ERROR_TO_DISPLAY.QUOTE_EXPIRED),
+          );
+
+      it("fetches one new quote, and builds again only on the next Review press", async () => {
+        const fetchData = quoteMoved();
+        jest.spyOn(UseSimulateSwapData, "useSimulateTxData").mockReturnValue({
+          state: { state: RequestState.IDLE, data: null, error: null },
+          isQuoteExpired: true,
+          fetchData,
+        } as any);
+        renderSwapAmount({ amount: "5", destinationAsset: AQUA });
+        await settle();
+        expect(fetchBackendV2).toHaveBeenCalledTimes(1);
+
+        await act(async () => {
+          fireEvent.click(cta());
+        });
+        await settle();
+        expect(fetchData).toHaveBeenCalledTimes(1);
+        expect(fetchBackendV2).toHaveBeenCalledTimes(2);
+
+        // Nothing retries by itself.
+        await act(async () => {
+          jest.advanceTimersByTime(60_000);
+        });
+        expect(fetchData).toHaveBeenCalledTimes(1);
+        expect(fetchBackendV2).toHaveBeenCalledTimes(2);
+
+        await act(async () => {
+          fireEvent.click(cta());
+        });
+        await settle();
+        expect(fetchData).toHaveBeenCalledTimes(2);
+        expect(fetchBackendV2).toHaveBeenCalledTimes(3);
+      });
+
+      it("stores the new quote even with the review sheet showing the error", async () => {
+        jest.spyOn(UseSimulateSwapData, "useSimulateTxData").mockReturnValue({
+          state: { state: RequestState.IDLE, data: null, error: null },
+          isQuoteExpired: true,
+          fetchData: quoteMoved(),
+        } as any);
+        renderSwapAmount({ amount: "5", destinationAsset: AQUA });
+        await settle();
+        expect(storedDestinationAmount()).toBe("50");
+
+        let answerRequote: (r: unknown) => void = () => {};
+        fetchBackendV2.mockImplementationOnce(
+          () =>
+            new Promise((resolve) => {
+              answerRequote = resolve;
+            }),
+        );
+        await act(async () => {
+          fireEvent.click(cta());
+        });
+        expect(
+          screen.getByRole("dialog", { name: "Review swap" }),
+        ).toBeInTheDocument();
+
+        await act(async () => {
+          answerRequote(quotesReply([classicRoute]));
+        });
+
+        expect(storedDestinationAmount()).toBe("42");
+      });
+    });
 
     it("ignores amount edits made while the review is being built", async () => {
       jest.spyOn(UseSimulateSwapData, "useSimulateTxData").mockReturnValue({
