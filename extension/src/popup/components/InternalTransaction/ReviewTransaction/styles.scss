@@ -84,12 +84,17 @@
     justify-content: center;
   }
 
+  // A 16px down arrow, centred under the 32px icons, as on the deposit review.
   &__Divider {
     display: flex;
-    margin: pxToRem(16px) 0;
+    justify-content: center;
+    width: pxToRem(32px);
+    margin: pxToRem(12px) 0;
+    color: var(--sds-clr-gray-09);
+
     svg {
-      color: var(--sds-clr-gray-09);
-      margin-left: pxToRem(7px);
+      width: pxToRem(16px);
+      height: pxToRem(16px);
     }
   }
 

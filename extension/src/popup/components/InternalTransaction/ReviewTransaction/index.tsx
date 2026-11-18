@@ -470,7 +470,7 @@ export const ReviewTx = ({
             />
           </div>
           <div className="ReviewTx__Divider">
-            <Icon.ChevronDownDouble />
+            <Icon.ArrowDown />
           </div>
           <div
             className="ReviewTx__SendDestination"
