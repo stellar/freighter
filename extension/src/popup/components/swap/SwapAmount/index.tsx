@@ -593,6 +593,7 @@ export const SwapAmount = ({
                   size="md"
                   isRounded
                   variant="tertiary"
+                  data-testid="swap-amount-settings-btn"
                   onClick={() => setIsEditingSettings(true)}
                 >
                   <Icon.Settings01 />
@@ -930,10 +931,12 @@ export const SwapAmount = ({
               setIsEditingSettings(false);
               // Rebuild the quote with the new fee before the review comes
               // back, so Confirm never submits the old XDR.
-              await fetchSimulationData({
-                amount,
-                destinationRate: dstAssetPrice,
-              });
+              if (new BigNumber(amount || "0").gt(0)) {
+                await fetchSimulationData({
+                  amount,
+                  destinationRate: dstAssetPrice,
+                });
+              }
               returnToReview();
             }}
           />
