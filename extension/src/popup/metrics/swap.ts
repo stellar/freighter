@@ -2,8 +2,9 @@ import { SwapSource } from "popup/constants/swap";
 
 /**
  * Where the swap was opened from, as every swap event carries it: `source` is
- * "token_details" or "earn", and absent for Home's Swap tab, matching what
- * `swap.completed` has always sent on both clients.
+ * "home", "token_details" or "earn". Both hosts always set one (the Swap route
+ * defaults to "home"), so the property is left off only for a swap event that
+ * no host started.
  */
 export const swapSourceProps = (
   swapSource: SwapSource | null | undefined,

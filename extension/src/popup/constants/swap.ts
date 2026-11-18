@@ -14,9 +14,11 @@ export enum STEPS {
 
 /**
  * Where the swap was opened from, carried as `source` on the swap events (see
- * popup/metrics/swap.ts). Absent for Home's Swap tab.
+ * popup/metrics/swap.ts).
  */
 export enum SwapSource {
+  /** Home's Swap tile: the Swap route with no `?source=`. */
+  Home = "home",
   /** The AssetDetail view's Swap button. */
   TokenDetails = "token_details",
   /** The swap sheet inside Earn, opened from the not-enough sheet. */

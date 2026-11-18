@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
-import { STEPS, isSwapSource } from "popup/constants/swap";
+import { STEPS, SwapSource, isSwapSource } from "popup/constants/swap";
 import {
   emitMetric,
   emitScreenViewed,
@@ -65,10 +65,11 @@ export const Swap = () => {
   const lastEmittedStep = useRef<STEPS | null>(null);
   // Where the swap was opened from, read off the URL rather than the store:
   // the first screen view fires before the mount effect saves it there.
-  // Whitelisted so arbitrary query values never reach analytics.
+  // Whitelisted so arbitrary query values never reach analytics; anything
+  // else, or no param at all, is Home's Swap tile.
   const swapSource = useMemo(() => {
     const sourceParam = new URLSearchParams(location.search).get("source");
-    return isSwapSource(sourceParam) ? sourceParam : null;
+    return isSwapSource(sourceParam) ? sourceParam : SwapSource.Home;
   }, [location.search]);
 
   // Emit a screen-view metric only once per step transition.
@@ -128,9 +129,7 @@ export const Swap = () => {
       dispatch(saveIsToken(false));
     }
 
-    if (swapSource) {
-      dispatch(saveSwapSource(swapSource));
-    }
+    dispatch(saveSwapSource(swapSource));
 
     // Pre-populate destination asset if provided and valid; otherwise default
     // to the network's USDC — or to native when the flow starts from USDC

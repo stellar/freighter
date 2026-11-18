@@ -31,7 +31,7 @@ export const METRIC_NAMES = {
 
   // -- Swap (first-class; also the home of routed/path-payment outcomes) ---
   // Every swap event carries `source`, where the swap was opened from:
-  // "token_details" or "earn", absent for Home (popup/metrics/swap.ts). The
+  // "home", "token_details" or "earn" (popup/metrics/swap.ts). The
   // picker events say what opened the picker as `trigger`, and the selection
   // events which list the token came from as `list`.
   swapPickerOpened: "swap.picker_opened",

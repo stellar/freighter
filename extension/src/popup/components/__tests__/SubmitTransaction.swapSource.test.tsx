@@ -154,7 +154,18 @@ describe("swap.completed source property", () => {
     );
   });
 
-  it("omits source entirely for swaps entered elsewhere", async () => {
+  it("carries source: home when the swap was opened from Home", async () => {
+    renderSwapSubmit("home");
+
+    await waitFor(() =>
+      expect(mockedEmitMetric).toHaveBeenCalledWith(
+        "swap.completed",
+        expect.objectContaining({ source: "home" }),
+      ),
+    );
+  });
+
+  it("omits source entirely when no swap host set one", async () => {
     renderSwapSubmit(null);
 
     // Absence is the whole point of this case, and objectContaining cannot
