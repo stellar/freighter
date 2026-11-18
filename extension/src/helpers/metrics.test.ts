@@ -17,9 +17,6 @@ jest.mock("popup/ducks/settings", () => ({
   settingsDataSharingSelector: jest.fn(() => true),
   settingsNetworkDetailsSelector: jest.fn(() => ({ network: "TESTNET" })),
 }));
-jest.mock("popup/ducks/cache", () => ({
-  balancesSelector: jest.fn(() => ({})),
-}));
 jest.mock("helpers/experimentClient", () => ({
   initExperimentClient: jest.fn(),
 }));
@@ -54,7 +51,6 @@ import {
   allAccountsSelector,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { balancesSelector } from "popup/ducks/cache";
 import { METRICS_DATA } from "constants/localStorageTypes";
 import { AccountType } from "@shared/api/types";
 import { truncatedPublicKey } from "helpers/stellar";
@@ -126,9 +122,6 @@ describe("buildCommonContext (four-bucket property model)", () => {
     (allAccountsSelector as unknown as jest.Mock).mockReturnValue([
       { publicKey: PUBLIC_KEY, name: "Imported", imported: true },
     ]);
-    (balancesSelector as unknown as jest.Mock).mockReturnValue({
-      TESTNET: { [PUBLIC_KEY]: { isFunded: true } },
-    });
     // A deliberately *stale* metricsData cache (wrong type) — proves the
     // account_type resolution no longer trusts it.
     localStorage.setItem(
@@ -154,7 +147,6 @@ describe("buildCommonContext (four-bucket property model)", () => {
     expect(ctx).toMatchObject({
       network: "TESTNET",
       account_type: "imported_secret_key",
-      account_funded: true,
       is_hardware_account: false,
       account_id_hash:
         "f56f6f2c6cf1b9388e3495dfab96f0c55ec5d217f481b2ae45d11b46145c44ef",
@@ -162,36 +154,10 @@ describe("buildCommonContext (four-bucket property model)", () => {
     expect(ctx.surface).toBeDefined();
   });
 
-  it("derives account_funded from the active account's cached balance entry, not the sticky metricsData flag", () => {
-    // metricsData says this account type has never been funded, but the
-    // balances cache has a funded entry for the *active* key — the cache
-    // must win. This is the fix for the sticky-per-type inaccuracy.
-    localStorage.setItem(
-      METRICS_DATA,
-      JSON.stringify({
-        accountType: AccountType.IMPORTED,
-        hwExists: false,
-        importedExists: true,
-        hwFunded: false,
-        importedFunded: false,
-        freighterFunded: false,
-        unfundedFreighterAccounts: [],
-      }),
+  it("does not emit account_funded", () => {
+    expect(buildCommonContext({} as never)).not.toHaveProperty(
+      "account_funded",
     );
-    (balancesSelector as unknown as jest.Mock).mockReturnValue({
-      TESTNET: { [PUBLIC_KEY]: { isFunded: true } },
-    });
-    expect(buildCommonContext({} as never)).toMatchObject({
-      account_funded: true,
-    });
-  });
-
-  it("omits account_funded when there is no cached balances entry for the active key", () => {
-    (balancesSelector as unknown as jest.Mock).mockReturnValue({});
-    const ctx = buildCommonContext({} as never);
-    expect(ctx).not.toHaveProperty("account_funded");
-    // Other active-account fields are still present.
-    expect(ctx).toMatchObject({ account_type: "imported_secret_key" });
   });
 
   it("drops SDK-supplied and legacy fields", () => {
@@ -209,7 +175,6 @@ describe("buildCommonContext (four-bucket property model)", () => {
     const ctx = buildCommonContext({} as never);
     expect(ctx).not.toHaveProperty("account_id_hash");
     expect(ctx).not.toHaveProperty("account_type");
-    expect(ctx).not.toHaveProperty("account_funded");
     expect(ctx).not.toHaveProperty("is_hardware_account");
     // non-account context is still present
     expect(ctx).toMatchObject({ schema_version: "4", network: "TESTNET" });
@@ -225,13 +190,9 @@ describe("buildCommonContext (four-bucket property model)", () => {
         hardwareWalletType: "Ledger",
       },
     ]);
-    (balancesSelector as unknown as jest.Mock).mockReturnValue({
-      TESTNET: { [PUBLIC_KEY]: { isFunded: true } },
-    });
     expect(buildCommonContext({} as never)).toMatchObject({
       account_type: "hardware",
       is_hardware_account: true,
-      account_funded: true,
     });
   });
 
@@ -261,7 +222,6 @@ describe("buildCommonContext (four-bucket property model)", () => {
     expect(ctx).not.toHaveProperty("is_hardware_account");
     // The active-key-derived fields are still emitted.
     expect(ctx).toHaveProperty("account_id_hash");
-    expect(ctx).toMatchObject({ account_funded: true });
   });
 });
 
