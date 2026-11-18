@@ -1,11 +1,14 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import { TESTNET_NETWORK_DETAILS, NETWORKS } from "@shared/constants/stellar";
+import {
+  MAINNET_NETWORK_DETAILS,
+  NETWORKS,
+  TESTNET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
 import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
 import { BlendCatalogPool } from "@shared/api/types/blend";
 import { PoolDetailsSheet } from "popup/components/earn/PoolDetailsSheet";
-import { BLEND_LENDING_DOCS_URL } from "popup/constants/externalLinks";
 import { openTab } from "popup/helpers/navigate";
 import { Wrapper } from "popup/__testHelpers__";
 
@@ -26,12 +29,15 @@ const pool: BlendCatalogPool = {
   reserves: [],
 };
 
-const renderSheet = (onClose = jest.fn()) =>
+const renderSheet = (
+  onClose = jest.fn(),
+  networkDetails = TESTNET_NETWORK_DETAILS,
+) =>
   render(
     <Wrapper
       routes={["/"]}
       state={{
-        settings: { networkDetails: TESTNET_NETWORK_DETAILS, assetsLists: {} },
+        settings: { networkDetails, assetsLists: {} },
       }}
     >
       <PoolDetailsSheet
@@ -54,10 +60,16 @@ describe("PoolDetailsSheet", () => {
     ).toBeInTheDocument();
   });
 
-  it("opens Blend's lending docs in a new tab", () => {
+  it("opens Blend's app for the network in a new tab", () => {
     renderSheet();
-    fireEvent.click(screen.getByTestId("earn-pool-docs-link"));
-    expect(openTab).toHaveBeenCalledWith(BLEND_LENDING_DOCS_URL);
+    fireEvent.click(screen.getByTestId("earn-pool-app-link"));
+    expect(openTab).toHaveBeenCalledWith("https://testnet.blend.capital/");
+  });
+
+  it("opens Blend's mainnet app on Mainnet", () => {
+    renderSheet(jest.fn(), MAINNET_NETWORK_DETAILS);
+    fireEvent.click(screen.getByTestId("earn-pool-app-link"));
+    expect(openTab).toHaveBeenCalledWith("https://mainnet.blend.capital/");
   });
 
   it("shows the deposited token's rate as the current yield", () => {

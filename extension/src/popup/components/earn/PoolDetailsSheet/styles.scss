@@ -126,10 +126,10 @@
     color: var(--sds-clr-gray-12);
   }
 
-  // "View pool details", opening Blend's lending docs in a new tab. A button
+  // "View pool details", opening Blend's app in a new tab. A button
   // rather than an anchor: the popup navigates by `openTab`, and an <a href>
   // would replace the popup's own document.
-  &__docs-link {
+  &__app-link {
     display: flex;
     align-items: center;
     align-self: flex-start;

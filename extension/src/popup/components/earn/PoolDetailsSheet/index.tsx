@@ -1,11 +1,13 @@
 import React from "react";
 import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 
 import { BlendCatalogPool } from "@shared/api/types/blend";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
 import { AssetIcon } from "popup/components/account/AccountAssets";
-import { BLEND_LENDING_DOCS_URL } from "popup/constants/externalLinks";
+import { getBlendAppUrl } from "popup/constants/externalLinks";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { openTab } from "popup/helpers/navigate";
 import { StatRow } from "popup/components/earn/StatRow";
 import {
@@ -49,6 +51,7 @@ export const PoolDetailsSheet = ({
   onClose,
 }: PoolDetailsSheetProps) => {
   const { t } = useTranslation();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   return (
     <div className="PoolDetailsSheet" data-testid="earn-pool-details-sheet">
@@ -97,9 +100,9 @@ export const PoolDetailsSheet = ({
           </div>
           <button
             type="button"
-            className="PoolDetailsSheet__docs-link"
-            onClick={() => openTab(BLEND_LENDING_DOCS_URL)}
-            data-testid="earn-pool-docs-link"
+            className="PoolDetailsSheet__app-link"
+            onClick={() => openTab(getBlendAppUrl(networkDetails.network))}
+            data-testid="earn-pool-app-link"
           >
             {t("View pool details")}
             <Icon.LinkExternal01 />

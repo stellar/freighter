@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Icon, Loader, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 
 import { BlendCatalogPool } from "@shared/api/types/blend";
-import { BLEND_LENDING_DOCS_URL } from "popup/constants/externalLinks";
+import { getBlendAppUrl } from "popup/constants/externalLinks";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
 import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
 import { BalanceRow } from "popup/components/BalanceRow";
@@ -17,6 +18,10 @@ import { NO_FIAT_VALUE, formatAmount } from "popup/helpers/formatters";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { getSwapTotalFee } from "popup/components/swap/SwapAmount/hooks/useSimulateSwapData";
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
+import { isNativeContract } from "@shared/helpers/assetIdentity";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { transactionDataSelector } from "popup/ducks/transactionSubmission";
+import { getAvailableBalance } from "popup/helpers/soroban";
 import { trackEarnBalanceInsufficientShown } from "popup/metrics/earn";
 
 import { NotEnoughTokenSheet } from "./NotEnoughTokenSheet";
@@ -81,6 +86,9 @@ const PickerShell = ({
   "data-testid": string;
 }) => {
   const { t } = useTranslation();
+  // From settings rather than the resolved data, so the chip works while the
+  // list is still loading.
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   return (
     <div className="EarnTokenPicker" data-testid={dataTestId}>
@@ -106,12 +114,12 @@ const PickerShell = ({
 
         <div className="EarnTokenPicker__deposit-into">
           <div className="EarnTokenPicker__label">{t("Deposit into")}</div>
-          {/* Opens Blend's lending docs, as on mobile. The protocol's own
-              name is not translated. */}
+          {/* Opens Blend's app for the network, as on mobile. The protocol's
+              own name is not translated. */}
           <button
             type="button"
             className="EarnTokenPicker__protocol"
-            onClick={() => openTab(BLEND_LENDING_DOCS_URL)}
+            onClick={() => openTab(getBlendAppUrl(networkDetails.network))}
             data-testid="earn-protocol-chip"
           >
             <PoolIcon size={16} />
@@ -137,6 +145,7 @@ export const EarnTokenPicker = ({
   const { t } = useTranslation();
   const { state, fetchData } = useGetEarnTokensData();
   const { recommendedFee } = useNetworkFees();
+  const { transactionFee } = useSelector(transactionDataSelector);
   const [notEnoughToken, setNotEnoughToken] = useState<EarnTokenOption | null>(
     null,
   );
@@ -222,13 +231,26 @@ export const EarnTokenPicker = ({
     setNotEnoughToken(option);
   };
 
+  // XLM's total includes the minimum balance the account can't spend, so its
+  // held row shows what the deposit screen will offer, worked out as that
+  // screen's "available" is, as on mobile. Other tokens show their balance.
+  const getRowAmount = (option: EarnTokenOption, isHeld: boolean) =>
+    isHeld &&
+    isNativeContract(option.assetId, data.networkDetails.networkPassphrase)
+      ? getAvailableBalance({
+          assetCanonical: "native",
+          balances: data.balances.balances,
+          recommendedFee: transactionFee || recommendedFee,
+        })
+      : option.total;
+
   const renderRow = (option: EarnTokenOption, isHeld: boolean) => (
     <BalanceRow
       key={option.assetId}
       code={option.code}
       issuerKey={option.issuer}
       iconUrl={option.iconUrl}
-      amount={`${formatAmount(option.total)} ${option.code}`}
+      amount={`${formatAmount(getRowAmount(option, isHeld))} ${option.code}`}
       rightSlot={<ApyBadge apy={option.apy} code={option.code} />}
       onClick={() =>
         isHeld ? onSelect(option, data) : openNotEnoughSheet(option)

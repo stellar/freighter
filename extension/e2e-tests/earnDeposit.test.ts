@@ -155,6 +155,16 @@ test("token picker splits held from supported and shows each rate", async ({
       exact: false,
     }),
   ).toBeVisible();
+
+  // The XLM row shows the spendable XLM, the figure the deposit screen offers,
+  // not the balance with the minimum balance in it.
+  const xlmRow = page.getByTestId("earn-token-row-XLM");
+  await expect(xlmRow).not.toContainText("10,000 XLM");
+  const rowAmount = (await xlmRow.innerText()).match(/[\d,.]+ XLM/)![0];
+  await xlmRow.click();
+  await expect(
+    page.getByTestId("earn-amount").locator(".AmountCard__available-balance"),
+  ).toContainText(`${rowAmount} available`);
 });
 
 // ---------------------------------------------------------------------------
@@ -333,7 +343,7 @@ test("pool details sheet shows market stats including Backstop", async ({
   // unavailable.
   await expect(page.getByTestId("earn-pool-backstop")).toContainText("$1.53M");
 
-  await expect(page.getByTestId("earn-pool-docs-link")).toBeVisible();
+  await expect(page.getByTestId("earn-pool-app-link")).toBeVisible();
 });
 
 // ---------------------------------------------------------------------------
