@@ -342,6 +342,33 @@ describe("SwapAsset destination: a contract token the account doesn't hold", () 
     expect(captureException).toHaveBeenCalled();
   });
 
+  it("clears the pick error when the search term changes", async () => {
+    jest
+      .spyOn(Soroban, "getDecimalsForAsset")
+      .mockRejectedValue(new Error("rpc down"));
+    renderPicker();
+
+    fireEvent.click(screen.getByTestId("SwapTokenRow-TKN-body"));
+    expect(
+      await screen.findByTestId("swap-picker-pick-error"),
+    ).toBeInTheDocument();
+
+    fireEvent.change(screen.getByTestId("swap-from-search"), {
+      target: { value: "TKN" },
+    });
+    // A loader replaces the list (and the notice above it) until the
+    // debounced search runs.
+    expect(
+      await screen.findByTestId("swap-picker-sections", undefined, {
+        timeout: 2000,
+      }),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.queryByTestId("swap-picker-pick-error"),
+    ).not.toBeInTheDocument();
+  });
+
   it("ignores a repeat tap while the read is pending", async () => {
     let resolve: (n: number) => void = () => {};
     const getDecimals = jest

@@ -128,6 +128,7 @@ const renderSimulate = (
           sourceDecimals: 7,
           destDecimals: 7,
         },
+        onQuoteMoved: jest.fn(),
       }),
     {
       wrapper: ({ children }) => (

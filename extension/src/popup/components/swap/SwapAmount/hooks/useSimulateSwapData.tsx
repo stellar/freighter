@@ -329,10 +329,13 @@ function useSimulateTxData({
   publicKey,
   networkDetails,
   simParams,
+  onQuoteMoved,
 }: {
   publicKey: string;
   networkDetails: NetworkDetails;
   simParams: SimulationParams;
+  /** The current build got a 409: its quote no longer builds. */
+  onQuoteMoved: () => void;
 }) {
   const {
     memo,
@@ -526,6 +529,7 @@ function useSimulateTxData({
             onQuoteMoved: () => {
               if (!isStale()) {
                 reduxDispatch(clearSwapQuoteKey());
+                onQuoteMoved();
               }
             },
           });

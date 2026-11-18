@@ -64,7 +64,6 @@ import { XLM_RESERVE_HELP_URL } from "popup/constants/externalLinks";
 import { EditSettings } from "popup/components/InternalTransaction/EditSettings";
 import { ReviewTx } from "popup/components/InternalTransaction/ReviewTransaction";
 import {
-  ERROR_TO_DISPLAY,
   getSwapTotalFee,
   useSimulateTxData,
 } from "./hooks/useSimulateSwapData";
@@ -218,6 +217,7 @@ export const SwapAmount = ({
     customFee: transactionFee,
     opCount: swapOpCount,
   });
+  const requoteRef = useRef(() => {});
   const {
     state: simulationState,
     fetchData: fetchSimulationData,
@@ -242,6 +242,8 @@ export const SwapAmount = ({
       destDecimals:
         heldDestDecimals ?? transactionData.destinationTokenDetails?.decimals,
     },
+    // The live-quote hook is created below; read it at call time.
+    onQuoteMoved: () => requoteRef.current(),
   });
 
   const [isEditingSlippage, setIsEditingSlippage] = useState(false);
@@ -303,21 +305,11 @@ export const SwapAmount = ({
   ) => {
     cancelLiveQuote();
     setBuildsInFlight((n) => n + 1);
-    let result;
     try {
-      result = await fetchSimulationData(params);
+      return await fetchSimulationData(params);
     } finally {
       setBuildsInFlight((n) => n - 1);
     }
-    // The backend's quote moved (409): fetch one new quote so the CTA can
-    // leave its pending state. The next build waits for a Review press.
-    if (
-      result instanceof Error &&
-      result.message === ERROR_TO_DISPLAY.QUOTE_EXPIRED
-    ) {
-      requote();
-    }
-    return result;
   };
 
   const handleContinue = async (values: { amount: string }) => {
@@ -455,6 +447,7 @@ export const SwapAmount = ({
     swapAmountData,
     dispatch,
   });
+  requoteRef.current = requote;
 
   if (isLoading) {
     return <Loading />;

@@ -132,6 +132,7 @@ const BODY =
 const mockLiveQuote = (state: Record<string, boolean>) =>
   jest.spyOn(UseSwapLiveQuote, "useSwapLiveQuote").mockReturnValue({
     cancelLiveQuote: jest.fn(),
+    requote: jest.fn(),
     ...state,
   } as any);
 
