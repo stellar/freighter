@@ -445,10 +445,6 @@ export interface DismissEthenaLaunchBannerMessage extends BaseMessage {
   type: SERVICE_TYPES.DISMISS_ETHENA_LAUNCH_BANNER;
 }
 
-export interface GetThemePreferenceMessage extends BaseMessage {
-  type: SERVICE_TYPES.GET_THEME_PREFERENCE;
-}
-
 export interface SaveThemePreferenceMessage extends BaseMessage {
   type: SERVICE_TYPES.SAVE_THEME_PREFERENCE;
   themePreference: ThemePreference;
@@ -606,7 +602,6 @@ export type ServiceMessageRequest =
   | GetHiddenAssetsMessage
   | GetEthenaLaunchBannerDismissedMessage
   | DismissEthenaLaunchBannerMessage
-  | GetThemePreferenceMessage
   | SaveThemePreferenceMessage
   | GetRecentProtocolsMessage
   | AddRecentProtocolMessage

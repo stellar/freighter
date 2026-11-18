@@ -13,13 +13,10 @@ import "./styles/fonts.scss";
 import "./styles/varialPalette.scss";
 import "./styles/vendor/tailwind.css";
 
-// Before render, so the first paint already uses the saved theme. The
-// static sds-theme-light on <body> stays as the pre-script fallback —
-// light-first, same as mobile.
-const hasMirroredTheme = initColorScheme();
-if (!hasMirroredTheme) {
-  syncThemePreferenceFromStorage();
-}
+// Before render. The static sds-theme-light on <body> stays as the
+// pre-script fallback — light-first, same as mobile.
+initColorScheme();
+syncThemePreferenceFromStorage();
 
 const root = createRoot(document.getElementById("root")!);
 root.render(<App />);

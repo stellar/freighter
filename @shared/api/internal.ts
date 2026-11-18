@@ -2616,19 +2616,6 @@ export const dismissEthenaLaunchBanner = async (): Promise<{
   return { isDismissed: !!isDismissed };
 };
 
-export const getThemePreference = async (): Promise<ThemePreference> => {
-  const { themePreference, error } = await sendMessageToBackground({
-    activePublicKey: null,
-    type: SERVICE_TYPES.GET_THEME_PREFERENCE,
-  });
-
-  if (error) {
-    throw new Error(error);
-  }
-
-  return themePreference;
-};
-
 export const saveThemePreference = async (
   themePreference: ThemePreference,
 ): Promise<ThemePreference> => {

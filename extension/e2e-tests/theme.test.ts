@@ -360,7 +360,7 @@ test("theme picker pins light/dark, syncs open pages, and returns to system", as
   await second.close();
 });
 
-test("restores a pinned theme from chrome.storage when the local copy is gone", async ({
+test("restores a pinned theme from chrome.storage on reload", async ({
   page,
   extensionId,
   context,
@@ -372,7 +372,6 @@ test("restores a pinned theme from chrome.storage when the local copy is gone", 
   await page.getByText("Dark", { exact: true }).click();
   await expect(page.locator("body")).toHaveClass(/sds-theme-dark/);
 
-  await page.evaluate(() => localStorage.removeItem("themePreference"));
   await page.reload();
   await expect(page.locator("body")).toHaveClass(/sds-theme-dark/);
 });

@@ -1,7 +1,7 @@
+import browser from "webextension-polyfill";
 import * as internal from "@shared/api/internal";
 import * as metrics from "helpers/metrics";
 import {
-  THEME_PREFERENCE_MIRROR_KEY,
   getThemePreferenceInEffect,
   initColorScheme,
   setThemePreference,
@@ -12,14 +12,25 @@ import {
 } from "popup/helpers/themePreference";
 import * as themeMetrics from "popup/metrics/theme";
 
-jest.mock("@shared/api/internal", () => ({
-  getThemePreference: jest.fn(),
-  saveThemePreference: jest.fn(),
-}));
+jest.mock("@shared/api/internal", () => ({ saveThemePreference: jest.fn() }));
 jest.mock("helpers/metrics", () => ({ syncPreferredThemeTrait: jest.fn() }));
 jest.mock("popup/metrics/theme", () => ({ emitThemeChanged: jest.fn() }));
+jest.mock("webextension-polyfill", () => {
+  const listeners: Array<(changes: object, areaName: string) => void> = [];
+  return {
+    storage: {
+      local: { get: jest.fn() },
+      onChanged: {
+        addListener: (l: (typeof listeners)[number]) => listeners.push(l),
+        emit: (changes: object, areaName: string) =>
+          listeners.forEach((l) => l(changes, areaName)),
+      },
+    },
+  };
+});
 
 const mockedInternal = internal as jest.Mocked<typeof internal>;
+const mockedStorageGet = browser.storage.local.get as jest.Mock;
 const mockedMetrics = metrics as jest.Mocked<typeof metrics>;
 const mockedThemeMetrics = themeMetrics as jest.Mocked<typeof themeMetrics>;
 
@@ -29,24 +40,24 @@ describe("themePreference", () => {
       matches: false,
       addEventListener: jest.fn(),
     }));
-    localStorage.clear();
     initColorScheme();
   });
 
   afterEach(() => {
     jest.resetAllMocks();
+    setThemePreference("system");
     document.body.className = "";
   });
 
-  it("adopts the chrome.storage value when the mirror is missing", async () => {
-    mockedInternal.getThemePreference.mockResolvedValue("dark");
+  it("adopts the chrome.storage value at startup", async () => {
+    mockedStorageGet.mockResolvedValue({ themePreference: "dark" });
     await syncThemePreferenceFromStorage();
     expect(getThemePreferenceInEffect()).toBe("dark");
     expect(document.body.classList.contains("sds-theme-dark")).toBe(true);
   });
 
   it("updates preferred_theme only when the stored value is applied", async () => {
-    mockedInternal.getThemePreference.mockResolvedValue("dark");
+    mockedStorageGet.mockResolvedValue({ themePreference: "dark" });
     await syncThemePreferenceFromStorage();
     expect(mockedMetrics.syncPreferredThemeTrait).toHaveBeenCalledWith("dark");
 
@@ -56,8 +67,8 @@ describe("themePreference", () => {
   });
 
   it("ignores a stored value read before a newer change", async () => {
-    let reply: (value: "light") => void = () => {};
-    mockedInternal.getThemePreference.mockReturnValue(
+    let reply: (value: { themePreference: string }) => void = () => {};
+    mockedStorageGet.mockReturnValue(
       new Promise((resolve) => {
         reply = resolve;
       }),
@@ -65,15 +76,15 @@ describe("themePreference", () => {
     const sync = syncThemePreferenceFromStorage();
 
     setThemePreference("dark");
-    reply("light");
+    reply({ themePreference: "light" });
     await sync;
 
     expect(getThemePreferenceInEffect()).toBe("dark");
     expect(mockedMetrics.syncPreferredThemeTrait).not.toHaveBeenCalled();
   });
 
-  it("keeps the mirrored theme when the background is unreachable", async () => {
-    mockedInternal.getThemePreference.mockRejectedValue(new Error("no bg"));
+  it("stays on the default when the background is unreachable", async () => {
+    mockedStorageGet.mockRejectedValue(new Error("unavailable"));
     await syncThemePreferenceFromStorage();
     expect(getThemePreferenceInEffect()).toBe("system");
   });
@@ -155,14 +166,11 @@ describe("themePreference", () => {
       const pending = deferSaves();
       const dark = selectThemePreference("dark");
 
-      // Another page picks Light: it writes the shared mirror, and the
-      // browser notifies this page.
-      localStorage.setItem(THEME_PREFERENCE_MIRROR_KEY, "light");
-      window.dispatchEvent(
-        new StorageEvent("storage", {
-          key: THEME_PREFERENCE_MIRROR_KEY,
-          newValue: "light",
-        }),
+      // Another page picks Light and saves it to chrome.storage.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (browser.storage.onChanged as any).emit(
+        { themePreference: { newValue: "light" } },
+        "local",
       );
 
       pending[0]();

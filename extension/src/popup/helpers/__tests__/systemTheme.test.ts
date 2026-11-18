@@ -1,13 +1,27 @@
+import browser from "webextension-polyfill";
 import {
   DARK_SCHEME_QUERY,
-  THEME_PREFERENCE_MIRROR_KEY,
   getAppliedColorScheme,
   getSystemColorScheme,
   getThemePreferenceInEffect,
   initColorScheme,
   setThemePreference,
   subscribeToThemePreference,
+  trackUnsavedPick,
 } from "popup/helpers/systemTheme";
+
+jest.mock("webextension-polyfill", () => {
+  const listeners: Array<(changes: object, areaName: string) => void> = [];
+  return {
+    storage: {
+      onChanged: {
+        addListener: (l: (typeof listeners)[number]) => listeners.push(l),
+        emit: (changes: object, areaName: string) =>
+          listeners.forEach((l) => l(changes, areaName)),
+      },
+    },
+  };
+});
 
 type ChangeHandler = (e: { matches: boolean }) => void;
 
@@ -31,21 +45,21 @@ const mockMatchMedia = ({ prefersDark }: { prefersDark: boolean }) => {
   };
 };
 
-// Another page writes the shared mirror, then the browser notifies this one.
-const writeFromOtherPage = (value: string) => {
-  localStorage.setItem(THEME_PREFERENCE_MIRROR_KEY, value);
-  window.dispatchEvent(
-    new StorageEvent("storage", {
-      key: THEME_PREFERENCE_MIRROR_KEY,
-      newValue: value,
-    }),
-  );
-};
+// The background saved a value to chrome.storage.local, e.g. for another page.
+const emitStorageChange = (
+  changes: Record<string, { newValue?: unknown }>,
+  areaName = "local",
+) =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (browser.storage.onChanged as any).emit(changes, areaName);
+
+const writeFromOtherPage = (value: string) =>
+  emitStorageChange({ themePreference: { newValue: value } });
 
 describe("systemTheme", () => {
   afterEach(() => {
     document.body.className = "";
-    localStorage.clear();
+    setThemePreference("system");
   });
 
   describe("getSystemColorScheme", () => {
@@ -128,18 +142,12 @@ describe("systemTheme", () => {
     });
 
     it("falls back to system for an unknown stored value", () => {
-      localStorage.setItem(THEME_PREFERENCE_MIRROR_KEY, "sepia");
       mockMatchMedia({ prefersDark: false });
       initColorScheme();
+      setThemePreference("dark");
+      writeFromOtherPage("sepia");
       expect(getThemePreferenceInEffect()).toBe("system");
       expect(isLight()).toBe(true);
-    });
-
-    it("applies a stored pin on init, ignoring the device scheme", () => {
-      localStorage.setItem(THEME_PREFERENCE_MIRROR_KEY, "dark");
-      mockMatchMedia({ prefersDark: false });
-      initColorScheme();
-      expect(isDark()).toBe(true);
     });
 
     it("ignores live system changes while pinned", () => {
@@ -165,52 +173,6 @@ describe("systemTheme", () => {
       expect(isDark()).toBe(true);
     });
 
-    it("reports whether a valid mirror was found", () => {
-      mockMatchMedia({ prefersDark: false });
-      expect(initColorScheme()).toBe(false);
-
-      localStorage.setItem(THEME_PREFERENCE_MIRROR_KEY, "sepia");
-      expect(initColorScheme()).toBe(false);
-
-      localStorage.setItem(THEME_PREFERENCE_MIRROR_KEY, "system");
-      expect(initColorScheme()).toBe(true);
-    });
-
-    it("drops the mirror when writing it fails", () => {
-      mockMatchMedia({ prefersDark: false });
-      const realStorage = window.localStorage;
-      const removeItem = jest.fn();
-      Object.defineProperty(window, "localStorage", {
-        configurable: true,
-        value: {
-          getItem: () => "light",
-          setItem: () => {
-            throw new Error("quota");
-          },
-          removeItem,
-        },
-      });
-      try {
-        initColorScheme();
-        setThemePreference("dark");
-      } finally {
-        Object.defineProperty(window, "localStorage", {
-          configurable: true,
-          value: realStorage,
-        });
-      }
-
-      expect(isDark()).toBe(true);
-      expect(removeItem).toHaveBeenCalledWith(THEME_PREFERENCE_MIRROR_KEY);
-    });
-
-    it("mirrors the preference to localStorage", () => {
-      mockMatchMedia({ prefersDark: false });
-      initColorScheme();
-      setThemePreference("dark");
-      expect(localStorage.getItem(THEME_PREFERENCE_MIRROR_KEY)).toBe("dark");
-    });
-
     it("applies a change made in another extension page", () => {
       mockMatchMedia({ prefersDark: false });
       initColorScheme();
@@ -221,19 +183,36 @@ describe("systemTheme", () => {
       expect(isDark()).toBe(true);
     });
 
-    it("ignores a late event older than this page's own write", () => {
+    it("ignores other storage keys and areas", () => {
       mockMatchMedia({ prefersDark: false });
       initColorScheme();
-      setThemePreference("light");
 
-      window.dispatchEvent(
-        new StorageEvent("storage", {
-          key: THEME_PREFERENCE_MIRROR_KEY,
-          newValue: "dark",
+      emitStorageChange({ isHideDustEnabled: { newValue: true } });
+      emitStorageChange({ themePreference: { newValue: "dark" } }, "session");
+      expect(getThemePreferenceInEffect()).toBe("system");
+    });
+
+    it("ignores a late event for this page's own earlier, unsaved pick", async () => {
+      mockMatchMedia({ prefersDark: false });
+      initColorScheme();
+      let finishSave: () => void = () => {};
+      setThemePreference("dark");
+      const save = trackUnsavedPick(
+        "dark",
+        new Promise<void>((resolve) => {
+          finishSave = resolve;
         }),
       );
+      setThemePreference("light");
+
+      writeFromOtherPage("dark");
       expect(getThemePreferenceInEffect()).toBe("light");
       expect(isLight()).toBe(true);
+
+      finishSave();
+      await save;
+      writeFromOtherPage("dark");
+      expect(getThemePreferenceInEffect()).toBe("dark");
     });
   });
 
