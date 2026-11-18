@@ -7,6 +7,7 @@ import { Account, SecretSource, SecretSourceType } from "@shared/api/types";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
   ACCOUNT_ALREADY_EXISTS_ERROR,
+  ACCOUNT_DISCOVERY_FAILED_ERROR,
   IMPORT_PHRASE_FAILED_ERROR,
   INCORRECT_PASSWORD_ERROR,
   NO_SOFTWARE_KEYSTORE_ERROR,
@@ -97,6 +98,14 @@ const submitPassword = async () => {
 };
 
 describe("ImportRecoveryPhrase", () => {
+  let discoverSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    discoverSpy = jest
+      .spyOn(ApiInternal, "discoverPhraseAccounts")
+      .mockResolvedValue([3]);
+  });
+
   afterEach(() => {
     jest.restoreAllMocks();
     mockEmitMetric.mockClear();
@@ -144,9 +153,11 @@ describe("ImportRecoveryPhrase", () => {
         expect.objectContaining({
           password: "password",
           mnemonicPhrase: VALID_12,
+          fundedIndices: [3],
         }),
       ),
     );
+    expect(discoverSpy).toHaveBeenCalledWith({ mnemonicPhrase: VALID_12 });
     expect(await screen.findByTestId("location")).toHaveTextContent(
       new RegExp(`^${ROUTES.account}$`),
     );
@@ -189,6 +200,21 @@ describe("ImportRecoveryPhrase", () => {
     await submitPassword();
 
     expect(await screen.findByText(shown)).toBeInTheDocument();
+  });
+
+  it("shows the discovery error and does not import when discovery fails", async () => {
+    discoverSpy.mockRejectedValue(new Error(ACCOUNT_DISCOVERY_FAILED_ERROR));
+    const importSpy = jest.spyOn(ApiInternal, "importRecoveryPhrase");
+    renderView();
+    await toPasswordStep();
+    await submitPassword();
+
+    expect(
+      await screen.findByText(
+        "Couldn't check this phrase's accounts. Check your connection and try again.",
+      ),
+    ).toBeInTheDocument();
+    expect(importSpy).not.toHaveBeenCalled();
   });
 
   it('shows "This account is already in your wallet." for ACCOUNT_ALREADY_EXISTS_ERROR', async () => {

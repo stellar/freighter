@@ -90,6 +90,7 @@ import { generateRecoveryPhrase } from "./handlers/generateRecoveryPhrase";
 import { clearPendingRecoveryPhrase } from "./handlers/clearPendingRecoveryPhrase";
 import { addRecoveryPhraseSource } from "./handlers/addRecoveryPhraseSource";
 import { importRecoveryPhrase } from "./handlers/importRecoveryPhrase";
+import { discoverPhraseAccounts } from "./handlers/discoverPhraseAccounts";
 import { migrateAccounts } from "./handlers/migrateAccounts";
 import { addAssetsList } from "./handlers/addAssetsList";
 import { modifyAssetsList } from "./handlers/modifyAssetsList";
@@ -273,6 +274,18 @@ export const popupMessageListener = (
         return { error: "Unauthorized" };
       }
       return clearPendingRecoveryPhrase({ request, sessionStore });
+    }
+    case SERVICE_TYPES.DISCOVER_PHRASE_ACCOUNTS: {
+      // Off the lock and read-only, but it fans out to Horizon, so only our
+      // own pages may start it.
+      if (!isFromExtensionPage && !isFromDevServer) {
+        return { error: "Unauthorized" };
+      }
+      return discoverPhraseAccounts({
+        request,
+        localStore,
+        discoveryDepth: phraseImportDiscoveryDepth,
+      });
     }
     case SERVICE_TYPES.IMPORT_RECOVERY_PHRASE: {
       return importRecoveryPhrase({

@@ -165,10 +165,17 @@ export interface ClearPendingRecoveryPhraseMessage extends BaseMessage {
  * index 0 and every funded index up to the discovery depth. Nothing already
  * in the wallet changes.
  */
+export interface DiscoverPhraseAccountsMessage extends BaseMessage {
+  type: SERVICE_TYPES.DISCOVER_PHRASE_ACCOUNTS;
+  mnemonicPhrase: string;
+}
+
 export interface ImportRecoveryPhraseMessage extends BaseMessage {
   type: SERVICE_TYPES.IMPORT_RECOVERY_PHRASE;
   password: string;
   mnemonicPhrase: string;
+  /** From DISCOVER_PHRASE_ACCOUNTS. */
+  fundedIndices: number[];
 }
 
 export interface ImportAccountMessage extends BaseMessage {
@@ -610,6 +617,7 @@ export type ServiceMessageRequest =
   | GenerateRecoveryPhraseMessage
   | AddRecoveryPhraseSourceMessage
   | ClearPendingRecoveryPhraseMessage
+  | DiscoverPhraseAccountsMessage
   | ImportRecoveryPhraseMessage
   | ImportAccountMessage
   | ImportHardWareWalletMessage

@@ -217,12 +217,25 @@ const importKey = (secret: string, activePublicKey: string) =>
     privateKey: secret,
   });
 
-const importPhrase = (mnemonicPhrase: string, activePublicKey: string) =>
+// Discovery answers only our own pages; a sender with no tab and no id is
+// one.
+const discover = (mnemonicPhrase: string) =>
+  mockMessageListener(
+    { type: SERVICE_TYPES.DISCOVER_PHRASE_ACCOUNTS, mnemonicPhrase },
+    {},
+  );
+
+const importDiscovered = (
+  mnemonicPhrase: string,
+  activePublicKey: string,
+  fundedIndices: number[],
+) =>
   send({
     type: SERVICE_TYPES.IMPORT_RECOVERY_PHRASE,
     activePublicKey,
     password: PASSWORD,
     mnemonicPhrase,
+    fundedIndices,
   });
 
 const addAccount = (sourceId: string, activePublicKey: string) =>
@@ -340,29 +353,18 @@ describe("concurrent account-mutating messages", () => {
   });
 
   it("stores one set of accounts when the same phrase is imported twice at once", async () => {
-    // Hold the funded-account lookups until both imports are discovering
-    // (each keeps 10 in flight), so both reach the post-discovery "held"
-    // check together. Under the lock only one import discovers at a time,
-    // so the timeout releases the first.
-    let release: () => void = () => undefined;
-    const gate = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    const releaseTimer = setTimeout(() => release(), 1_000);
-    let pending = 0;
-    global.fetch = jest.fn(async (url: string) => {
-      pending += 1;
-      if (pending >= 20) release();
-      await gate;
-      return horizonResponse(url);
-    }) as unknown as typeof fetch;
+    // Both windows discover before either imports, so neither discovery
+    // sees the phrase as held; the lock has to settle it.
     const active = activeKey();
+    const [first, second] = await Promise.all([
+      discover(PHRASE_2.mnemonic),
+      discover(PHRASE_2.mnemonic),
+    ]);
 
     const results = await Promise.all([
-      importPhrase(PHRASE_2.mnemonic, active),
-      importPhrase(PHRASE_2.mnemonic, active),
+      importDiscovered(PHRASE_2.mnemonic, active, first.fundedIndices),
+      importDiscovered(PHRASE_2.mnemonic, active, second.fundedIndices),
     ]);
-    clearTimeout(releaseTimer);
 
     expect(results.map((r) => r.error).sort()).toEqual(
       [PHRASE_ALREADY_HELD_ERROR, undefined].sort(),
@@ -439,6 +441,33 @@ describe("concurrent account-mutating messages", () => {
 
     expect(signOutResult.error).toBeUndefined();
     expect(session().publicKey).toBeFalsy();
+  });
+
+  it("signs out without waiting for a phrase discovery's lookups", async () => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    global.fetch = jest.fn(async (url: string) => {
+      await gate;
+      return horizonResponse(url);
+    }) as unknown as typeof fetch;
+    const order: string[] = [];
+
+    const discovering = discover(PHRASE_2.mnemonic).then(() =>
+      order.push("discover"),
+    );
+    const signOutResult = await send({
+      type: SERVICE_TYPES.SIGN_OUT,
+      activePublicKey: activeKey(),
+    });
+    order.push("signOut");
+    release();
+    await discovering;
+
+    expect(signOutResult.error).toBeUndefined();
+    expect(session().publicKey).toBeFalsy();
+    expect(order).toEqual(["signOut", "discover"]);
   });
 
   it("still refuses a signing request carrying the key an import replaced", async () => {

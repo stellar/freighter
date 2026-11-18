@@ -7,7 +7,6 @@ import { ImportRecoveryPhraseMessage } from "@shared/api/types/message-request";
 import { SecretSourceType } from "@shared/api/types";
 import {
   ACCOUNT_ALREADY_EXISTS_ERROR,
-  ACCOUNT_DISCOVERY_FAILED_ERROR,
   IMPORT_PHRASE_FAILED_ERROR,
   PHRASE_ALREADY_HELD_ERROR,
 } from "@shared/constants/errors";
@@ -34,7 +33,6 @@ import {
   publicKeySelector,
 } from "background/ducks/session";
 import { verifyAddPassword } from "../helpers/verify-add-password";
-import { discoverFundedIndices } from "../helpers/discover-funded-indices";
 import { storeAccount } from "../helpers/store-account";
 import { activatePublicKey } from "../helpers/activate-public-key";
 
@@ -44,8 +42,10 @@ export { IMPORT_PHRASE_FAILED_ERROR };
 
 /*
   Adds a recovery phrase the user typed to a live wallet as a new phrase
-  source: index 0 always, then every index from 1 to `discoveryDepth - 1`
-  that is funded on mainnet. Every refusal returns before the first write.
+  source: index 0, plus the funded indices DISCOVER_PHRASE_ACCOUNTS found.
+  Discovery runs as its own message so its Horizon lookups stay off the
+  account-mutation lock; this one makes no network calls. Every refusal
+  returns before the first write.
 
   Unlike onboarding recover, this never clears the wallet: existing sources,
   accounts, names, indices, provenance and the application state stay as
@@ -66,11 +66,24 @@ export const importRecoveryPhrase = async ({
   sessionTimer: SessionTimer;
   discoveryDepth: number;
 }) => {
-  const { password } = request;
+  const { password, fundedIndices } = request;
   const mnemonicPhrase = normalizeMnemonic(request.mnemonicPhrase || "");
 
   if (!isValidImportMnemonic(mnemonicPhrase)) {
     return { error: "Invalid mnemonic phrase" };
+  }
+
+  // The popup passes these back from discovery. They can only name indices
+  // of the user's own phrase, but anything out of range is refused rather
+  // than stored.
+  if (
+    !Array.isArray(fundedIndices) ||
+    fundedIndices.some(
+      (i) => !Number.isInteger(i) || i < 1 || i >= discoveryDepth,
+    ) ||
+    new Set(fundedIndices).size !== fundedIndices.length
+  ) {
+    return { error: IMPORT_PHRASE_FAILED_ERROR };
   }
 
   const passwordError = await verifyAddPassword({
@@ -96,31 +109,12 @@ export const importRecoveryPhrase = async ({
     return { error: IMPORT_PHRASE_FAILED_ERROR };
   }
 
-  const isSourceHeld = async () =>
-    Boolean((await getSecretSources({ localStore }))[sourceId]);
-
-  // Checked before discovery to skip the lookups for a held phrase.
-  if (await isSourceHeld()) {
+  // Another import of the same phrase may have finished since discovery.
+  if ((await getSecretSources({ localStore }))[sourceId]) {
     return { error: PHRASE_ALREADY_HELD_ERROR };
   }
 
-  const { funded: fundedIndices, failedCount } = await discoverFundedIndices({
-    wallet,
-    from: 1,
-    to: discoveryDepth - 1,
-  });
-  // A held phrase is refused on retry, so importing with gaps would leave
-  // the missed accounts out for good. Fail before writing anything instead.
-  if (failedCount > 0) {
-    return { error: ACCOUNT_DISCOVERY_FAILED_ERROR };
-  }
-  const indices = [0, ...fundedIndices];
-
-  // Checked again after discovery: another import of the same phrase may
-  // have finished while the lookups ran.
-  if (await isSourceHeld()) {
-    return { error: PHRASE_ALREADY_HELD_ERROR };
-  }
+  const indices = [0, ...[...fundedIndices].sort((a, b) => a - b)];
 
   // Collisions are refused, never merged: if any address this phrase would
   // add is already in the wallet (say, imported earlier as a secret key),
