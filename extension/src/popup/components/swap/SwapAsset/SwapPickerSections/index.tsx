@@ -75,6 +75,7 @@ export interface SwapPickerSectionsProps {
    * unavailable notice is suppressed: the network simply has no Popular list, so
    * it's hidden gracefully rather than flagged as a (transient) outage. */
   isDiscoverySupported?: boolean;
+  onViewDetails?: (record: SwapTokenRecord) => void;
 }
 
 export const SwapPickerSections = ({
@@ -84,6 +85,7 @@ export const SwapPickerSections = ({
   onClickAsset,
   stellarExpertUrl,
   isDiscoverySupported = false,
+  onViewDetails,
 }: SwapPickerSectionsProps) => {
   const { t } = useTranslation();
   const [verifiedSheetOpen, setVerifiedSheetOpen] = useState(false);
@@ -162,6 +164,7 @@ export const SwapPickerSections = ({
               code={code}
               issuerKey={r.issuer}
               stellarExpertUrl={stellarExpertUrl}
+              onViewDetails={onViewDetails ? () => onViewDetails(r) : undefined}
             />
           }
         />

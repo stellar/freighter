@@ -26,10 +26,16 @@ jest.mock("popup/components/AssetListRow", () => ({
   AssetListRow: ({
     code,
     domain,
+    rightElement,
   }: {
     code: string;
     domain?: string | null;
-  }) => <div data-testid={`row-${code}`} data-domain={domain ?? ""} />,
+    rightElement?: React.ReactNode;
+  }) => (
+    <div data-testid={`row-${code}`} data-domain={domain ?? ""}>
+      {rightElement}
+    </div>
+  ),
 }));
 
 const rec = (code: string, isHeld = false) => ({
@@ -301,5 +307,23 @@ describe("SwapPickerSections", () => {
 
     expect(screen.queryByTestId("swap-picker-empty")).toBeNull();
     expect(screen.queryByTestId(/^swap-section-/)).toBeNull();
+  });
+
+  it("View details on a Popular row calls onViewDetails with that record", () => {
+    const onViewDetails = jest.fn();
+    const aqua = rec("AQUA");
+    render(
+      <SwapPickerSections
+        {...baseProps}
+        searchTerm=""
+        onViewDetails={onViewDetails}
+        result={{ ...emptyResult, popular: [aqua] }}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("SwapTokenRow-AQUA-menu"));
+    fireEvent.click(screen.getByTestId("SwapTokenRow-AQUA-view-details"));
+
+    expect(onViewDetails).toHaveBeenCalledWith(aqua);
   });
 });

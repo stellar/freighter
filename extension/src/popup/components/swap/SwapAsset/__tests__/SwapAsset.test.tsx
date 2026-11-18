@@ -9,6 +9,7 @@ import {
 import { captureException } from "@sentry/browser";
 
 import { Wrapper } from "popup/__testHelpers__";
+import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import * as UseSwapFromData from "popup/components/swap/SwapAsset/hooks/useSwapFromData";
@@ -17,6 +18,13 @@ import * as Soroban from "popup/helpers/soroban";
 import { SwapAsset } from "popup/components/swap/SwapAsset";
 
 jest.mock("@sentry/browser", () => ({ captureException: jest.fn() }));
+
+jest.mock("popup/components/account/AssetDetail/AssetDetailSheet", () => ({
+  AssetDetailSheet: ({ asset }: { asset: { canonical: string } | null }) =>
+    asset ? (
+      <div data-testid="asset-detail-sheet">{asset.canonical}</div>
+    ) : null,
+}));
 
 const resolvedFromState = {
   state: RequestState.SUCCESS,
@@ -607,5 +615,102 @@ describe("SwapAsset destination: a pick before the account data resolves", () =>
     expect(getDecimals).toHaveBeenCalledWith(
       expect.objectContaining({ publicKey: "GACCOUNT" }),
     );
+  });
+});
+
+describe("SwapAsset destination: View details", () => {
+  const USDC_ISSUER =
+    "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+  const USDC = `USDC:${USDC_ISSUER}`;
+  const usdcRecord = {
+    canonical: USDC,
+    code: "USDC",
+    issuer: USDC_ISSUER,
+    domain: "circle.com",
+    image: "",
+    isHeld: false,
+    isContract: false,
+    requiresTrustline: true,
+  };
+
+  beforeEach(() => {
+    jest.spyOn(UseSwapFromData, "useGetSwapFromData").mockReturnValue({
+      state: resolvedFromState,
+      fetchData: jest.fn().mockResolvedValue(undefined),
+      filterBalances: jest.fn(),
+    } as any);
+    jest.spyOn(UseSwapTokenLookup, "useSwapTokenLookup").mockReturnValue({
+      fetchData: jest.fn().mockResolvedValue(undefined),
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          sections: {
+            yourTokens: [],
+            popular: [usdcRecord],
+            verified: [usdcRecord],
+            unverified: [],
+          },
+          isSearch: false,
+          isFallback: false,
+        },
+        error: null,
+      },
+    } as any);
+  });
+
+  afterEach(() => jest.restoreAllMocks());
+
+  const renderPicker = (priceHistory: boolean, mainnet = true) =>
+    render(
+      <Wrapper
+        state={{
+          ...(mainnet
+            ? { settings: { networkDetails: MAINNET_NETWORK_DETAILS } }
+            : {}),
+          remoteConfig: {
+            isInitialized: true,
+            use_balances_v2: false,
+            use_token_price_history: priceHistory,
+            maintenance_banner: { enabled: false, payload: undefined },
+            maintenance_screen: { enabled: false, payload: undefined },
+          },
+        }}
+        routes={["/"]}
+      >
+        <SwapAsset
+          selectionType="destination"
+          hiddenAssets={[]}
+          onClickAsset={jest.fn()}
+          goBack={jest.fn()}
+        />
+      </Wrapper>,
+    );
+
+  it("opens the detail sheet for the chosen Popular row and keeps the search term", async () => {
+    renderPicker(true);
+
+    fireEvent.change(screen.getByTestId("swap-from-search"), {
+      target: { value: "US" },
+    });
+    // The loader replaces the list from the keystroke until the debounced
+    // lookup starts; wait for the searched list to come back.
+    expect(screen.queryByTestId("swap-picker-sections")).toBeNull();
+    fireEvent.click(await screen.findByTestId("SwapTokenRow-USDC-menu"));
+    fireEvent.click(screen.getByTestId("SwapTokenRow-USDC-view-details"));
+
+    expect(screen.getByTestId("asset-detail-sheet")).toHaveTextContent(USDC);
+    expect(screen.getByTestId("swap-from-search")).toHaveValue("US");
+  });
+
+  it.each([
+    ["price history is off", false, true],
+    ["off-mainnet", true, false],
+  ])("offers no View details when %s", async (_name, priceHistory, mainnet) => {
+    renderPicker(priceHistory, mainnet);
+
+    fireEvent.click(await screen.findByTestId("SwapTokenRow-USDC-menu"));
+
+    expect(screen.queryByTestId("SwapTokenRow-USDC-view-details")).toBeNull();
+    expect(screen.getByTestId("SwapTokenRow-USDC-copy")).toBeInTheDocument();
   });
 });

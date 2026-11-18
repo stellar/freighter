@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { Icon, Input, Loader, Notification } from "@stellar/design-system";
 import { captureException } from "@sentry/browser";
@@ -11,6 +11,7 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { closeWindow, openTab } from "popup/helpers/navigate";
 import { View } from "popup/basics/layout/View";
 import { FormRows } from "popup/basics/Forms";
+import type { AccountBalances } from "helpers/hooks/useGetBalances";
 import { RequestState } from "constants/request";
 import { isMainnet, isTestnet } from "helpers/stellar";
 import { AppDataType } from "helpers/hooks/useGetAppData";
@@ -19,6 +20,11 @@ import { reRouteOnboarding } from "popup/helpers/route";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
+import { tokenPriceHistoryEnabledSelector } from "popup/ducks/remoteConfig";
+import { SecurityLevel } from "popup/constants/blockaid";
+import { AssetDetailSheet } from "popup/components/account/AssetDetail/AssetDetailSheet";
+import type { NonHeldAssetDescriptor } from "popup/components/account/AssetDetail/NonHeldAssetDetail";
+import { TokenChartSource } from "popup/components/account/TokenPriceChart/constants";
 import type { DestinationTokenDetails } from "popup/ducks/transactionSubmission";
 import { getDecimalsForAsset } from "popup/helpers/soroban";
 import { swapIdentityKey } from "popup/helpers/swapQuote";
@@ -28,6 +34,7 @@ import {
   useSwapTokenLookup,
   balancesToHeldRecords,
 } from "./hooks/useSwapTokenLookup";
+import type { SwapTokenRecord } from "./hooks/useSwapTokenLookup";
 import { SwapPickerSections } from "./SwapPickerSections";
 import type { SwapPickerSectionsResult } from "./SwapPickerSections";
 
@@ -51,6 +58,24 @@ interface SwapAssetProps {
   goBack: () => void;
 }
 
+const EMPTY_BALANCES: AccountBalances = {
+  balances: [],
+  isFunded: false,
+  subentryCount: 0,
+};
+
+const toDescriptor = (r: SwapTokenRecord): NonHeldAssetDescriptor => ({
+  canonical: r.canonical,
+  code: r.code ?? "",
+  issuer: r.issuer,
+  contractId: r.isContract ? r.issuer : undefined,
+  name: r.name,
+  iconUrl: r.image ?? r.icon,
+  domain: r.domain,
+  isSuspicious: r.securityLevel === SecurityLevel.SUSPICIOUS,
+  isMalicious: r.securityLevel === SecurityLevel.MALICIOUS,
+});
+
 export const SwapAsset = ({
   selectionType,
   hiddenAssets,
@@ -66,6 +91,10 @@ export const SwapAsset = ({
   const isDiscoverySupported =
     isMainnet(networkDetails) || isTestnet(networkDetails);
   const isDestination = selectionType === "destination";
+  const [detailsAsset, setDetailsAsset] =
+    useState<NonHeldAssetDescriptor | null>(null);
+  const isDetailsOffered =
+    useSelector(tokenPriceHistoryEnabledSelector) && isMainnet(networkDetails);
   const title = isDestination ? t("Swap to") : t("Swap from");
 
   const {
@@ -97,6 +126,11 @@ export const SwapAsset = ({
     },
     [],
   );
+
+  const sheetBalances =
+    fromState.data?.type === AppDataType.RESOLVED
+      ? fromState.data.balances
+      : EMPTY_BALANCES;
 
   const isLoading = isDestination
     ? lookupState.state === RequestState.IDLE ||
@@ -407,6 +441,11 @@ export const SwapAsset = ({
                 onClickAsset={handleDestinationPick}
                 stellarExpertUrl={stellarExpertUrl}
                 isDiscoverySupported={isDiscoverySupported}
+                onViewDetails={
+                  isDetailsOffered
+                    ? (r) => setDetailsAsset(toDescriptor(r))
+                    : undefined
+                }
               />
             </>
           ) : (
@@ -420,6 +459,14 @@ export const SwapAsset = ({
           )}
         </div>
       </View.Content>
+      {isDestination && (
+        <AssetDetailSheet
+          asset={detailsAsset}
+          accountBalances={sheetBalances}
+          source={TokenChartSource.SwapPicker}
+          onClose={() => setDetailsAsset(null)}
+        />
+      )}
     </>
   );
 };
