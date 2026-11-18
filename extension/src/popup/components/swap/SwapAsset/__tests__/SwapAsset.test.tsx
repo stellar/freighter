@@ -1,5 +1,11 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+  act,
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+} from "@testing-library/react";
 import { captureException } from "@sentry/browser";
 
 import { Wrapper } from "popup/__testHelpers__";
@@ -367,6 +373,53 @@ describe("SwapAsset destination: a contract token the account doesn't hold", () 
     expect(
       screen.queryByTestId("swap-picker-pick-error"),
     ).not.toBeInTheDocument();
+  });
+
+  describe("when the search changes while the read is pending", () => {
+    const tapThenSearch = async () => {
+      let settle: { resolve: (n: number) => void; reject: (e: Error) => void } =
+        { resolve: () => {}, reject: () => {} };
+      const getDecimals = jest
+        .spyOn(Soroban, "getDecimalsForAsset")
+        .mockImplementation(
+          () =>
+            new Promise<number>((resolve, reject) => {
+              settle = { resolve, reject };
+            }),
+        );
+      const onClickAsset = renderPicker();
+      fireEvent.click(screen.getByTestId("SwapTokenRow-TKN-body"));
+      expect(getDecimals).toHaveBeenCalledTimes(1);
+      fireEvent.change(screen.getByTestId("swap-from-search"), {
+        target: { value: "USDC" },
+      });
+      await screen.findByTestId("swap-picker-sections", undefined, {
+        timeout: 2000,
+      });
+      return { onClickAsset, settle };
+    };
+
+    it("drops a late failure", async () => {
+      const { settle } = await tapThenSearch();
+
+      await act(async () => {
+        settle.reject(new Error("rpc down"));
+      });
+
+      expect(
+        screen.queryByTestId("swap-picker-pick-error"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("drops a late success", async () => {
+      const { onClickAsset, settle } = await tapThenSearch();
+
+      await act(async () => {
+        settle.resolve(18);
+      });
+
+      expect(onClickAsset).not.toHaveBeenCalled();
+    });
   });
 
   it("ignores a repeat tap while the read is pending", async () => {

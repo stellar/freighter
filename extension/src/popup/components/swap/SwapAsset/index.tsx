@@ -87,8 +87,8 @@ export const SwapAsset = ({
   // Blockaid revalidation / cached-result repaint.
   const [isSearchPending, setIsSearchPending] = React.useState(false);
   const [pickError, setPickError] = React.useState<string | null>(null);
-  // A contract-token pick waits on its decimals; a newer pick or the picker
-  // closing wins over a late result.
+  // A contract-token pick waits on its decimals; a newer pick, a new search
+  // or the picker closing wins over a late result.
   const pickIdRef = useRef(0);
   const pendingPickRef = useRef<string | null>(null);
   useEffect(
@@ -159,7 +159,10 @@ export const SwapAsset = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     formik.setFieldValue("searchTerm", val);
-    // A failed read is about a row from the previous results.
+    // A new search abandons a pending pick and its error: both are about a
+    // row from the previous results.
+    pickIdRef.current += 1;
+    pendingPickRef.current = null;
     setPickError(null);
     // The destination lookup is async (debounced + network); show the loader
     // immediately so stale results clear at once. It's handed off to isLoading
