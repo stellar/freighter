@@ -7,7 +7,7 @@ import { captureException } from "@sentry/browser";
 import * as GetSwapQuotes from "@shared/api/helpers/getSwapQuotes";
 import * as HorizonGetBestPath from "popup/helpers/horizonGetBestPath";
 
-import { getSwapQuote } from "../swapQuote";
+import { getHeldTokenDecimals, getSwapQuote } from "../swapQuote";
 
 jest.mock("@sentry/browser", () => ({ captureException: jest.fn() }));
 
@@ -166,8 +166,8 @@ describe("getSwapQuote", () => {
       expect(result.route?.path).toEqual([hopAsset]);
     });
 
-    it("uses the classic route, even when it is not the best, and keeps the full response", async () => {
-      const quotes = { routes: [lifiRoute, classicRoute], unavailable: [] };
+    it("uses the backend's best route and keeps the full response", async () => {
+      const quotes = { routes: [classicRoute, lifiRoute], unavailable: [] };
       getSwapQuotes.mockResolvedValue(quotes);
 
       const result = await getSwapQuote({
@@ -217,11 +217,8 @@ describe("getSwapQuote", () => {
       expect(result.route?.path).toEqual(["native"]);
     });
 
-    it("has no route when no classic route came back", async () => {
-      const quotes = {
-        routes: [lifiRoute],
-        unavailable: [{ source: "classic", reason: "no_route" }],
-      };
+    it("uses a LI.FI route ranked above the classic one", async () => {
+      const quotes = { routes: [lifiRoute, classicRoute], unavailable: [] };
       getSwapQuotes.mockResolvedValue(quotes);
 
       const result = await getSwapQuote({
@@ -233,7 +230,11 @@ describe("getSwapQuote", () => {
         publicKey: ACCOUNT,
       });
 
-      expect(result).toEqual({ route: null, quotes, key: expect.any(Object) });
+      expect(result.route).toEqual({
+        sourceAmount: "100",
+        destinationAmount: "18",
+        path: [],
+      });
     });
   });
 
@@ -259,9 +260,9 @@ describe("getSwapQuote", () => {
     expect(key.amount).toBe(sent);
   });
 
-  describe("when classic can't quote", () => {
+  describe("when no source quotes", () => {
     const quoteWith = (unavailable: { source: string; reason: string }[]) => {
-      getSwapQuotes.mockResolvedValue({ routes: [lifiRoute], unavailable });
+      getSwapQuotes.mockResolvedValue({ routes: [], unavailable });
       return getSwapQuote({
         mode: "send",
         amount: "100",
@@ -297,7 +298,48 @@ describe("getSwapQuote", () => {
     });
   });
 
+  it("uses the LI.FI route while classic is down, without reporting it", async () => {
+    getSwapQuotes.mockResolvedValue({
+      routes: [lifiRoute],
+      unavailable: [{ source: "classic", reason: "error" }],
+    });
+
+    const result = await getSwapQuote({
+      mode: "send",
+      amount: "100",
+      sourceAsset: "native",
+      destAsset: USDC,
+      networkDetails: MAINNET_NETWORK_DETAILS,
+      publicKey: ACCOUNT,
+    });
+
+    expect(result.route?.destinationAmount).toBe("18");
+    expect(captureException).not.toHaveBeenCalled();
+  });
+
   describe("on a custom network", () => {
+    it.each([
+      ["sold", `TKN:${TOKEN_CONTRACT}`, USDC],
+      ["bought", "native", `TKN:${TOKEN_CONTRACT}`],
+    ])(
+      "has no route, without asking Horizon, when a contract token is %s",
+      async (_side, sourceAsset, destAsset) => {
+        horizonSend.mockRejectedValue(new Error("Horizon must not be asked"));
+
+        const result = await getSwapQuote({
+          mode: "send",
+          amount: "1",
+          sourceAsset,
+          destAsset,
+          networkDetails: CUSTOM_NETWORK_DETAILS,
+          publicKey: ACCOUNT,
+        });
+
+        expect(horizonSend).not.toHaveBeenCalled();
+        expect(result.route).toBeNull();
+      },
+    );
+
     it("keeps Horizon strict-send path finding", async () => {
       horizonSend.mockResolvedValue({
         source_amount: "100",
@@ -386,5 +428,30 @@ describe("getSwapQuote", () => {
         key: expect.any(Object),
       });
     });
+  });
+});
+
+describe("getHeldTokenDecimals", () => {
+  const TOKEN = `TKN:${TOKEN_CONTRACT}`;
+  const heldToken = {
+    token: { code: "TKN", issuer: { key: TOKEN_CONTRACT } },
+    contractId: TOKEN_CONTRACT,
+    decimals: 18,
+  } as any;
+
+  it("reads a held contract token's decimals from its balance", () => {
+    expect(getHeldTokenDecimals(TOKEN, [heldToken])).toBe(18);
+  });
+
+  it("is undefined for a contract token not held", () => {
+    expect(getHeldTokenDecimals(TOKEN, [])).toBeUndefined();
+  });
+
+  it.each([
+    ["a classic asset", USDC],
+    ["XLM", "native"],
+    ["no token", ""],
+  ])("is undefined for %s", (_name, canonical) => {
+    expect(getHeldTokenDecimals(canonical, [heldToken])).toBeUndefined();
   });
 });

@@ -160,6 +160,8 @@ export interface SwapHop {
   from: string;
   to: string;
   pool?: string;
+  /** Estimated output of this hop, in `to`'s display units (not base units). Set on every hop of a LI.FI route or on none. */
+  toAmount?: string;
 }
 
 export interface SwapPath {
@@ -179,6 +181,8 @@ export interface SwapRoute {
   toAmount: string;
   paths: SwapPath[];
   fees: SwapFee[];
+  /** LI.FI only: the simulated Soroban resource fee, in XLM. */
+  resourceFee?: string;
 }
 
 export interface SwapUnavailable {
@@ -189,4 +193,24 @@ export interface SwapUnavailable {
 export interface SwapQuotesResponse {
   routes: SwapRoute[];
   unavailable: SwapUnavailable[];
+}
+
+// `POST /swap/tx`. `fee` is the user's network fee setting in XLM; classic
+// builds split it across the operations, LI.FI builds add the resource fee.
+export interface SwapTxRequest {
+  account: string;
+  source: string;
+  fromAsset: string;
+  toAsset: string;
+  amount: string;
+  minOut: string;
+  fee: string;
+  slippage: string;
+  timeout: number;
+  paths?: SwapPath[];
+}
+
+export interface SwapTxResponse {
+  xdr: string;
+  addsTrustline: boolean;
 }

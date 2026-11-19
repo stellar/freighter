@@ -1,7 +1,8 @@
 import { NetworkDetails } from "@shared/constants/stellar";
 import { TrendingAsset } from "@shared/api/types";
 import { getStellarExpertAssets } from "@shared/api/internal";
-import { isTestnet } from "helpers/stellar";
+import { isTestnet, truncateString } from "helpers/stellar";
+import { isContractId } from "popup/helpers/soroban";
 
 // Re-exported so existing `popup/helpers/trendingAssets` imports keep resolving.
 export type { TrendingAsset };
@@ -14,6 +15,8 @@ export const MIN_TRENDING_VOLUME7D = 70_000_000_000;
 
 interface TrendingRecord {
   asset: string; // "CODE-ISSUER" for classic, contract id otherwise
+  code?: string;
+  decimals?: number;
   volume7d?: number;
   domain?: string;
   tomlInfo?: { image?: string; code?: string };
@@ -47,16 +50,26 @@ export const fetchTrendingAssets = async ({
   const applyFloor = !testnet;
 
   return records
-    .filter((record) => record.asset.includes("-")) // classic only; contract ids dropped here, SAC handled in the hook
     .map((record): TrendingAsset => {
-      const [code, issuer] = record.asset.split("-");
-      return {
-        code,
-        issuer,
+      const common = {
         domain: record.domain ?? null,
         icon: record.tomlInfo?.image,
         volume7d: record.volume7d ?? 0,
       };
+      if (isContractId(record.asset)) {
+        return {
+          ...common,
+          code:
+            record.code ||
+            record.tomlInfo?.code ||
+            truncateString(record.asset),
+          issuer: record.asset,
+          contract: record.asset,
+          decimals: record.decimals,
+        };
+      }
+      const [code, issuer] = record.asset.split("-");
+      return { ...common, code, issuer };
     })
     .filter((asset) =>
       applyFloor ? asset.volume7d >= MIN_TRENDING_VOLUME7D : true,

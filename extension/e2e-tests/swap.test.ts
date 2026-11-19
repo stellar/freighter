@@ -29,7 +29,6 @@
  *  - trustline-info-sheet        TrustlineInfoSheet.tsx:16
  *  - XlmReserveSheet             XlmReserveSheet/index.tsx:27
  *  - swap-picker-fallback-notice SwapPickerSections/index.tsx:108
- *  - swap-picker-empty-soroban   SwapPickerSections/index.tsx:123
  *  - blockaid-malicious-label    WarningMessages/index.tsx:768,933
  *
  * testids NOT yet in source (design doc used wrong names; real counterparts above):
@@ -51,10 +50,11 @@ import {
   stubScanTxMalicious,
   stubScanTxSafe,
   stubSwapQuotes,
+  stubSwapTx,
   TESTNET_TRENDING_ASSETS_ROUTE,
   TRENDING_ASSETS_ROUTE,
 } from "./helpers/stubs";
-// Soroban contract address — searching for this should produce the Soroban empty state.
+// A Soroban-only token's contract address.
 const SOROBAN_CONTRACT_ADDRESS =
   "CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND";
 
@@ -153,6 +153,54 @@ test("held-to-held swap reaches review screen", async ({
   });
 });
 
+test("a quote that moved before the build shows the quote-expired toast", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+
+  const stubOverrides = async () => {
+    await context.unroute(ASSET_SEARCH_ROUTE);
+    await context.route(ASSET_SEARCH_ROUTE, (route) =>
+      route.fulfill(
+        assetSearchResponse([
+          {
+            asset:
+              "AQUA-GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
+            volume7d: 1_000_000_000_000,
+          },
+        ]),
+      ),
+    );
+    await context.route(TRENDING_ASSETS_ROUTE, (route) =>
+      route.fulfill(assetSearchResponse([])),
+    );
+    await stubSwapQuotes(context, { toAmount: "0.95" });
+    await stubSwapTx(context, { status: 409 });
+  };
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await switchToMainnet(page);
+
+  await page.getByTestId("nav-link-swap").click();
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
+  await openSwapToPicker(page);
+  await page.getByTestId("swap-from-search").fill("AQUA");
+  await page.getByText("AQUA").first().click({ force: true });
+  await page
+    .getByTestId("swap-sell-card")
+    .getByTestId("send-amount-amount-input")
+    .fill("1");
+  await clickReviewSwap(page);
+
+  await expect(
+    page
+      .getByText("Quote has expired, please try again to get a new quote")
+      .first(),
+  ).toBeVisible({ timeout: 30000 });
+});
+
 // ---------------------------------------------------------------------------
 // 2. Swap-to-new-token happy path
 //    User searches for AQUA (non-held, verified on Mainnet), picks it, and at
@@ -204,6 +252,7 @@ test("swap to new token shows trustline banner at review", async ({
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   // Registered after login so it overrides the default no-route stub.
   await stubSwapQuotes(context, { toAmount: "0.95" });
+  await stubSwapTx(context, { addsTrustline: true });
   await switchToMainnet(page);
 
   await page.getByTestId("nav-link-swap").click();
@@ -385,11 +434,9 @@ test("flagged destination surfaces blockaid malicious warning at review", async 
 });
 
 // ---------------------------------------------------------------------------
-// 5. Search: Soroban contract address → Soroban empty state
-//    Entering a contract address in the "Swap to" search should surface the
-//    Soroban-unsupported empty state copy.
+// 5. Search: Soroban contract address → the contract token's row
 // ---------------------------------------------------------------------------
-test("search with Soroban contract address shows Soroban empty state", async ({
+test("search with a Soroban contract address lists the contract token", async ({
   page,
   extensionId,
   context,
@@ -397,12 +444,14 @@ test("search with Soroban contract address shows Soroban empty state", async ({
   test.slow();
 
   const stubOverrides = async () => {
-    // Return empty results — the Soroban detection happens in the picker via
-    // hadSorobanMatches logic in SwapPickerSections based on the search term
-    // being a contract-shaped address; no search result records needed.
-    await context.unroute(ASSET_SEARCH_ROUTE);
-    await context.route(ASSET_SEARCH_ROUTE, (route) =>
-      route.fulfill(assetSearchResponse([])),
+    // A pasted contract ID is looked up through token-details, not the
+    // asset search.
+    await page.route(
+      `**/token-details/${SOROBAN_CONTRACT_ADDRESS}**`,
+      (route) =>
+        route.fulfill({
+          json: { name: "TKN", symbol: "TKN", decimals: 18 },
+        }),
     );
     await context.route(TRENDING_ASSETS_ROUTE, (route) =>
       route.fulfill(assetSearchResponse([])),
@@ -416,18 +465,12 @@ test("search with Soroban contract address shows Soroban empty state", async ({
   await expect(page.getByTestId("swap-sell-card")).toBeVisible();
 
   await openSwapToPicker(page);
-  // Type a Soroban contract address — SwapPickerSections.hadSorobanMatches
-  // triggers when the search term looks like a contract ID (56-char Stellar G/C address)
   await page.getByTestId("swap-from-search").fill(SOROBAN_CONTRACT_ADDRESS);
 
-  // The Soroban empty state message (swap-picker-empty-soroban)
-  // Text: "Soroban contract tokens aren't supported for swaps yet."
-  await expect(page.getByTestId("swap-picker-empty-soroban")).toBeVisible({
+  await expect(page.getByTestId("SwapTokenRow-TKN")).toBeVisible({
     timeout: 15000,
   });
-  await expect(
-    page.getByText(/Soroban contract tokens aren't supported/),
-  ).toBeVisible();
+  await expect(page.getByTestId("SwapTokenRow-TKN")).toContainText("CAZX…XSND");
 });
 
 // ---------------------------------------------------------------------------
@@ -535,6 +578,7 @@ test("flagged non-held destination stacks trustline and Blockaid banners", async
     );
     // Path so the simulation succeeds and reaches review.
     await stubSwapQuotes(context, { toAmount: "0.95" });
+    await stubSwapTx(context, { addsTrustline: true });
     // Flag the destination TOKEN malicious via the bulk-scan endpoint. The swap
     // reads data.results["CODE-ISSUER"], so the map MUST be keyed exactly by
     // "SCAM-<issuer>". The transaction scan stays safe, so the review's single
@@ -641,6 +685,7 @@ test("completes a swap to a new token and shows the success summary", async ({
     );
     // Path so the swap simulates and builds a prepared transaction to submit.
     await stubSwapQuotes(context, { toAmount: "0.95" });
+    await stubSwapTx(context, { addsTrustline: true });
     // Token + transaction both scan clean, so the review shows the normal
     // Confirm button (no "Confirm anyway").
     await page.route("**/scan-asset-bulk**", (route) =>
@@ -831,6 +876,7 @@ test("recovers to the amount screen when the swap quote expires at submit", asyn
       route.fulfill(assetSearchResponse([])),
     );
     await stubSwapQuotes(context, { toAmount: "0.95" });
+    await stubSwapTx(context, { addsTrustline: true });
     await stubScanTxSafe(page);
     await stubScanAssetSafe(page);
     // Submit fails with a quote-expiry op code → the flow recovers to review.

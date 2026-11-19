@@ -32,6 +32,7 @@ import {
 } from "popup/helpers/formatters";
 import { useGetSwapAmountData } from "./hooks/useGetSwapAmountData";
 import { getAssetFromCanonical } from "helpers/stellar";
+import { splitCanonical } from "@shared/helpers/stellar";
 import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
@@ -39,8 +40,16 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import { closeWindow, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
-import { getAvailableBalance } from "popup/helpers/soroban";
-import { getBalanceCanonicalKey } from "popup/helpers/balance";
+import {
+  CLASSIC_ASSET_DECIMALS,
+  getAvailableBalance,
+  isContractId,
+  isSacContract,
+} from "popup/helpers/soroban";
+import {
+  findAssetBalance,
+  getBalanceCanonicalKey,
+} from "popup/helpers/balance";
 import { useBlockaidOverrideState } from "popup/helpers/blockaid";
 import { AppDispatch } from "popup/App";
 import { emitMetric, emitScreenViewed } from "helpers/metrics";
@@ -74,10 +83,19 @@ import { SlideupModal } from "popup/components/SlideupModal";
 import { AmountCard } from "popup/components/amount/AmountCard";
 import { PercentageButtons } from "popup/components/amount/PercentageButtons";
 import { shouldShowXlmReservePreflight } from "popup/helpers/xlmReserve";
-import { getSwapQuote } from "popup/helpers/swapQuote";
+import {
+  getHeldTokenDecimals,
+  getSwapQuote,
+  getSwapQuoteKey,
+  isSameSwapPair,
+  isSameSwapQuoteKey,
+  pickSwapRoute,
+  toBackendAsset,
+} from "popup/helpers/swapQuote";
 import { SheetHeader } from "popup/components/SheetHeader";
 import { SheetLayout } from "popup/components/SheetLayout";
 import { XlmReserveSheet } from "popup/components/swap/XlmReserveSheet";
+import { SwapDetailsSheet } from "popup/components/swap/SwapDetailsSheet";
 import { useSwapLiveQuote } from "./hooks/useSwapLiveQuote";
 import { EditSlippage } from "./EditSlippage";
 
@@ -121,7 +139,6 @@ export const SwapAmount = ({
     destination,
     destinationAmount,
     destinationAsset,
-    isToken,
     memo,
     path,
     transactionFee,
@@ -162,10 +179,34 @@ export const SwapAmount = ({
       ? (swapAmountData.data.userBalances.unfilteredBalances ??
         swapAmountData.data.userBalances.balances)
       : [];
+  const heldSourceDecimals = getHeldTokenDecimals(asset, heldBalances);
+  const heldDestDecimals = getHeldTokenDecimals(destinationAsset, heldBalances);
+  // Input precision only: the build reads an unheld token's decimals on chain.
+  const sourceDecimals = heldSourceDecimals ?? CLASSIC_ASSET_DECIMALS;
+  // Only a classic destination needs a trustline; a contract token holds its
+  // own balances, except a SAC (held by contract ID, named CODE:ISSUER), which
+  // needs its classic asset's.
+  const dstContractBalance =
+    dstAsset && isContractId(dstAsset.issuer)
+      ? findAssetBalance(heldBalances, dstAsset)
+      : undefined;
+  const dstClassicCanonical =
+    dstContractBalance &&
+    "name" in dstContractBalance &&
+    isSacContract(
+      dstContractBalance.name,
+      dstContractBalance.contractId,
+      networkDetails.networkPassphrase,
+    )
+      ? dstContractBalance.name
+      : destinationAsset;
   const destRequiresTrustline =
     Boolean(destinationAsset) &&
+    !isContractId(splitCanonical(dstClassicCanonical).issuer) &&
     heldBalances.length > 0 &&
-    !heldBalances.some((b) => getBalanceCanonicalKey(b) === destinationAsset);
+    !heldBalances.some(
+      (b) => getBalanceCanonicalKey(b) === dstClassicCanonical,
+    );
 
   // A new-trustline swap is two ops; scale the recommended default fee by op
   // count so each op pays the recommended fee (a custom fee is the total and
@@ -176,6 +217,7 @@ export const SwapAmount = ({
     customFee: transactionFee,
     opCount: swapOpCount,
   });
+  const requoteRef = useRef(() => {});
   const {
     state: simulationState,
     fetchData: fetchSimulationData,
@@ -189,11 +231,19 @@ export const SwapAmount = ({
       amount,
       allowedSlippage,
       path,
-      transactionFee: fee,
+      recommendedFee,
+      customFee: transactionFee,
       transactionTimeout,
       memo,
       destRequiresTrustline,
+      sourceDecimals: heldSourceDecimals,
+      // Read at pick for an unheld contract token; a destination that never
+      // went through the picker is read at build.
+      destDecimals:
+        heldDestDecimals ?? transactionData.destinationTokenDetails?.decimals,
     },
+    // The live-quote hook is created below; read it at call time.
+    onQuoteMoved: () => requoteRef.current(),
   });
 
   const [isEditingSlippage, setIsEditingSlippage] = useState(false);
@@ -233,6 +283,7 @@ export const SwapAmount = ({
     });
   }, [isReviewingTx]);
   const [isXlmReserveOpen, setIsXlmReserveOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isQuoteUnavailableOpen, setIsQuoteUnavailableOpen] = useState(false);
   // Tracks focus on the sell input so the "Enter an amount" CTA can disable
   // itself while the input is focused. The extension has no virtual keyboard,
@@ -244,9 +295,24 @@ export const SwapAmount = ({
     () => !!asset && !!destinationAsset,
   );
 
-  const handleContinue = async (values: { amount: string }) => {
-    // A live quote landing now would overwrite the quote the review builds.
+  // Live quotes stay frozen while any build is in flight, the review is
+  // open, or settings are open from it: one landing then would overwrite the
+  // quote being reviewed. A count, so an overlapping build's end can't thaw it.
+  const [buildsInFlight, setBuildsInFlight] = useState(0);
+  const [isSettingsFromReview, setIsSettingsFromReview] = useState(false);
+  const buildReview = async (
+    params: Parameters<typeof fetchSimulationData>[0],
+  ) => {
     cancelLiveQuote();
+    setBuildsInFlight((n) => n + 1);
+    try {
+      return await fetchSimulationData(params);
+    } finally {
+      setBuildsInFlight((n) => n - 1);
+    }
+  };
+
+  const handleContinue = async (values: { amount: string }) => {
     // Retrying after a quote-expiry submit failure: dismiss the stale notice
     // before re-simulating against a fresh quote.
     if (isSwapQuoteExpired) {
@@ -257,7 +323,7 @@ export const SwapAmount = ({
     // was entered in token or dollar terms.
     const cleanedAmount = cleanAmount(values.amount);
     dispatch(saveAmount(cleanedAmount));
-    await fetchSimulationData({
+    await buildReview({
       amount: cleanedAmount,
       destinationRate: dstAssetPrice,
     });
@@ -267,7 +333,8 @@ export const SwapAmount = ({
       spendableXlm: getAvailableBalance({
         assetCanonical: "native",
         balances: sendData.userBalances.balances,
-        recommendedFee: fee,
+        // Includes a Soroban route's resource fee, which the XLM also pays.
+        recommendedFee: displayFee,
       }),
     });
     if (needsReserve) {
@@ -279,7 +346,11 @@ export const SwapAmount = ({
   };
 
   const validate = (values: { amount: string }) => {
-    const error = validateSwapAmount(values.amount);
+    const error = validateSwapAmount(
+      values.amount,
+      sourceDecimals,
+      !isContractId(srcAsset?.issuer),
+    );
     return error ? { amount: error } : {};
   };
 
@@ -290,6 +361,13 @@ export const SwapAmount = ({
     enableReinitialize: true,
     validateOnChange: true,
   });
+
+  // Max taps before the pair's first quote can't know its resource fee. When
+  // that quote leaves the Max amount over spendable, Max is applied again, once
+  // per tap, so a fee that moves with the amount can't keep re-sizing it.
+  const maxPendingRef = useRef<string | null>(null);
+  const recheckMaxRef = useRef(() => {});
+  useEffect(() => recheckMaxRef.current());
 
   // Gate the fullscreen spinner ONLY on the swap data, never on the network
   // fee: feeStats() has no timeout and a slow Horizon can hang the whole
@@ -362,17 +440,21 @@ export const SwapAmount = ({
   );
 
   // Live "You receive" quote as the user types (debounced path-only lookup).
-  const { cancelLiveQuote } = useSwapLiveQuote({
+  const { cancelLiveQuote, requote } = useSwapLiveQuote({
     amount,
     asset,
     destinationAsset,
     destinationAmount,
     networkDetails,
     publicKey,
-    isReviewingTx,
+    isReviewingTx:
+      isReviewingTx ||
+      buildsInFlight > 0 ||
+      (isEditingSettings && isSettingsFromReview),
     swapAmountData,
     dispatch,
   });
+  requoteRef.current = requote;
 
   if (isLoading) {
     return <Loading />;
@@ -413,6 +495,45 @@ export const SwapAmount = ({
     state: swapAmountData.state,
   });
 
+  // The stored quote lags the inputs until the debounced re-quote lands. The
+  // CTA's pending state reads this too, so hasQuote and "pending" agree.
+  const inputsKey = getSwapQuoteKey({
+    mode: "send",
+    amount: amount || "0",
+    sourceAsset: asset,
+    destAsset: destinationAsset,
+    networkDetails,
+    publicKey,
+  });
+  const isQuoteForInputs = isSameSwapQuoteKey(
+    transactionData.swapQuoteKey,
+    inputsKey,
+  );
+  const hasQuote =
+    !!srcAsset &&
+    !!dstAsset &&
+    new BigNumber(destinationAmount || "0").gt(0) &&
+    isQuoteForInputs;
+  const quotedRoute =
+    hasQuote && transactionData.swapQuotes
+      ? pickSwapRoute(transactionData.swapQuotes)
+      : undefined;
+  const resourceFee = quotedRoute?.resourceFee;
+  const displayFee = resourceFee
+    ? new BigNumber(fee).plus(resourceFee).toFixed()
+    : fee;
+  // Until this amount's quote lands, spendable (and so Max) holds back the
+  // pair's last quoted resource fee: it barely moves with the amount, and
+  // without it Max overshoots once the quote arrives.
+  const { swapLastQuotedFee } = transactionData;
+  const lastResourceFee =
+    !hasQuote && isSameSwapPair(swapLastQuotedFee?.key, inputsKey)
+      ? swapLastQuotedFee?.resourceFee
+      : null;
+  const balanceFee = lastResourceFee
+    ? new BigNumber(fee).plus(lastResourceFee).toFixed()
+    : displayFee;
+
   // All balance/price/fee/security/CTA derivation. Plain function (not a hook):
   // it runs below the early returns, where a hook would violate rules-of-hooks.
   const {
@@ -422,7 +543,6 @@ export const SwapAmount = ({
     destinationIsNonHeld,
     assetPrice,
     dstAssetPrice,
-    assetDecimals,
     priceValueUsd,
     supportsUsd,
     dstPriceValueUsd,
@@ -440,17 +560,17 @@ export const SwapAmount = ({
     data,
     asset,
     destinationAsset,
-    isToken,
     destinationAmount,
     destinationTokenDetails: transactionData.destinationTokenDetails,
     amount: formik.values.amount,
     amountUsd: formik.values.amountUsd,
-    fee,
+    // Max and the XLM fee check hold back what the swap will pay.
+    fee: balanceFee,
+    feesGateFee: displayFee,
     blockaidOverrideState,
     networkDetails,
     inputType,
-    publicKey,
-    swapQuoteKey: transactionData.swapQuoteKey,
+    isQuoteForInputs,
     destRequiresTrustline,
   });
 
@@ -471,6 +591,8 @@ export const SwapAmount = ({
     // The receive side becomes XLM — a held token, so no trustline is needed.
     dispatch(saveDestinationAsset("native"));
     dispatch(saveDestinationTokenDetails(null));
+    // Both sides are classic from here on.
+    dispatch(saveIsToken(false));
 
     if (!sourceIsNonXlmClassic) {
       // Switching the sell side to a different token: reset the amount, since
@@ -545,6 +667,53 @@ export const SwapAmount = ({
     }
   };
 
+  const applyPercentage = (pct: number, isTap = true) => {
+    // A set-max tap is a user action, not a screen view (RFC
+    // #2883, D5): emit the shared action event so it doesn't
+    // inflate the swap_amount screen.viewed count. Mirrors the
+    // Send handler and mobile — both fire the max-amount
+    // action on the max tap only, on send and swap alike.
+    if (pct === 100 && isTap) {
+      emitMetric(METRIC_NAMES.paymentMaxAmountSelected);
+    }
+    // Always a fraction of the crypto available balance, so
+    // the committed amount is identical in crypto and fiat
+    // display. In fiat mode the fiat field mirrors it (rounded
+    // to cents) for display only.
+    const pctAmount = new BigNumber(cleanAmount(availableBalance))
+      .multipliedBy(new BigNumber(pct).dividedBy(100))
+      .decimalPlaces(sourceDecimals)
+      .toFixed();
+    formik.setFieldValue("amount", pctAmount);
+    dispatch(saveAmount(pctAmount));
+    maxPendingRef.current = pct === 100 && isTap ? pctAmount : null;
+    if (inputType === "fiat" && assetPrice) {
+      const pctUsd = formatAmount(
+        roundUsdValue(
+          new BigNumber(assetPrice).multipliedBy(pctAmount).toString(),
+        ),
+      );
+      formik.setFieldValue("amountUsd", pctUsd);
+      dispatch(saveAmountUsd(pctUsd));
+    }
+  };
+  recheckMaxRef.current = () => {
+    const pending = maxPendingRef.current;
+    if (pending === null || !hasQuote) {
+      return;
+    }
+    maxPendingRef.current = null;
+    if (
+      pending === amount &&
+      new BigNumber(pending).gt(cleanAmount(availableBalance))
+    ) {
+      applyPercentage(100, false);
+    }
+  };
+
+  // Review shows the built transaction, not the quote or the inputs.
+  const reviewed = simulationState.data?.decoded;
+
   const ctaLabels: Record<SwapCtaLabelKey, string> = {
     select: t("Select a token"),
     enter: t("Enter an amount"),
@@ -552,6 +721,18 @@ export const SwapAmount = ({
     insufficientXlmFees: t("Not enough XLM for network fees"),
     review: t("Review swap"),
   };
+
+  const xlmPrice = data.tokenPrices?.native?.currentPrice;
+  const feeUsd = xlmPrice
+    ? new BigNumber(displayFee).multipliedBy(xlmPrice)
+    : undefined;
+  // A cent or more reads in dollars, as on mobile; below that "$0.00" says
+  // nothing, so the line keeps XLM and the Details row drops its dollar part.
+  const feeFiat =
+    feeUsd?.isFinite() && feeUsd.gte(0.01)
+      ? `$${formatAmount(roundUsdValue(feeUsd.toString()))}`
+      : undefined;
+  const feeLineText = feeFiat ?? `${displayFee} XLM`;
 
   const availableBalanceText = srcAsset
     ? `${displayTotal} ${srcAsset.code} ${t("available")}`
@@ -576,7 +757,7 @@ export const SwapAmount = ({
                 </span>
                 {/* The network fee is always denominated in XLM, regardless of
                     whether the amount is being entered in crypto or fiat. */}
-                <span>{`${fee} XLM`}</span>
+                <span data-testid="swap-amount-fee-display">{`${displayFee} XLM`}</span>
               </div>
               <div className="SwapAsset__settings-options">
                 <Button
@@ -594,7 +775,10 @@ export const SwapAmount = ({
                   isRounded
                   variant="tertiary"
                   data-testid="swap-amount-settings-btn"
-                  onClick={() => setIsEditingSettings(true)}
+                  onClick={() => {
+                    setIsSettingsFromReview(false);
+                    setIsEditingSettings(true);
+                  }}
                 >
                   <Icon.Settings01 />
                 </Button>
@@ -704,7 +888,7 @@ export const SwapAmount = ({
                     })}
                     isAmountTooHigh={isAmountTooHigh}
                     maxSpendableText={displayTotal}
-                    cryptoDecimals={assetDecimals}
+                    cryptoDecimals={sourceDecimals}
                     onAmountChange={({ amount: newAmount }) => {
                       // Normalize a cleared input back to the canonical "0".
                       const v = newAmount === "" ? DEFAULT_AMOUNT : newAmount;
@@ -721,7 +905,7 @@ export const SwapAmount = ({
                       const crypto = assetPrice
                         ? new BigNumber(cleanAmount(usd))
                             .dividedBy(assetPrice)
-                            .decimalPlaces(assetDecimals)
+                            .decimalPlaces(sourceDecimals)
                             .toFixed()
                         : DEFAULT_AMOUNT;
                       formik.setFieldValue("amount", crypto);
@@ -764,15 +948,21 @@ export const SwapAmount = ({
                       // A non-held destination can't become the source, so reset
                       // it to "(+) Select" instead of moving it into the sell
                       // slot; otherwise swap the two positions normally.
-                      dispatch(
-                        saveAsset(destinationIsNonHeld ? "" : destinationAsset),
-                      );
+                      const nextSrc = destinationIsNonHeld
+                        ? ""
+                        : destinationAsset;
+                      dispatch(saveAsset(nextSrc));
                       dispatch(saveDestinationAsset(prevSrc));
-                      // The new destination (old source) and new source are both
-                      // held/classic or empty — neither carries trustline/contract
-                      // metadata.
+                      // The new destination (old source) is held, so it carries
+                      // no pick-time details.
                       dispatch(saveDestinationTokenDetails(null));
-                      dispatch(saveIsToken(false));
+                      // isToken is the sell-side token's contract-ness (the
+                      // review reads it against srcAsset).
+                      dispatch(
+                        saveIsToken(
+                          isContractId(splitCanonical(nextSrc).issuer),
+                        ),
+                      );
                       // The amount was denominated in the old source token; reset
                       // it whenever the source token changes.
                       dispatch(saveAmount(DEFAULT_AMOUNT));
@@ -826,7 +1016,6 @@ export const SwapAmount = ({
                     isAmountLoading={isQuotePending}
                     isReadOnly
                     autoFocus={false}
-                    cryptoDecimals={7}
                     onAmountChange={() => {}}
                     onAmountUsdChange={() => {}}
                     onToggleInputType={() => {}}
@@ -839,6 +1028,25 @@ export const SwapAmount = ({
                     }}
                   />
                 </div>
+                {hasQuote ? (
+                  <div
+                    className="SwapAsset__details-link"
+                    data-testid="swap-details-link"
+                  >
+                    <span>
+                      {t("{{fee}} network fee", { fee: feeLineText })}
+                    </span>
+                    <span aria-hidden="true">·</span>
+                    <button
+                      type="button"
+                      data-testid="swap-see-details"
+                      onClick={() => setIsDetailsOpen(true)}
+                    >
+                      {t("See details")}
+                      <Icon.InfoCircle />
+                    </button>
+                  </div>
+                ) : null}
                 {isQuoteUnavailable ? (
                   <div className="SwapAsset__details-link">
                     <button
@@ -855,41 +1063,7 @@ export const SwapAmount = ({
                   className="SwapAsset__percentage-buttons"
                   data-testid="swap-percentage-buttons"
                 >
-                  <PercentageButtons
-                    onSelect={(pct: number) => {
-                      // A set-max tap is a user action, not a screen view (RFC
-                      // #2883, D5): emit the shared action event so it doesn't
-                      // inflate the swap_amount screen.viewed count. Mirrors the
-                      // Send handler and mobile — both fire the max-amount
-                      // action on the max tap only, on send and swap alike.
-                      if (pct === 100) {
-                        emitMetric(METRIC_NAMES.paymentMaxAmountSelected);
-                      }
-                      // Always a fraction of the crypto available balance, so
-                      // the committed amount is identical in crypto and fiat
-                      // display. In fiat mode the fiat field mirrors it (rounded
-                      // to cents) for display only.
-                      const pctAmount = new BigNumber(
-                        cleanAmount(availableBalance),
-                      )
-                        .multipliedBy(new BigNumber(pct).dividedBy(100))
-                        .decimalPlaces(assetDecimals)
-                        .toFixed();
-                      formik.setFieldValue("amount", pctAmount);
-                      dispatch(saveAmount(pctAmount));
-                      if (inputType === "fiat" && assetPrice) {
-                        const pctUsd = formatAmount(
-                          roundUsdValue(
-                            new BigNumber(assetPrice)
-                              .multipliedBy(pctAmount)
-                              .toString(),
-                          ),
-                        );
-                        formik.setFieldValue("amountUsd", pctUsd);
-                        dispatch(saveAmountUsd(pctUsd));
-                      }
-                    }}
-                  />
+                  <PercentageButtons onSelect={applyPercentage} />
                 </div>
               </div>
             </form>
@@ -932,9 +1106,11 @@ export const SwapAmount = ({
               // Rebuild the quote with the new fee before the review comes
               // back, so Confirm never submits the old XDR.
               if (new BigNumber(amount || "0").gt(0)) {
-                await fetchSimulationData({
+                await buildReview({
                   amount,
                   destinationRate: dstAssetPrice,
+                  customFee: fee,
+                  transactionTimeout: timeout,
                 });
               }
               returnToReview();
@@ -952,7 +1128,7 @@ export const SwapAmount = ({
         {isReviewingTx ? (
           <ReviewTx
             assetIcon={assetIcon}
-            fee={fee}
+            fee={reviewed?.fee ?? fee}
             networkDetails={networkDetails}
             onCancel={() => setIsReviewingTx(false)}
             // The trustline-added + swap-success metrics fire post-confirmation
@@ -962,8 +1138,11 @@ export const SwapAmount = ({
               skipRejectionRef.current = true;
               goToNext();
             }}
-            onEditSettings={openSettingsFromReview}
-            sendAmount={amount}
+            onEditSettings={() => {
+              setIsSettingsFromReview(true);
+              openSettingsFromReview();
+            }}
+            sendAmount={reviewed?.sendAmount ?? amount}
             // Show the same fiat figure the amount screen displayed: the
             // entered dollars in fiat mode, the computed USD of the crypto
             // amount in crypto mode.
@@ -983,10 +1162,44 @@ export const SwapAmount = ({
             destinationTokenDetails={transactionData.destinationTokenDetails}
             sourceTokenSecurityLevel={sourceTokenSecurityLevel}
             sourceTokenSecurityWarnings={sourceTokenSecurityWarnings}
-            // Balances-derived, so the trustline disclosure also renders for
-            // defaulted/deep-linked destinations that have no pick-time
-            // snapshot — the same flag that made getBuiltTx add the op.
-            requiresTrustline={destRequiresTrustline}
+            requiresTrustline={reviewed?.addsTrustline ?? destRequiresTrustline}
+          />
+        ) : (
+          <></>
+        )}
+      </SlideupModal>
+      <SlideupModal
+        setIsModalOpen={() => setIsDetailsOpen(false)}
+        isModalOpen={isDetailsOpen}
+        ariaLabel={t("Details")}
+      >
+        {isDetailsOpen && hasQuote && srcAsset && dstAsset ? (
+          <SwapDetailsSheet
+            route={quotedRoute}
+            fee={displayFee}
+            feeFiat={feeFiat}
+            knownTokens={{
+              [toBackendAsset(asset)]: {
+                code: srcAsset.code,
+                issuer: srcAsset.issuer ?? "",
+                canonical: asset,
+                icon: assetIcon ?? null,
+              },
+              [toBackendAsset(destinationAsset)]: {
+                code: dstAsset.code,
+                issuer: dstAsset.issuer ?? "",
+                canonical: destinationAsset,
+                icon: dstAssetIcon ?? null,
+              },
+            }}
+            srcCode={srcAsset.code}
+            dstCode={dstAsset.code}
+            sendAmount={cleanAmount(amount)}
+            destinationAmount={destinationAmount}
+            icons={data.icons}
+            balances={heldBalances}
+            networkDetails={networkDetails}
+            onClose={() => setIsDetailsOpen(false)}
           />
         ) : (
           <></>

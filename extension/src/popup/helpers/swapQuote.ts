@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Horizon, StrKey } from "stellar-sdk";
+import { Horizon } from "stellar-sdk";
 
 import {
   getSwapQuotes,
@@ -10,6 +10,7 @@ import {
   SwapQuotesResponse,
   SwapRoute,
 } from "@shared/api/types/backend-api";
+import { AssetType } from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import {
@@ -17,7 +18,9 @@ import {
   isCustomNetwork,
   splitCanonical,
 } from "@shared/helpers/stellar";
+import { findAssetBalance } from "popup/helpers/balance";
 import { cleanAmount } from "popup/helpers/formatters";
+import { isContractId } from "popup/helpers/soroban";
 import {
   horizonGetBestPath,
   horizonGetBestReceivePath,
@@ -89,21 +92,51 @@ export const isSameSwapQuoteKey = (
   a.destAsset === b.destAsset &&
   new BigNumber(a.amount).isEqualTo(b.amount);
 
+/** Same account, network and asset pair, whatever the amount. */
+export const isSameSwapPair = (
+  a: SwapQuoteKey | null | undefined,
+  b: SwapQuoteKey,
+) => !!a && isSameSwapQuoteKey({ ...a, amount: b.amount }, b);
+
 // Classic reasons that mean the source is down rather than that the pair has
 // no route.
 const CLASSIC_OUTAGE_REASONS = ["error", "timeout", "rate_limited"];
 
-// The client still builds a classic path payment itself, so only the classic
-// route is usable, even when another source quotes better.
-export const pickSwapRoute = (quotes: SwapQuotesResponse) =>
-  quotes.routes.find((route) => route.source === "classic");
+// The backend ranks routes best first.
+export const pickSwapRoute = (
+  quotes: SwapQuotesResponse,
+): SwapRoute | undefined => quotes.routes[0];
 
-const toBackendAsset = (canonical: string) => {
+const isContractToken = (canonical: string) =>
+  isContractId(splitCanonical(canonical).issuer);
+
+/**
+ * What makes two swap tokens the same token. A contract token's code differs
+ * between sources (the contract's symbol on a held balance, stellar.expert's
+ * code on a search row), so its contract ID alone identifies it.
+ */
+export const swapIdentityKey = (canonical: string) =>
+  isContractToken(canonical) ? splitCanonical(canonical).issuer : canonical;
+
+export const toBackendAsset = (canonical: string) => {
   if (isNativeAssetId(canonical)) {
     return "XLM";
   }
-  const { issuer } = splitCanonical(canonical);
-  return StrKey.isValidContract(issuer) ? issuer : canonical;
+  return isContractToken(canonical)
+    ? splitCanonical(canonical).issuer
+    : canonical;
+};
+
+/** A held contract token's decimals; undefined for anything else. */
+export const getHeldTokenDecimals = (
+  canonical: string,
+  balances: AssetType[],
+): number | undefined => {
+  if (!isContractToken(canonical)) {
+    return undefined;
+  }
+  const held = findAssetBalance(balances, splitCanonical(canonical));
+  return held && "decimals" in held ? Number(held.decimals) : undefined;
 };
 
 const fromBackendAsset = (asset: string) => {
@@ -151,6 +184,10 @@ export const getSwapQuote = async (
   const key = getSwapQuoteKey(params);
   const { amount } = key;
   if (isCustomNetwork(networkDetails)) {
+    // Contract tokens route only through the backend's Soroban sources.
+    if (isContractToken(sourceAsset) || isContractToken(destAsset)) {
+      return { route: null, quotes: null, key };
+    }
     const record =
       mode === "send"
         ? await horizonGetBestPath({

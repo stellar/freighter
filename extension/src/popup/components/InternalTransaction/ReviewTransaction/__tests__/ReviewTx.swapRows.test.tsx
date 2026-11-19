@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 
 import { RequestState } from "constants/request";
 import { Wrapper } from "popup/__testHelpers__";
@@ -58,6 +58,54 @@ describe("ReviewTx swap rows", () => {
     expect(
       screen.queryByTestId("review-tx-minimum-received"),
     ).not.toBeInTheDocument();
+  });
+
+  it("breaks a Soroban swap's fee into inclusion and resource fees", () => {
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <ReviewTx
+          {...swapProps}
+          fee="0.0858659"
+          simulationState={{
+            ...swapProps.simulationState,
+            data: {
+              ...swapProps.simulationState.data,
+              inclusionFee: "0.00002",
+              resourceFee: "0.0858459",
+            },
+          }}
+        />
+      </Wrapper>,
+    );
+    fireEvent.click(screen.getByTestId("review-tx-fee-info-btn"));
+
+    expect(screen.getByTestId("review-tx-resource-fee")).toHaveTextContent(
+      "0.0858459 XLM",
+    );
+    expect(screen.getByTestId("review-tx-total-fee")).toHaveTextContent(
+      "0.0858659 XLM",
+    );
+  });
+
+  it("does not confirm while the transaction is still being built", () => {
+    const onConfirm = jest.fn();
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <ReviewTx
+          {...swapProps}
+          onConfirm={onConfirm}
+          simulationState={
+            { state: RequestState.LOADING, data: null, error: null } as any
+          }
+        />
+      </Wrapper>,
+    );
+
+    const confirm = screen.getByTestId("SubmitAction");
+    fireEvent.click(confirm);
+
+    expect(confirm).toBeDisabled();
+    expect(onConfirm).not.toHaveBeenCalled();
   });
 
   it("hides the Memo row on swaps (swaps carry no memo)", () => {
