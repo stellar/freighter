@@ -340,15 +340,17 @@ describe("EarnAmount reviewed amount", () => {
     await saveFee("0.01");
 
     // Review is back, but the deposit it shows was built with the old fee, so
-    // there is nothing to sign. A toast says why.
+    // there is nothing to sign. A toast says why, in plain words.
+    const reason =
+      "The pool can’t take this deposit right now. Try again later.";
     await waitFor(() => expect(isReviewOpen()).toBe(true));
     expect(screen.getByTestId("earn-review-confirm")).toBeDisabled();
     // The reason is the toast's; the amount screen behind Review stays clear.
     expect(
-      within(screen.getByTestId("earn-amount")).queryByText("Pool is frozen"),
+      within(screen.getByTestId("earn-amount")).queryByText(reason),
     ).not.toBeInTheDocument();
     expect(showToast).toHaveBeenCalledTimes(1);
-    expect(lastToastText()).toContain("Pool is frozen");
+    expect(lastToastText()).toContain(reason);
 
     // A save that rebuilds cleanly turns Confirm back on.
     await act(async () => {

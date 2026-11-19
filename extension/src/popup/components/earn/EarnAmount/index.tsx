@@ -10,6 +10,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate, useLocation } from "react-router-dom";
+import { captureException } from "@sentry/browser";
 
 import { View } from "popup/basics/layout/View";
 import { showToast } from "popup/basics/shadcn/Toast";
@@ -461,18 +462,33 @@ export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
         assetCode: selected?.code || "",
         reasonCode: scrubStrKeys(message) || "unknown",
       });
-      // A balance rejection on an XLM deposit is the fee, not the amount: the
-      // CTA already gates anything above the spendable balance, so what is left
-      // is a deposit that cannot also pay for itself. Every other rejection is
-      // the pool's own and reads better in its own words.
-      return {
-        kind: "message",
-        message:
-          isXlm && isInsufficientBalanceFailure(message)
+      // The raw reason (a pool's host error, or a network failure) goes to
+      // Sentry; the user gets a plain one, as on mobile. A balance rejection on
+      // an XLM deposit is the fee, not the amount: the CTA already gates
+      // anything above the spendable balance, so what is left is a deposit
+      // that cannot also pay for itself. On any other token it is that token's
+      // balance. Every other rejection (a supply cap, a frozen pool, a stale
+      // oracle, the network) is one to retry later.
+      captureException(
+        `Failed to simulate an Earn deposit - ${scrubStrKeys(message)}`,
+      );
+      if (isInsufficientBalanceFailure(message)) {
+        return {
+          kind: "message",
+          message: isXlm
             ? t(
                 "Not enough XLM to cover the network fee. Try depositing a smaller amount.",
               )
-            : message,
+            : t("Not enough {{code}} for this deposit. Try a smaller amount.", {
+                code: selected?.code || "",
+              }),
+        };
+      }
+      return {
+        kind: "message",
+        message: t(
+          "The pool can’t take this deposit right now. Try again later.",
+        ),
       };
     } finally {
       setIsSimulating(false);

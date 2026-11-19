@@ -69,6 +69,8 @@ const earnKeys = [
   "You don’t have enough available XLM to cover the transaction fee. Add XLM to continue with your deposit.",
   "Not enough XLM left for the network fee. Reduce your deposit by at least {{amount}} XLM.",
   "Not enough XLM to cover the network fee. Try depositing a smaller amount.",
+  "Not enough {{code}} for this deposit. Try a smaller amount.",
+  "The pool can’t take this deposit right now. Try again later.",
   "Transaction failed. Try again.",
   "Description",
   "Deposit supported tokens into this Blend pool to earn yield. APY may change over time. Withdraw anytime.",

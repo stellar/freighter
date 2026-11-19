@@ -212,6 +212,43 @@ describe("internalApi", () => {
     });
   });
 
+  describe("simulateTransaction", () => {
+    const args = {
+      xdr: "AAAA",
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    };
+
+    it("returns the prepared transaction from a successful reply", async () => {
+      jest.spyOn(global, "fetch").mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ preparedTransaction: "prepared" }),
+      } as unknown as Response);
+
+      await expect(internalApi.simulateTransaction(args)).resolves.toEqual({
+        ok: true,
+        response: { preparedTransaction: "prepared" },
+      });
+    });
+
+    // The backend replies to a rejected simulation in plain text. Parsing it
+    // as JSON threw, and the reason never reached the caller.
+    it("returns a rejection's plain-text reply as text", async () => {
+      const reply = "Error: Error - simulation incorrect: {}\n    at stack";
+      const json = jest.fn().mockRejectedValue(new SyntaxError("not JSON"));
+      jest.spyOn(global, "fetch").mockResolvedValue({
+        ok: false,
+        json,
+        text: jest.fn().mockResolvedValue(reply),
+      } as unknown as Response);
+
+      await expect(internalApi.simulateTransaction(args)).resolves.toEqual({
+        ok: false,
+        response: reply,
+      });
+      expect(json).not.toHaveBeenCalled();
+    });
+  });
+
   describe("simulateTokenTransfer", () => {
     it("includes the fee in stroops in the indexer request body", async () => {
       const fetchSpy = jest.spyOn(global, "fetch").mockResolvedValue({

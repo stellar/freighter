@@ -2864,10 +2864,18 @@ export const simulateTransaction = async (args: {
     }),
   };
   const res = await fetch(`${INDEXER_URL}/simulate-tx`, options);
-  const response = await res.json();
+  // The backend answers a rejected simulation with a 400 whose body is plain
+  // text (its error message, then the stack), so a failure is returned as
+  // that text: parsing it as JSON would throw, and the reason would be lost.
+  if (!res.ok) {
+    return {
+      ok: false,
+      response: await res.text(),
+    };
+  }
   return {
-    ok: res.ok,
-    response,
+    ok: true,
+    response: await res.json(),
   };
 };
 
