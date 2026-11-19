@@ -1,8 +1,8 @@
 @use "../../../styles/utils.scss" as *;
 
-// Figma: Varial 4470:111414 "Review deposit".
+// Figma: Varial 4470:111414 "Review deposit". SheetLayout pads it and pins
+// its actions.
 .EarnReview {
-  padding: pxToRem(24);
   display: flex;
   flex-direction: column;
   gap: pxToRem(24);

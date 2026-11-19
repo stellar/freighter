@@ -241,6 +241,24 @@ describe("EarnReview Blockaid transaction verdict", () => {
     expect(await screen.findByTestId("earn-review")).toBeInTheDocument();
   });
 
+  // With a banner the review outgrows the popup; Confirm has to stay in
+  // reach, as on the Send and Swap review.
+  it("pins the actions under the review and under the reasons sheet", async () => {
+    renderReview({ scanResult: maliciousScan });
+
+    const confirm = screen.getByTestId("earn-review-confirm");
+    expect(confirm.closest(".SheetLayout__footer")).not.toBeNull();
+    expect(screen.getByTestId("earn-review").contains(confirm)).toBe(false);
+
+    await userEvent.click(screen.getByTestId("earn-review-blockaid-warning"));
+    await screen.findByTestId("earn-review-blockaid-pane");
+    expect(
+      screen
+        .getByTestId("earn-review-blockaid-proceed")
+        .closest(".SheetLayout__footer"),
+    ).not.toBeNull();
+  });
+
   it("confirms anyway from the reasons sheet on a verdict, as mobile does", async () => {
     const onConfirm = jest.fn();
     const onCancel = jest.fn();

@@ -27,6 +27,7 @@ import { formatRate } from "popup/components/earn/helpers/formatPoolStats";
 import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
 import { formatEarnAmount } from "popup/components/earn/helpers/formatEarnAmount";
 import { SheetHeader, SheetHeaderLayout } from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
 import { StatRow } from "popup/components/earn/StatRow";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 import {
@@ -352,144 +353,154 @@ export const EarnReview = ({
     const backToReview = () => setIsOnBlockaidSheet(false);
 
     return (
-      <div className="EarnReview" data-testid="earn-review-blockaid-pane">
-        <BlockAidScanExpanded
-          scanResult={txScanResult}
-          onClose={backToReview}
-        />
-        <div className="EarnReview__blockaid-actions">
-          <Button
-            size="lg"
-            variant={isMalicious ? "destructive" : "secondary"}
-            isRounded
-            isFullWidth
-            onClick={backToReview}
-            data-testid="earn-review-blockaid-cancel"
-          >
-            {t("Cancel")}
-          </Button>
-          <button
-            type="button"
-            className={`EarnReview__text-action EarnReview__text-action--${
-              isMalicious ? "error" : "default"
-            }`}
-            disabled={!isUnableToScan && !canConfirm}
-            onClick={isUnableToScan ? backToReview : onConfirmTx}
-            data-testid="earn-review-blockaid-proceed"
-          >
-            {isUnableToScan ? t("Continue") : t("Confirm anyway")}
-          </button>
+      // The actions pin under the reasons, as under the Send and Swap
+      // review's Blockaid pane.
+      <SheetLayout
+        footer={
+          <div className="EarnReview__blockaid-actions">
+            <Button
+              size="lg"
+              variant={isMalicious ? "destructive" : "secondary"}
+              isRounded
+              isFullWidth
+              onClick={backToReview}
+              data-testid="earn-review-blockaid-cancel"
+            >
+              {t("Cancel")}
+            </Button>
+            <button
+              type="button"
+              className={`EarnReview__text-action EarnReview__text-action--${
+                isMalicious ? "error" : "default"
+              }`}
+              disabled={!isUnableToScan && !canConfirm}
+              onClick={isUnableToScan ? backToReview : onConfirmTx}
+              data-testid="earn-review-blockaid-proceed"
+            >
+              {isUnableToScan ? t("Continue") : t("Confirm anyway")}
+            </button>
+          </div>
+        }
+      >
+        <div className="EarnReview" data-testid="earn-review-blockaid-pane">
+          <BlockAidScanExpanded
+            scanResult={txScanResult}
+            onClose={backToReview}
+          />
         </div>
-      </div>
+      </SheetLayout>
     );
   }
 
+  // The title scrolls away with the review, as on Send and Swap's; only the
+  // actions pin, so Confirm stays in reach however tall the review gets (a
+  // Blockaid banner takes it past the popup's height).
   return (
-    <div className="EarnReview" data-testid="earn-review">
-      <SheetHeader
-        layout={SheetHeaderLayout.Centered}
-        title={t("Review deposit")}
-      />
+    <SheetLayout footer={actions}>
+      <div className="EarnReview" data-testid="earn-review">
+        <SheetHeader
+          layout={SheetHeaderLayout.Centered}
+          title={t("Review deposit")}
+        />
 
-      <div className="EarnReview__blocks">
-        <div className="EarnReview__group EarnReview__group--deposit">
-          <div className="EarnReview__group-title">
-            {t("You are depositing")}
-          </div>
-          <div className="EarnReview__flow">
-            <div className="EarnReview__asset">
-              <AssetIcon
-                assetIcons={assetIcon ? { [assetCode]: assetIcon } : {}}
-                code={assetCode}
-                issuerKey={assetIssuer}
-                icon={assetIcon || undefined}
-              />
-              <div>
-                <div
-                  className="EarnReview__primary"
-                  data-testid="earn-review-amount"
-                >
-                  {formatEarnAmount(amount)} {assetCode}
+        <div className="EarnReview__blocks">
+          <div className="EarnReview__group EarnReview__group--deposit">
+            <div className="EarnReview__group-title">
+              {t("You are depositing")}
+            </div>
+            <div className="EarnReview__flow">
+              <div className="EarnReview__asset">
+                <AssetIcon
+                  assetIcons={assetIcon ? { [assetCode]: assetIcon } : {}}
+                  code={assetCode}
+                  issuerKey={assetIssuer}
+                  icon={assetIcon || undefined}
+                />
+                <div>
+                  <div
+                    className="EarnReview__primary"
+                    data-testid="earn-review-amount"
+                  >
+                    {formatEarnAmount(amount)} {assetCode}
+                  </div>
+                  <div className="EarnReview__secondary">
+                    {amountUsd === null
+                      ? NO_FIAT_VALUE
+                      : formatFiatAmount(amountUsd)}
+                  </div>
                 </div>
-                <div className="EarnReview__secondary">
-                  {amountUsd === null
-                    ? NO_FIAT_VALUE
-                    : formatFiatAmount(amountUsd)}
+              </div>
+
+              <div className="EarnReview__arrow">
+                <Icon.ArrowDown />
+              </div>
+
+              <div className="EarnReview__asset">
+                <PoolIcon />
+                <div>
+                  <div className="EarnReview__secondary">{t("To")}</div>
+                  <div
+                    className="EarnReview__primary"
+                    data-testid="earn-review-pool"
+                  >
+                    {formatPoolName(pool?.name, t)}
+                  </div>
                 </div>
               </div>
             </div>
-
-            <div className="EarnReview__arrow">
-              <Icon.ArrowDown />
-            </div>
-
-            <div className="EarnReview__asset">
-              <PoolIcon />
-              <div>
-                <div className="EarnReview__secondary">{t("To")}</div>
-                <div
-                  className="EarnReview__primary"
-                  data-testid="earn-review-pool"
-                >
-                  {formatPoolName(pool?.name, t)}
-                </div>
-              </div>
-            </div>
           </div>
-        </div>
 
-        {/* Sits between the deposit card and the position rows rather than at
+          {/* Sits between the deposit card and the position rows rather than at
             the top of the view, so the warning reads against the deposit it is
             about — the same placement the swap review uses. */}
-        {securityLevel && shouldShowTxWarning ? (
-          <BlockaidBanner
-            securityLevel={securityLevel}
-            entity="transaction"
-            onClick={() => setIsOnBlockaidSheet(true)}
-            dataTestId="earn-review-blockaid-warning"
-          />
-        ) : null}
+          {securityLevel && shouldShowTxWarning ? (
+            <BlockaidBanner
+              securityLevel={securityLevel}
+              entity="transaction"
+              onClick={() => setIsOnBlockaidSheet(true)}
+              dataTestId="earn-review-blockaid-warning"
+            />
+          ) : null}
 
-        <div className="EarnReview__group EarnReview__group--rows">
-          <StatRow
-            label={t("Position")}
-            testId="earn-review-position"
-            value={
-              <>
-                <span className="EarnReview__before">
-                  {`${formatEarnAmount(currentPosition)} → `}
-                </span>
-                {formatEarnAmount(positionAfter)} {assetCode}
-              </>
-            }
-          />
-          <StatRow
-            label={t("Current APY")}
-            value={formatRate(apy)}
-            isPositive
-            testId="earn-review-apy"
-          />
-          <StatRow
-            label={t("Monthly earnings (est.)")}
-            testId="earn-review-monthly"
-            value={formatEstimate(monthly)}
-          />
-          <StatRow
-            label={t("Yearly earnings (est.)")}
-            testId="earn-review-yearly"
-            value={formatEstimate(yearly)}
-          />
+          <div className="EarnReview__group EarnReview__group--rows">
+            <StatRow
+              label={t("Position")}
+              testId="earn-review-position"
+              value={
+                <>
+                  <span className="EarnReview__before">
+                    {`${formatEarnAmount(currentPosition)} → `}
+                  </span>
+                  {formatEarnAmount(positionAfter)} {assetCode}
+                </>
+              }
+            />
+            <StatRow
+              label={t("Current APY")}
+              value={formatRate(apy)}
+              isPositive
+              testId="earn-review-apy"
+            />
+            <StatRow
+              label={t("Monthly earnings (est.)")}
+              testId="earn-review-monthly"
+              value={formatEstimate(monthly)}
+            />
+            <StatRow
+              label={t("Yearly earnings (est.)")}
+              testId="earn-review-yearly"
+              value={formatEstimate(yearly)}
+            />
+          </div>
+
+          {detailTx && (
+            <TransactionDetailsButton
+              testId="earn-review-details-btn"
+              onClick={() => setIsOnDetailsPane(true)}
+            />
+          )}
         </div>
-
-        {detailTx && (
-          <TransactionDetailsButton
-            testId="earn-review-details-btn"
-            onClick={() => setIsOnDetailsPane(true)}
-          />
-        )}
       </div>
-
-      {actions}
-    </div>
+    </SheetLayout>
   );
 };
