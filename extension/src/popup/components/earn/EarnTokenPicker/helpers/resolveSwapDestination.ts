@@ -1,10 +1,13 @@
-import { Asset, Networks } from "stellar-sdk";
+import { Networks } from "stellar-sdk";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getTokenDetails } from "@shared/api/internal";
-import { isNativeAssetId } from "@shared/helpers/assetIdentity";
-import { getAssetSacAddress } from "@shared/helpers/soroban/token";
-import { getCanonicalFromAsset } from "@shared/helpers/stellar";
+import {
+  isNativeAssetId,
+  isNativeContract,
+} from "@shared/helpers/assetIdentity";
+import { isSacContract } from "@shared/helpers/soroban/token";
+import { getCanonicalFromAsset, splitCanonical } from "@shared/helpers/stellar";
 import { DestinationTokenDetails } from "popup/ducks/transactionSubmission";
 import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
 
@@ -24,20 +27,6 @@ import { EarnTokenOption } from "../hooks/useGetEarnTokensData";
  * the pool takes, so callers can decline to start a swap rather than send the
  * user somewhere with a half-filled or different destination.
  */
-/**
- * The address of the Stellar Asset Contract for `canonical`, or null when it
- * names no classic asset (a malformed name, or a contract-issued token).
- */
-const getSacAddress = (canonical: string, networkPassphrase: string) => {
-  try {
-    return isNativeAssetId(canonical)
-      ? Asset.native().contractId(networkPassphrase)
-      : getAssetSacAddress(canonical, networkPassphrase as Networks);
-  } catch {
-    return null;
-  }
-};
-
 export const resolveSwapDestination = async ({
   option,
   publicKey,
@@ -68,16 +57,20 @@ export const resolveSwapDestination = async ({
 
     canonical = tokenDetails.name;
     // "native" has no issuer half; everything else is CODE:ISSUER.
-    issuer = canonical.includes(":") ? canonical.split(":")[1] : undefined;
+    issuer = splitCanonical(canonical).issuer || undefined;
   }
 
   // The swap has to buy the token the pool takes. A SAC's address is derived
   // from its asset, so the asset found is that token only when its contract is
   // the one the pool lists; anything else is some other asset.
-  if (
-    getSacAddress(canonical, networkDetails.networkPassphrase) !==
-    option.assetId
-  ) {
+  const isPoolAsset = isNativeAssetId(canonical)
+    ? isNativeContract(option.assetId, networkDetails.networkPassphrase)
+    : isSacContract(
+        canonical,
+        option.assetId,
+        networkDetails.networkPassphrase as Networks,
+      );
+  if (!isPoolAsset) {
     return null;
   }
 

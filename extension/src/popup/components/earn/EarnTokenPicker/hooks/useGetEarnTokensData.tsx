@@ -1,6 +1,5 @@
 import { useReducer, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import BigNumber from "bignumber.js";
 import { captureException } from "@sentry/browser";
 
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -15,7 +14,6 @@ import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 import {
   getCatalogAssetIdentity,
   getCatalogIconKey,
-  getCatalogIssuer,
   resolveEarnAssetIcons,
 } from "popup/components/earn/helpers/earnAssetIcons";
 import { AppDispatch } from "popup/App";
@@ -36,7 +34,7 @@ import {
   useGetAppData,
 } from "helpers/hooks/useGetAppData";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
-import { getBalanceByKey } from "popup/helpers/balance";
+import { getBalanceByKey, getTotalInWholeUnits } from "popup/helpers/balance";
 
 /** One row in the picker. */
 export interface EarnTokenOption {
@@ -136,16 +134,25 @@ const buildEarnRows = ({
       heldBalances,
       networkDetails,
     );
-    const total = balance?.total ? new BigNumber(balance.total) : null;
+    // In whole tokens: a SEP-41 reserve's balance reports raw units.
+    const total = balance ? getTotalInWholeUnits(balance) : null;
     const balanceIssuer =
       balance && "token" in balance && "issuer" in balance.token
         ? balance.token.issuer.key
         : undefined;
 
+    // The code, issuer and nativeness the catalog itself implies.
+    const catalog = getCatalogAssetIdentity({
+      symbol: option.symbol,
+      name: option.name,
+      assetId: option.assetId,
+      networkDetails,
+    });
+
     // A zero-balance reserve has no balance to take an issuer from; the
     // catalog's `name` is the only other source. Without it the row can
     // build no icon key at all.
-    const issuer = balanceIssuer || getCatalogIssuer(option.name);
+    const issuer = balanceIssuer || catalog.issuer;
 
     // `symbol` is null for native XLM on the live catalog (verified against
     // dev), so it cannot be the only source of the display code — taking it
@@ -162,16 +169,10 @@ const buildEarnRows = ({
     // reported with a null symbol *and* a null name and so is recognisable
     // only by its SAC. Without it an account holding no XLM had no code to
     // fall back on and the row rendered a truncated contract address.
-    const catalogCode = getCatalogAssetIdentity({
-      symbol: option.symbol,
-      name: option.name,
-      assetId: option.assetId,
-      networkDetails,
-    }).code;
     const code =
       option.symbol ||
       balanceCode ||
-      catalogCode ||
+      catalog.code ||
       `${option.assetId.slice(0, 4)}…`;
 
     // Icons are keyed by canonical, and come from the session's icon cache:

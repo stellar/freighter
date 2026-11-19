@@ -1,10 +1,13 @@
-import { Asset, StrKey } from "stellar-sdk";
+import { StrKey } from "stellar-sdk";
 
 import { getAssetIcons } from "@shared/api/internal";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { isNativeAssetId } from "@shared/helpers/assetIdentity";
-import { getCanonicalFromAsset } from "@shared/helpers/stellar";
+import {
+  isNativeAssetId,
+  isNativeContract,
+} from "@shared/helpers/assetIdentity";
+import { getCanonicalFromAsset, splitCanonical } from "@shared/helpers/stellar";
 
 /**
  * The Blend catalog identifies every asset by contract address and reports a
@@ -13,10 +16,8 @@ import { getCanonicalFromAsset } from "@shared/helpers/stellar";
  * unexpected `name` cannot produce a bogus canonical.
  */
 export const getCatalogIssuer = (name?: string | null) => {
-  const parts = name ? name.split(":") : [];
-  return parts.length === 2 && StrKey.isValidEd25519PublicKey(parts[1])
-    ? parts[1]
-    : undefined;
+  const { code, issuer } = splitCanonical(name || "");
+  return code && StrKey.isValidEd25519PublicKey(issuer) ? issuer : undefined;
 };
 
 /**
@@ -40,7 +41,7 @@ export const getCatalogIconKey = ({
   if (issuer && code) {
     return getCanonicalFromAsset(code, issuer);
   }
-  if (assetId === Asset.native().contractId(networkDetails.networkPassphrase)) {
+  if (isNativeContract(assetId, networkDetails.networkPassphrase)) {
     return "native";
   }
   return "";
@@ -65,10 +66,11 @@ export const getCatalogAssetIdentity = ({
   networkDetails: NetworkDetails;
 }) => {
   const issuer = getCatalogIssuer(name);
-  const isNative =
-    assetId === Asset.native().contractId(networkDetails.networkPassphrase);
+  const isNative = isNativeContract(assetId, networkDetails.networkPassphrase);
   const code =
-    symbol || (issuer ? name!.split(":")[0] : "") || (isNative ? "XLM" : "");
+    symbol ||
+    (issuer ? splitCanonical(name!).code : "") ||
+    (isNative ? "XLM" : "");
 
   return {
     code,
