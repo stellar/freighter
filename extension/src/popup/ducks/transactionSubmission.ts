@@ -514,6 +514,12 @@ interface TransactionData {
   // networks and whenever the quote is cleared.
   swapQuotes: SwapQuotesResponse | null;
   swapQuoteKey: SwapQuoteKey | null;
+  // The best route's resource fee from the last quote, kept past a new
+  // amount so Max can hold it back before that amount's quote lands.
+  swapLastQuotedFee: {
+    key: SwapQuoteKey;
+    resourceFee: string | null;
+  } | null;
 }
 
 interface HardwareWalletData {
@@ -580,6 +586,7 @@ export const initialState: InitialState = {
     swapSource: null,
     swapQuotes: null,
     swapQuoteKey: null,
+    swapLastQuotedFee: null,
   },
   transactionSimulation: {
     response: null,
@@ -737,6 +744,14 @@ const transactionSubmissionSlice = createSlice({
         action.payload.destinationAmount;
       state.transactionData.swapQuotes = action.payload.quotes ?? null;
       state.transactionData.swapQuoteKey = action.payload.key ?? null;
+      const { quotes, key } = action.payload;
+      // An answer with no route says nothing about the pair's fee.
+      if (quotes?.routes[0] && key) {
+        state.transactionData.swapLastQuotedFee = {
+          key,
+          resourceFee: quotes.routes[0].resourceFee ?? null,
+        };
+      }
     },
     saveDestinationTokenDetails: (
       state,

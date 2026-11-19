@@ -35,6 +35,12 @@ describe("swap i18n parity", () => {
       expect(pt).toHaveProperty([k]);
     });
   });
+
+  // "Taxa" would read as a second fee next to the network fee row.
+  it("labels the Details sheet's rate as a quote rate, not a fee", () => {
+    expect(en).toHaveProperty(["Swap details rate"], "Rate");
+    expect(pt).toHaveProperty(["Swap details rate"], "Cotação");
+  });
 });
 
 // i18next only interpolates {{double}} braces. A single-brace placeholder type

@@ -160,6 +160,8 @@ export interface SwapHop {
   from: string;
   to: string;
   pool?: string;
+  /** Estimated output of this hop, in `to`'s display units (not base units). Set on every hop of a LI.FI route or on none. */
+  toAmount?: string;
 }
 
 export interface SwapPath {
@@ -179,6 +181,8 @@ export interface SwapRoute {
   toAmount: string;
   paths: SwapPath[];
   fees: SwapFee[];
+  /** LI.FI only: the simulated Soroban resource fee, in XLM. */
+  resourceFee?: string;
 }
 
 export interface SwapUnavailable {

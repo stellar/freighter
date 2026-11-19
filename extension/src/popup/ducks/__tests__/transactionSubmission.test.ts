@@ -219,3 +219,48 @@ describe("transactionSubmission removeTokenId", () => {
     });
   });
 });
+
+describe("saveSwapBestPath and the pair's last quoted resource fee", () => {
+  it("keeps the last route's resource fee when a quote comes back with no route", () => {
+    const key = {
+      mode: "send",
+      amount: "1",
+      sourceAsset: "native",
+      destAsset: "TKN:CB23WRDQWGSP6YPMY4UV5C4OW5CBTXKYN3XEATG7KJEZCXMJBYEHOUOV",
+      network: "PUBLIC",
+      publicKey: "G123",
+    } as never;
+    const withRoute = transactionSubmissionReducer(
+      undefined,
+      saveSwapBestPath({
+        path: [],
+        destinationAmount: "2",
+        quotes: {
+          routes: [
+            {
+              source: "lifi",
+              fromAmount: "1",
+              toAmount: "2",
+              paths: [],
+              fees: [],
+              resourceFee: "0.05",
+            },
+          ],
+          unavailable: [],
+        } as never,
+        key,
+      }),
+    );
+    const noRoute = transactionSubmissionReducer(
+      withRoute,
+      saveSwapBestPath({
+        path: [],
+        destinationAmount: "0",
+        quotes: { routes: [], unavailable: [] },
+        key: { ...(key as object), amount: "999999" } as never,
+      }),
+    );
+
+    expect(noRoute.transactionData.swapLastQuotedFee?.resourceFee).toBe("0.05");
+  });
+});
