@@ -362,6 +362,13 @@ export const SwapAmount = ({
     validateOnChange: true,
   });
 
+  // Max taps before the pair's first quote can't know its resource fee. When
+  // that quote leaves the Max amount over spendable, Max is applied again, once
+  // per tap, so a fee that moves with the amount can't keep re-sizing it.
+  const maxPendingRef = useRef<string | null>(null);
+  const recheckMaxRef = useRef(() => {});
+  useEffect(() => recheckMaxRef.current());
+
   // Gate the fullscreen spinner ONLY on the swap data, never on the network
   // fee: feeStats() has no timeout and a slow Horizon can hang the whole
   // screen for >15s. The fee seeds from the base fee / in-session cache and
@@ -657,6 +664,50 @@ export const SwapAmount = ({
       captureException(
         `Swap-for-reserve prefill failed - ${e instanceof Error ? e.message : JSON.stringify(e)}`,
       );
+    }
+  };
+
+  const applyPercentage = (pct: number, isTap = true) => {
+    // A set-max tap is a user action, not a screen view (RFC
+    // #2883, D5): emit the shared action event so it doesn't
+    // inflate the swap_amount screen.viewed count. Mirrors the
+    // Send handler and mobile — both fire the max-amount
+    // action on the max tap only, on send and swap alike.
+    if (pct === 100 && isTap) {
+      emitMetric(METRIC_NAMES.paymentMaxAmountSelected);
+    }
+    // Always a fraction of the crypto available balance, so
+    // the committed amount is identical in crypto and fiat
+    // display. In fiat mode the fiat field mirrors it (rounded
+    // to cents) for display only.
+    const pctAmount = new BigNumber(cleanAmount(availableBalance))
+      .multipliedBy(new BigNumber(pct).dividedBy(100))
+      .decimalPlaces(sourceDecimals)
+      .toFixed();
+    formik.setFieldValue("amount", pctAmount);
+    dispatch(saveAmount(pctAmount));
+    maxPendingRef.current = pct === 100 && isTap ? pctAmount : null;
+    if (inputType === "fiat" && assetPrice) {
+      const pctUsd = formatAmount(
+        roundUsdValue(
+          new BigNumber(assetPrice).multipliedBy(pctAmount).toString(),
+        ),
+      );
+      formik.setFieldValue("amountUsd", pctUsd);
+      dispatch(saveAmountUsd(pctUsd));
+    }
+  };
+  recheckMaxRef.current = () => {
+    const pending = maxPendingRef.current;
+    if (pending === null || !hasQuote) {
+      return;
+    }
+    maxPendingRef.current = null;
+    if (
+      pending === amount &&
+      new BigNumber(pending).gt(cleanAmount(availableBalance))
+    ) {
+      applyPercentage(100, false);
     }
   };
 
@@ -1012,41 +1063,7 @@ export const SwapAmount = ({
                   className="SwapAsset__percentage-buttons"
                   data-testid="swap-percentage-buttons"
                 >
-                  <PercentageButtons
-                    onSelect={(pct: number) => {
-                      // A set-max tap is a user action, not a screen view (RFC
-                      // #2883, D5): emit the shared action event so it doesn't
-                      // inflate the swap_amount screen.viewed count. Mirrors the
-                      // Send handler and mobile — both fire the max-amount
-                      // action on the max tap only, on send and swap alike.
-                      if (pct === 100) {
-                        emitMetric(METRIC_NAMES.paymentMaxAmountSelected);
-                      }
-                      // Always a fraction of the crypto available balance, so
-                      // the committed amount is identical in crypto and fiat
-                      // display. In fiat mode the fiat field mirrors it (rounded
-                      // to cents) for display only.
-                      const pctAmount = new BigNumber(
-                        cleanAmount(availableBalance),
-                      )
-                        .multipliedBy(new BigNumber(pct).dividedBy(100))
-                        .decimalPlaces(sourceDecimals)
-                        .toFixed();
-                      formik.setFieldValue("amount", pctAmount);
-                      dispatch(saveAmount(pctAmount));
-                      if (inputType === "fiat" && assetPrice) {
-                        const pctUsd = formatAmount(
-                          roundUsdValue(
-                            new BigNumber(assetPrice)
-                              .multipliedBy(pctAmount)
-                              .toString(),
-                          ),
-                        );
-                        formik.setFieldValue("amountUsd", pctUsd);
-                        dispatch(saveAmountUsd(pctUsd));
-                      }
-                    }}
-                  />
+                  <PercentageButtons onSelect={applyPercentage} />
                 </div>
               </div>
             </form>

@@ -15,6 +15,17 @@ import * as UseNetworkFees from "popup/helpers/useNetworkFees";
 import * as Internal from "@shared/api/internal";
 import * as TokenList from "@shared/api/helpers/token-list";
 import { getSwapQuoteKey } from "popup/helpers/swapQuote";
+import {
+  saveAmount,
+  saveSwapBestPath,
+} from "popup/ducks/transactionSubmission";
+import { emitMetric } from "helpers/metrics";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
+
+jest.mock("helpers/metrics", () => ({
+  ...jest.requireActual("helpers/metrics"),
+  emitMetric: jest.fn(),
+}));
 
 // Interpolates, so the fee inside "{{fee}} network fee" is checkable.
 jest.mock("react-i18next", () => ({
@@ -325,6 +336,69 @@ describe("SwapAmount details sheet", () => {
         withBalances([xlm("100")]);
         renderSwapAmount(lastQuoted(AQUA));
         clickMax();
+        expect(savedAmount()).toBe("98.49998");
+      });
+    });
+
+    describe("when the pair's first quote lands after Max", () => {
+      const noQuoteYet = {
+        amount: "50",
+        swapQuotes: null,
+        swapQuoteKey: null,
+      };
+      const quoteLands = (forAmount: string, resourceFee: string) =>
+        act(() => {
+          getTestStore()!.dispatch(
+            saveSwapBestPath({
+              path: [],
+              destinationAmount: "30",
+              quotes: quotes({ resourceFee }) as any,
+              key: quoteKey(forAmount),
+            }),
+          );
+        });
+
+      it("re-applies Max to leave the quote's resource fee", () => {
+        const metric = emitMetric as jest.Mock;
+        metric.mockClear();
+        withBalances([xlm("100")]);
+        renderSwapAmount(noQuoteYet);
+        clickMax();
+        expect(savedAmount()).toBe("98.49998");
+        quoteLands("98.49998", "0.0858459");
+        expect(savedAmount()).toBe("98.4141341");
+        // The re-apply isn't a tap.
+        expect(
+          metric.mock.calls.filter(
+            ([name]) => name === METRIC_NAMES.paymentMaxAmountSelected,
+          ),
+        ).toHaveLength(1);
+      });
+
+      it("leaves an amount typed after Max", () => {
+        withBalances([xlm("100")]);
+        renderSwapAmount(noQuoteYet);
+        clickMax();
+        act(() => {
+          getTestStore()!.dispatch(saveAmount("50"));
+        });
+        quoteLands("50", "0.0858459");
+        expect(savedAmount()).toBe("50");
+      });
+
+      it("re-applies once per tap", () => {
+        withBalances([xlm("100")]);
+        renderSwapAmount(noQuoteYet);
+        clickMax();
+        quoteLands("98.49998", "0.0858459");
+        quoteLands("98.4141341", "0.1");
+        expect(savedAmount()).toBe("98.4141341");
+      });
+
+      it("leaves an amount the user typed", () => {
+        withBalances([xlm("100")]);
+        renderSwapAmount({ ...noQuoteYet, amount: "98.49998" });
+        quoteLands("98.49998", "0.0858459");
         expect(savedAmount()).toBe("98.49998");
       });
     });
