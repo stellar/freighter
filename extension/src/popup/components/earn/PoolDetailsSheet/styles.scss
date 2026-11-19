@@ -1,25 +1,8 @@
 @use "../../../styles/utils.scss" as *;
 
 // Figma: Varial 4470:111204.
+// The header is SheetLayout's, pinned while the stats scroll.
 .PoolDetailsSheet {
-  padding: pxToRem(24);
-  display: flex;
-  flex-direction: column;
-  gap: pxToRem(16);
-
-  // The stat rows grow as the pool gains fields, and SlideupModal sizes itself
-  // to its content's scrollHeight — so without a cap here the sheet runs to the
-  // top of the popup with nothing to scroll. Capped like `.EarnReview--details`,
-  // with the header pinned and only the body scrolling.
-  max-height: 85vh;
-
-  &__header {
-    display: flex;
-    align-items: flex-start;
-    gap: pxToRem(12);
-    flex: none;
-  }
-
   // The 40px pool mark with the deposited token badged at its bottom right.
   &__mark {
     position: relative;
@@ -51,53 +34,7 @@
     }
   }
 
-  // Keeps the icon beside the name, with the X pushed to the far edge.
-  &__identity {
-    margin-right: auto;
-    min-width: 0;
-  }
-
-  // Text/MD/600.
-  &__name {
-    font-size: pxToRem(16);
-    line-height: pxToRem(24);
-    font-weight: 600;
-    color: var(--sds-clr-gray-12);
-  }
-
-  // Text/XS/500.
-  &__provider {
-    font-size: pxToRem(12);
-    line-height: pxToRem(18);
-    font-weight: 500;
-    color: var(--sds-clr-gray-11);
-  }
-
-  &__close {
-    flex: 0 0 auto;
-    width: pxToRem(24);
-    height: pxToRem(24);
-    padding: 0;
-    border: none;
-    cursor: pointer;
-    background: none;
-    color: var(--sds-clr-gray-12);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    svg {
-      width: pxToRem(24);
-      height: pxToRem(24);
-    }
-  }
-
   &__body {
-    flex: 1;
-    // Without this a flex item refuses to shrink below its content height, and
-    // the overflow never engages.
-    min-height: 0;
-    overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: pxToRem(16);
@@ -160,7 +97,7 @@
 
   // The deposit rate reads in Success green here (the review uses the darker
   // Success/Text).
-  .EarnStatRow__value--positive {
+  &__body .EarnStatRow__value--positive {
     color: var(--sds-clr-green-10);
   }
 }

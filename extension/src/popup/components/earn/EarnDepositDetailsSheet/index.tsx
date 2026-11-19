@@ -13,6 +13,8 @@ import { EarnTransactionDetails } from "popup/components/earn/EarnTransactionDet
 import { formatEarnAmount } from "popup/components/earn/helpers/formatEarnAmount";
 import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
 import { StatRow } from "popup/components/earn/StatRow";
+import { SheetHeader, SheetHeaderLayout } from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
 import { TransactionDetailsButton } from "popup/components/TransactionDetailsButton";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { NO_FIAT_VALUE } from "popup/helpers/formatters";
@@ -113,6 +115,24 @@ export const EarnDepositDetailsSheet = ({
     }
   }, [xdr, networkDetails.networkPassphrase]);
 
+  // Pinned under the details, like history's transaction sheet.
+  const explorerButton = !isCustomNetwork(networkDetails) ? (
+    <Button
+      size="lg"
+      variant="secondary"
+      isFullWidth
+      isRounded
+      icon={<Icon.LinkExternal01 />}
+      iconPosition="right"
+      onClick={() =>
+        openTab(`${getStellarExpertUrl(networkDetails)}/tx/${transactionHash}`)
+      }
+      data-testid="earn-deposit-details-explorer"
+    >
+      {t("View on stellar.expert")}
+    </Button>
+  ) : undefined;
+
   if (isOnDetailsPane && transaction) {
     return (
       <EarnTransactionDetails
@@ -125,37 +145,31 @@ export const EarnDepositDetailsSheet = ({
   }
 
   return (
-    <div className="EarnDepositDetailsSheet" data-testid="earn-deposit-details">
-      <div className="EarnDepositDetailsSheet__header">
-        <div className="EarnDepositDetailsSheet__token">
-          <AssetIcon
-            assetIcons={assetIcons}
-            code={assetCode}
-            issuerKey={assetIssuer}
-          />
-        </div>
-        <div className="EarnDepositDetailsSheet__identity">
-          <div className="EarnDepositDetailsSheet__title">
-            {t("Deposited {{code}}", { code: assetCode })}
-          </div>
-          <div
-            className="EarnDepositDetailsSheet__date"
-            data-testid="earn-deposit-details-date"
-          >
-            {onChain ? formatDepositDate(onChain.createdAt) : NO_FIAT_VALUE}
-          </div>
-        </div>
-        <button
-          type="button"
-          className="EarnDepositDetailsSheet__close"
-          onClick={onClose}
-          aria-label={t("Close")}
-          data-testid="earn-deposit-details-close"
-        >
-          <Icon.X />
-        </button>
-      </div>
-
+    <SheetLayout
+      data-testid="earn-deposit-details"
+      header={
+        <SheetHeader
+          layout={SheetHeaderLayout.Inline}
+          leading={
+            <div className="EarnDepositDetailsSheet__token">
+              <AssetIcon
+                assetIcons={assetIcons}
+                code={assetCode}
+                issuerKey={assetIssuer}
+              />
+            </div>
+          }
+          title={t("Deposited {{code}}", { code: assetCode })}
+          subtitle={
+            onChain ? formatDepositDate(onChain.createdAt) : NO_FIAT_VALUE
+          }
+          subtitleTestId="earn-deposit-details-date"
+          onClose={onClose}
+          closeTestId="earn-deposit-details-close"
+        />
+      }
+      footer={explorerButton}
+    >
       <div className="EarnDepositDetailsSheet__body">
         <div className="EarnDepositDetailsSheet__group">
           <StatRow
@@ -202,25 +216,6 @@ export const EarnDepositDetailsSheet = ({
           />
         )}
       </div>
-
-      {!isCustomNetwork(networkDetails) && (
-        <Button
-          size="lg"
-          variant="secondary"
-          isFullWidth
-          isRounded
-          icon={<Icon.LinkExternal01 />}
-          iconPosition="right"
-          onClick={() =>
-            openTab(
-              `${getStellarExpertUrl(networkDetails)}/tx/${transactionHash}`,
-            )
-          }
-          data-testid="earn-deposit-details-explorer"
-        >
-          {t("View on stellar.expert")}
-        </Button>
-      )}
-    </div>
+    </SheetLayout>
   );
 };

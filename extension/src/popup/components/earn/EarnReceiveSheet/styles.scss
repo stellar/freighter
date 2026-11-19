@@ -2,45 +2,14 @@
 
 // Figma: Varial 4478:116045 "Receive funds".
 .EarnReceiveSheet {
-  padding: pxToRem(24);
   display: flex;
   flex-direction: column;
   align-items: center;
 
-  // Back, title, X: the glyphs sit 16px from the sheet's edges, 8px further out
-  // than the content.
-  &__header {
+  // The header spans the sheet; everything under it is centred.
+  .SheetHeader {
     align-self: stretch;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin: 0 pxToRem(-8) pxToRem(24);
-  }
-
-  &__icon-button {
-    width: pxToRem(24);
-    height: pxToRem(24);
-    padding: 0;
-    border: none;
-    cursor: pointer;
-    background: none;
-    color: var(--sds-clr-gray-12);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    svg {
-      width: pxToRem(24);
-      height: pxToRem(24);
-    }
-  }
-
-  // Text/MD/600.
-  &__title {
-    font-size: pxToRem(16);
-    line-height: pxToRem(24);
-    font-weight: 600;
-    color: var(--sds-clr-gray-12);
+    margin-bottom: pxToRem(24);
   }
 
   // The QR keeps a white ground in the dark theme too.

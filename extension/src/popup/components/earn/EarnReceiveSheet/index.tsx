@@ -9,6 +9,12 @@ import { truncatedPublicKey } from "helpers/stellar";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { showToast } from "popup/basics/shadcn/Toast";
 import { publicKeySelector } from "popup/ducks/accountServices";
+import {
+  SheetHeader,
+  SheetHeaderAction,
+  SheetHeaderLayout,
+} from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
 import VarialMarkQr from "popup/assets/varial-mark-qr.svg";
 
 import "./styles.scss";
@@ -60,63 +66,59 @@ export const EarnReceiveSheet = ({
   };
 
   return (
-    <div className="EarnReceiveSheet" data-testid="earn-receive-sheet">
-      <div className="EarnReceiveSheet__header">
-        <button
-          type="button"
-          className="EarnReceiveSheet__icon-button"
-          onClick={onBack}
-          aria-label={t("Back")}
-          data-testid="earn-receive-back"
-        >
-          <Icon.ArrowLeft />
-        </button>
-        <div className="EarnReceiveSheet__title">{t("Receive funds")}</div>
-        <button
-          type="button"
-          className="EarnReceiveSheet__icon-button"
-          onClick={onClose}
-          aria-label={t("Close")}
-          data-testid="earn-receive-close"
-        >
-          <Icon.X />
-        </button>
-      </div>
+    <SheetLayout data-testid="earn-receive-sheet">
+      <div className="EarnReceiveSheet">
+        <SheetHeader
+          layout={SheetHeaderLayout.Centered}
+          leading={
+            <SheetHeaderAction
+              onClick={onBack}
+              aria-label={t("Back")}
+              data-testid="earn-receive-back"
+            >
+              <Icon.ArrowLeft />
+            </SheetHeaderAction>
+          }
+          title={t("Receive funds")}
+          onClose={onClose}
+          closeTestId="earn-receive-close"
+        />
 
-      {/* Black on white in both themes, so any camera reads it. The mark in
+        {/* Black on white in both themes, so any camera reads it. The mark in
           the middle is knocked out of the modules, which level H's error
           correction covers. */}
-      <div className="EarnReceiveSheet__qr">
-        <QRCodeSVG
-          value={publicKey}
-          size={240}
-          level="H"
-          marginSize={1}
-          imageSettings={{
-            src: VarialMarkQr,
-            width: 62,
-            height: 62,
-            excavate: true,
-          }}
-        />
-      </div>
+        <div className="EarnReceiveSheet__qr">
+          <QRCodeSVG
+            value={publicKey}
+            size={240}
+            level="H"
+            marginSize={1}
+            imageSettings={{
+              src: VarialMarkQr,
+              width: 62,
+              height: 62,
+              excavate: true,
+            }}
+          />
+        </div>
 
-      <div className="EarnReceiveSheet__caption">
-        {t("This address supports Stellar network.")}
-      </div>
+        <div className="EarnReceiveSheet__caption">
+          {t("This address supports Stellar network.")}
+        </div>
 
-      <Button
-        size="lg"
-        variant="secondary"
-        isFullWidth
-        isRounded
-        icon={<Icon.Copy01 />}
-        iconPosition="left"
-        onClick={copyAddress}
-        data-testid="earn-receive-copy"
-      >
-        {t("Copy address")}
-      </Button>
-    </div>
+        <Button
+          size="lg"
+          variant="secondary"
+          isFullWidth
+          isRounded
+          icon={<Icon.Copy01 />}
+          iconPosition="left"
+          onClick={copyAddress}
+          data-testid="earn-receive-copy"
+        >
+          {t("Copy address")}
+        </Button>
+      </div>
+    </SheetLayout>
   );
 };

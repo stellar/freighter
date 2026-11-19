@@ -10,6 +10,8 @@ import { getBlendAppUrl } from "popup/constants/externalLinks";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { openTab } from "popup/helpers/navigate";
 import { StatRow } from "popup/components/earn/StatRow";
+import { SheetHeader, SheetHeaderLayout } from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
 import {
   formatCompactUsd,
   formatRate,
@@ -54,37 +56,32 @@ export const PoolDetailsSheet = ({
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   return (
-    <div className="PoolDetailsSheet" data-testid="earn-pool-details-sheet">
-      <div className="PoolDetailsSheet__header">
-        <div className="PoolDetailsSheet__mark">
-          <PoolIcon size={40} />
-          {/* The token being deposited, badged onto the pool. */}
-          <div className="PoolDetailsSheet__token">
-            <AssetIcon
-              assetIcons={token.icon ? { [token.code]: token.icon } : {}}
-              code={token.code}
-              issuerKey={token.issuer}
-              icon={token.icon || undefined}
-            />
-          </div>
-        </div>
-        <div className="PoolDetailsSheet__identity">
-          <div className="PoolDetailsSheet__name">
-            {formatPoolName(pool.name, t)}
-          </div>
-          <div className="PoolDetailsSheet__provider">{t("by Blend")}</div>
-        </div>
-        <button
-          type="button"
-          className="PoolDetailsSheet__close"
-          onClick={onClose}
-          aria-label={t("Close")}
-          data-testid="earn-pool-details-close"
-        >
-          <Icon.X />
-        </button>
-      </div>
-
+    <SheetLayout
+      data-testid="earn-pool-details-sheet"
+      header={
+        <SheetHeader
+          layout={SheetHeaderLayout.Inline}
+          leading={
+            <div className="PoolDetailsSheet__mark">
+              <PoolIcon size={40} />
+              {/* The token being deposited, badged onto the pool. */}
+              <div className="PoolDetailsSheet__token">
+                <AssetIcon
+                  assetIcons={token.icon ? { [token.code]: token.icon } : {}}
+                  code={token.code}
+                  issuerKey={token.issuer}
+                  icon={token.icon || undefined}
+                />
+              </div>
+            </div>
+          }
+          title={formatPoolName(pool.name, t)}
+          subtitle={t("by Blend")}
+          onClose={onClose}
+          closeTestId="earn-pool-details-close"
+        />
+      }
+    >
       <div
         className="PoolDetailsSheet__body"
         data-testid="earn-pool-details-body"
@@ -146,6 +143,6 @@ export const PoolDetailsSheet = ({
           </div>
         </div>
       </div>
-    </div>
+    </SheetLayout>
   );
 };

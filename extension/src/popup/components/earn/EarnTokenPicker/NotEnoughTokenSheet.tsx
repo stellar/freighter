@@ -1,15 +1,19 @@
 import React, { useState } from "react";
-import { Button, Icon } from "@stellar/design-system";
+import { Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { EarnReceiveSheet } from "popup/components/earn/EarnReceiveSheet";
+import { SheetHeader } from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
 import { NotEnoughVariant } from "popup/constants/earn";
 import { useGetOnrampToken } from "helpers/hooks/useGetOnrampToken";
 import { trackEarnFundingActionSelected } from "popup/metrics/earn";
 
 import { EarnTokenOption } from "./hooks/useGetEarnTokensData";
+
+import "./NotEnoughTokenSheet.scss";
 
 interface NotEnoughTokenSheetProps {
   option: EarnTokenOption;
@@ -87,122 +91,118 @@ export const NotEnoughTokenSheet = ({
   }
 
   return (
-    <div className="NotEnoughTokenSheet" data-testid="earn-not-enough-sheet">
-      <div className="NotEnoughTokenSheet__header">
-        <AssetIcon
-          assetIcons={{
-            [getCanonicalFromAsset(option.code, option.issuer)]:
-              option.iconUrl ?? null,
-          }}
-          code={option.code}
-          issuerKey={option.issuer}
-          icon={option.iconUrl || undefined}
+    <SheetLayout data-testid="earn-not-enough-sheet">
+      <div className="NotEnoughTokenSheet">
+        <SheetHeader
+          leading={
+            <AssetIcon
+              assetIcons={{
+                [getCanonicalFromAsset(option.code, option.issuer)]:
+                  option.iconUrl ?? null,
+              }}
+              code={option.code}
+              issuerKey={option.issuer}
+              icon={option.iconUrl || undefined}
+            />
+          }
+          title={t("Not enough {{code}}", { code: option.code })}
+          onClose={onClose}
+          closeTestId="earn-not-enough-close"
         />
-        <button
-          type="button"
-          className="NotEnoughTokenSheet__close"
-          onClick={onClose}
-          aria-label={t("Close")}
-          data-testid="earn-not-enough-close"
-        >
-          <Icon.X />
-        </button>
-      </div>
 
-      <h2 className="NotEnoughTokenSheet__title">
-        {t("Not enough {{code}}", { code: option.code })}
-      </h2>
-
-      {/* Two sentences on two lines, as the design breaks them. */}
-      <div className="NotEnoughTokenSheet__body">
-        <div>
-          {t("Get {{code}} to deposit into this pool.", { code: option.code })}
+        {/* Two sentences on two lines, as the design breaks them. */}
+        <div className="NotEnoughTokenSheet__body">
+          <div>
+            {t("Get {{code}} to deposit into this pool.", {
+              code: option.code,
+            })}
+          </div>
+          <div>{nextStep()}</div>
         </div>
-        <div>{nextStep()}</div>
-      </div>
 
-      <div className="NotEnoughTokenSheet__actions">
-        {showBuy && showSwap ? (
-          <>
-            <div className="NotEnoughTokenSheet__actions-row">
-              <Button
-                size="lg"
-                variant="secondary"
-                isFullWidth
-                isRounded
-                onClick={handleSwap}
-                data-testid="earn-not-enough-swap"
+        <div className="NotEnoughTokenSheet__actions">
+          {showBuy && showSwap ? (
+            <>
+              <div className="NotEnoughTokenSheet__actions-row">
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  isFullWidth
+                  isRounded
+                  onClick={handleSwap}
+                  data-testid="earn-not-enough-swap"
+                >
+                  {t("Swap for {{code}}", { code: option.code })}
+                </Button>
+                <Button
+                  size="lg"
+                  variant="tertiary"
+                  isFullWidth
+                  isRounded
+                  onClick={handleBuy}
+                  data-testid="earn-not-enough-buy"
+                >
+                  {t("Buy {{code}}", { code: option.code })}
+                </Button>
+              </div>
+
+              <div className="NotEnoughTokenSheet__or">
+                <span>{t("or")}</span>
+              </div>
+
+              <button
+                type="button"
+                className="NotEnoughTokenSheet__text-action"
+                onClick={handleReceive}
+                data-testid="earn-not-enough-transfer"
               >
-                {t("Swap for {{code}}", { code: option.code })}
-              </Button>
-              <Button
-                size="lg"
-                variant="tertiary"
-                isFullWidth
-                isRounded
-                onClick={handleBuy}
-                data-testid="earn-not-enough-buy"
-              >
-                {t("Buy {{code}}", { code: option.code })}
-              </Button>
-            </div>
+                {receiveLabel}
+              </button>
+            </>
+          ) : (
+            <>
+              {showBuy && (
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  isFullWidth
+                  isRounded
+                  onClick={handleBuy}
+                  data-testid="earn-not-enough-buy"
+                >
+                  {t("Buy with Coinbase")}
+                </Button>
+              )}
 
-            <div className="NotEnoughTokenSheet__or">
-              <span>{t("or")}</span>
-            </div>
+              {showSwap && (
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  isFullWidth
+                  isRounded
+                  onClick={handleSwap}
+                  data-testid="earn-not-enough-swap"
+                >
+                  {t("Swap for {{code}}", { code: option.code })}
+                </Button>
+              )}
 
-            <button
-              type="button"
-              className="NotEnoughTokenSheet__text-action"
-              onClick={handleReceive}
-              data-testid="earn-not-enough-transfer"
-            >
-              {receiveLabel}
-            </button>
-          </>
-        ) : (
-          <>
-            {showBuy && (
-              <Button
-                size="lg"
-                variant="secondary"
-                isFullWidth
-                isRounded
-                onClick={handleBuy}
-                data-testid="earn-not-enough-buy"
-              >
-                {t("Buy with Coinbase")}
-              </Button>
-            )}
-
-            {showSwap && (
-              <Button
-                size="lg"
-                variant="secondary"
-                isFullWidth
-                isRounded
-                onClick={handleSwap}
-                data-testid="earn-not-enough-swap"
-              >
-                {t("Swap for {{code}}", { code: option.code })}
-              </Button>
-            )}
-
-            {/* Outlined under a primary route; filled when receiving is the
+              {/* Outlined under a primary route; filled when receiving is the
                 only thing the account can do. */}
-            <Button
-              size="lg"
-              variant={showBuy || showSwap ? "tertiary" : "secondary"}
-              isFullWidth
-              isRounded
-              onClick={handleReceive}
-              data-testid="earn-not-enough-transfer"
-            >
-              {receiveLabel}
-            </Button>
-          </>
-        )}
+              <Button
+                size="lg"
+                variant={showBuy || showSwap ? "tertiary" : "secondary"}
+                isFullWidth
+                isRounded
+                onClick={handleReceive}
+                data-testid="earn-not-enough-transfer"
+              >
+                {receiveLabel}
+              </Button>
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </SheetLayout>
   );
 };

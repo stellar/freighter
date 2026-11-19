@@ -1,10 +1,14 @@
 import React, { useState } from "react";
-import { Button, Icon } from "@stellar/design-system";
+import { Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { EarnReceiveSheet } from "popup/components/earn/EarnReceiveSheet";
+import { SheetHeader } from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
 import { useGetOnrampToken } from "helpers/hooks/useGetOnrampToken";
+
+import "../EarnTokenPicker/NotEnoughTokenSheet.scss";
 
 interface NetworkFeeSheetProps {
   onClose: () => void;
@@ -20,8 +24,8 @@ interface NetworkFeeSheetProps {
  * XlmReserveSheet: that one's copy is about funding a new trustline's reserve,
  * which a SupplyCollateral deposit never creates.
  *
- * Laid out like the "Not enough" sheet (Varial 4478:115952), whose styles it
- * shares.
+ * Laid out like the "Not enough" sheet (Varial 4478:115952), whose
+ * stylesheet it imports.
  */
 export const NetworkFeeSheet = ({
   onClose,
@@ -42,55 +46,47 @@ export const NetworkFeeSheet = ({
   }
 
   return (
-    <div className="NotEnoughTokenSheet" data-testid="earn-network-fee-sheet">
-      <div className="NotEnoughTokenSheet__header">
-        <AssetIcon assetIcons={{}} code="XLM" issuerKey="" />
-        <button
-          type="button"
-          className="NotEnoughTokenSheet__close"
-          onClick={onClose}
-          aria-label={t("Close")}
-          data-testid="earn-network-fee-close"
-        >
-          <Icon.X />
-        </button>
-      </div>
+    <SheetLayout data-testid="earn-network-fee-sheet">
+      <div className="NotEnoughTokenSheet">
+        <SheetHeader
+          leading={<AssetIcon assetIcons={{}} code="XLM" issuerKey="" />}
+          title={t("You need XLM to pay fees")}
+          onClose={onClose}
+          closeTestId="earn-network-fee-close"
+        />
 
-      <h2 className="NotEnoughTokenSheet__title">
-        {t("You need XLM to pay fees")}
-      </h2>
+        <div className="NotEnoughTokenSheet__body">
+          {t(
+            "You don’t have enough available XLM to cover the transaction fee. Add XLM to continue with your deposit.",
+          )}
+        </div>
 
-      <div className="NotEnoughTokenSheet__body">
-        {t(
-          "You don’t have enough available XLM to cover the transaction fee. Add XLM to continue with your deposit.",
-        )}
-      </div>
-
-      <div className="NotEnoughTokenSheet__actions">
-        {canBuyXlm && (
+        <div className="NotEnoughTokenSheet__actions">
+          {canBuyXlm && (
+            <Button
+              size="lg"
+              variant="secondary"
+              isFullWidth
+              isRounded
+              onClick={() => openOnramp()}
+              data-testid="earn-network-fee-buy"
+            >
+              {t("Buy with Coinbase")}
+            </Button>
+          )}
+          {/* Outlined under Buy; filled when it is the only way to add XLM. */}
           <Button
             size="lg"
-            variant="secondary"
+            variant={canBuyXlm ? "tertiary" : "secondary"}
             isFullWidth
             isRounded
-            onClick={() => openOnramp()}
-            data-testid="earn-network-fee-buy"
+            onClick={() => setIsReceiving(true)}
+            data-testid="earn-network-fee-transfer"
           >
-            {t("Buy with Coinbase")}
+            {t("Receive {{code}}", { code: "XLM" })}
           </Button>
-        )}
-        {/* Outlined under Buy; filled when it is the only way to add XLM. */}
-        <Button
-          size="lg"
-          variant={canBuyXlm ? "tertiary" : "secondary"}
-          isFullWidth
-          isRounded
-          onClick={() => setIsReceiving(true)}
-          data-testid="earn-network-fee-transfer"
-        >
-          {t("Receive {{code}}", { code: "XLM" })}
-        </Button>
+        </div>
       </div>
-    </div>
+    </SheetLayout>
   );
 };
