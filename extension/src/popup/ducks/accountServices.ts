@@ -1072,9 +1072,11 @@ export const linkConflictsSelector = createSelector(
   authSelector,
   (auth: InitialState) => auth.linkConflicts,
 );
+// One shared empty list, so a state without sources keeps a stable reference.
+const NO_SECRET_SOURCES: SecretSource[] = [];
 export const secretSourcesSelector = createSelector(
   authSelector,
-  (auth: InitialState) => auth.secretSources,
+  (auth: InitialState) => auth.secretSources ?? NO_SECRET_SOURCES,
 );
 export const migratedAccountsSelector = createSelector(
   authSelector,

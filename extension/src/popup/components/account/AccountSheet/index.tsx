@@ -4,10 +4,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Button, Icon, Loader, Notification } from "@stellar/design-system";
 
-import {
-  getStellarExpertUrl,
-  isStellarExpertSupported,
-} from "popup/helpers/account";
 import { emitMetric } from "helpers/metrics";
 import { truncatedPublicKey } from "helpers/stellar";
 import { RequestState } from "constants/request";
@@ -29,23 +25,36 @@ import {
   activeAccountSelector,
   allAccountsSelector,
   publicKeySelector,
+  secretSourcesSelector,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
   clearBalancesForAccount,
   clearCollectiblesForAccount,
 } from "popup/ducks/cache";
-import { navigateTo, openTab } from "popup/helpers/navigate";
+import { navigateTo } from "popup/helpers/navigate";
+import {
+  AccountGroup,
+  groupAccountsBySource,
+} from "popup/helpers/accountGroups";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { WalletRow } from "popup/components/account/WalletRow";
-import { RenameWallet } from "popup/components/account/RenameWallet";
 import { AddWallet } from "popup/components/account/AddWallet";
 
 import { useGetWalletsData } from "./hooks/useGetWalletsData";
 
 import "./styles.scss";
 
-type SheetBody = "list" | "rename" | "add";
+type SheetBody = "list" | "add";
+
+/*
+  Groups the user collapsed, kept for as long as the popup stays open so the
+  sheet reopens the way they left it. Module scope rather than component
+  state because Home unmounts the sheet whenever it navigates away. The
+  active account's group is the exception: it is expanded again each time the
+  sheet opens, so the active row is never hidden.
+*/
+export const collapsedGroupKeys = new Set<string>();
 
 interface AccountSheetProps {
   isOpen: boolean;
@@ -54,11 +63,12 @@ interface AccountSheetProps {
 }
 
 /**
- * The account switcher sheet: the active account's identity and actions, the
- * list of wallets, and Add wallet.
+ * The account switcher sheet: the active account's identity, the wallets
+ * grouped by what roots them, and Add wallet. Renaming and the explorer link
+ * live in Edit account.
  *
- * Rename and Add wallet are body states rather than overlays. They used to be
- * absolutely-positioned layers over the full-screen Wallets view, which cannot
+ * Add wallet is a body state rather than an overlay. It used to be an
+ * absolutely-positioned layer over the full-screen Wallets view, which cannot
  * work here -- SlideupModal is a containing block for fixed descendants and
  * measures its height from in-flow content only, so an overlay would be clipped
  * and would collapse the card.
@@ -72,10 +82,13 @@ export const AccountSheet = ({
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const [body, setBody] = useState<SheetBody>("list");
-  const [renameKey, setRenameKey] = useState("");
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(
+    () => new Set(collapsedGroupKeys),
+  );
   const { state: dataState, fetchData } = useGetWalletsData();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const allAccounts = useSelector(allAccountsSelector);
+  const secretSources = useSelector(secretSourcesSelector);
   // Fallback for the error state, where the fetch yields no data but Redux
   // still holds the active account from the last successful load.
   const reduxPublicKey = useSelector(publicKeySelector);
@@ -85,10 +98,8 @@ export const AccountSheet = ({
     if (!isOpen) {
       return;
     }
-    // Always reopen on the list; a sheet closed mid-rename would otherwise
-    // come back to a stale form.
+    // Always reopen on the list rather than inside Add wallet.
     setBody("list");
-    setRenameKey("");
     const getData = async () => {
       await fetchData(true);
     };
@@ -121,6 +132,26 @@ export const AccountSheet = ({
   const activeAccountName =
     allAccounts.find((account) => account.id === activeAccountId)?.name || "";
 
+  const groups = groupAccountsBySource({
+    accounts: allAccounts,
+    sources: secretSources,
+    t,
+  });
+  const activeGroupKey = groups.find((group) =>
+    group.accounts.some((account) => account.id === activeAccountId),
+  )?.key;
+
+  // Open on the active account's group even if it was collapsed, e.g. after
+  // adding a wallet under a collapsed phrase. Collapsing it while the sheet is
+  // open changes neither dep, so this doesn't undo the click.
+  useEffect(() => {
+    if (!isOpen || !activeGroupKey || !collapsedGroupKeys.has(activeGroupKey)) {
+      return;
+    }
+    collapsedGroupKeys.delete(activeGroupKey);
+    setCollapsed(new Set(collapsedGroupKeys));
+  }, [isOpen, activeGroupKey]);
+
   const copyAddress = async () => {
     try {
       await navigator.clipboard.writeText(activePublicKey);
@@ -143,26 +174,93 @@ export const AccountSheet = ({
     }
   };
 
+  const toggleGroup = (key: string) => {
+    if (collapsedGroupKeys.has(key)) {
+      collapsedGroupKeys.delete(key);
+    } else {
+      collapsedGroupKeys.add(key);
+    }
+    setCollapsed(new Set(collapsedGroupKeys));
+  };
+
+  const selectAccount = async ({
+    id,
+    publicKey,
+  }: {
+    id: string;
+    publicKey: string;
+  }) => {
+    await dispatch(makeAccountActive({ id }));
+    dispatch(clearBalancesForAccount({ publicKey, networkDetails }));
+    dispatch(clearCollectiblesForAccount({ publicKey, networkDetails }));
+    // Close before refetching: Home renders <Loading /> while the new account
+    // loads, which unmounts this sheet anyway. Closing first keeps that from
+    // reading as a flicker.
+    onClose();
+    await onAccountChanged({ publicKey });
+  };
+
+  const renderRows = (accounts: AccountGroup["accounts"]) =>
+    accounts.map(({ id, publicKey, name }) => (
+      <WalletRow
+        key={id}
+        isFetchingTokenPrices={isFetchingTokenPrices}
+        accountName={name}
+        accountValue={accountValue ? accountValue[publicKey] : ""}
+        publicKey={publicKey}
+        isSelected={activeAccountId === id}
+        onClick={() => selectAccount({ id, publicKey })}
+      />
+    ));
+
+  const renderGroups = () => {
+    // One source has nothing to tell apart, and collapsing it would only hide
+    // the whole list, so a single group renders flat.
+    if (groups.length <= 1) {
+      return renderRows(allAccounts);
+    }
+
+    return groups.map((group, i) => {
+      const isExpanded = !collapsed.has(group.key);
+      const listId = `AccountSheet-group-${group.key}`;
+
+      return (
+        <React.Fragment key={group.key}>
+          {i > 0 ? <div className="AccountSheet__divider" /> : null}
+          <section
+            className="AccountSheet__group"
+            data-testid="account-sheet-group"
+          >
+            <button
+              type="button"
+              className="AccountSheet__group__toggle"
+              onClick={() => toggleGroup(group.key)}
+              aria-expanded={isExpanded}
+              aria-controls={isExpanded ? listId : undefined}
+              data-testid="account-sheet-group-toggle"
+            >
+              <span>{group.label}</span>
+              <Icon.ChevronDown
+                className={`AccountSheet__group__chevron${
+                  isExpanded ? "" : " AccountSheet__group__chevron--collapsed"
+                }`}
+                aria-hidden="true"
+              />
+            </button>
+            {isExpanded ? (
+              <div id={listId} className="AccountSheet__group__rows">
+                {renderRows(group.accounts)}
+              </div>
+            ) : null}
+          </section>
+        </React.Fragment>
+      );
+    });
+  };
+
   // Each body supplies its pinned header and footer; the list between them is
   // what scrolls, under the sheet's edge fades, like mobile's wallets sheet.
   const renderSheet = () => {
-    if (body === "rename") {
-      // RenameWallet ships its own header, so it stands alone as the whole body.
-      return {
-        header: undefined,
-        footer: undefined,
-        content: (
-          <RenameWallet
-            allAccounts={allAccounts}
-            accountId={renameKey}
-            source="wallets"
-            onSubmit={() => fetchData(true)}
-            onClose={() => setBody("list")}
-          />
-        ),
-      };
-    }
-
     if (body === "add") {
       return {
         header: (
@@ -225,66 +323,26 @@ export const AccountSheet = ({
               <IdenticonImg publicKey={activePublicKey} />
             </div>
             {/* Name and address are one tight block; the 16px gap belongs
-              between the identicon, this block, and the action row. */}
+              between the identicon and this block. */}
             <div className="AccountSheet__identity__text">
               <div className="AccountSheet__identity__name">
                 {activeAccountName}
               </div>
               <div className="AccountSheet__identity__address">
                 {truncatedPublicKey(activePublicKey)}
-              </div>
-            </div>
-            <div className="AccountSheet__identity__actions">
-              <button
-                className="AccountSheet__identity__action"
-                onClick={() => navigateTo(ROUTES.viewPublicKey, navigate)}
-                data-testid="wallets-header-qr"
-                aria-label={t("Show QR code")}
-              >
-                <Icon.QrCode02 />
-              </button>
-              {/* account.public_key_copied carries no source and never the raw
-                key. Emitted from copyAddress only once the clipboard write
-                succeeds, so failed copies aren't counted. */}
-              <button
-                className="AccountSheet__identity__action"
-                onClick={copyAddress}
-                data-testid="wallets-header-copy"
-                aria-label={t("Copy wallet address")}
-              >
-                <Icon.Copy01 />
-              </button>
-              {/* Gated on stellar.expert's supported networks, not merely on
-                "not a custom network": it has no Futurenet explorer, and
-                experimental mode makes Futurenet the active network. */}
-              {isStellarExpertSupported(networkDetails) ? (
+                {/* account.public_key_copied carries no source and never the
+                  raw key. Emitted from copyAddress only once the clipboard
+                  write succeeds, so failed copies aren't counted. */}
                 <button
-                  className="AccountSheet__identity__action"
-                  onClick={() => {
-                    openTab(
-                      `${getStellarExpertUrl(networkDetails)}/account/${activePublicKey}`,
-                    );
-                    emitMetric(METRIC_NAMES.accountStellarExpertOpened, {
-                      source: "wallets",
-                    });
-                  }}
-                  data-testid="wallets-header-explorer"
-                  aria-label={t("View on stellar.expert")}
+                  type="button"
+                  className="AccountSheet__identity__copy"
+                  onClick={copyAddress}
+                  data-testid="wallets-header-copy"
+                  aria-label={t("Copy wallet address")}
                 >
-                  <Icon.LinkExternal01 />
+                  <Icon.Copy01 />
                 </button>
-              ) : null}
-              <button
-                className="AccountSheet__identity__action"
-                onClick={() => {
-                  setRenameKey(activeAccountId);
-                  setBody("rename");
-                }}
-                data-testid="wallets-header-edit-name"
-                aria-label={t("Rename wallet")}
-              >
-                <Icon.Edit01 />
-              </button>
+              </div>
             </div>
           </div>
 
@@ -299,48 +357,7 @@ export const AccountSheet = ({
                 {t("Your wallets could not be fetched at this time.")}
               </Notification>
             ) : (
-              allAccounts.map(
-                ({ id, publicKey, name, imported, hardwareWalletType }) => {
-                  const isSelected = activeAccountId === id;
-                  const totalValueUsd = accountValue
-                    ? accountValue[publicKey]
-                    : "";
-
-                  return (
-                    <WalletRow
-                      key={id}
-                      isFetchingTokenPrices={isFetchingTokenPrices}
-                      accountName={name}
-                      accountValue={totalValueUsd}
-                      isImported={imported}
-                      hardwareWalletType={hardwareWalletType}
-                      publicKey={publicKey}
-                      isSelected={isSelected}
-                      onClick={async () => {
-                        await dispatch(makeAccountActive({ id }));
-                        dispatch(
-                          clearBalancesForAccount({
-                            publicKey,
-                            networkDetails,
-                          }),
-                        );
-                        dispatch(
-                          clearCollectiblesForAccount({
-                            publicKey,
-                            networkDetails,
-                          }),
-                        );
-                        // Close before refetching: Home renders <Loading /> while
-                        // the new account loads, which unmounts this sheet
-                        // anyway. Closing first keeps that from reading as a
-                        // flicker.
-                        onClose();
-                        await onAccountChanged({ publicKey });
-                      }}
-                    />
-                  );
-                },
-              )
+              renderGroups()
             )}
             {isLoading ? (
               <div className="AccountSheet__loader">
