@@ -428,6 +428,31 @@ describe("concurrent account-mutating messages", () => {
       allAccounts().find(({ publicKey }) => publicKey === key.publicKey()),
     ).toBeDefined();
   });
+  it("keeps an import that overlaps a pending-phrase clear", async () => {
+    mockGenerated.push(PHRASE_2.mnemonic);
+    const { pendingPhraseId } = await send({
+      type: SERVICE_TYPES.GENERATE_RECOVERY_PHRASE,
+    });
+    mockSession.latency.ms = 50;
+    const key = Keypair.random();
+    const active = activeKey();
+
+    const results = await Promise.all([
+      importKey(key.secret(), active),
+      send({
+        type: SERVICE_TYPES.CLEAR_PENDING_RECOVERY_PHRASE,
+        activePublicKey: null,
+        pendingPhraseId,
+      }),
+    ]);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    expect(results.map((r) => r.error)).toEqual([undefined, undefined]);
+    expect(
+      allAccounts().find(({ publicKey }) => publicKey === key.publicKey()),
+    ).toBeDefined();
+    expect(session().pendingMnemonicPhrase).toBe("");
+  });
   it("skips a queued auto-lock when activity rearms the timer", async () => {
     const key = Keypair.random();
     const active = activeKey();

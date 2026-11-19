@@ -38,6 +38,7 @@ export const ACCOUNT_MUTATING_SERVICE_TYPES: ReadonlySet<string> = new Set([
   // another holder's session.
   SERVICE_TYPES.GET_MIGRATED_MNEMONIC_PHRASE,
   SERVICE_TYPES.RESET_EXP_DATA,
+  SERVICE_TYPES.CLEAR_PENDING_RECOVERY_PHRASE,
 ]);
 
 // One chain per background context is enough: MV3 runs a single service
