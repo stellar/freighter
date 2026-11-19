@@ -349,8 +349,15 @@ export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
     const spendableXlm = getSpendableXlm(inclusionFee);
 
     // Checked after the CTA gate, so an unaffordable XLM deposit reads as
-    // "Insufficient balance" rather than as a missing-fee problem.
-    if (needsXlmForFee({ spendableXlm, fee: inclusionFee })) {
+    // "Insufficient balance" rather than as a missing-fee problem. Compared
+    // before the fee comes out (fee "0"), as Swap's check is: netting it out
+    // first and then comparing against it again would ask for the fee twice.
+    if (
+      needsXlmForFee({
+        spendableXlm: getSpendableXlm("0"),
+        fee: inclusionFee,
+      })
+    ) {
       trackEarnXlmFeeInsufficientShown({
         assetCode: selected?.code || "",
         reason: "no_xlm",

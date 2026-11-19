@@ -36,8 +36,9 @@ export const getEarnCtaState = ({
  * Does the account lack the XLM to pay this transaction's fee?
  *
  * A Soroban invoke's fee is XLM-only and no trustline is involved, so this is
- * simply "spendable XLM < fee". `spendableXlm` is expected to come from
- * `getAvailableBalance`, which already nets out the base reserve.
+ * simply "spendable XLM < fee". `spendableXlm` is the XLM above the base
+ * reserve with the fee NOT yet taken out — `getAvailableBalance` with a fee of
+ * "0". Passing a figure that already nets out the fee counts it twice.
  *
  * Order this AFTER the CTA's insufficient-balance check: when the deposit asset
  * IS XLM, an unaffordable amount should read as insufficient balance on the
