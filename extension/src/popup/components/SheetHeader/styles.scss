@@ -125,4 +125,15 @@ $action-size: 32px;
       height: pxToRem($close-size);
     }
   }
+
+  // A sheet that draws all its header icons in one colour (iconTone).
+  &--icons-primary &__action,
+  &--icons-primary &__close {
+    color: var(--sds-clr-gray-12);
+  }
+
+  &--icons-secondary &__action,
+  &--icons-secondary &__close {
+    color: var(--sds-clr-gray-09);
+  }
 }

@@ -2,7 +2,11 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-import { SheetHeader, SheetHeaderLayout } from "popup/components/SheetHeader";
+import {
+  SheetHeader,
+  SheetHeaderIconTone,
+  SheetHeaderLayout,
+} from "popup/components/SheetHeader";
 
 describe("SheetHeader", () => {
   it("renders nothing without a title, a leading element or an X", () => {
@@ -78,5 +82,28 @@ describe("SheetHeader", () => {
     const { container } = render(<SheetHeader title="Hide tokens" />);
 
     expect(container.querySelector(".SheetHeader__titles")).toBeNull();
+  });
+
+  it("draws every header icon in one tone when asked", () => {
+    const { container } = render(
+      <SheetHeader
+        title="Receive funds"
+        layout={SheetHeaderLayout.Centered}
+        iconTone={SheetHeaderIconTone.Primary}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(container.firstChild).toHaveClass("SheetHeader--icons-primary");
+  });
+
+  it("leaves the icons' default colours alone without a tone", () => {
+    const { container } = render(
+      <SheetHeader title="Hide tokens" onClose={jest.fn()} />,
+    );
+
+    expect((container.firstChild as HTMLElement).className).not.toMatch(
+      /--icons-/,
+    );
   });
 });

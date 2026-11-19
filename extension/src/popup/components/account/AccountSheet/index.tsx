@@ -19,6 +19,7 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import {
   SheetHeader,
   SheetHeaderAction,
+  SheetHeaderIconTone,
   SheetHeaderLayout,
 } from "popup/components/SheetHeader";
 import { SheetLayout } from "popup/components/SheetLayout";
@@ -171,6 +172,8 @@ export const AccountSheet = ({
               </SheetHeaderAction>
             }
             onClose={onClose}
+            // The X in the settings gear's colour, across this sheet.
+            iconTone={SheetHeaderIconTone.Secondary}
             closeTestId="AccountSheet__close"
           />
         ),
@@ -192,6 +195,8 @@ export const AccountSheet = ({
             </SheetHeaderAction>
           }
           onClose={onClose}
+          // The X in the settings gear's colour, across this sheet.
+          iconTone={SheetHeaderIconTone.Secondary}
           closeTestId="AccountSheet__close"
         />
       ),

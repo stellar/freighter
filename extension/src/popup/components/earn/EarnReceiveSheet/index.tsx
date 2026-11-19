@@ -12,6 +12,7 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 import {
   SheetHeader,
   SheetHeaderAction,
+  SheetHeaderIconTone,
   SheetHeaderLayout,
 } from "popup/components/SheetHeader";
 import { SheetLayout } from "popup/components/SheetLayout";
@@ -81,6 +82,8 @@ export const EarnReceiveSheet = ({
           }
           title={t("Receive funds")}
           onClose={onClose}
+          // The back arrow in the X's colour (Varial 4478:116045).
+          iconTone={SheetHeaderIconTone.Primary}
           closeTestId="earn-receive-close"
         />
 

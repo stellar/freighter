@@ -19,6 +19,16 @@ export enum SheetHeaderLayout {
   Centered = "centered",
 }
 
+/**
+ * One colour for every icon in the header, the X and any actions, for sheets
+ * whose design draws them alike: Text/Primary (gray 12) or Foreground/Primary
+ * (gray 9). Left unset, the X is primary and the actions are secondary.
+ */
+export enum SheetHeaderIconTone {
+  Primary = "primary",
+  Secondary = "secondary",
+}
+
 interface SheetHeaderProps {
   title?: React.ReactNode;
   /** A secondary line under the title (e.g. who runs a pool, or a date). */
@@ -33,6 +43,7 @@ interface SheetHeaderProps {
   trailing?: React.ReactNode;
   /** Shows the X when given. */
   onClose?: () => void;
+  iconTone?: SheetHeaderIconTone;
   closeTestId?: string;
   titleTestId?: string;
   subtitleTestId?: string;
@@ -50,6 +61,7 @@ export const SheetHeader = ({
   leading,
   trailing,
   onClose,
+  iconTone,
   closeTestId,
   titleTestId,
   subtitleTestId,
@@ -62,6 +74,7 @@ export const SheetHeader = ({
 
   const resolvedLayout =
     layout ?? (leading ? SheetHeaderLayout.Stacked : SheetHeaderLayout.Inline);
+  const toneClass = iconTone ? ` SheetHeader--icons-${iconTone}` : "";
 
   const closeButton = onClose ? (
     <button
@@ -95,7 +108,7 @@ export const SheetHeader = ({
 
   if (resolvedLayout === SheetHeaderLayout.Stacked) {
     return (
-      <div className="SheetHeader SheetHeader--stacked">
+      <div className={`SheetHeader SheetHeader--stacked${toneClass}`}>
         {(leading || closeButton) && (
           <div className="SheetHeader__row">
             <div className="SheetHeader__leading">{leading}</div>
@@ -108,7 +121,7 @@ export const SheetHeader = ({
   }
 
   return (
-    <div className={`SheetHeader SheetHeader--${resolvedLayout}`}>
+    <div className={`SheetHeader SheetHeader--${resolvedLayout}${toneClass}`}>
       {leading && <div className="SheetHeader__leading">{leading}</div>}
       {titleElement}
       {resolvedLayout === SheetHeaderLayout.Centered && trailing ? (
