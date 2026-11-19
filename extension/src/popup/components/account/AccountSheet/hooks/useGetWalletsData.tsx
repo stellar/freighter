@@ -18,6 +18,7 @@ import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { useGetTokenPrices } from "helpers/hooks/useGetTokenPrices";
+import { onListAccountValue } from "helpers/accountFunding";
 
 export interface ResolvedData {
   type: AppDataType.RESOLVED;
@@ -83,6 +84,7 @@ function useGetWalletsData() {
     useCache,
     payload,
   }: {
+    // The batch to fetch. `payload.allAccounts` holds every own account.
     accounts: Account[];
     networkDetails: NetworkDetails;
     isMainnetNetwork: boolean;
@@ -135,6 +137,21 @@ function useGetWalletsData() {
             prices.tokenPrices || {},
             visibleBalances,
           );
+          // Feeds funded_account_count. It changes only `funded`, never the
+          // event state, so it cannot emit account.funded.
+          onListAccountValue({
+            publicKey: account.publicKey,
+            networkDetails,
+            allAccounts: payload.allAccounts,
+            input: {
+              isFunded: balances.isFunded,
+              balances: visibleBalances,
+              tokenPrices: prices.tokenPrices,
+              hasBalanceError: !!(
+                balances.error?.horizon || balances.error?.soroban
+              ),
+            },
+          });
           return {
             [account.publicKey]: getTotalUsdLabel({
               hasError: false,

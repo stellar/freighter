@@ -25,6 +25,11 @@ import {
 } from "@shared/constants/stellar";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { onListAccountValue } from "helpers/accountFunding";
+
+jest.mock("helpers/accountFunding", () => ({
+  onListAccountValue: jest.fn(),
+}));
 
 jest.mock("@shared/api/internal", () => ({
   ...jest.requireActual("@shared/api/internal"),
@@ -110,6 +115,8 @@ describe("useGetWalletsData", () => {
       await result.current.fetchData();
     });
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
+    // No results off Mainnet, so funded_account_count does not change.
+    expect(onListAccountValue).not.toHaveBeenCalled();
     // Nothing is fetched off Mainnet, but every account still gets a label so
     // the row never has to interpret a missing entry.
     expect(result.current.state.data).toEqual({
@@ -232,6 +239,32 @@ describe("useGetWalletsData", () => {
       (result.current.state.data as { accountValue: Record<string, string> })
         .accountValue,
     ).toEqual({ G1: "$50.00", G2: "$250.00" });
+    // The funding update reads the same balances as the total: without the
+    // hidden assets of each account.
+    expect(onListAccountValue).toHaveBeenCalledTimes(2);
+    const inputFor = (publicKey: string) =>
+      (onListAccountValue as jest.Mock).mock.calls.find(
+        ([params]) => params.publicKey === publicKey,
+      )[0];
+    const codes = (publicKey: string) =>
+      inputFor(publicKey).input.balances.map(
+        (balance: { token: { code: string } }) => balance.token.code,
+      );
+    expect(codes("G1")).not.toContain("USDC");
+    expect(codes("G2")).toContain("USDC");
+    expect(inputFor("G2")).toEqual(
+      expect.objectContaining({
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        allAccounts: [{ publicKey: "G1" }, { publicKey: "G2" }],
+        input: expect.objectContaining({
+          isFunded: true,
+          hasBalanceError: false,
+          tokenPrices: expect.objectContaining({
+            native: expect.any(Object),
+          }),
+        }),
+      }),
+    );
     // One read per account
     expect(getHiddenAssetsSpy).toHaveBeenCalledTimes(2);
     ["G1", "G2"].forEach((publicKey) =>

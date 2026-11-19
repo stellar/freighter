@@ -15,7 +15,6 @@ import {
 } from "@shared/api/types/backend-api";
 import { RequestState } from "constants/request";
 import { initialState, isCacheValid, reducer } from "helpers/request";
-import { storeBalanceMetricData } from "helpers/metrics";
 import { filterHiddenBalances, sortBalances } from "popup/helpers/account";
 import { AssetType } from "@shared/api/types/account-balance";
 import { settingsSelector } from "popup/ducks/settings";
@@ -178,7 +177,6 @@ function useGetBalances(options: {
       }
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-      storeBalanceMetricData(publicKey, accountBalances.isFunded || false);
       return payload;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
