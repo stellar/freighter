@@ -7,6 +7,7 @@ import { SERVICE_TYPES } from "@shared/constants/services";
 import { WalletType } from "@shared/constants/hardwareWallet";
 import {
   ConfirmPasswordMessage,
+  ImportAccountMessage,
   RecoverAccountMessage,
 } from "@shared/api/types/message-request";
 import {
@@ -578,6 +579,44 @@ describe("pre-V2 storage migration", () => {
         expect(await mockDataStorage.getItem(PENDING_ATTRIBUTION_ID)).toEqual([
           PRE_V2_IMPORTED_ID,
         ]);
+      });
+
+      it("attributes the import once a pin is set, even with a phraseless key active", async () => {
+        failIdentityOnce();
+        expect((await unlock()).error).toBeUndefined();
+        expect(await mockDataStorage.getItem(PENDING_ATTRIBUTION_ID)).toEqual([
+          PRE_V2_IMPORTED_ID,
+        ]);
+        jest.restoreAllMocks();
+
+        // A key imported on V2 becomes the active account. Its keystore
+        // carries no phrase, so the identity can't resolve from it.
+        const v2Import = await send({
+          type: SERVICE_TYPES.IMPORT_ACCOUNT,
+          password: PRE_V2_PASSWORD,
+          privateKey: Keypair.random().secret(),
+        } as ImportAccountMessage);
+        expect((v2Import as { error?: string }).error).toBeUndefined();
+        const activeKeyId = await mockDataStorage.getItem(KEY_ID);
+        expect(
+          (await mockDataStorage.getItem(ACCOUNT_PROVENANCE_ID))[activeKeyId],
+        ).toMatchObject({ type: AccountType.IMPORTED });
+
+        mockSessionStore.dispatch(sessionSlice.actions.reset());
+        expect((await unlock()).error).toBeUndefined();
+
+        const sourceId = await importedSourceId();
+        expect(await mockDataStorage.getItem(PINNED_SOURCE_ID)).toBe(
+          PRE_UPGRADE_METRICS_USER_ID,
+        );
+        expect(
+          (await mockDataStorage.getItem(ACCOUNT_PROVENANCE_ID))[
+            PRE_V2_IMPORTED_ID
+          ],
+        ).toEqual({ type: AccountType.IMPORTED, sourceId });
+        expect(await mockDataStorage.getItem(PENDING_ATTRIBUTION_ID)).toEqual(
+          [],
+        );
       });
     });
 

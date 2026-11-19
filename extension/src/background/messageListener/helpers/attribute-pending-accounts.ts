@@ -13,6 +13,7 @@ import {
 import {
   addSecretSource,
   getPhraseSourceId,
+  getPinnedSourceId,
   getSecretKeySourceId,
 } from "background/helpers/secret-sources";
 import { getIsHardwareWalletActive } from "background/helpers/account";
@@ -82,9 +83,10 @@ const findDerivationIndex = (
   import look the same on disk, so derivation is the only way to tell them
   apart.
 
-  If the wallet has an identity keystore whose phrase does not resolve, imports
-  stay pending until an unlock resolves it, so an import never takes the pin
-  that belongs to the phrase. Phrase accounts are still attributed: every
+  If the wallet has an identity keystore whose phrase does not resolve and
+  nothing is pinned yet, imports stay pending until an unlock resolves it or
+  something else takes the pin, so an import never takes the pin that belongs
+  to the phrase. Phrase accounts are still attributed: every
   pre-V2 non-hardware keystore carries the same wallet phrase, so whichever
   registers first pins it.
 
@@ -184,7 +186,11 @@ export const attributePendingAccounts = async ({
     }
   }
 
-  const identityUnresolved = Boolean(identityKeyId) && !identityId;
+  // Imports wait only while the pin is still open. Once anything is pinned
+  // (the phrase above, or a key imported on V2, whose keystore carries no
+  // phrase), registering an import can't move it.
+  const pinned = await getPinnedSourceId({ localStore });
+  const identityUnresolved = Boolean(identityKeyId) && !identityId && !pinned;
 
   let attributed = false;
 
