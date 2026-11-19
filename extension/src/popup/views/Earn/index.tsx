@@ -7,7 +7,10 @@ import { getAssetFromCanonical } from "helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 import { STEPS } from "popup/constants/earn";
 import { navigateTo } from "popup/helpers/navigate";
-import { emitScreenViewed, ScreenViewedProps } from "helpers/metrics";
+import {
+  ScreenByStep,
+  useStepScreenViews,
+} from "popup/helpers/useStepScreenViews";
 import { ActionStatus } from "@shared/api/types";
 import { resetSimulation } from "popup/ducks/token-payment";
 import {
@@ -66,9 +69,7 @@ type EnterAnim = "from-bottom" | "from-right" | "from-left";
  * transition, so it owns both of its screen views. The `confirm` step is the
  * review sheet, emitted by EarnAmount.
  */
-const EARN_SCREEN_BY_STEP: Partial<
-  Record<STEPS, { screen_name: string } & ScreenViewedProps>
-> = {
+const EARN_SCREEN_BY_STEP: ScreenByStep<STEPS> = {
   [STEPS.INTRO]: { screen_name: "earn_intro", flow: "earn" },
   [STEPS.CHOOSE_TOKEN]: { screen_name: "earn_select_token", flow: "earn" },
   [STEPS.AMOUNT]: { screen_name: "earn_amount", flow: "earn" },
@@ -103,7 +104,6 @@ export const Earn = () => {
   } | null>(null);
 
   const hasResolvedIntro = useRef(false);
-  const lastEmittedStep = useRef<STEPS | null>(null);
   const isFirstSubmitStatusRun = useRef(true);
   // True while a submission the swap branch started is unsettled. The swap and
   // the deposit share the submission slice, so this is how a swap's outcome is
@@ -229,19 +229,7 @@ export const Earn = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [swapTarget]);
 
-  // Emit a screen-view metric only once per step transition.
-  useEffect(() => {
-    if (activeStep === lastEmittedStep.current) {
-      return;
-    }
-    lastEmittedStep.current = activeStep;
-
-    const screen = EARN_SCREEN_BY_STEP[activeStep];
-    if (screen) {
-      const { screen_name, ...props } = screen;
-      emitScreenViewed(screen_name, props);
-    }
-  }, [activeStep]);
+  useStepScreenViews(activeStep, EARN_SCREEN_BY_STEP);
 
   const renderStep = (step: STEPS) => {
     switch (step) {

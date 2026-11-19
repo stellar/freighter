@@ -11,6 +11,7 @@ import {
   trackEarnDepositFailed,
   trackEarnFundingActionSelected,
   trackEarnPercentAmountSelected,
+  trackEarnPoolDetailsOpened,
   trackEarnSimulationFailed,
   trackEarnTokenSelected,
   trackEarnXlmFeeInsufficientShown,
@@ -111,6 +112,15 @@ describe("Earn funnel metrics", () => {
     expect(mockEmitMetric).toHaveBeenCalledWith(
       METRIC_NAMES.earnSimulationFailed,
       { asset_code: "XLM", reason_code: "simulation failed" },
+    );
+  });
+
+  it("reports the pool details opened, with the pool", () => {
+    trackEarnPoolDetailsOpened({ poolId: POOL_ID });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnPoolDetailsOpened,
+      { pool_id: POOL_ID },
     );
   });
 

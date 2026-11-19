@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Icon, IconButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -11,13 +11,12 @@ import {
   SheetTitle,
   ScreenReaderOnly,
 } from "popup/basics/shadcn/Sheet";
-import { EARN_SWAP_STEPS } from "popup/constants/earn";
 import {
   DEFAULT_AMOUNT,
   DEFAULT_AMOUNT_USD,
 } from "popup/components/amount/constants";
 import { InputType } from "helpers/transaction";
-import { emitMetric, emitScreenViewed } from "helpers/metrics";
+import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { TransactionConfirm } from "popup/components/InternalTransaction/SubmitTransaction";
@@ -25,8 +24,9 @@ import { SwapAsset } from "popup/components/swap/SwapAsset";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
 import { useSwapSubmitQuoteExpiry } from "popup/components/swap/hooks/useSwapSubmitQuoteExpiry";
 import { useSwapSubmitScreenViews } from "popup/components/swap/hooks/useSwapSubmitScreenViews";
-import { SwapSource } from "popup/constants/swap";
-import { swapSourceProps } from "popup/metrics/swap";
+import { STEPS, SwapSource } from "popup/constants/swap";
+import { SWAP_SCREEN_BY_STEP, swapSourceProps } from "popup/metrics/swap";
+import { useStepScreenViews } from "popup/helpers/useStepScreenViews";
 import { resetSimulation } from "popup/ducks/token-payment";
 import {
   DestinationTokenDetails,
@@ -87,35 +87,22 @@ export const EarnSwap = ({
   const submission = useSelector(transactionSubmissionSelector);
   const { transactionSimulation, transactionData } = submission;
 
-  const [activeStep, setActiveStep] = useState(EARN_SWAP_STEPS.AMOUNT);
+  const [activeStep, setActiveStep] = useState(STEPS.AMOUNT);
   const [inputType, setInputType] = useState<InputType>("crypto");
 
   const { isQuoteExpiredAtSubmit } = useSwapSubmitQuoteExpiry({
-    onRecover: () => setActiveStep(EARN_SWAP_STEPS.AMOUNT),
+    onRecover: () => setActiveStep(STEPS.AMOUNT),
   });
 
-  // The same screen views the Swap route reports, tagged as opened from Earn:
-  // one per step the user reaches, then processing and success as the
-  // submission advances. The submitting step reports only those two, as on the
-  // Swap route.
-  const lastEmittedStep = useRef<EARN_SWAP_STEPS | null>(null);
-  useEffect(() => {
-    if (activeStep === lastEmittedStep.current) {
-      return;
-    }
-    lastEmittedStep.current = activeStep;
-    const screenName = {
-      [EARN_SWAP_STEPS.AMOUNT]: "swap_amount",
-      [EARN_SWAP_STEPS.SET_FROM_ASSET]: "swap_from_asset",
-      [EARN_SWAP_STEPS.SWAP_CONFIRM]: null,
-    }[activeStep];
-    if (screenName) {
-      emitScreenViewed(screenName, {
-        flow: "swap",
-        ...swapSourceProps(SwapSource.Earn),
-      });
-    }
-  }, [activeStep]);
+  // The same screen views the Swap route reports, from the same table, tagged
+  // as opened from Earn: one per step the user reaches, then processing and
+  // success as the submission advances. The submitting step reports only
+  // those two, as on the Swap route.
+  useStepScreenViews(
+    activeStep,
+    SWAP_SCREEN_BY_STEP,
+    swapSourceProps(SwapSource.Earn),
+  );
   useSwapSubmitScreenViews(SwapSource.Earn);
 
   // Seed the swap: the source the caller picked (see pickSwapSource), the
@@ -160,7 +147,7 @@ export const EarnSwap = ({
 
   const renderStep = () => {
     switch (activeStep) {
-      case EARN_SWAP_STEPS.SWAP_CONFIRM: {
+      case STEPS.SWAP_CONFIRM: {
         // The recovery effect steps back to the amount screen on a quote-expiry
         // failure; render nothing this frame so SubmitFail never flashes.
         if (isQuoteExpiredAtSubmit) {
@@ -169,7 +156,7 @@ export const EarnSwap = ({
         return (
           <TransactionConfirm
             xdr={transactionSimulation.preparedTransaction!}
-            goBack={() => setActiveStep(EARN_SWAP_STEPS.AMOUNT)}
+            goBack={() => setActiveStep(STEPS.AMOUNT)}
             // Both exits stay inside Earn: Done returns to the picker with the
             // new balance, Close backs out without abandoning the deposit.
             onDone={finish}
@@ -179,7 +166,7 @@ export const EarnSwap = ({
         );
       }
 
-      case EARN_SWAP_STEPS.SET_FROM_ASSET: {
+      case STEPS.SET_FROM_ASSET: {
         return (
           <SwapAsset
             selectionType="source"
@@ -187,7 +174,7 @@ export const EarnSwap = ({
             // A real step back to the amount sheet, so an arrow rather than the
             // X the standalone Swap route uses — the sheet owns the X.
             backIcon={<Icon.ArrowLeft />}
-            goBack={() => setActiveStep(EARN_SWAP_STEPS.AMOUNT)}
+            goBack={() => setActiveStep(STEPS.AMOUNT)}
             onClickAsset={(canonical: string, isContract: boolean) => {
               dispatch(saveAsset(canonical));
               dispatch(saveIsToken(isContract));
@@ -199,13 +186,13 @@ export const EarnSwap = ({
                 list: "balances",
                 ...swapSourceProps(SwapSource.Earn),
               });
-              setActiveStep(EARN_SWAP_STEPS.AMOUNT);
+              setActiveStep(STEPS.AMOUNT);
             }}
           />
         );
       }
 
-      case EARN_SWAP_STEPS.AMOUNT:
+      case STEPS.AMOUNT:
       default: {
         return (
           <SwapAmount
@@ -216,12 +203,12 @@ export const EarnSwap = ({
             // dismisses the whole branch.
             isSheetLayout
             goBack={onCancel}
-            goToEditSrc={() => setActiveStep(EARN_SWAP_STEPS.SET_FROM_ASSET)}
+            goToEditSrc={() => setActiveStep(STEPS.SET_FROM_ASSET)}
             // Unreachable while the destination is pinned — the receive pill is
             // a label, not a control — but the prop is required; point it at the
             // source picker rather than leaving a silent no-op behind.
-            goToEditDst={() => setActiveStep(EARN_SWAP_STEPS.SET_FROM_ASSET)}
-            goToNext={() => setActiveStep(EARN_SWAP_STEPS.SWAP_CONFIRM)}
+            goToEditDst={() => setActiveStep(STEPS.SET_FROM_ASSET)}
+            goToNext={() => setActiveStep(STEPS.SWAP_CONFIRM)}
           />
         );
       }
@@ -246,7 +233,7 @@ export const EarnSwap = ({
         // the design draws it (4478:117063, 4478:117082); the loading, failure
         // and password screens keep the steps' height they're laid out for.
         className={`EarnSwapSheet${
-          activeStep === EARN_SWAP_STEPS.SWAP_CONFIRM &&
+          activeStep === STEPS.SWAP_CONFIRM &&
           (submission.submitStatus === ActionStatus.PENDING ||
             submission.submitStatus === ActionStatus.SUCCESS)
             ? " EarnSwapSheet--status"
@@ -265,7 +252,7 @@ export const EarnSwap = ({
             the submitting/success step, which has no header of its own. The
             source picker steps back with its arrow instead. What the X *means*
             is not the same on every step — see `dismiss`. */}
-        {activeStep !== EARN_SWAP_STEPS.SET_FROM_ASSET && (
+        {activeStep !== STEPS.SET_FROM_ASSET && (
           <div className="EarnSwapSheet__close">
             <IconButton
               type="button"

@@ -22,19 +22,6 @@ export enum STEPS {
 }
 
 /**
- * Sub-steps of the swap branch, owned by EarnSwap rather than the Earn view.
- *
- * Keeping these out of STEPS means CHOOSE_TOKEN stays the active step with the
- * swap sheet over it, the mount-all loop stays cheap, and the sub-state resets
- * for free on unmount.
- */
-export enum EARN_SWAP_STEPS {
-  AMOUNT = "earn-swap-amount",
-  SET_FROM_ASSET = "earn-swap-from-asset",
-  SWAP_CONFIRM = "earn-swap-confirm",
-}
-
-/**
  * Which button set the "Not enough X" sheet shows. Driven by whether the asset
  * can be bought via the onramp and whether the account holds anything it could
  * swap from. Each has its own frame in the design (Varial 4478:115689 and its

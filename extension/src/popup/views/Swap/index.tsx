@@ -2,18 +2,14 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import { STEPS, SwapSource, isSwapSource } from "popup/constants/swap";
-import {
-  emitMetric,
-  emitScreenViewed,
-  ScreenViewedProps,
-} from "helpers/metrics";
+import { emitMetric, emitScreenViewed } from "helpers/metrics";
 import { InputType } from "helpers/transaction";
 import { TransactionConfirm } from "popup/components/InternalTransaction/SubmitTransaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SwapAsset } from "popup/components/swap/SwapAsset";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
 import { useSwapSubmitScreenViews } from "popup/components/swap/hooks/useSwapSubmitScreenViews";
-import { swapSourceProps } from "popup/metrics/swap";
+import { SWAP_SCREEN_BY_STEP, swapSourceProps } from "popup/metrics/swap";
 import { useSwapSubmitQuoteExpiry } from "popup/components/swap/hooks/useSwapSubmitQuoteExpiry";
 import { AppDispatch, AppState } from "popup/App";
 import {
@@ -40,22 +36,6 @@ import {
   DEFAULT_SWAP_DEST_CANONICAL,
   NETWORKS,
 } from "@shared/constants/stellar";
-
-// Each swap sub-step emits the consolidated `screen.viewed` event; the step's
-// identity lives in `screen_name`, declared as a literal below.
-const SWAP_SCREEN_BY_STEP: Partial<
-  Record<STEPS, { screen_name: string } & ScreenViewedProps>
-> = {
-  // STEPS.SWAP_CONFIRM is deliberately absent. It renders the submitting
-  // screen, which the user only reaches after approving, so it is not the
-  // `confirm` stage — SwapAmount's review modal is, and it emits
-  // `swap_confirm` itself. This screen's own stages are covered by the
-  // submitStatus effect below (processing, then success).
-  [STEPS.SET_DST_ASSET]: { screen_name: "swap_to_asset", flow: "swap" },
-  [STEPS.AMOUNT]: { screen_name: "swap_amount", flow: "swap" },
-  [STEPS.CONFIRM_AMOUNT]: { screen_name: "swap_amount_review", flow: "swap" },
-  [STEPS.SET_FROM_ASSET]: { screen_name: "swap_from_asset", flow: "swap" },
-};
 
 export const Swap = () => {
   const dispatch = useDispatch<AppDispatch>();

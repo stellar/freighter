@@ -117,6 +117,11 @@ export const trackEarnSimulationFailed = ({
  * If Earn ever needs partial-shortcut usage, add a separately named event
  * rather than widening this one.
  */
+/** The pool card on the amount screen was tapped for the pool's details. */
+export const trackEarnPoolDetailsOpened = ({ poolId }: { poolId: string }) => {
+  emitMetric(METRIC_NAMES.earnPoolDetailsOpened, { pool_id: poolId });
+};
+
 export const trackEarnPercentAmountSelected = ({
   assetCode,
   percent,
