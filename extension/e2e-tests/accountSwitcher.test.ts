@@ -68,22 +68,34 @@ test("Groups the switcher by source and switches between a phrase account and an
     group(page, "Secret key 1").getByTestId("wallet-row-select"),
   ).not.toHaveAttribute("aria-current", "true");
 
-  // Collapse the phrase group; it stays collapsed when the sheet reopens.
+  // Collapse the inactive key group; it stays collapsed when the sheet reopens.
+  const keyToggle = group(page, "Secret key 1").getByTestId(
+    "account-sheet-group-toggle",
+  );
+  await keyToggle.click();
+  await expect(keyToggle).toHaveAttribute("aria-expanded", "false");
+  await expect(
+    group(page, "Secret key 1").getByTestId("wallet-row-select"),
+  ).toHaveCount(0);
+
+  await page.getByTestId("AccountSheet__close").click();
+  await page.getByTestId("account-view-account-name").click();
+  await expect(keyToggle).toHaveAttribute("aria-expanded", "false");
+  await expect(
+    group(page, "Secret key 1").getByTestId("wallet-row-select"),
+  ).toHaveCount(0);
+  await expect(
+    group(page, "Recovery phrase 1").getByTestId("wallet-row-select").first(),
+  ).toHaveAttribute("aria-current", "true");
+
+  // The active account's group reopens expanded even if it was collapsed.
   const phraseToggle = group(page, "Recovery phrase 1").getByTestId(
     "account-sheet-group-toggle",
   );
   await phraseToggle.click();
   await expect(phraseToggle).toHaveAttribute("aria-expanded", "false");
-  await expect(
-    group(page, "Recovery phrase 1").getByTestId("wallet-row-select"),
-  ).toHaveCount(0);
 
   await page.getByTestId("AccountSheet__close").click();
   await page.getByTestId("account-view-account-name").click();
-  await expect(
-    group(page, "Recovery phrase 1").getByTestId("account-sheet-group-toggle"),
-  ).toHaveAttribute("aria-expanded", "false");
-  await expect(
-    group(page, "Secret key 1").getByTestId("wallet-row-select"),
-  ).toHaveCount(1);
+  await expect(phraseToggle).toHaveAttribute("aria-expanded", "true");
 });
