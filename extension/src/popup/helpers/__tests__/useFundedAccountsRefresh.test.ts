@@ -103,6 +103,41 @@ describe("useFundedAccountsRefresh", () => {
     expect(fetchData).toHaveBeenCalledTimes(2);
   });
 
+  it("does not store a time when an account had an error, so the next open retries (FR-31)", async () => {
+    fetchData.mockResolvedValueOnce({
+      type: AppDataType.RESOLVED,
+      hasAccountErrors: true,
+    });
+    renderHook(() => useFundedAccountsRefresh());
+    await flush();
+    expect(localStorage.getItem(FUNDED_ACCOUNTS_REFRESHED_AT_ID)).toBeNull();
+
+    renderHook(() => useFundedAccountsRefresh());
+    await flush();
+    expect(fetchData).toHaveBeenCalledTimes(2);
+    expect(
+      Number(localStorage.getItem(FUNDED_ACCOUNTS_REFRESHED_AT_ID)),
+    ).toBeGreaterThan(0);
+  });
+
+  it("calls the latest fetchData when the delay ends", async () => {
+    const latestFetchData = jest
+      .fn()
+      .mockResolvedValue({ type: AppDataType.RESOLVED });
+    const { rerender } = renderHook(() => useFundedAccountsRefresh());
+    // A render during the delay, for example after the Account view fills
+    // the Redux caches, gives a new fetchData with the new cache snapshots.
+    (useGetWalletsData as jest.Mock).mockReturnValue({
+      fetchData: latestFetchData,
+      state: {},
+    });
+    rerender();
+    await flush();
+    expect(fetchData).not.toHaveBeenCalled();
+    expect(latestFetchData).toHaveBeenCalledTimes(1);
+    expect(latestFetchData).toHaveBeenCalledWith(true);
+  });
+
   it("does not start a second refresh while one runs", async () => {
     let resolve: (value: unknown) => void = () => {};
     fetchData.mockReturnValueOnce(

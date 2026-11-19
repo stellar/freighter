@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 
 import { FUNDED_ACCOUNTS_REFRESHED_AT_ID } from "constants/localStorageTypes";
@@ -60,6 +60,11 @@ export const resetFundedAccountsRefreshState = () => {
 export const useFundedAccountsRefresh = () => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { fetchData } = useGetWalletsData();
+  // fetchData reads the Redux caches of its render. The timer calls the
+  // latest one, so data that the Account view caches during the delay is
+  // reused, not fetched again.
+  const fetchDataRef = useRef(fetchData);
+  fetchDataRef.current = fetchData;
 
   useEffect(() => {
     if (!isMainnet(networkDetails)) {
@@ -73,8 +78,13 @@ export const useFundedAccountsRefresh = () => {
       isRefreshInFlight = true;
       try {
         // fetchData catches its own errors and returns them.
-        const result = (await fetchData(true)) as { type?: unknown } | null;
-        if (result?.type === AppDataType.RESOLVED) {
+        const result = (await fetchDataRef.current(true)) as {
+          type?: unknown;
+          hasAccountErrors?: boolean;
+        } | null;
+        // Store the time only when every account gave a result. After an
+        // error, the next app open tries again.
+        if (result?.type === AppDataType.RESOLVED && !result.hasAccountErrors) {
           setLastRefreshedAt(Date.now());
         }
       } catch {
@@ -85,8 +95,5 @@ export const useFundedAccountsRefresh = () => {
     }, FUNDED_ACCOUNTS_REFRESH_DELAY_MS);
 
     return () => clearTimeout(timer);
-    // fetchData is a new function on each render. The refresh depends only
-    // on the network.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [networkDetails]);
 };

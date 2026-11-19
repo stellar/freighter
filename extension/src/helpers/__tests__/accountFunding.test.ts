@@ -148,6 +148,12 @@ describe("toFunded", () => {
     expect(toFunded(input({ isFunded: null }))).toBeNull();
   });
 
+  it("gives no result when a balance error comes with isFunded false", () => {
+    expect(
+      toFunded(input({ isFunded: false, hasBalanceError: true })),
+    ).toBeNull();
+  });
+
   it("gives no result when the price fetch failed or did not run (VT-5)", () => {
     expect(toFunded(input({ tokenPrices: null }))).toBeNull();
     expect(toFunded(input({ tokenPrices: undefined }))).toBeNull();
@@ -236,6 +242,17 @@ describe("onAccountValue", () => {
     activeValue(FUNDED);
     activeValue(FUNDED);
     expect(fundedEvents()).toHaveLength(1);
+  });
+
+  it("keeps a funded record when an errored response has isFunded false", () => {
+    activeValue(FUNDED);
+    activeValue(input({ isFunded: false, hasBalanceError: true }));
+    activeValue(FUNDED);
+    expect(fundedEvents()).toHaveLength(0);
+    expect(getFundingRecord("PUBLIC", KEY_A)).toEqual({
+      status: "funded",
+      funded: true,
+    });
   });
 
   it("changes no record for a result that is not definite (VT-4, VT-5, VT-6)", () => {

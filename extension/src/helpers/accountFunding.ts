@@ -52,12 +52,17 @@ export const toFunded = ({
   tokenPrices,
   hasBalanceError,
 }: AccountValueInput): boolean | null => {
+  // A balance error makes every field unreliable, `isFunded` too. Check it
+  // first, so an errored response never resets a record to unfunded.
+  if (hasBalanceError) {
+    return null;
+  }
   // Rule 1: no ledger entry, so no balances and no value.
   if (isFunded === false) {
     return false;
   }
   // Rule 2: the balance data is not complete.
-  if (hasBalanceError || isFunded === null || isFunded === undefined) {
+  if (isFunded === null || isFunded === undefined) {
     return null;
   }
   // Rule 3: the price fetch failed, or did not run.
