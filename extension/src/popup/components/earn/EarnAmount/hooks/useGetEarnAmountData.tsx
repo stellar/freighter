@@ -76,13 +76,15 @@ export function useGetEarnAmountData() {
         useCache: true,
       });
 
-      const payload = {
+      const payload: ResolvedEarnAmount = {
         type: AppDataType.RESOLVED,
         publicKey,
         networkDetails,
         balances,
-        tokenPrices: fetchedTokenPrices.tokenPrices,
-      } as EarnAmountData;
+        // The price fetch reports failure with null; the screen reads prices
+        // unguarded, so normalize here as Swap's and Send's loaders do.
+        tokenPrices: fetchedTokenPrices.tokenPrices || {},
+      };
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
