@@ -1,13 +1,16 @@
 import BigNumber from "bignumber.js";
 
-import { AssetType, ClassicAsset } from "@shared/api/types/account-balance";
-import { BASE_RESERVE, NetworkDetails } from "@shared/constants/stellar";
+import { AssetType } from "@shared/api/types/account-balance";
+import { NetworkDetails } from "@shared/constants/stellar";
 import { isNativeBalance } from "@shared/helpers/assetIdentity";
-import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 import { isMainnet } from "helpers/stellar";
 import { EARN_ONRAMP_ASSETS, NotEnoughVariant } from "popup/constants/earn";
-import { isClassicBalance, isSorobanBalance } from "popup/helpers/balance";
+import { isSwapSourceCandidate } from "popup/components/earn/helpers/isSwapSourceCandidate";
 import { getAvailableBalance } from "popup/helpers/soroban";
+import {
+  deductNewTrustlineReserve,
+  shouldShowXlmReservePreflight,
+} from "popup/helpers/xlmReserve";
 
 /**
  * Can the Coinbase onramp sell this asset?
@@ -53,41 +56,37 @@ export const hasSwappableBalance = ({
   /** Whether the swap has to open a trustline for the target first. */
   requiresTrustline: boolean;
 }) => {
-  const spendableXlm = new BigNumber(
-    getAvailableBalance({
-      assetCanonical: "native",
-      balances,
-      recommendedFee: transactionFee,
-    }),
-  );
-  if (requiresTrustline && spendableXlm.lte(BASE_RESERVE)) {
+  const spendableXlm = getAvailableBalance({
+    assetCanonical: "native",
+    balances,
+    recommendedFee: transactionFee,
+  });
+  // Main Swap's gate for a token sold into a new trustline. Taken as a
+  // non-XLM sale because the reserve is needed whichever token is sold.
+  if (
+    shouldShowXlmReservePreflight({
+      requiresTrustline,
+      sourceIsXlm: false,
+      spendableXlm,
+    })
+  ) {
     return false;
   }
-  const xlmLeftToSwap = requiresTrustline
-    ? spendableXlm.minus(BASE_RESERVE)
-    : spendableXlm;
+  // Selling XLM itself: what is left once the new trustline's reserve is set
+  // aside.
+  const xlmLeftToSwap = new BigNumber(
+    deductNewTrustlineReserve({
+      spendable: spendableXlm,
+      sourceIsXlm: true,
+      requiresTrustline,
+    }),
+  );
 
-  return balances.some((balance) => {
-    // Contract-only tokens are not swappable, and LP shares are not a token.
-    // Note isClassicBalance keys off `issuer`, which native XLM has not — so
-    // it has to be admitted explicitly or the most common source is excluded.
-    if (isSorobanBalance(balance)) {
-      return false;
-    }
-    if (isNativeBalance(balance)) {
-      return xlmLeftToSwap.gt(0);
-    }
-    if (!isClassicBalance(balance)) {
-      return false;
-    }
-
-    const canonical = getCanonicalFromAsset(
-      (balance as ClassicAsset).token.code,
-      (balance as ClassicAsset).token.issuer.key,
-    );
-
-    return canonical !== targetCanonical && new BigNumber(balance.total).gt(0);
-  });
+  return balances.some(
+    (balance) =>
+      isSwapSourceCandidate(balance, targetCanonical) &&
+      (!isNativeBalance(balance) || xlmLeftToSwap.gt(0)),
+  );
 };
 
 /**

@@ -3,11 +3,8 @@ import BigNumber from "bignumber.js";
 import { ApiTokenPrices } from "@shared/api/types";
 import { AssetType } from "@shared/api/types/account-balance";
 import { isNativeBalance } from "@shared/helpers/assetIdentity";
-import {
-  getBalanceCanonicalKey,
-  isClassicBalance,
-  isSorobanBalance,
-} from "popup/helpers/balance";
+import { isSwapSourceCandidate } from "popup/components/earn/helpers/isSwapSourceCandidate";
+import { getBalanceCanonicalKey } from "popup/helpers/balance";
 
 /**
  * The token the Earn swap starts from, chosen as mobile chooses it: the most
@@ -27,12 +24,8 @@ export const pickSwapSource = ({
   prices: ApiTokenPrices | null | undefined;
   destinationCanonical: string;
 }): string => {
-  const candidates = balances.filter(
-    (balance) =>
-      !isSorobanBalance(balance) &&
-      (isNativeBalance(balance) || isClassicBalance(balance)) &&
-      new BigNumber(balance.total).gt(0) &&
-      getBalanceCanonicalKey(balance) !== destinationCanonical,
+  const candidates = balances.filter((balance) =>
+    isSwapSourceCandidate(balance, destinationCanonical),
   );
 
   let mostValuable: AssetType | undefined;
