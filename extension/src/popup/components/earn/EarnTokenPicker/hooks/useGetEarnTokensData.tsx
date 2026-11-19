@@ -92,8 +92,8 @@ const headlineApy = (
 
 /**
  * Splits the pool's reserves into the picker's two sections. Each row takes its
- * icon from what is already known: the held balances' icons, else the session's
- * icon cache. Rows still without one get it looked up after the list shows.
+ * icon from the session's icon cache; rows still without one get it looked up
+ * after the list shows.
  */
 const buildEarnRows = ({
   earnOptions,
@@ -166,11 +166,11 @@ const buildEarnRows = ({
       catalogCode ||
       `${option.assetId.slice(0, 4)}…`;
 
-    // Icons are keyed by canonical. `balances.icons` only holds entries for
-    // assets the account actually has; a zero-balance reserve finds its icon
-    // in the session's cache once it has been looked up. Native is the
-    // exception: keyed "native" whether or not it is held, and its logo is
-    // bundled.
+    // Icons are keyed by canonical, and come from the session's icon cache:
+    // Home fills it for what the account holds, and the picker's own lookup
+    // for the rest. A row the cache can't place yet gets its icon after the
+    // list shows. Native is the exception: keyed "native" whether or not it
+    // is held, and its logo is bundled.
     const canonical = getCatalogIconKey({
       code,
       issuer,
@@ -182,8 +182,7 @@ const buildEarnRows = ({
       assetId: option.assetId,
       code,
       issuer,
-      iconUrl:
-        balances.icons?.[canonical] || cachedIcons[canonical] || undefined,
+      iconUrl: cachedIcons[canonical] || undefined,
       decimals: option.decimals ?? CLASSIC_ASSET_DECIMALS,
       total: total ? total.toFixed() : "0",
       hasTrustline: Boolean(balance),
@@ -211,8 +210,11 @@ const buildEarnRows = ({
  *   already loaded, as Swap's and Send's pickers do. A refresh after a swap
  *   passes `false` for fresh balances.
  * - The Blend catalog is fetched alongside the balances, not after them.
- * - Icons for tokens the account doesn't hold are looked up after the list
- *   shows, and fill in when they arrive.
+ * - No icon lookup holds up the list: rows show the icons the session has
+ *   already resolved, and the rest are looked up after the list shows and
+ *   fill in when they arrive. The lookup can take seconds: for a token no
+ *   list has an icon for, it asks Horizon for the issuer's home domain and
+ *   then fetches that domain's stellar.toml.
  * - A refresh keeps the current list on screen until the new one is ready,
  *   and a failed refresh keeps it.
  */
@@ -224,7 +226,9 @@ export function useGetEarnTokensData() {
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchBalances } = useGetBalances({
     showHidden: false,
-    includeIcons: true,
+    // Icons come from the session's cache and the lookup after the list
+    // shows (see above), never from inside the balances fetch.
+    includeIcons: false,
   });
   const reduxDispatch = useDispatch<AppDispatch>();
   const { assetsLists } = useSelector(settingsSelector);

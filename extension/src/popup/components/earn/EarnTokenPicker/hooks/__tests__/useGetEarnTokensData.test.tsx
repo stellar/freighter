@@ -24,9 +24,13 @@ jest.mock("helpers/hooks/useGetAppData", () => ({
   useGetAppData: () => ({ fetchData: mockFetchAppData }),
 }));
 
+const mockUseGetBalancesOptions = jest.fn();
 jest.mock("helpers/hooks/useGetBalances", () => ({
   ...jest.requireActual("helpers/hooks/useGetBalances"),
-  useGetBalances: () => ({ fetchData: mockFetchBalances }),
+  useGetBalances: (options: unknown) => {
+    mockUseGetBalancesOptions(options);
+    return { fetchData: mockFetchBalances };
+  },
 }));
 
 jest.mock("@shared/api/helpers/blend", () => ({
@@ -182,6 +186,59 @@ describe("useGetEarnTokensData", () => {
     await act(async () => icons.resolve({ [USDC_CANONICAL]: USDC_ICON }));
 
     expect(resolvedData(result).supported[0].iconUrl).toBe(USDC_ICON);
+  });
+
+  it("doesn't wait on icons for held tokens either", async () => {
+    const icons = deferred<Record<string, string | null>>();
+    mockResolveEarnAssetIcons.mockReturnValue(icons.promise);
+    mockFetchBalances.mockResolvedValue(balancesOf(xlmBalance, usdcBalance));
+    const { result } = renderData();
+
+    await act(() => result.current.fetchData(true));
+
+    // The balances fetch resolves no icons: a held token's icon lookup can
+    // take seconds (the issuer's home domain, then its stellar.toml).
+    expect(mockUseGetBalancesOptions).toHaveBeenCalledWith(
+      expect.objectContaining({ includeIcons: false }),
+    );
+    expect(result.current.state.state).toBe(RequestState.SUCCESS);
+    expect(resolvedData(result).held).toEqual([
+      expect.objectContaining({ code: "XLM" }),
+      expect.objectContaining({ code: "USDC", iconUrl: undefined }),
+    ]);
+
+    await act(async () => icons.resolve({ [USDC_CANONICAL]: USDC_ICON }));
+
+    expect(resolvedData(result).held[1].iconUrl).toBe(USDC_ICON);
+  });
+
+  it("shows icons the session has already resolved straight away", async () => {
+    const icons = deferred<Record<string, string | null>>();
+    mockResolveEarnAssetIcons.mockReturnValue(icons.promise);
+    const { result } = renderHook(() => useGetEarnTokensData(), {
+      wrapper: ({ children }: { children: React.ReactNode }) => (
+        <Wrapper
+          routes={["/earn"]}
+          state={{
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+              assetsLists: {},
+            },
+            cache: {
+              icons: { [USDC_CANONICAL]: USDC_ICON },
+              tokenLists: [{ assets: [] }],
+            },
+          }}
+        >
+          {children}
+        </Wrapper>
+      ),
+    });
+
+    await act(() => result.current.fetchData(true));
+
+    expect(resolvedData(result).supported[0].iconUrl).toBe(USDC_ICON);
+    expect(mockResolveEarnAssetIcons).not.toHaveBeenCalled();
   });
 
   it("keeps the list on screen while it refreshes", async () => {
