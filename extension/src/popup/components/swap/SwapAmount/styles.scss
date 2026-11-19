@@ -307,3 +307,38 @@
     margin-bottom: 2rem;
   }
 }
+
+.SwapAsset__quote-unavailable-body {
+  color: var(--sds-clr-gray-11);
+  font-size: pxToRem(14px);
+  line-height: pxToRem(20px);
+}
+
+.SwapAsset__details-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: pxToRem(6px);
+  margin-top: pxToRem(12px);
+  color: var(--sds-clr-gray-11);
+  font-size: pxToRem(12px);
+  line-height: pxToRem(18px);
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: pxToRem(4px);
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--sds-clr-gray-12);
+    font: inherit;
+    font-weight: var(--sds-fw-medium);
+    cursor: pointer;
+
+    svg {
+      width: pxToRem(14px);
+      height: pxToRem(14px);
+    }
+  }
+}
