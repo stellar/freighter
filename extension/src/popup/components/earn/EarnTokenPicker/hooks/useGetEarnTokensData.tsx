@@ -1,6 +1,7 @@
 import { useReducer, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
+import { captureException } from "@sentry/browser";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getBlendEarnOptions, getBlendPools } from "@shared/api/helpers/blend";
@@ -22,6 +23,7 @@ import { settingsSelector } from "popup/ducks/settings";
 import {
   iconsSelector,
   saveIconsForBalances,
+  saveTokenLists,
   tokensListsSelector,
 } from "popup/ducks/cache";
 import { RequestState } from "constants/request";
@@ -261,12 +263,14 @@ export function useGetEarnTokensData() {
     }
 
     try {
-      const assetsListsData = cachedTokenLists.length
-        ? cachedTokenLists
-        : await getCombinedAssetListData({
-            networkDetails: payload.networkDetails,
-            assetsLists,
-          });
+      let assetsListsData = cachedTokenLists;
+      if (!assetsListsData.length) {
+        assetsListsData = await getCombinedAssetListData({
+          networkDetails: payload.networkDetails,
+          assetsLists,
+        });
+        reduxDispatch(saveTokenLists(assetsListsData));
+      }
       const fetchedIcons = await resolveEarnAssetIcons({
         assets: rowsMissingIcons,
         networkDetails: payload.networkDetails,
@@ -296,7 +300,7 @@ export function useGetEarnTokensData() {
         },
       });
     } catch (error) {
-      console.error(error);
+      captureException(`Failed to look up Earn token icons - ${error}`);
     }
   };
 

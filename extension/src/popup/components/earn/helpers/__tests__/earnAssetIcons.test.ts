@@ -1,12 +1,20 @@
 import { Asset, Networks } from "stellar-sdk";
 
+import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { PUBLIC_SACS } from "@shared/constants/sac";
 import {
   getCatalogAssetIdentity,
   getCatalogIconKey,
   getCatalogIssuer,
+  resolveEarnAssetIcons,
 } from "../earnAssetIcons";
+
+// A token-list hit is also written to the background's icon cache.
+jest.mock("@shared/api/helpers/extensionMessaging", () => ({
+  ...jest.requireActual("@shared/api/helpers/extensionMessaging"),
+  sendMessageToBackground: jest.fn().mockResolvedValue({}),
+}));
 
 const USDC_ISSUER = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
 const networkDetails = {
@@ -121,5 +129,59 @@ describe("getCatalogAssetIdentity", () => {
     expect(identity.code).toBe("");
     expect(identity.canonical).toBe("");
     expect(identity.isNative).toBe(false);
+  });
+});
+
+describe("resolveEarnAssetIcons", () => {
+  const USDC_SAC = new Asset("USDC", USDC_ISSUER).contractId(Networks.PUBLIC);
+  const USDC_ICON = "https://example.com/usdc.png";
+  const usdc = { code: "USDC", issuer: USDC_ISSUER, assetId: USDC_SAC };
+
+  const listsWith = (record: object) =>
+    [{ assets: [record] }] as unknown as AssetListResponse[];
+
+  // StellarExpert and Soroswap list USDC with both its issuer and its SAC. The
+  // picker reads icons by "CODE:G…", so that is where the hit has to land.
+  it("files a list hit under the canonical the picker reads", async () => {
+    const icons = await resolveEarnAssetIcons({
+      assets: [usdc],
+      networkDetails,
+      cachedIcons: {},
+      assetsListsData: listsWith({
+        code: "USDC",
+        issuer: USDC_ISSUER,
+        contract: USDC_SAC,
+        icon: USDC_ICON,
+      }),
+    });
+
+    expect(icons).toEqual({ [`USDC:${USDC_ISSUER}`]: USDC_ICON });
+  });
+
+  it("uses a cached icon without reading the lists", async () => {
+    const icons = await resolveEarnAssetIcons({
+      assets: [usdc],
+      networkDetails,
+      cachedIcons: { [`USDC:${USDC_ISSUER}`]: USDC_ICON },
+      assetsListsData: [],
+    });
+
+    expect(icons).toEqual({ [`USDC:${USDC_ISSUER}`]: USDC_ICON });
+  });
+
+  it("looks nothing up for native XLM, whose icon is bundled", async () => {
+    const icons = await resolveEarnAssetIcons({
+      assets: [
+        {
+          code: "XLM",
+          assetId: Asset.native().contractId(Networks.PUBLIC),
+        },
+      ],
+      networkDetails,
+      cachedIcons: {},
+      assetsListsData: [],
+    });
+
+    expect(icons).toEqual({});
   });
 });
