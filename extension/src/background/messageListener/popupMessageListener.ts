@@ -86,6 +86,9 @@ import { getTokenIds } from "./handlers/getTokenIds";
 import { removeTokenId } from "./handlers/removeTokenId";
 import { getMigratableAccounts } from "./handlers/getMigratableAccounts";
 import { getMigratedMnemonicPhrase } from "./handlers/getMigratedMnemonicPhrase";
+import { generateRecoveryPhrase } from "./handlers/generateRecoveryPhrase";
+import { clearPendingRecoveryPhrase } from "./handlers/clearPendingRecoveryPhrase";
+import { addRecoveryPhraseSource } from "./handlers/addRecoveryPhraseSource";
 import { migrateAccounts } from "./handlers/migrateAccounts";
 import { addAssetsList } from "./handlers/addAssetsList";
 import { modifyAssetsList } from "./handlers/modifyAssetsList";
@@ -219,6 +222,34 @@ export const popupMessageListener = (
         keyManager,
         sessionTimer,
       });
+    }
+    case SERVICE_TYPES.GENERATE_RECOVERY_PHRASE: {
+      // A new phrase is generated and held only for our own pages (and the
+      // dev-server popup, which relays through the content script).
+      if (!isFromExtensionPage && !isFromDevServer) {
+        return { error: "Unauthorized" };
+      }
+      return generateRecoveryPhrase({ sessionStore });
+    }
+    case SERVICE_TYPES.ADD_RECOVERY_PHRASE_SOURCE: {
+      // Same gate as GENERATE_RECOVERY_PHRASE.
+      if (!isFromExtensionPage && !isFromDevServer) {
+        return { error: "Unauthorized" };
+      }
+      return addRecoveryPhraseSource({
+        request,
+        localStore,
+        sessionStore,
+        keyManager,
+        sessionTimer,
+      });
+    }
+    case SERVICE_TYPES.CLEAR_PENDING_RECOVERY_PHRASE: {
+      // Same gate as GENERATE_RECOVERY_PHRASE.
+      if (!isFromExtensionPage && !isFromDevServer) {
+        return { error: "Unauthorized" };
+      }
+      return clearPendingRecoveryPhrase({ request, sessionStore });
     }
     case SERVICE_TYPES.IMPORT_ACCOUNT: {
       return importAccount({
@@ -568,6 +599,12 @@ export const popupMessageListener = (
       });
     }
     case SERVICE_TYPES.GET_MIGRATED_MNEMONIC_PHRASE: {
+      // The migrated recovery phrase leaves the background only for our own
+      // pages (and the dev-server popup, which relays through the content
+      // script).
+      if (!isFromExtensionPage && !isFromDevServer) {
+        return { error: "Unauthorized" };
+      }
       return getMigratedMnemonicPhrase({
         sessionStore,
       });

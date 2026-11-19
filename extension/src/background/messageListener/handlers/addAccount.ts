@@ -11,6 +11,7 @@ import {
 import {
   getDefaultMnemonic,
   getHeldMnemonic,
+  listSecretSources,
 } from "background/helpers/secret-sources";
 import {
   markDerivationIndexUsed,
@@ -50,7 +51,7 @@ export const addAccount = async ({
   keyManager: KeyManager;
   sessionTimer: SessionTimer;
 }) => {
-  const { password, sourceId: requestedSourceId } = request;
+  const { password, sourceId: requestedSourceId, accountName } = request;
 
   /*
     The phrase to derive from: the one the message names, else the active
@@ -202,6 +203,7 @@ export const addAccount = async ({
       phraseSourceId: sourceId,
       sourceId,
       derivationIndex,
+      accountName,
       sessionStore,
       keyManager,
       localStore,
@@ -223,5 +225,6 @@ export const addAccount = async ({
     activeAccountId: await getActiveAccountId({ localStore }),
     allAccounts: allAccountsSelector(currentState),
     hasPrivateKey: await hasPrivateKeySelector(currentState),
+    secretSources: await listSecretSources({ localStore }),
   };
 };

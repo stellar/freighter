@@ -9,6 +9,7 @@ import { Networks } from "stellar-sdk";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
   addAccount as addAccountService,
+  addRecoveryPhraseSource as addRecoveryPhraseSourceService,
   importAccount as importAccountService,
   importHardwareWallet as importHardwareWalletService,
   makeAccountActive as makeAccountActiveService,
@@ -89,29 +90,33 @@ export const fundAccount = createAsyncThunk(
   },
 );
 
+interface AddedAccountPayload {
+  publicKey: string;
+  activeAccountId: string;
+  allAccounts: Account[];
+  hasPrivateKey: boolean;
+  secretSources: SecretSource[];
+}
+
 export const addAccount = createAsyncThunk<
-  {
-    publicKey: string;
-    activeAccountId: string;
-    allAccounts: Account[];
-    hasPrivateKey: boolean;
-  },
-  { password: string; sourceId?: string },
+  AddedAccountPayload,
+  { password: string; sourceId?: string; accountName?: string },
   { rejectValue: ErrorMessage }
 >(
   "auth/addAccount",
-  async ({ password, sourceId }, { getState, rejectWithValue }) => {
+  async (
+    { password, sourceId, accountName },
+    { getState, rejectWithValue },
+  ) => {
     const activePublicKey = publicKeySelector(getState() as AppState);
 
-    let res = {
-      publicKey: "",
-      activeAccountId: "",
-      allAccounts: [] as Account[],
-      hasPrivateKey: false,
-    };
-
     try {
-      res = await addAccountService({ activePublicKey, password, sourceId });
+      return await addAccountService({
+        activePublicKey,
+        password,
+        sourceId,
+        accountName,
+      });
     } catch (e) {
       const message = e instanceof Error ? e.message : JSON.stringify(e);
       console.error("Failed when creating an account: ", message);
@@ -119,7 +124,39 @@ export const addAccount = createAsyncThunk<
         errorMessage: message,
       });
     }
-    return res;
+  },
+);
+
+/**
+ * Stores the phrase the background generated for a new source and derives
+ * its first account. The phrase itself stays in the background.
+ */
+export const addRecoveryPhraseSource = createAsyncThunk<
+  AddedAccountPayload,
+  { password: string; accountName?: string; pendingPhraseId: string },
+  { rejectValue: ErrorMessage }
+>(
+  "auth/addRecoveryPhraseSource",
+  async (
+    { password, accountName, pendingPhraseId },
+    { getState, rejectWithValue },
+  ) => {
+    const activePublicKey = publicKeySelector(getState() as AppState);
+
+    try {
+      return await addRecoveryPhraseSourceService({
+        activePublicKey,
+        password,
+        accountName,
+        pendingPhraseId,
+      });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      console.error("Failed when adding a recovery phrase: ", message);
+      return rejectWithValue({
+        errorMessage: message,
+      });
+    }
   },
 );
 
@@ -740,12 +777,12 @@ const authSlice = createSlice({
         error: errorMessage,
       };
     });
-    builder.addCase(addAccount.fulfilled, (state, action) => {
-      const { publicKey, allAccounts, hasPrivateKey } = action.payload || {
-        publicKey: "",
-        allAccounts: [],
-        hasPrivateKey: false,
-      };
+    const onAccountAdded = (
+      state: InitialState,
+      action: { payload: AddedAccountPayload },
+    ) => {
+      const { publicKey, allAccounts, hasPrivateKey, secretSources } =
+        action.payload;
 
       return {
         ...state,
@@ -755,16 +792,27 @@ const authSlice = createSlice({
         publicKey,
         allAccounts,
         hasPrivateKey,
+        // An add can register a new source, so take the list it returns.
+        secretSources: secretSources?.length
+          ? secretSources
+          : state.secretSources,
       };
-    });
-    builder.addCase(addAccount.rejected, (state, action) => {
+    };
+    const onAccountAddFailed = (
+      state: InitialState,
+      action: { payload?: ErrorMessage },
+    ) => {
       const { errorMessage } = action.payload || { errorMessage: "" };
 
       return {
         ...state,
         error: errorMessage,
       };
-    });
+    };
+    builder.addCase(addAccount.fulfilled, onAccountAdded);
+    builder.addCase(addAccount.rejected, onAccountAddFailed);
+    builder.addCase(addRecoveryPhraseSource.fulfilled, onAccountAdded);
+    builder.addCase(addRecoveryPhraseSource.rejected, onAccountAddFailed);
     builder.addCase(importAccount.fulfilled, (state, action) => {
       const { publicKey, allAccounts, hasPrivateKey } = action.payload || {
         publicKey: "",

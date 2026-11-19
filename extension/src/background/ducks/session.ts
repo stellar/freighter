@@ -59,6 +59,8 @@ const initialState: InitialState = {
   },
   allAccounts: [] as Account[],
   migratedMnemonicPhrase: "",
+  pendingMnemonicPhrase: "",
+  pendingMnemonicPhraseId: "",
   isHardwareWalletLocked: false,
 };
 
@@ -66,6 +68,16 @@ interface UiData {
   publicKey: string;
   allAccounts?: Account[];
   migratedMnemonicPhrase?: string;
+  /**
+   * A phrase generated for a new source in an existing wallet, held until the
+   * user confirms they saved it. Cleared once stored, and on lock or log out.
+   */
+  pendingMnemonicPhrase?: string;
+  /**
+   * Identifies the generation `pendingMnemonicPhrase` came from. Windows share
+   * the session, so confirming must name the generation the user saw.
+   */
+  pendingMnemonicPhraseId?: string;
 }
 
 interface AppData {
@@ -109,8 +121,23 @@ export const sessionSlice = createSlice({
         migratedMnemonicPhrase,
       };
     },
+    setPendingMnemonicPhrase: (
+      state,
+      action: {
+        payload: {
+          pendingMnemonicPhrase: string;
+          pendingMnemonicPhraseId: string;
+        };
+      },
+    ) => ({
+      ...state,
+      pendingMnemonicPhrase: action.payload.pendingMnemonicPhrase,
+      pendingMnemonicPhraseId: action.payload.pendingMnemonicPhraseId,
+    }),
     timeoutAccountAccess: (state) => ({
       ...state,
+      pendingMnemonicPhrase: "",
+      pendingMnemonicPhraseId: "",
       hashKey: {
         key: "",
       },
@@ -179,6 +206,7 @@ export const {
     lockHardwareWallet,
     unlockHardwareWallet,
     setMigratedMnemonicPhrase,
+    setPendingMnemonicPhrase,
     updateAccountName,
   },
 } = sessionSlice;
@@ -190,6 +218,14 @@ export const publicKeySelector = createSelector(
 export const migratedMnemonicPhraseSelector = createSelector(
   sessionSelector,
   (session) => session.migratedMnemonicPhrase,
+);
+export const pendingMnemonicPhraseSelector = createSelector(
+  sessionSelector,
+  (session) => session.pendingMnemonicPhrase || "",
+);
+export const pendingMnemonicPhraseIdSelector = createSelector(
+  sessionSelector,
+  (session) => session.pendingMnemonicPhraseId || "",
 );
 export const allAccountsSelector = createSelector(
   sessionSelector,

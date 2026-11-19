@@ -26,7 +26,8 @@ import { ActiveTabProvider } from "popup/views/Account/contexts/activeTabContext
 import { Account } from "popup/views/Account";
 import { AccountHistory } from "popup/views/AccountHistory";
 import { AccountCreator } from "popup/views/AccountCreator";
-import { AddAccount } from "popup/views/AddAccount/AddAccount";
+import { AddWallet } from "popup/views/AddWallet";
+import { CreateWallet } from "popup/views/CreateWallet";
 import { ManageAssetsLists } from "popup/views/ManageAssetsLists";
 import { ImportAccount } from "popup/views/AddAccount/ImportAccount";
 import { SelectHardwareWallet } from "popup/views/AddAccount/connect/SelectHardwareWallet";
@@ -209,7 +210,8 @@ export const Router = () => (
           path={ROUTES.accountHistory}
           element={<AccountHistory />}
         ></Route>
-        <Route path={ROUTES.addAccount} element={<AddAccount />}></Route>
+        <Route path={ROUTES.addWallet} element={<AddWallet />}></Route>
+        <Route path={ROUTES.createWallet} element={<CreateWallet />}></Route>
         <Route path={ROUTES.addToken} element={<AddToken />}></Route>
         <Route path={ROUTES.importAccount} element={<ImportAccount />}></Route>
         <Route

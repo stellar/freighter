@@ -1,0 +1,28 @@
+@use "../../styles/utils.scss" as *;
+
+.ScreenTitle {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(8px);
+  margin-bottom: pxToRem(24px);
+  color: var(--sds-clr-gray-12);
+
+  // Heading/Screen: 24/32, medium, -4% tracking. The design's Funnel Sans
+  // isn't bundled in the extension, so this uses the app font.
+  &__title {
+    margin: 0;
+    font-size: pxToRem(24px);
+    line-height: pxToRem(32px);
+    font-weight: var(--sds-fw-medium);
+    letter-spacing: -0.04em;
+  }
+
+  // Text/SM/400
+  &__subtitle {
+    margin: 0;
+    font-size: pxToRem(14px);
+    line-height: pxToRem(20px);
+    font-weight: var(--sds-fw-regular);
+    color: var(--sds-clr-gray-12);
+  }
+}
