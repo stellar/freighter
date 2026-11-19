@@ -129,8 +129,3 @@ export const {
 export const { reducer } = earnSlice;
 
 export const earnSelector = (state: { earn: EarnState }) => state.earn;
-
-export const earnPoolSelector = (state: { earn: EarnState }) => state.earn.pool;
-
-export const earnSubmitFailedSelector = (state: { earn: EarnState }) =>
-  state.earn.lastSubmitFailed;

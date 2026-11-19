@@ -2,7 +2,7 @@ import { Asset, Networks } from "stellar-sdk";
 
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { PUBLIC_SACS } from "@shared/constants/sac";
+import { PUBLIC_SACS } from "@shared/api/__tests__/fixtures/sac";
 import {
   getCatalogAssetIdentity,
   getCatalogIconKey,

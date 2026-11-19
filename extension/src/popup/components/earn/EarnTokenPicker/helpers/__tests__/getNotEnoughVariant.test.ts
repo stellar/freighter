@@ -5,7 +5,7 @@ import {
   MAINNET_NETWORK_DETAILS,
   TESTNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
-import { PUBLIC_SACS } from "@shared/constants/sac";
+import { PUBLIC_SACS } from "@shared/api/__tests__/fixtures/sac";
 import { NotEnoughVariant } from "popup/constants/earn";
 
 import {

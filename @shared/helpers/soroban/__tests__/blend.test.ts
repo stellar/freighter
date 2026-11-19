@@ -5,7 +5,7 @@ import {
   buildBlendSubmitOp,
 } from "../blend";
 import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
-import { PUBLIC_SACS } from "@shared/constants/sac";
+import { PUBLIC_SACS } from "@shared/api/__tests__/fixtures/sac";
 import { NETWORKS } from "@shared/constants/stellar";
 
 const USDC_SAC = PUBLIC_SACS.USDC!;

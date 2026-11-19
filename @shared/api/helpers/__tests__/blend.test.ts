@@ -8,7 +8,7 @@ import { captureException } from "@sentry/browser";
 import { sendMessageToBackground } from "../extensionMessaging";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
-import { PUBLIC_SACS } from "@shared/constants/sac";
+import { PUBLIC_SACS } from "@shared/api/__tests__/fixtures/sac";
 import { NETWORKS } from "@shared/constants/stellar";
 
 jest.mock("../extensionMessaging");

@@ -7,16 +7,14 @@ interface SacAddresses {
 }
 
 /**
- * Well-known Stellar Asset Contract addresses, by network.
+ * Well-known Stellar Asset Contract addresses, by network, for tests.
  *
- * A SAC address is a deterministic function of the classic asset and the network
- * passphrase, so these are network facts rather than configuration — they can be
- * re-derived with `new Asset(code, issuer).contractId(passphrase)` (for the
- * native SAC, `getNativeContractId`). They are spelled out here because the
- * Blend catalog addresses reserves by contract id, with no issuer in hand, and
- * because every test that fixtures a Soroban asset needs the real address: a
- * placeholder contract id fails `getBalanceByKey`'s SAC derivation and silently
- * makes a held asset look unheld.
+ * A SAC address is a deterministic function of the classic asset and the
+ * network passphrase, so production code derives them (`getNativeContractId`,
+ * `getAssetSacAddress`). Tests spell them out because every fixture of a
+ * Soroban asset needs the real address: a placeholder contract id fails
+ * `getBalanceByKey`'s SAC derivation and silently makes a held asset look
+ * unheld. `sacFixtures.test.ts` checks them against the derivation.
  */
 export const SACS: Record<NETWORKS.PUBLIC | NETWORKS.TESTNET, SacAddresses> = {
   [NETWORKS.PUBLIC]: {
