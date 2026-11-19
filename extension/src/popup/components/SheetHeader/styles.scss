@@ -89,6 +89,22 @@ $action-size: 32px;
     line-height: pxToRem(24px);
   }
 
+  // The title with a subtitle under it, taking the title's place in the row.
+  &__titles {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  // Text/XS/500 in Text/Secondary.
+  &__subtitle {
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(12px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(18px);
+  }
+
   &__close {
     display: flex;
     flex-shrink: 0;

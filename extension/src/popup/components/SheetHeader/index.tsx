@@ -5,7 +5,8 @@ import { Icon } from "@stellar/design-system";
 import "./styles.scss";
 
 /**
- * - `inline`: title and X on one row, title left-aligned.
+ * - `inline`: title and X on one row, title left-aligned, after `leading` (if
+ *   any, e.g. a token icon). Pass `layout` explicitly to use it with `leading`.
  * - `stacked`: a top row with `leading` on the left and the X on the right,
  *   the title below it.
  * - `centered`: title centered, X (if any) on the right and `leading` (if any,
@@ -20,10 +21,12 @@ export enum SheetHeaderLayout {
 
 interface SheetHeaderProps {
   title?: React.ReactNode;
+  /** A secondary line under the title (e.g. who runs a pool, or a date). */
+  subtitle?: React.ReactNode;
   /** Defaults to `stacked` when `leading` is given, `inline` otherwise. */
   layout?: SheetHeaderLayout;
   /** Rendered at the start of the stacked layout's top row (e.g. a settings
-   * button). */
+   * button), or before the inline layout's title (e.g. a token icon). */
   leading?: React.ReactNode;
   /** Rendered on the right of the centered layout, where the X would go (e.g.
    * a menu when the X sits on the left as `leading`). */
@@ -32,6 +35,7 @@ interface SheetHeaderProps {
   onClose?: () => void;
   closeTestId?: string;
   titleTestId?: string;
+  subtitleTestId?: string;
 }
 
 /**
@@ -41,12 +45,14 @@ interface SheetHeaderProps {
  */
 export const SheetHeader = ({
   title,
+  subtitle,
   layout,
   leading,
   trailing,
   onClose,
   closeTestId,
   titleTestId,
+  subtitleTestId,
 }: SheetHeaderProps) => {
   const { t } = useTranslation();
 
@@ -69,11 +75,23 @@ export const SheetHeader = ({
     </button>
   ) : null;
 
-  const titleElement = title ? (
+  const heading = title ? (
     <h2 className="SheetHeader__title" data-testid={titleTestId}>
       {title}
     </h2>
   ) : null;
+  // Only wrapped when there is a subtitle, so a plain title keeps its markup.
+  const titleElement =
+    heading && subtitle ? (
+      <div className="SheetHeader__titles">
+        {heading}
+        <div className="SheetHeader__subtitle" data-testid={subtitleTestId}>
+          {subtitle}
+        </div>
+      </div>
+    ) : (
+      heading
+    );
 
   if (resolvedLayout === SheetHeaderLayout.Stacked) {
     return (
@@ -91,9 +109,7 @@ export const SheetHeader = ({
 
   return (
     <div className={`SheetHeader SheetHeader--${resolvedLayout}`}>
-      {resolvedLayout === SheetHeaderLayout.Centered && leading && (
-        <div className="SheetHeader__leading">{leading}</div>
-      )}
+      {leading && <div className="SheetHeader__leading">{leading}</div>}
       {titleElement}
       {resolvedLayout === SheetHeaderLayout.Centered && trailing ? (
         <div className="SheetHeader__trailing">{trailing}</div>

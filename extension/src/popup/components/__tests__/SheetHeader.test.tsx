@@ -50,4 +50,33 @@ describe("SheetHeader", () => {
     expect(container.firstChild).toHaveClass("SheetHeader--centered");
     expect(screen.queryByRole("button")).toBeNull();
   });
+
+  it("puts a leading element before an inline title, with a subtitle under it", () => {
+    const { container } = render(
+      <SheetHeader
+        layout={SheetHeaderLayout.Inline}
+        leading={<img alt="USDC" />}
+        title="Deposited USDC"
+        subtitle="Nov 19, 2026"
+        subtitleTestId="subtitle"
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(container.firstChild).toHaveClass("SheetHeader--inline");
+    const [leading, titles] = Array.from(
+      (container.firstChild as HTMLElement).children,
+    );
+    expect(leading).toContainElement(screen.getByRole("img", { name: "USDC" }));
+    expect(titles).toContainElement(
+      screen.getByRole("heading", { name: "Deposited USDC" }),
+    );
+    expect(screen.getByTestId("subtitle")).toHaveTextContent("Nov 19, 2026");
+  });
+
+  it("leaves a title without a subtitle unwrapped", () => {
+    const { container } = render(<SheetHeader title="Hide tokens" />);
+
+    expect(container.querySelector(".SheetHeader__titles")).toBeNull();
+  });
 });
