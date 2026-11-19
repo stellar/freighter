@@ -48,6 +48,7 @@ import {
 } from "./helpers/soroban";
 import {
   Account,
+  SecretSource,
   AllowList,
   BalanceToMigrate,
   MigratableAccount,
@@ -353,6 +354,8 @@ export const loadAccount = (): Promise<{
   tokenIdList: string[];
   /** Source ids another user owns, from /user/link. */
   linkConflicts?: string[];
+  /** The wallet's phrases and imported keys, oldest first. */
+  secretSources?: SecretSource[];
 }> =>
   sendMessageToBackground({
     activePublicKey: null,
@@ -482,6 +485,7 @@ export const confirmPassword = async (
   allAccounts: Array<Account>;
   bipPath: string;
   linkConflicts: string[];
+  secretSources: SecretSource[];
 }> => {
   let response = {
     publicKey: "",
@@ -491,6 +495,7 @@ export const confirmPassword = async (
     allAccounts: [] as Array<Account>,
     bipPath: "",
     linkConflicts: [] as string[],
+    secretSources: [] as SecretSource[],
   };
   try {
     response = await sendMessageToBackground({
@@ -2301,16 +2306,45 @@ export const resetWallet = async (): Promise<{ error?: string }> => {
 export const showBackupPhrase = async ({
   activePublicKey,
   password,
+  sourceId,
 }: {
   activePublicKey: string | null;
   password: string;
+  /** The phrase to reveal; the wallet's default phrase when omitted. */
+  sourceId?: string;
 }): Promise<{ mnemonicPhrase: string; error: string }> => {
   let response = { mnemonicPhrase: "", error: "" };
   try {
     response = await sendMessageToBackground({
       activePublicKey,
       password,
+      sourceId,
       type: SERVICE_TYPES.SHOW_BACKUP_PHRASE,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  return response;
+};
+
+export const revealSecretKey = async ({
+  activePublicKey,
+  accountId,
+  password,
+}: {
+  activePublicKey: string | null;
+  /** `Account.id`: two accounts can share a public key. */
+  accountId: string;
+  password: string;
+}): Promise<{ secretKey: string; error: string }> => {
+  let response = { secretKey: "", error: "" };
+  try {
+    response = await sendMessageToBackground({
+      activePublicKey,
+      accountId,
+      password,
+      type: SERVICE_TYPES.REVEAL_SECRET_KEY,
     });
   } catch (e) {
     console.error(e);

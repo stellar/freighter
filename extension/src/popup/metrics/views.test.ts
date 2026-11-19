@@ -92,6 +92,17 @@ describe("views navigate handler → screen.viewed", () => {
     expect(emitMetric).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ["secret key", ROUTES.revealSecretKey],
+    ["recovery phrase", ROUTES.revealRecoveryPhrase],
+  ])("does not emit a screen-view for the %s reveal route", (_label, route) => {
+    // The reveal view emits unlock_* and then show_* from its own step, so
+    // a reveal is only counted after the password is accepted.
+    fireNavigate(route);
+    expect(emitScreenViewed).not.toHaveBeenCalled();
+    expect(emitMetric).not.toHaveBeenCalled();
+  });
+
   it("skips (does not throw) and reports to Sentry for an uncatalogued route (D6)", () => {
     (captureException as jest.Mock).mockClear();
     expect(() => fireNavigate("/some-brand-new-route")).not.toThrow();

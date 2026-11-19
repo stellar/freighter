@@ -9,6 +9,7 @@ import {
 } from "background/ducks/session";
 import { getBipPath, getActiveAccountId } from "background/helpers/account";
 import { getLinkConflicts } from "background/helpers/link-status";
+import { listSecretSources } from "background/helpers/secret-sources";
 
 export const loadAccount = async ({
   localStore,
@@ -29,5 +30,6 @@ export const loadAccount = async ({
     bipPath: await getBipPath({ localStore }),
     tokenIdList: (await localStore.getItem(TOKEN_ID_LIST)) || {},
     linkConflicts: await getLinkConflicts({ localStore }),
+    secretSources: await listSecretSources({ localStore }),
   };
 };

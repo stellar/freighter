@@ -6,8 +6,15 @@ import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 import { KEY_ID } from "constants/localStorageTypes";
 import { SessionTimer } from "background/helpers/session";
-import { getDefaultMnemonic } from "background/helpers/secret-sources";
+import {
+  getDefaultMnemonic,
+  getHeldMnemonic,
+  getSecretSources,
+} from "background/helpers/secret-sources";
+import { SecretSourceType } from "@shared/api/types";
+import { getIsHardwareWalletActive } from "background/helpers/account";
 import { loginToAllAccounts } from "../helpers/login-all-accounts";
+import { getNonHwKeyID } from "../helpers/get-non-hw-key-id";
 
 export const showBackupPhrase = async ({
   request,
@@ -22,21 +29,35 @@ export const showBackupPhrase = async ({
   keyManager: KeyManager;
   sessionTimer: SessionTimer;
 }) => {
-  const { password } = request;
+  const { password, sourceId } = request;
+
+  // A hardware account's key id has no keystore, so check the password
+  // against the first one that does. Every keystore shares the password.
+  const keyID = (await getIsHardwareWalletActive({ localStore }))
+    ? await getNonHwKeyID({ localStore })
+    : (await localStore.getItem(KEY_ID)) || "";
 
   try {
-    await unlockKeystore({
-      keyID: (await localStore.getItem(KEY_ID)) || "",
-      password,
-      keyManager,
-    });
+    await unlockKeystore({ keyID, password, keyManager });
   } catch (e) {
     return { error: "Incorrect Password" };
   }
 
-  // Interim: shows the wallet's default phrase until the reveal is scoped
-  // to the account's own source.
-  let source = await getDefaultMnemonic({ sessionStore, localStore });
+  // Edit account names the phrase that roots the account. Settings →
+  // Security names none and gets the wallet's default phrase.
+  if (sourceId) {
+    const source = (await getSecretSources({ localStore }))[sourceId];
+    if (source?.type !== SecretSourceType.PHRASE) {
+      return { error: "Recovery phrase not found" };
+    }
+  }
+
+  const resolve = () =>
+    sourceId
+      ? getHeldMnemonic({ sessionStore, localStore, sourceId })
+      : getDefaultMnemonic({ sessionStore, localStore });
+
+  let source = await resolve();
 
   if (!source) {
     try {
@@ -47,13 +68,17 @@ export const showBackupPhrase = async ({
         keyManager,
         sessionTimer,
       );
-      source = await getDefaultMnemonic({ sessionStore, localStore });
+      source = await resolve();
     } catch (e) {
       return { error: "Incorrect password" };
     }
   }
 
+  if (!source) {
+    return { error: "Recovery phrase not found" };
+  }
+
   return {
-    mnemonicPhrase: source?.mnemonic ?? "",
+    mnemonicPhrase: source.mnemonic,
   };
 };

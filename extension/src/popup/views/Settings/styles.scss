@@ -25,6 +25,64 @@
     }
   }
 
+  &__accounts {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(12px);
+    margin-bottom: pxToRem(16px);
+    padding: pxToRem(20px) pxToRem(16px);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-lilac-03);
+    text-decoration: none;
+
+    &__text {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    &__title {
+      font-size: pxToRem(16px);
+      line-height: pxToRem(24px);
+      font-weight: var(--font-weight-semi-bold);
+      color: var(--sds-clr-gray-12);
+    }
+
+    &__subtitle {
+      font-size: pxToRem(14px);
+      line-height: pxToRem(20px);
+      color: var(--sds-clr-gray-11);
+    }
+
+    // Two 32px avatars, the second tucked 8px under the first.
+    &__avatars {
+      display: flex;
+      flex-shrink: 0;
+    }
+
+    &__avatar {
+      width: pxToRem(32px);
+      height: pxToRem(32px);
+
+      & + & {
+        margin-left: pxToRem(-8px);
+      }
+
+      &:first-child {
+        position: relative;
+        z-index: 1;
+      }
+    }
+
+    &__chevron {
+      flex-shrink: 0;
+      width: pxToRem(24px);
+      height: pxToRem(24px);
+      stroke: var(--sds-clr-gray-11);
+    }
+  }
+
   &__header {
     margin-bottom: 2rem;
   }
