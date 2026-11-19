@@ -39,8 +39,8 @@ export const getEarnCtaState = ({
  * simply "spendable XLM < fee". `spendableXlm` is expected to come from
  * `getAvailableBalance`, which already nets out the base reserve.
  *
- * Order this AFTER the CTA's insufficient-funds check: when the deposit asset
- * IS XLM, an unaffordable amount should read as insufficient funds on the
+ * Order this AFTER the CTA's insufficient-balance check: when the deposit asset
+ * IS XLM, an unaffordable amount should read as insufficient balance on the
  * button, and this sheet should only fire for an otherwise-affordable amount
  * that leaves no fee headroom.
  *

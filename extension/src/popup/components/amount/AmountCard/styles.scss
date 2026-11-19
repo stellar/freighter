@@ -214,12 +214,6 @@
     }
   }
 
-  // Error/Text/Primary. Used instead of the message row when the caller asks for
-  // the amount itself to carry the invalid state.
-  &__input-amount--invalid {
-    color: var(--sds-clr-red-11);
-  }
-
   &__invalid-state {
     display: flex;
     justify-content: center;

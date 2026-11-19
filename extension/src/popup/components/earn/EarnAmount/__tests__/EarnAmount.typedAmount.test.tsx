@@ -246,4 +246,27 @@ describe("EarnAmount typed amount", () => {
       expect(input).toHaveValue(shown);
     },
   );
+
+  it("says an amount over the balance is too much, as Swap does", () => {
+    renderAmount();
+
+    fireEvent.change(screen.getByTestId("send-amount-amount-input"), {
+      target: { value: "6000" },
+    });
+
+    // On the card, naming the maximum (the tests' translator doesn't
+    // interpolate), with the amount left in its usual color.
+    expect(
+      screen.getByText(
+        "Insufficient balance. Maximum spendable: {{amount}} {{symbol}}",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId("send-amount-amount-input").className,
+    ).not.toContain("invalid");
+    expect(screen.getByTestId("earn-amount-btn-continue")).toHaveTextContent(
+      "Insufficient balance",
+    );
+    expect(screen.getByTestId("earn-amount-btn-continue")).toBeDisabled();
+  });
 });

@@ -34,14 +34,6 @@ export interface AmountCardProps {
   hasUsdPrice?: boolean;
   fiatLineText: string;
   isAmountTooHigh: boolean;
-  /**
-   * How an over-limit amount is shown. "message" (the default) keeps the inline
-   * "Insufficient balance…" row. "amount" turns the amount itself red and leaves
-   * the card's height alone, which is what the Earn deposit design specifies —
-   * there the CTA already reads "Insufficient funds", so the row would only say
-   * it twice.
-   */
-  invalidAmountStyle?: "message" | "amount";
   /** Pre-formatted max-spendable amount shown in the insufficient-balance
    * error (e.g. "123.23"); the token code is taken from assetCode. */
   maxSpendableText?: string;
@@ -85,7 +77,6 @@ export const AmountCard = ({
   hasUsdPrice = true,
   fiatLineText,
   isAmountTooHigh,
-  invalidAmountStyle = "message",
   maxSpendableText = "",
   isAssetLocked = false,
   isReadOnly = false,
@@ -150,11 +141,7 @@ export const AmountCard = ({
     </>
   );
 
-  const isAmountShownInvalid =
-    isAmountTooHigh && invalidAmountStyle === "amount";
-  const fontClass = `AmountCard__input-amount AmountCard__${amountFontSizeClass}${
-    isAmountShownInvalid ? " AmountCard__input-amount--invalid" : ""
-  }`;
+  const fontClass = `AmountCard__input-amount AmountCard__${amountFontSizeClass}`;
 
   return (
     <div className="AmountCard">
@@ -335,7 +322,7 @@ export const AmountCard = ({
         </div>
       </div>
 
-      {isAmountTooHigh && invalidAmountStyle === "message" && (
+      {isAmountTooHigh && (
         <div className="AmountCard__invalid-state">
           <Icon.AlertCircle />
           <span>

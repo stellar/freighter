@@ -301,7 +301,7 @@ export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
 
   const ctaLabel = {
     enter: t("Enter an amount"),
-    insufficient: t("Insufficient funds"),
+    insufficient: t("Insufficient balance"),
     review: t("Review deposit"),
   }[cta.labelKey];
 
@@ -340,7 +340,7 @@ export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
     const spendableXlm = getSpendableXlm(inclusionFee);
 
     // Checked after the CTA gate, so an unaffordable XLM deposit reads as
-    // "Insufficient funds" rather than as a missing-fee problem.
+    // "Insufficient balance" rather than as a missing-fee problem.
     if (needsXlmForFee({ spendableXlm, fee: inclusionFee })) {
       trackEarnXlmFeeInsufficientShown({
         assetCode: selected?.code || "",
@@ -580,10 +580,9 @@ export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
               cryptoAmount: amount,
               code: selected?.code || "",
             })}
+            // Over the spendable amount, the card says so and names the
+            // maximum, as on Swap.
             isAmountTooHigh={isAmountTooHigh}
-            // The design turns the amount red rather than adding a message row:
-            // the CTA below already reads "Insufficient funds".
-            invalidAmountStyle="amount"
             maxSpendableText={formatAmount(availableBalance)}
             cryptoDecimals={decimals}
             onAmountChange={({ amount: next }) =>
