@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 
 import { BlendCatalogPool } from "@shared/api/types/blend";
+import { NetworkDetails } from "@shared/constants/stellar";
 import { getBlendAppUrl } from "popup/constants/externalLinks";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
 import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
@@ -19,7 +20,6 @@ import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { getSwapTotalFee } from "popup/components/swap/SwapAmount/hooks/useSimulateSwapData";
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 import { isNativeContract } from "@shared/helpers/assetIdentity";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { transactionDataSelector } from "popup/ducks/transactionSubmission";
 import { getAvailableBalance } from "popup/helpers/soroban";
 import { trackEarnBalanceInsufficientShown } from "popup/metrics/earn";
@@ -69,26 +69,20 @@ const ApyBadge = ({ apy, code }: { apy: number | null; code: string }) => {
 };
 
 /**
- * The screen's chrome: the close affordance, the title and the "Deposit into"
- * chip. Shared by the loading and error states so neither shifts the layout
- * when the list resolves.
+ * The screen's chrome: the close affordance and the title. Shared by the
+ * loading, error and list states so the title doesn't move when the list
+ * resolves.
  */
 const PickerShell = ({
   onClose,
-  pool,
   children,
   "data-testid": dataTestId,
 }: {
   onClose: () => void;
-  /** Names the pool on the chip; just the protocol until the catalog loads. */
-  pool: BlendCatalogPool | null;
   children: React.ReactNode;
   "data-testid": string;
 }) => {
   const { t } = useTranslation();
-  // From settings rather than the resolved data, so the chip works while the
-  // list is still loading.
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   return (
     <div className="EarnTokenPicker" data-testid={dataTestId}>
@@ -112,26 +106,43 @@ const PickerShell = ({
           </div>
         </div>
 
-        <div className="EarnTokenPicker__deposit-into">
-          <div className="EarnTokenPicker__label">{t("Deposit into")}</div>
-          {/* Opens Blend's app for the network, as on mobile. The protocol's
-              own name is not translated. */}
-          <button
-            type="button"
-            className="EarnTokenPicker__protocol"
-            onClick={() => openTab(getBlendAppUrl(networkDetails.network))}
-            data-testid="earn-protocol-chip"
-          >
-            <PoolIcon size={16} />
-            <span className="EarnTokenPicker__protocol-name">
-              {pool ? `Blend · ${formatPoolName(pool.name, t)}` : "Blend"}
-            </span>
-            <Icon.LinkExternal01 />
-          </button>
-        </div>
-
         {children}
       </div>
+    </div>
+  );
+};
+
+/**
+ * The "Deposit into" chip. Shown with the list rather than behind the spinner,
+ * so its label appears once, with the pool's name, instead of reading "Blend"
+ * and then growing when the catalog loads.
+ */
+const DepositInto = ({
+  pool,
+  networkDetails,
+}: {
+  pool: BlendCatalogPool | null;
+  networkDetails: NetworkDetails;
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="EarnTokenPicker__deposit-into">
+      <div className="EarnTokenPicker__label">{t("Deposit into")}</div>
+      {/* Opens Blend's app for the network, as on mobile. The protocol's own
+          name is not translated. */}
+      <button
+        type="button"
+        className="EarnTokenPicker__protocol"
+        onClick={() => openTab(getBlendAppUrl(networkDetails.network))}
+        data-testid="earn-protocol-chip"
+      >
+        <PoolIcon size={16} />
+        <span className="EarnTokenPicker__protocol-name">
+          {pool ? `Blend · ${formatPoolName(pool.name, t)}` : "Blend"}
+        </span>
+        <Icon.LinkExternal01 />
+      </button>
     </div>
   );
 };
@@ -172,11 +183,7 @@ export const EarnTokenPicker = ({
 
   if (isLoading) {
     return (
-      <PickerShell
-        onClose={onClose}
-        pool={null}
-        data-testid="earn-token-picker-loading"
-      >
+      <PickerShell onClose={onClose} data-testid="earn-token-picker-loading">
         <div className="EarnTokenPicker__loader">
           <Loader size="2rem" />
         </div>
@@ -186,11 +193,7 @@ export const EarnTokenPicker = ({
 
   if (state.state === RequestState.ERROR) {
     return (
-      <PickerShell
-        onClose={onClose}
-        pool={null}
-        data-testid="earn-token-picker-error"
-      >
+      <PickerShell onClose={onClose} data-testid="earn-token-picker-error">
         <Text as="p" size="sm">
           {t("We couldn’t load earnable tokens. Please try again.")}
         </Text>
@@ -288,11 +291,9 @@ export const EarnTokenPicker = ({
 
   return (
     <>
-      <PickerShell
-        onClose={onClose}
-        pool={data.pool}
-        data-testid="earn-token-picker"
-      >
+      <PickerShell onClose={onClose} data-testid="earn-token-picker">
+        <DepositInto pool={data.pool} networkDetails={data.networkDetails} />
+
         <div className="EarnTokenPicker__sections">
           {hasHeld ? (
             renderSection(t("In your wallet"), data.held, true)
