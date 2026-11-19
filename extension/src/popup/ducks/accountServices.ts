@@ -22,6 +22,7 @@ import {
   createAccount as createAccountService,
   fundAccount as fundAccountService,
   recoverAccount as recoverAccountService,
+  recoverAccountFromSecretKey as recoverAccountFromSecretKeyService,
   confirmPassword as confirmPasswordService,
   signOut as signOutService,
   resetWallet as resetWalletService,
@@ -373,6 +374,55 @@ export const recoverAccount = createAsyncThunk<
     if (!res.publicKey || res.error) {
       return thunkApi.rejectWithValue({
         errorMessage: res.error || "The phrase you entered is incorrect",
+      });
+    }
+
+    return res;
+  },
+);
+
+export const recoverAccountFromSecretKey = createAsyncThunk<
+  {
+    allAccounts: Account[];
+    hasPrivateKey: boolean;
+    publicKey: string;
+    activeAccountId: string;
+    error: string;
+  },
+  {
+    password: string;
+    secretKey: string;
+    isOverwritingAccount?: boolean;
+  },
+  { rejectValue: ErrorMessage }
+>(
+  "auth/recoverAccountFromSecretKey",
+  async ({ password, secretKey, isOverwritingAccount = false }, thunkApi) => {
+    let res = {
+      allAccounts: [] as Account[],
+      publicKey: "",
+      activeAccountId: "",
+      hasPrivateKey: false,
+      error: "",
+    };
+
+    try {
+      res = await recoverAccountFromSecretKeyService({
+        password,
+        secretKey,
+        isOverwritingAccount,
+      });
+    } catch (e) {
+      // Log a fixed string only; never the secret key.
+      console.error("Failed when importing an account from a secret key");
+      return thunkApi.rejectWithValue({
+        errorMessage: "Error importing account",
+      });
+    }
+
+    if (!res.publicKey || res.error) {
+      return thunkApi.rejectWithValue({
+        errorMessage: res.error || "Error importing account",
       });
     }
 
@@ -968,6 +1018,30 @@ const authSlice = createSlice({
         error: errorMessage,
       };
     });
+    builder.addCase(recoverAccountFromSecretKey.fulfilled, (state, action) => {
+      const { publicKey, allAccounts, hasPrivateKey } = action.payload || {
+        publicKey: "",
+        allAccounts: [],
+        hasPrivateKey: false,
+      };
+
+      return {
+        ...state,
+        error: "",
+        allAccounts,
+        hasPrivateKey,
+        applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+        publicKey,
+      };
+    });
+    builder.addCase(recoverAccountFromSecretKey.rejected, (state, action) => {
+      const { errorMessage } = action.payload || { errorMessage: "" };
+
+      return {
+        ...state,
+        error: errorMessage,
+      };
+    });
     builder.addCase(confirmMnemonicPhrase.rejected, (state, action) => {
       const { applicationState, errorMessage } = action.payload || {
         errorMessage: "",
@@ -1117,6 +1191,7 @@ const authSlice = createSlice({
         importHardwareWallet,
         makeAccountActive,
         recoverAccount,
+        recoverAccountFromSecretKey,
         confirmPassword,
         migrateAccounts,
       ),

@@ -1,5 +1,6 @@
 import { test, expect } from "./test-fixtures";
 import { loginToTestAccountPT } from "./helpers/login-pt";
+import { TEST_ACCOUNT_WORDS } from "./helpers/login";
 import { stubAllExternalApis } from "./helpers/stubs";
 test.use({ language: "pt" });
 
@@ -24,19 +25,25 @@ test("Smoke test: Portuguese translations in account view", async ({
   // Login first
   await page.goto(`chrome-extension://${extensionId}/index.html`);
   await page.getByText("Importar carteira").click();
-  await expect(page.getByText("Criar uma Senha")).toBeVisible();
-
-  // Fill password form with Portuguese labels
-  await page.locator("#new-password-input").fill("My-password123");
-  await page.locator("#confirm-password-input").fill("My-password123");
-  await page.locator("#termsOfUse-input").check({ force: true });
-  await expect(page.getByText("Confirmar")).toBeVisible();
-  await page.getByText("Confirmar").click();
 
   // Verify Portuguese text in import flow
   await expect(
-    page.getByText("Importar carteira da frase de recuperação"),
+    page.getByText(
+      "Importe sua carteira usando uma frase de recuperação ou chave secreta",
+    ),
   ).toBeVisible();
+  await expect(
+    page.getByPlaceholder("Insira sua frase de recuperação ou chave secreta"),
+  ).toBeVisible();
+
+  await page
+    .getByTestId("import-secret-input")
+    .fill(TEST_ACCOUNT_WORDS.join(" "));
+  await page.getByTestId("import-secret-next").click();
+
+  // Password form with Portuguese labels
+  await expect(page.getByText("Criar uma Senha")).toBeVisible();
+  await expect(page.getByText("Confirmar")).toBeVisible();
 });
 
 test("Smoke test: Portuguese translations in settings", async ({

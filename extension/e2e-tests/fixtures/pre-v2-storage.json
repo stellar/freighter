@@ -1,0 +1,133 @@
+{
+  "accountNameList": "eyIwLjUyMjQzMjc5MTM0NTg3ODQiOiJBY2NvdW50IDEiLCIwLjQ5NDIwMDk3ODY0NjQ0MjIiOiJBY2NvdW50IDIiLCIwLjg1MjMwNTc3NzU5NTkyMjkiOiJBY2NvdW50IDMiLCIwLjI5MzY3MjQxMjQ0MDM5MDIiOiJBY2NvdW50IDQiLCIwLjcxMjY3MjE2ODk2MTgyNzQiOiJBY2NvdW50IDUiLCIwLjg0MTgxNjE0ODM4OTY2OTMiOiJBY2NvdW50IDYiLCIwLjg0NjcxMDc3MDU5MTg0ODEiOiJTYXZpbmdzIiwiMC4xNzExMTM4MjUwNDk0MDU3NSI6IkFjY291bnQgOCJ9",
+  "allowlist": {
+    "Future Net": {},
+    "Main Net": {},
+    "Test Net": {}
+  },
+  "applicationState": "MNEMONIC_PHRASE_CONFIRMED",
+  "assetsLists": {
+    "PUBLIC": [
+      {
+        "isEnabled": true,
+        "url": "https://api.stellar.expert/explorer/public/asset-list/top50"
+      },
+      {
+        "isEnabled": true,
+        "url": "https://raw.githubusercontent.com/soroswap/token-list/main/tokenList.json"
+      },
+      {
+        "isEnabled": true,
+        "url": "https://lobstr.co/api/v1/sep/assets/curated.json"
+      }
+    ],
+    "TESTNET": [
+      {
+        "isEnabled": true,
+        "url": "https://api.stellar.expert/explorer/testnet/asset-list/top50"
+      }
+    ]
+  },
+  "hasAccountSubscription": {},
+  "isHashSigningEnabled": false,
+  "isNonSSLEnabled": false,
+  "keyDerivationNumber": "6",
+  "keyId": "0.17111382504940575",
+  "keyIdList": [
+    "0.5224327913458784",
+    "0.4942009786464422",
+    "0.8523057775959229",
+    "0.2936724124403902",
+    "0.7126721689618274",
+    "0.8418161483896693",
+    "0.8467107705918481",
+    "0.17111382504940575"
+  ],
+  "lastUsedAccount": "GCKOB6GK54D3YBBYBXNUJXKE7UCTZ4Y5R64YRDBXXGRJJUU5HY2F73EA",
+  "network": {
+    "friendbotUrl": "https://friendbot.stellar.org",
+    "network": "TESTNET",
+    "networkName": "Test Net",
+    "networkPassphrase": "Test SDF Network ; September 2015",
+    "networkUrl": "https://horizon-testnet.stellar.org",
+    "sorobanRpcUrl": "https://soroban-testnet.stellar.org/"
+  },
+  "networksList": [
+    {
+      "network": "PUBLIC",
+      "networkName": "Main Net",
+      "networkPassphrase": "Public Global Stellar Network ; September 2015",
+      "networkUrl": "https://horizon.stellar.org",
+      "sorobanRpcUrl": "http://stellar-rpc-pubnet-prd:8000"
+    },
+    {
+      "friendbotUrl": "https://friendbot.stellar.org",
+      "network": "TESTNET",
+      "networkName": "Test Net",
+      "networkPassphrase": "Test SDF Network ; September 2015",
+      "networkUrl": "https://horizon-testnet.stellar.org",
+      "sorobanRpcUrl": "https://soroban-testnet.stellar.org/"
+    }
+  ],
+  "rebrandAnnouncementStatus": "seen",
+  "stellarkeys:0.17111382504940575": {
+    "encryptedBlob": "AZM8dBum4dwtphS1rRv8I6JLO9di1JQvMg17bEzyIFFwXcnjs4wNroLGrlvuUFXIWayYMDqUpygmk/3GoV9cg/n9VYp0Mg/9THZrNHor1xlTUlnLNMWu/EctNqGf3vitkGxAQMj552E6S0aORsBtjrbDcG8c2EKj6RM5STswaBc1cie6O1ph7ofmYnKVAHx75DloI7tw3tYUGggQVXgrKuaayiLEzVvQnfAfeOj0NcdREcNBnuK1Us7jmuF6FEiIvpFyx7UKL15nWuMaVPfGeAFD0nGIuBuyNXXxEEpZck+pRwK2CqVdWq6s97RFhtmIR5T2Ss25Rrsx2kvxWCiKBcVwp/DafNSz31hHuXDp8f3YaM0xpkit3xWQrgt+9/RANJkbHzzQXNk5MxJNvRzz61A4Pz+fk0rMfDCN87LIS0R23goC5+JX",
+    "encrypterName": "ScryptEncrypter",
+    "id": "0.17111382504940575",
+    "salt": "c2B48abAzLIteZXzLxAllYPN5q7+FtU8grwupiE6VTk="
+  },
+  "stellarkeys:0.2936724124403902": {
+    "encryptedBlob": "ASDlz+e5vXUTAaR6pctO/EoI1dIiuakXe57lPOZnqlwni23ximlI7jo94RLL9AqW4LET8vxi79wUgibTDdyS6M0WzeUjn4xV6+44eC2FmM3HISY9mDSVWgZLuSCJWxFY0rlwHmWRTYvYkM8zzPOlRWyByeUsgA/2d9Q4MDbS5M4008aTqQK7lQULc1BczCPX+mIJxw8dtZfs36ivBJ6Fwmc3/w9DHBLC0uPL6IBQ5RP660vdyi3bxYmoyVQZcI1BA0eUWuGeGg35BePriUG9snqUqMBAA/BFBfjbfmopmULKhL6UwcsSxk2NrOABQUy/1+/7wWRLxTuGvUUsgQ6OimmUNFlVjMirsiPa2O9g0RlnjlnlGD9JIPPn+8LHBqnZFRXpkQKoIo4JJtLq2WRXO7rN3ebUxJUWRVAIXPEW5N4pB/yFfP0bXA==",
+    "encrypterName": "ScryptEncrypter",
+    "id": "0.2936724124403902",
+    "salt": "poOf4O+NdrPLrWcMQYsMUfQ/i0T9ZRF7OZ9nRsKASlg="
+  },
+  "stellarkeys:0.4942009786464422": {
+    "encryptedBlob": "AWak/9BLluFLSvKkI+ipkkPIl0zQqKjG72d3Ffda3FJQCjIYn5SFdcCnd3BCR+mckp6HSr7gv4wK8szTszDLfvOzD7JFUPgEEkruQe7wKj7R+rCm4Ier7aX0C37YHDQLIOQ8b6P5Kku1KbC5DEEEn522qsU9OWoxNmdKIWXqYkZjXBVlf7JZYiPgU3A3snu7cNtFbsUbRQ6svo+Zu9OoZYpT+OVQjsiCtuxVch95vxLnM9QlZikuKmCjRfyJ1uXOMWglBEftxINeaUwOtrW0esXpnLj24c6iKhK5oKd31Mp/6+m1TdTR5Q2icAwBrdOQZpXOZQjO4C1iCaWAOd/nQZz/gPYh9Bb8s4D7iNvNi8dRabChHCSijkZDTUtlqp5c/2dIrhXaPELK25VQwlS03n6c8Pcar1CSSPz5XWpA9g8/k44MNQ91+A==",
+    "encrypterName": "ScryptEncrypter",
+    "id": "0.4942009786464422",
+    "salt": "RPnfekc2ys04nzPrB3oInoKHIDcAkUpHS8nyrEJnhSU="
+  },
+  "stellarkeys:0.5224327913458784": {
+    "encryptedBlob": "AdcxNw0Aqe+AHqMyYVoQz2ZaHC8Prp8vR6uZd8YcjdAx24Yj50R6v6YWbMGjqOUmEbOmnSy/lCuv5qSLxjPF4AIjFA6UjmrDCBw5H3FQz/JKBrMc8A2ZK9ejbQGqxwhJdzRnzytpkbgCjbeBAl7f6ndjmr8rPKxCIXn+mx0bNwj4TLm6mcD6tQNlULNPOW5btxpOuCMAM+iQyjDzMx4vTU1kNlBJBUXtQu0q6PEcplo8KEnw6zLAqB1B/uIDvpLPGTGSP1tarsVXKk83xDEg6Z8rTTWAs2k6pIwvuQa+/QkHc/gAK8VEodchSmq951BHp3umRhbWBNqIfXvW0g3J3g1/Z11qcXxgzy7aEQZDwrfUdUrz694XK54cbCwkets9u6RP0yZWhjWFm50ljySUvem8J2IBXj36zuaaRvWOTHQ83nHZZ51TXQ==",
+    "encrypterName": "ScryptEncrypter",
+    "id": "0.5224327913458784",
+    "salt": "LsN1q9rGmy201y3FSdUbg00620jOypyWJUCAwTSG/hE="
+  },
+  "stellarkeys:0.7126721689618274": {
+    "encryptedBlob": "AbCbsWEoJD7jU6XTHxd5efl7B8L/Z/CkJ0W2l0AhjxBDfBxwVpHKZz9wWhVMwL4LwEwMWjs1boOrh/Q8eeHE2BvhKF1LjTDosyAUxQsrrOfMapBXJc8vIp5G++ePv/ot2TaZRlmukWVIFNEik+Kzfwo4+CzLYoXieVNZjoGR6/zn75fIuf4PpR5ydni+Up5x8H2HdMw5N90Oyo+OHRFuuB3q9TF6Dshc9kXoTjpYJvg2N4uf8nnNS4tAZ9dalGzatb/Idu/apmXMWldtnljqaPOKRLYPG+KtexnisiV/YEICh0bRBjxPR576Ui8gFiymKho8HzEPqbUbpQ1ZAEmcicvQbaY6JQtJ/sc5dnsXzVX9Es9T/8dgAUMrS5MZWP1//eIu8QDWQwQMVYnSZAXA0fVHNynZFveHUbWWF3/zUcGcABIb7vsu/g==",
+    "encrypterName": "ScryptEncrypter",
+    "id": "0.7126721689618274",
+    "salt": "qP0QoiiwO7LTl/cZ2IDN2JZAT66Q5XdaMJca7wFkpy4="
+  },
+  "stellarkeys:0.8418161483896693": {
+    "encryptedBlob": "AYvIAiI4BA0UGmDE2ASnRmczFYwcO4Th1wwkZW3hFrMK/tr4o/xBi2kCmK/daacIRUAq5GWAMUbBdd3cBy68VaV2Yh5kU1m9VFPby7nkIdNLnrpIsYVykM2cX0uv39gEA1eJePhIgW7E+NbPHkk48xMNjScZrp4yeOi+Fx8oi3l2oBFA8adh/WNF9cUREHQjtcSUMBGr+5CLb8Z096v3VAWmie4LQgvlPQpb+HMhYfpIg8MQjFJkLasbzWIK0+ab4XGDExSS0a1jI2Ypyb7v0WY9ljZR7xBMIOdA5lWYddamKSNMPetzU91U9eNcYDYUsSYMhB1XxxcIOCFg+ZTUQlZblYqG12LpxpYN4/O6glNaC5E/O3BcXY7YcxFMPxOmoFfs0+Af7sjjkmfznfbSI0oQbpO8wm6nV2RowJeyo1ZMyNg0zBdeqw==",
+    "encrypterName": "ScryptEncrypter",
+    "id": "0.8418161483896693",
+    "salt": "vESX2SK24Ts9j/0EHxM654bkQvm67fnsXc0WwnuI4DE="
+  },
+  "stellarkeys:0.8467107705918481": {
+    "encryptedBlob": "AXeq+tl6aLrTrL1Xtk0Ib+L6Ke+VS3qowbmgbq4Q43VcwTMZwt6ArqEej+MnJFO5ynBNfK3hCaiJzVlhIf/FkfP9EzRq/zCIdi6pPDdsv3wYgCLl4JberMAuEX7Yx+fuzqcmoHLSH4WYOk8+Y4+j++a+29ljhC959DXnfVa0p4uFip9bG/7Pe1rHS46wIxH4Gsswc50Aw3IkBw8mSe2tmc4s174CUvMhvrdvIWeSRMwvLZmlMviQxKQoo3E6Pv4qrsbk17xBWA3KTQBSFSX1xRcGI88v6K9gJD/8aD1l8XFLoKddL+CJ8SM6YWCW11fLwoihjNEhMdxLyO+b7QJuMyaj0DxZzIGv64vCA+X1u9LIrFmqDw7eSjMOyIesE3aRP8nrasNInq9Jl0BA1GfY9wPYle1DHN3tIRwAZoiOGBPo8LDLphE8bw==",
+    "encrypterName": "ScryptEncrypter",
+    "id": "0.8467107705918481",
+    "salt": "2g7MlU6oJ5AAGt4DS5aaaubbFnPUY3Tt1Q5D/msxELY="
+  },
+  "stellarkeys:0.8523057775959229": {
+    "encryptedBlob": "AVXcWP9qCx4m+GOuTJX9DoTscRpDCIYV/v/s969fLC/tY0HWh0T5uezohH1PRfTVIdnT74EhqtB16u3LRwFV0arJ+jogWxMNgswxeUIp1tcsT92SGzBZYWUaiz9h5ddSlaZi4w7Mafn8VQJ3FG706ZK4/ovaL/Wcl8xi2fpL09VwHEoYOmtLzbKIxQEAd24LT4kbkQcXR+XQws37OEKyaqg0qFakJdRrFsi6fVMNyOYirdV9G046Z7SiThgkj52BuQ/c2kErF9n87CvtjIusLOcHLC0+URRNtlzhGcR5RLHiYaAgwl4G/Z9bmQXJNF7ueOoHE417c6zf/pV2tH4ySTfIoEY4uU2yWfTUJJ1a2QLDxQeWEkzRHOzR556+ojmlB5cnNPH4sOkg/cUiGjrN5YO0MXgRyfPtvoAmLu/PNAZU/MWQSQQj+w==",
+    "encrypterName": "ScryptEncrypter",
+    "id": "0.8523057775959229",
+    "salt": "LRmD9Tn1bWojTb5leN+xZDUm8Xzy3T0i7MhJWmbH/9Q="
+  },
+  "storageVersion": "5.33.5",
+  "temporaryStore": {
+    "0.17111382504940575": "/MYRhMQze6CULN9gtF7L1bg6wypwIzdKV7QYG37kAnry0qlPdHmwmtklHGJ3VK2R4BMxbNf3JAqNpZuu3Z6c4sfXD6EdoBIRkMXCjRy/fzI=",
+    "0.2936724124403902": "nYuCu+CvM1Obiq37PoW7j7x5gr0DHveCNQys1G2XP1sYhOvj+hrBL3E7DtmSC3IZpd2VaWvQHjIc0QrHrPmJZbm+DpfO+aMfeGMGRHsQYm0=",
+    "0.4942009786464422": "+rt5iQOTx9POMA+xB9LmhSmS40ru6/S3X27MIABdI71msaQnzoIL5fSZj3FvGOP+rsfuQ8jGijA1+727W1l4SX4o0w/XhMSlJr9/gP00nGI=",
+    "0.5224327913458784": "IUYH/WuBMNxw47KgMnO1RJrOTWMFC8o5rBMNBrKK9IURkgGL8ZQLtC3BR0PRxeznyuGx4fXVQWxdzltSi35oHZ9A+WBelyeCQS1jnQ0QXNs=",
+    "0.7126721689618274": "sBXjcI27rilrRsmxPQ36gxEt5ml/D8KIwM6txM9Whm/keXoMnmETlHrULZj2Dt5m9MG1K1MlV+nuVVW4JKcZ8SG5gYi1dpNDb2iNPOTFWK8=",
+    "0.8418161483896693": "EBdFtFN8tg1iSFwDNwfhOI4w7aHMbtj4mdoq8T8Y5Qev5QOw9icNgNoivFi3dkDtxe1NfMBi2YwORt4clneURYxh5kjcYMJArxw1ps/NOl8=",
+    "0.8467107705918481": "X+hDS9J8hQz8azouHM7jiywkOja6v5b+GFk1b1oy5gnm08dAG+DTEez7tzuEiz0p0d5K4leM52lNdxLHwfK4kk9ZbtlnmbiqhUSTywZQL6U=",
+    "0.8523057775959229": "a0s2X/yePo5gkqlotJmFyxL1COeRqDNiMbmQ9Pn3dbKJJBe8QAzhGf11u+1a9pG58xZsKboaJ123H1u9rboJm0jWdviXA053qql2FYsjSkI=",
+    "temporaryStoreExtra": "4CkJ2MflSLYXPzEx3LDEbrlpliRKu6znUToW1n5fo/rGSxUOAq6N1vRjopemTzw28+CJjl3dGIYGLjMokeDM5WvLsNAA/GwZqoh5RIIdObJ2UtYfSPgHmkjjRymbGceY"
+  }
+}
