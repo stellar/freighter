@@ -436,6 +436,15 @@ export const SendAmount = ({
     validateOnChange: true,
   });
 
+  // Whether saving a memo or fee may rebuild the XDR now. Classic sends build
+  // Operation.payment, which throws in stellar-base on an amount Continue
+  // would also reject: "0" before the user types one, or above TX_SEND_MAX.
+  // Soroban sends simulate with "0" by design (the fee display needs it), so
+  // they always rebuild.
+  const canRebuildTx =
+    isSorobanSend ||
+    (isValidPositiveAmount(amount) && !validate({ amount }).amount);
+
   const srcAsset = getAssetFromCanonical(asset);
   const parsedSourceAsset = getAssetFromCanonical(formik.values.asset);
   const isLoading =
@@ -955,8 +964,12 @@ export const SendAmount = ({
             onSubmit={async ({ memo }: { memo: string }) => {
               dispatch(saveMemoAndType({ memo, memoType: "" }));
               setIsEditingMemo(false);
-              // Regenerate transaction XDR with new memo (now reads memo from Redux state inside fetchData)
-              await fetchSimulationData();
+              // Regenerate the XDR with the new memo (fetchData reads the memo
+              // from Redux). Skipped while the amount is one the build would
+              // reject; Continue rebuilds before review anyway.
+              if (canRebuildTx) {
+                await fetchSimulationData();
+              }
               // Reopen review sheet after memo is saved and XDR is regenerated only if user came from review flow
               if (memoEditingContext === MemoEditingContext.Review) {
                 setIsReviewingTx(true);
@@ -1007,7 +1020,7 @@ export const SendAmount = ({
               setDraftFeeForDisplay(null);
               // Rebuild the XDR with the new fee before the review comes back,
               // so Confirm never submits the old one.
-              if (destination) {
+              if (destination && canRebuildTx) {
                 await fetchSimulationData();
               }
               returnToReview();
