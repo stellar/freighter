@@ -32,12 +32,18 @@ export const formatCompactUsd = (value: number | null): string => {
 };
 
 /**
+ * A rate's percentage figure without the sign — 0.1694 becomes "16.94" — for
+ * copy that supplies its own "%". Rounds half-up, so every place that shows a
+ * rate shows the same digits.
+ */
+export const formatRatePercent = (rate: number): string =>
+  new BigNumber(rate).times(100).toFormat(2);
+
+/**
  * A rate as a percentage — 0.1694 becomes "16.94%".
  *
  * Null means no fresh oracle price and renders "--"; a genuine zero renders
  * "0.00%". Never conflate the two.
  */
 export const formatRate = (rate: number | null): string =>
-  rate === null
-    ? NO_FIAT_VALUE
-    : `${new BigNumber(rate).times(100).toFormat(2)}%`;
+  rate === null ? NO_FIAT_VALUE : `${formatRatePercent(rate)}%`;

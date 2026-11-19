@@ -1,4 +1,8 @@
-import { formatCompactUsd, formatRate } from "../formatPoolStats";
+import {
+  formatCompactUsd,
+  formatRate,
+  formatRatePercent,
+} from "../formatPoolStats";
 
 describe("formatCompactUsd", () => {
   it("renders millions compactly", () => {
@@ -43,6 +47,15 @@ describe("formatRate", () => {
 
   it("rounds to two places", () => {
     expect(formatRate(0.042419)).toBe("4.24%");
+  });
+
+  // The picker's badge shows the figure without the sign. A float
+  // `toFixed(2)` there rounded 0.02345 down to 2.34 while every other screen
+  // showed 2.35%.
+  it("rounds a half up, and the badge's figure agrees", () => {
+    expect(formatRate(0.02345)).toBe("2.35%");
+    expect(formatRatePercent(0.02345)).toBe("2.35");
+    expect(formatRatePercent(0.07125)).toBe("7.13");
   });
 
   it("handles a rate above 100%", () => {

@@ -9,6 +9,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { getBlendAppUrl } from "popup/constants/externalLinks";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
 import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
+import { formatRatePercent } from "popup/components/earn/helpers/formatPoolStats";
 import { BalanceRow } from "popup/components/BalanceRow";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { RequestState } from "constants/request";
@@ -62,7 +63,7 @@ const ApyBadge = ({ apy, code }: { apy: number | null; code: string }) => {
       {apy === null
         ? NO_FIAT_VALUE
         : t("{{rate}}% APY*", {
-            rate: formatAmount((apy * 100).toFixed(2)),
+            rate: formatRatePercent(apy),
           })}
     </div>
   );
