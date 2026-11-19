@@ -245,10 +245,13 @@
   flex-direction: column;
 
   // The token at 40px with the design's ring, and a bare X at the top right.
+  // The 12px over the title sits here: the global `#root h2` rule zeroes a
+  // heading's own top margin and outranks a class selector.
   &__header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
+    margin-bottom: pxToRem(12);
 
     .AccountAssets__asset--logo {
       width: pxToRem(40);
@@ -286,9 +289,9 @@
     }
   }
 
-  // Text/MD/600, 12px under the icon.
+  // Text/MD/600, 12px under the icon (the header's margin).
   &__title {
-    margin: pxToRem(12) 0 0;
+    margin: 0;
     font-size: pxToRem(16);
     line-height: pxToRem(24);
     font-weight: 600;
