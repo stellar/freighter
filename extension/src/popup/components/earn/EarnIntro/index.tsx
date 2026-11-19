@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Icon, Text } from "@stellar/design-system";
+import { Button, Icon, IconButton, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import BlendLogo from "popup/assets/blend-logo.svg";
@@ -58,15 +58,17 @@ export const EarnIntro = ({ onStart, onClose }: EarnIntroProps) => {
       <EarnGlow className="EarnIntro__glow" />
 
       <div className="EarnIntro__header">
-        <button
+        <IconButton
           type="button"
-          className="EarnIntro__close"
-          onClick={onClose}
+          icon={<Icon.X />}
+          altText={t("Close")}
           aria-label={t("Close")}
+          // The design's 24px X in Text/Primary.
+          customSize="1.5rem"
+          customColor="var(--sds-clr-gray-12)"
+          onClick={onClose}
           data-testid="earn-intro-close"
-        >
-          <Icon.X />
-        </button>
+        />
       </div>
 
       <div className="EarnIntro__content">

@@ -223,24 +223,9 @@
     --Button-box-shadow-color: var(--sds-clr-amber-06);
   }
 
-  // A circle as tall as the lg Cancel and Confirm beside it, with a 16px glyph.
+  // Keeps the gear at its own width beside the stretching Cancel and Confirm.
   &__settings {
     flex: 0 0 auto;
-    width: pxToRem(40);
-    height: pxToRem(40);
-    border-radius: 50%;
-    border: 1px solid var(--sds-clr-gray-06);
-    cursor: pointer;
-    background: none;
-    color: var(--sds-clr-gray-09);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    svg {
-      width: pxToRem(16);
-      height: pxToRem(16);
-    }
   }
 }
 

@@ -66,28 +66,13 @@
   }
 }
 
-// The sheet's X: bare, at the top right, 16px in, level with the amount step's
-// title.
+// Places the sheet's X: at the top right, 16px in, level with the amount
+// step's title.
 .EarnSwapSheet__close {
   position: absolute;
   top: pxToRem(24);
   right: pxToRem(16);
   z-index: 1;
-  width: pxToRem(24);
-  height: pxToRem(24);
-  padding: 0;
-  border: none;
-  cursor: pointer;
-  background: none;
-  color: var(--sds-clr-gray-12);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  svg {
-    width: pxToRem(24);
-    height: pxToRem(24);
-  }
 }
 
 .EarnSwapSheet__body {

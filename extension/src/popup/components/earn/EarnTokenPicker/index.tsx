@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Icon, Loader, Text } from "@stellar/design-system";
+import { Icon, IconButton, Loader, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Navigate, useLocation } from "react-router-dom";
@@ -88,15 +88,17 @@ const PickerShell = ({
   return (
     <div className="EarnTokenPicker" data-testid={dataTestId}>
       <div className="EarnTokenPicker__header">
-        <button
+        <IconButton
           type="button"
-          className="EarnTokenPicker__close"
-          onClick={onClose}
+          icon={<Icon.X />}
+          altText={t("Close")}
           aria-label={t("Close")}
+          // The design's 24px X in Text/Primary.
+          customSize="1.5rem"
+          customColor="var(--sds-clr-gray-12)"
+          onClick={onClose}
           data-testid="earn-token-picker-close"
-        >
-          <Icon.X />
-        </button>
+        />
       </div>
 
       <div className="EarnTokenPicker__content">

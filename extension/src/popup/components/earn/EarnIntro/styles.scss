@@ -40,24 +40,6 @@
   margin-right: pxToRem(-8);
 }
 
-.EarnIntro__close {
-  width: pxToRem(24);
-  height: pxToRem(24);
-  padding: 0;
-  border: none;
-  cursor: pointer;
-  background: transparent;
-  color: var(--sds-clr-gray-12);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  svg {
-    width: pxToRem(24);
-    height: pxToRem(24);
-  }
-}
-
 // Starts 108px from the top, as in the mock: 24 padding + 24 header + 60.
 // Grows to absorb the space between the copy and the footer button; never
 // shrinks, since overflow is the view's to scroll, not this column's to clip.

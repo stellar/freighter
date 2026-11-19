@@ -279,15 +279,19 @@ export const EarnReview = ({
 
   const actions = (
     <div className="EarnReview__actions">
-      <button
-        type="button"
-        className="EarnReview__settings"
-        aria-label={t("Settings")}
-        data-testid="earn-review-settings-btn"
-        onClick={onEditSettings}
-      >
-        <Icon.Settings04 />
-      </button>
+      {/* The Send and Swap review's gear (ReviewTx's ActionButtons). */}
+      <div className="EarnReview__settings">
+        <Button
+          size="lg"
+          isRounded
+          variant="tertiary"
+          aria-label={t("Settings")}
+          data-testid="earn-review-settings-btn"
+          onClick={onEditSettings}
+        >
+          <Icon.Settings04 />
+        </Button>
+      </div>
       {/* Cancel is the recommended action once a warning is up, so it takes on
           the filled weight in the severity color. The tone lives on the
           wrapper, not on Button: SDS spreads incoming props after its own

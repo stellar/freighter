@@ -19,24 +19,6 @@
     margin-left: pxToRem(-8);
   }
 
-  &__close {
-    width: pxToRem(24);
-    height: pxToRem(24);
-    padding: 0;
-    border: none;
-    cursor: pointer;
-    background: transparent;
-    color: var(--sds-clr-gray-12);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    svg {
-      width: pxToRem(24);
-      height: pxToRem(24);
-    }
-  }
-
   // One column with 24px between its blocks, the footnote included, scrolling
   // as a whole. The fade at the bottom stands in for View.Content's.
   &__content {

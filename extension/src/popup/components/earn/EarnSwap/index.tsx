@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Icon } from "@stellar/design-system";
+import { Icon, IconButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -266,15 +266,19 @@ export const EarnSwap = ({
             source picker steps back with its arrow instead. What the X *means*
             is not the same on every step — see `dismiss`. */}
         {activeStep !== EARN_SWAP_STEPS.SET_FROM_ASSET && (
-          <button
-            type="button"
-            className="EarnSwapSheet__close"
-            onClick={dismiss}
-            aria-label={t("Close")}
-            data-testid="earn-swap-close"
-          >
-            <Icon.X />
-          </button>
+          <div className="EarnSwapSheet__close">
+            <IconButton
+              type="button"
+              icon={<Icon.X />}
+              altText={t("Close")}
+              aria-label={t("Close")}
+              // The design's 24px X in Text/Primary.
+              customSize="1.5rem"
+              customColor="var(--sds-clr-gray-12)"
+              onClick={dismiss}
+              data-testid="earn-swap-close"
+            />
+          </div>
         )}
         <div className="EarnSwapSheet__body">{renderStep()}</div>
       </SheetContent>
