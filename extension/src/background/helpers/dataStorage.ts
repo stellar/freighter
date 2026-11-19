@@ -431,6 +431,17 @@ export const migrateToMultiSourceModel = async () => {
   }
 };
 
+// The account subscription is gone, so nothing reads this key anymore.
+export const removeAccountSubscriptions = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (shouldRunMigration({ storageVersion, migrationVersion: "5.53.0" })) {
+    await localStore.remove(HAS_ACCOUNT_SUBSCRIPTION);
+    await migrateDataStorageVersion("5.53.0");
+  }
+};
+
 export const versionedMigration = async () => {
   // sequentially call migrations in order to enforce smooth schema upgrades
 
@@ -447,6 +458,7 @@ export const versionedMigration = async () => {
   await migrateAllowlistToKeyNetworkSchema();
   await migratePubnetRpcUrl();
   await migrateToMultiSourceModel();
+  await removeAccountSubscriptions();
 };
 
 // Updates storage version

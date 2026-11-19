@@ -1,14 +1,9 @@
-import {
-  subscribeTokenBalance,
-  subscribeTokenHistory,
-} from "background/helpers/account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { KEY_ID, TOKEN_ID_LIST } from "constants/localStorageTypes";
 
 interface Args {
   contractId: string;
   network: string;
-  publicKey: string;
 }
 
 type AddTokenWithContractIdResult = {
@@ -23,7 +18,7 @@ export const addTokenWithContractId = async ({
   args: Args;
   localStore: DataStorageAccess;
 }): Promise<AddTokenWithContractIdResult> => {
-  const { contractId: tokenId, network, publicKey } = args;
+  const { contractId: tokenId, network } = args;
 
   const tokenIdsByNetwork = (await localStore.getItem(TOKEN_ID_LIST)) || {};
   const tokenIdList = tokenIdsByNetwork[network] || {};
@@ -56,22 +51,6 @@ export const addTokenWithContractId = async ({
     // isn't there on reload).
     return { accountTokenIdList, error: "Failed to add token" };
   }
-
-  // Fire-and-forget best-effort subscriptions. These are slow indexer calls and
-  // must NOT block the dApp response: the caller resolves the request right
-  // after this returns, and the popup may close immediately after. Awaiting
-  // them would delay response() past a window-close, which resolves the request
-  // as "declined" — reporting a rejection for a trustline that actually
-  // succeeded. The token is already stored above; subscriptions are a non-
-  // essential nicety that can complete (or fail) in the background.
-  void (async () => {
-    try {
-      await subscribeTokenBalance({ publicKey, contractId: tokenId, network });
-      await subscribeTokenHistory({ publicKey, contractId: tokenId, network });
-    } catch (error) {
-      console.error(error);
-    }
-  })();
 
   return { accountTokenIdList };
 };
