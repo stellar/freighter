@@ -6,6 +6,7 @@ import { PASSWORD } from "./helpers/credentials";
 import { stubAllExternalApis } from "./helpers/stubs";
 import {
   ExtensionSession,
+  LATEST_STORAGE_VERSION,
   launchExtension,
   makeProfileDir,
   readLocalStorage,
@@ -99,7 +100,7 @@ test("migrates a pre-V2 wallet in place without re-onboarding", async () => {
     await expectMigratedSwitcher(page);
     expect(
       (await readLocalStorage(session, ["storageVersion"])).storageVersion,
-    ).toBe("5.50.0");
+    ).toBe(LATEST_STORAGE_VERSION);
   } finally {
     await session?.context.close();
     removeProfileDir(profileDir);

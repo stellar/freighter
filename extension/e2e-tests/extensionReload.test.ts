@@ -3,6 +3,7 @@
 // its afterEach, which launches another, unused one.
 import { expect, test } from "@playwright/test";
 import {
+  LATEST_STORAGE_VERSION,
   launchExtension,
   makeProfileDir,
   readLocalStorage,
@@ -31,7 +32,7 @@ test("relaunching on the same profile re-runs the storage migrations", async () 
           (await readLocalStorage(session, ["storageVersion"])).storageVersion,
         { timeout: 10000 },
       )
-      .toBe("5.50.0");
+      .toBe(LATEST_STORAGE_VERSION);
   } finally {
     await session.context.close();
     removeProfileDir(profileDir);
