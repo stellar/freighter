@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Icon, IconButton, Text } from "@stellar/design-system";
+import { Button, Icon, IconButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import BlendLogo from "popup/assets/blend-logo.svg";
@@ -84,9 +84,7 @@ export const EarnIntro = ({ onStart, onClose }: EarnIntroProps) => {
           <div className="EarnIntro__copy">
             <h1 className="EarnIntro__title">{t("Put your tokens to work")}</h1>
             <div className="EarnIntro__subtitle">
-              <Text as="p" size="sm" weight="regular">
-                {t("Supply tokens to Blend and earn variable yield.")}
-              </Text>
+              {t("Supply tokens to Blend and earn variable yield.")}
             </div>
           </div>
         </div>

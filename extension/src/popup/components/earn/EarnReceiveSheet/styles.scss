@@ -30,9 +30,7 @@
   // Text/SM/400 in secondary.
   &__caption {
     margin: pxToRem(16) 0;
-    font-size: pxToRem(14);
-    line-height: pxToRem(20);
-    font-weight: 400;
+    @include text(sm);
     color: var(--sds-clr-gray-11);
     text-align: center;
   }

@@ -1,4 +1,5 @@
 @use "../../../styles/utils.scss" as *;
+@use "../compactAmountCard" as *;
 
 // The swap branch is a bottom sheet over the still-visible token picker. The
 // container rules are scoped by data-slot because our shadcn Sheet forwards
@@ -90,23 +91,13 @@
   // Values are measured off the Figma sheet (Varial 4478:116498): a 24px
   // header row 24px below the top edge with 24px under it, so the sell card
   // starts 72px down, and 24px under the CTA.
-  --View-header-height: #{pxToRem(72)};
-  --View-inset-padding-top: 0;
   --View-footer-padding-bottom: #{pxToRem(24)};
+  @include compact-view-header;
 }
 
 // The steps' titles at Text/MD/600, over the app header's 14px.
 .EarnSwapSheet__body .View__header__box--center .Text {
-  font-size: pxToRem(16);
-  line-height: pxToRem(24);
-  font-weight: 600;
-}
-
-// The header's X and back arrow at the design's 24px, in primary.
-.EarnSwapSheet__body .View__header .BackButton svg {
-  width: pxToRem(24);
-  height: pxToRem(24);
-  color: var(--sds-clr-gray-12);
+  @include text(md, semi-bold);
 }
 
 // The submitting/success step has no header, so it starts its own content
@@ -144,70 +135,12 @@
 }
 
 // The shared amount cards and percentage pills, drawn as the deposit screen
-// draws them (see EarnAmount): a lighter fill, 12/18 labels, a 24/32 amount and
-// a compact token pill. Scoped to the sheet so main Swap keeps its own.
+// draws them (see EarnAmount), with a 24/32 amount. Scoped to the sheet so
+// main Swap keeps its own.
 .EarnSwapSheet__body {
-  .AmountCard {
-    margin: 0;
-    background-color: var(--sds-clr-gray-02);
-  }
-
-  .AmountCard__sending-label {
-    gap: pxToRem(12);
-    font-size: pxToRem(12);
-    line-height: pxToRem(18);
-    font-weight: 500;
-  }
-
-  .AmountCard__lg {
-    font-size: pxToRem(24);
-    line-height: pxToRem(32);
-    font-weight: 600;
-    letter-spacing: pxToRem(-0.96);
-  }
-
-  .AmountCard__asset-selector-inline {
-    min-height: pxToRem(28);
-    padding: pxToRem(4) pxToRem(8);
-
-    .AccountAssets__asset--logo {
-      width: pxToRem(16) !important;
-      height: pxToRem(16) !important;
-      min-width: pxToRem(16);
-      margin: 0;
-    }
-
-    > svg {
-      width: pxToRem(12);
-      height: pxToRem(12);
-      color: var(--sds-clr-gray-09);
-    }
-  }
-
-  .AmountCard__asset-code {
-    line-height: pxToRem(20);
-    font-weight: 600;
-  }
-
-  .AmountCard__balance-row {
-    margin-top: pxToRem(8);
-  }
-
-  .AmountCard__amount-price {
-    font-size: pxToRem(12);
-    line-height: pxToRem(18);
-    font-weight: 500;
-  }
-
-  .PercentageButtons {
-    gap: pxToRem(12);
-  }
-
-  .PercentageButtons__btn {
-    padding: pxToRem(6) pxToRem(10);
-    border-radius: pxToRem(100);
-    font-size: pxToRem(14);
-    line-height: pxToRem(20);
-    font-weight: 600;
-  }
+  @include compact-amount-card(
+    $amount-size: 24,
+    $amount-line-height: 32,
+    $amount-letter-spacing: -0.96
+  );
 }

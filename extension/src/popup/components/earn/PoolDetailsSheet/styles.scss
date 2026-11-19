@@ -17,20 +17,11 @@
     top: pxToRem(24);
 
     .AccountAssets__asset--logo {
-      width: pxToRem(16);
-      height: pxToRem(16);
-      min-width: pxToRem(16);
+      @include asset-logo-size(16);
       margin: 0;
 
       // The design's 1px ring, drawn over the artwork.
-      &::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        border-radius: 50%;
-        border: 1px solid var(--sds-clr-gray-06);
-        pointer-events: none;
-      }
+      @include asset-logo-ring;
     }
   }
 
@@ -49,17 +40,13 @@
 
   // Text/XS/500 in secondary.
   &__section-title {
-    font-size: pxToRem(12);
-    line-height: pxToRem(18);
-    font-weight: 500;
+    @include text(xs, medium);
     color: var(--sds-clr-gray-11);
   }
 
   // Text/SM/400 in primary.
   &__description {
-    font-size: pxToRem(14);
-    line-height: pxToRem(20);
-    font-weight: 400;
+    @include text(sm);
     color: var(--sds-clr-gray-12);
   }
 
@@ -78,9 +65,7 @@
     border: 0;
     background: none;
     color: var(--sds-clr-lilac-09);
-    font-size: pxToRem(14);
-    font-weight: 600;
-    line-height: pxToRem(20);
+    @include text(sm, semi-bold);
     cursor: pointer;
 
     svg {

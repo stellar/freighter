@@ -14,9 +14,7 @@
     // Text/SM/500 in secondary, 16px above Close.
     &-note {
       color: var(--sds-clr-gray-11);
-      font-size: pxToRem(14);
-      line-height: pxToRem(20);
-      font-weight: 500;
+      @include text(sm, medium);
       text-align: center;
       padding-bottom: pxToRem(8);
     }

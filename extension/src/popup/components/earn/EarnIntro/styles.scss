@@ -120,14 +120,10 @@
   color: var(--sds-clr-gray-12);
 }
 
-// Figma's Text/SM/400 is 14/20; SDS's Text--sm is 14/22.
+// Figma's Text/SM/400, which is 14/20 where SDS's Text--sm is 14/22.
 .EarnIntro__subtitle {
+  @include text(sm);
   color: var(--sds-clr-gray-11);
-
-  // Outruns SDS's own .Text--sm rule, which inheritance cannot.
-  .Text {
-    line-height: pxToRem(20);
-  }
 }
 
 .EarnIntro__features {
@@ -177,18 +173,14 @@
 
 // Text/SM/600.
 .EarnIntro__feature__title {
-  font-size: pxToRem(14);
-  line-height: pxToRem(20);
-  font-weight: 600;
+  @include text(sm, semi-bold);
   color: var(--sds-clr-gray-12);
 }
 
 // Text/XS/400.
 .EarnIntro__feature__body {
   margin: 0;
-  font-size: pxToRem(12);
-  line-height: pxToRem(18);
-  font-weight: 400;
+  @include text(xs);
   color: var(--sds-clr-gray-11);
 }
 

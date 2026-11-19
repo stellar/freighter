@@ -31,9 +31,7 @@
 
   // Text/SM/500 in primary.
   &__group-title {
-    font-size: pxToRem(14);
-    line-height: pxToRem(20);
-    font-weight: 500;
+    @include text(sm, medium);
     color: var(--sds-clr-gray-12);
   }
 
@@ -54,30 +52,19 @@
     .AccountAssets__asset--logo {
       margin-right: 0;
 
-      &::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        border-radius: 50%;
-        border: 1px solid var(--sds-clr-gray-06);
-        pointer-events: none;
-      }
+      @include asset-logo-ring;
     }
   }
 
   // Text/SM/500 in primary.
   &__primary {
-    font-size: pxToRem(14);
-    line-height: pxToRem(20);
-    font-weight: 500;
+    @include text(sm, medium);
     color: var(--sds-clr-gray-12);
   }
 
   // Text/XS/500 in secondary.
   &__secondary {
-    font-size: pxToRem(12);
-    line-height: pxToRem(18);
-    font-weight: 500;
+    @include text(xs, medium);
     color: var(--sds-clr-gray-11);
   }
 
@@ -195,9 +182,7 @@
   border: none;
   background: none;
   font-family: var(--sds-ff-base);
-  font-weight: 600;
-  font-size: pxToRem(14);
-  line-height: pxToRem(20);
+  @include text(sm, semi-bold);
   padding: pxToRem(8) 0;
   cursor: pointer;
   text-align: center;

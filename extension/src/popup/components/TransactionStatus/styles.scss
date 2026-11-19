@@ -14,9 +14,7 @@
     align-items: center;
     gap: pxToRem(8);
     color: var(--sds-clr-gray-12);
-    font-size: pxToRem(18);
-    line-height: pxToRem(26);
-    font-weight: 500;
+    @include text(lg, medium);
 
     .Loader {
       opacity: 0.5;
@@ -53,14 +51,7 @@
     .AccountAssets__asset--logo {
       margin-right: 0;
 
-      &::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        border-radius: 50%;
-        border: 1px solid var(--sds-clr-gray-06);
-        pointer-events: none;
-      }
+      @include asset-logo-ring;
     }
   }
 
@@ -72,9 +63,7 @@
 
   // Text/SM/500: the amounts in primary, the verb in secondary.
   &__caption {
-    font-size: pxToRem(14);
-    line-height: pxToRem(20);
-    font-weight: 500;
+    @include text(sm, medium);
     color: var(--sds-clr-gray-12);
   }
 

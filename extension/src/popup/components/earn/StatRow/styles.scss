@@ -7,9 +7,7 @@
   align-items: center;
   justify-content: space-between;
   gap: pxToRem(12);
-  font-size: pxToRem(14);
-  line-height: pxToRem(20);
-  font-weight: 500;
+  @include text(sm, medium);
   color: var(--sds-clr-gray-11);
 
   & + & {

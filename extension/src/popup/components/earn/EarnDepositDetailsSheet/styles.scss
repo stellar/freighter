@@ -5,19 +5,10 @@
 .EarnDepositDetailsSheet {
   // The deposited token at 40px with the design's 1px ring.
   &__token .AccountAssets__asset--logo {
-    width: pxToRem(40);
-    height: pxToRem(40);
-    min-width: pxToRem(40);
+    @include asset-logo-size(40);
     margin: 0;
 
-    &::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      border: 1px solid var(--sds-clr-gray-06);
-      pointer-events: none;
-    }
+    @include asset-logo-ring;
   }
 
   &__body {

@@ -8,27 +8,16 @@
 
   // The token at 40px with the design's ring, leading the header.
   .SheetHeader__leading .AccountAssets__asset--logo {
-    width: pxToRem(40);
-    height: pxToRem(40);
-    min-width: pxToRem(40);
+    @include asset-logo-size(40);
     margin: 0;
 
-    &::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      border: 1px solid var(--sds-clr-gray-06);
-      pointer-events: none;
-    }
+    @include asset-logo-ring;
   }
 
   // Text/MD/400 in secondary, 12px under the title and 24px over the actions.
   &__body {
     margin: pxToRem(12) 0 pxToRem(24);
-    font-size: pxToRem(16);
-    line-height: pxToRem(24);
-    font-weight: 400;
+    @include text(md);
     color: var(--sds-clr-gray-11);
   }
 
@@ -48,9 +37,7 @@
     align-items: center;
     gap: pxToRem(8);
     color: var(--sds-clr-gray-11);
-    font-size: pxToRem(14);
-    line-height: pxToRem(20);
-    font-weight: 600;
+    @include text(sm, semi-bold);
 
     &::before,
     &::after {
@@ -67,8 +54,6 @@
     background: none;
     cursor: pointer;
     color: var(--sds-clr-gray-11);
-    font-size: pxToRem(14);
-    line-height: pxToRem(20);
-    font-weight: 600;
+    @include text(sm, semi-bold);
   }
 }

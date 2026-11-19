@@ -318,9 +318,7 @@ export const EarnTokenPicker = ({
                 {t("No supported assets in your wallet")}
               </Text>
               <div className="EarnTokenPicker__empty-body">
-                <Text as="p" size="sm" weight="regular">
-                  {t("Add a supported asset to start earning.")}
-                </Text>
+                {t("Add a supported asset to start earning.")}
               </div>
             </div>
           )}

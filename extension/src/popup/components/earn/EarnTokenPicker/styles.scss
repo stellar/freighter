@@ -55,18 +55,14 @@
   // Text/MD/500.
   &__title {
     margin: 0;
-    font-size: pxToRem(16);
-    line-height: pxToRem(24);
-    font-weight: 500;
+    @include text(md, medium);
     color: var(--sds-clr-gray-12);
   }
 
   // Text/XS/400.
   &__subtitle {
     margin: 0;
-    font-size: pxToRem(12);
-    line-height: pxToRem(18);
-    font-weight: 400;
+    @include text(xs);
     color: var(--sds-clr-gray-11);
   }
 
@@ -79,9 +75,7 @@
 
   // Text/XS/500.
   &__label {
-    font-size: pxToRem(12);
-    line-height: pxToRem(18);
-    font-weight: 500;
+    @include text(xs, medium);
     color: var(--sds-clr-gray-11);
   }
 
@@ -114,9 +108,7 @@
 
   // Text/SM/500.
   &__protocol-name {
-    font-size: pxToRem(14);
-    line-height: pxToRem(20);
-    font-weight: 500;
+    @include text(sm, medium);
     white-space: nowrap;
   }
 
@@ -129,12 +121,10 @@
     color: var(--sds-clr-gray-12);
   }
 
+  // Figma's Text/SM/400, which is 14/20 where SDS's Text--sm is 14/22.
   &__empty-body {
+    @include text(sm);
     color: var(--sds-clr-gray-11);
-
-    .Text {
-      line-height: pxToRem(20);
-    }
   }
 
   &__sections {
@@ -152,9 +142,7 @@
   // Text/SM/500.
   &__section-title {
     margin: 0;
-    font-size: pxToRem(14);
-    line-height: pxToRem(20);
-    font-weight: 500;
+    @include text(sm, medium);
     color: var(--sds-clr-gray-12);
   }
 
@@ -181,14 +169,7 @@
   .BalanceRow__left .AccountAssets__asset--logo {
     margin-right: pxToRem(16);
 
-    &::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      border: 1px solid var(--sds-clr-gray-06);
-      pointer-events: none;
-    }
+    @include asset-logo-ring;
   }
 
   // Text/XS/500 on a pale green pill.
@@ -197,9 +178,7 @@
     color: var(--sds-clr-green-11);
     border-radius: pxToRem(100);
     padding: pxToRem(4) pxToRem(6);
-    font-size: pxToRem(12);
-    line-height: pxToRem(18);
-    font-weight: 500;
+    @include text(xs, medium);
     white-space: nowrap;
   }
 
@@ -212,9 +191,7 @@
   // Text/XS/400, flowing after the last section.
   &__disclaimer {
     margin: 0;
-    font-size: pxToRem(12);
-    line-height: pxToRem(18);
-    font-weight: 400;
+    @include text(xs);
     color: var(--sds-clr-gray-11);
   }
 }
