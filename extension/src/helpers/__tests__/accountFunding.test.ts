@@ -50,7 +50,7 @@ import {
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { METRICS_DATA } from "constants/localStorageTypes";
+import { ACCOUNT_FUNDING_RECORDS_ID } from "constants/localStorageTypes";
 
 const KEY_A = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
 const KEY_B = "GBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB";
@@ -230,7 +230,7 @@ describe("onAccountValue", () => {
     expect(
       getFundedAccountCount(
         [{ publicKey: KEY_A }] as never,
-        JSON.parse(localStorage.getItem(METRICS_DATA)!).fundingRecords,
+        JSON.parse(localStorage.getItem(ACCOUNT_FUNDING_RECORDS_ID)!),
       ),
     ).toBe(1);
     expect(syncIdentifyTraits).toHaveBeenCalled();
@@ -273,7 +273,7 @@ describe("onAccountValue", () => {
     activeValue(UNFUNDED, KEY_A, TESTNET_NETWORK_DETAILS);
     activeValue(FUNDED, KEY_A, TESTNET_NETWORK_DETAILS);
     expect(fundedEvents()).toHaveLength(0);
-    expect(localStorage.getItem(METRICS_DATA)).toBeNull();
+    expect(localStorage.getItem(ACCOUNT_FUNDING_RECORDS_ID)).toBeNull();
     expect(syncIdentifyTraits).not.toHaveBeenCalled();
   });
 
@@ -373,7 +373,7 @@ describe("onListAccountValue", () => {
     const count = () =>
       getFundedAccountCount(
         [{ publicKey: KEY_A }, { publicKey: KEY_B }] as never,
-        JSON.parse(localStorage.getItem(METRICS_DATA)!).fundingRecords,
+        JSON.parse(localStorage.getItem(ACCOUNT_FUNDING_RECORDS_ID)!),
       );
     expect(count()).toBe(2);
     listValue(UNFUNDED, KEY_B);
@@ -390,6 +390,6 @@ describe("onListAccountValue", () => {
     listValue(FUNDED, KEY_B, TESTNET_NETWORK_DETAILS);
     const stranger = "GCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC";
     listValue(FUNDED, stranger);
-    expect(localStorage.getItem(METRICS_DATA)).toBeNull();
+    expect(localStorage.getItem(ACCOUNT_FUNDING_RECORDS_ID)).toBeNull();
   });
 });

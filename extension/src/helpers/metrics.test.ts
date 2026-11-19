@@ -56,7 +56,10 @@ import {
   allAccountsSelector,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { METRICS_DATA } from "constants/localStorageTypes";
+import {
+  ACCOUNT_FUNDING_RECORDS_ID,
+  METRICS_DATA,
+} from "constants/localStorageTypes";
 import { AccountType } from "@shared/api/types";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -296,10 +299,10 @@ describe("funding records", () => {
 
   it("keys a record by network and account_id_hash, without the G address", () => {
     saveFundingRecord("PUBLIC", KEY_A, { status: "unfunded", funded: false });
-    const raw = localStorage.getItem(METRICS_DATA)!;
+    const raw = localStorage.getItem(ACCOUNT_FUNDING_RECORDS_ID)!;
     expect(raw).not.toContain(KEY_A);
     expect(raw).not.toContain(KEY_A.slice(0, 10));
-    expect(JSON.parse(raw).fundingRecords).toEqual({
+    expect(JSON.parse(raw)).toEqual({
       [`PUBLIC:${getAccountIdHash(KEY_A)}`]: {
         status: "unfunded",
         funded: false,
@@ -315,19 +318,9 @@ describe("funding records", () => {
     expect(getFundingRecord("TESTNET", KEY_A)).toBeUndefined();
   });
 
-  it("keeps the other metricsData fields when it saves a record", () => {
-    localStorage.setItem(
-      METRICS_DATA,
-      JSON.stringify({ accountType: AccountType.HW, hwExists: true }),
-    );
-    saveFundingRecord("PUBLIC", KEY_A, { funded: true });
-    expect(JSON.parse(localStorage.getItem(METRICS_DATA)!)).toMatchObject({
-      accountType: AccountType.HW,
-      hwExists: true,
-    });
-  });
-
-  it("deletes the legacy account.first_funded fields on the first write after the update (VT-17)", () => {
+  it("drops fields that the code no longer uses on the next metricsData write (VT-17)", () => {
+    // Fields of the removed account.first_funded detector. No code names
+    // them. storeAccountMetricsData writes a new object, so they go away.
     localStorage.setItem(
       METRICS_DATA,
       JSON.stringify({
@@ -343,11 +336,19 @@ describe("funding records", () => {
     storeAccountMetricsData(KEY_A, [
       { publicKey: KEY_A, name: "A", imported: false },
     ] as never);
-    const stored = JSON.parse(localStorage.getItem(METRICS_DATA)!);
-    expect(stored).not.toHaveProperty("unfundedFreighterAccounts");
-    expect(stored).not.toHaveProperty("freighterFunded");
-    expect(stored).not.toHaveProperty("hwFunded");
-    expect(stored).not.toHaveProperty("importedFunded");
+    expect(JSON.parse(localStorage.getItem(METRICS_DATA)!)).toEqual({
+      accountType: AccountType.FREIGHTER,
+      hwExists: false,
+      importedExists: false,
+    });
+  });
+
+  it("keeps the funding records when metricsData is written", () => {
+    saveFundingRecord("PUBLIC", KEY_A, { funded: true });
+    storeAccountMetricsData(KEY_A, [
+      { publicKey: KEY_A, name: "A", imported: false },
+    ] as never);
+    expect(getFundingRecord("PUBLIC", KEY_A)).toEqual({ funded: true });
   });
 
   it("counts own accounts with funded: true on PUBLIC only (VT-24, VT-28)", () => {

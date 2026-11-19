@@ -8,7 +8,11 @@ import { hash, xdr } from "stellar-sdk";
 import browser from "webextension-polyfill";
 
 import { store } from "popup/App";
-import { METRICS_DATA, METRICS_USER_ID } from "constants/localStorageTypes";
+import {
+  ACCOUNT_FUNDING_RECORDS_ID,
+  METRICS_DATA,
+  METRICS_USER_ID,
+} from "constants/localStorageTypes";
 import { AMPLITUDE_KEY, APP_VERSION } from "constants/env";
 import { initExperimentClient } from "helpers/experimentClient";
 import { BUNDLE_ID_USER_PROPERTY_KEY, getBundleId } from "helpers/analytics";
@@ -126,19 +130,7 @@ export interface MetricsData {
   accountType: AccountType;
   hwExists: boolean;
   importedExists: boolean;
-  fundingRecords?: FundingRecords;
 }
-
-/**
- * Fields of the old `account.first_funded` detector. The first read after the
- * update deletes them. The new funding records do not use them.
- */
-const LEGACY_METRICS_DATA_FIELDS = [
-  "unfundedFreighterAccounts",
-  "freighterFunded",
-  "hwFunded",
-  "importedFunded",
-] as const;
 
 let hasInitialized = false;
 
@@ -439,10 +431,7 @@ let lastIdentifiedTraits: string | null = null;
 
 /** Sends durable wallet-composition traits to Amplitude Identify (dirty-checked). */
 export const syncIdentifyTraits = (allAccounts: Account[]): void => {
-  const traits = deriveIdentifyTraits(
-    allAccounts,
-    getMetricsData().fundingRecords,
-  );
+  const traits = deriveIdentifyTraits(allAccounts, getFundingRecords());
   const fingerprint = JSON.stringify(traits);
   if (fingerprint === lastIdentifiedTraits) return;
 
@@ -578,29 +567,16 @@ export const buildCommonContext = (
 // localStorage helpers
 // ---------------------------------------------------------------------------
 
-const METRICS_DATA_DEFAULTS: MetricsData = {
-  accountType: AccountType.FREIGHTER,
-  hwExists: false,
-  importedExists: false,
-};
-
 /**
- * Reads and parses metrics data from localStorage.
- * Returns safe defaults if the entry is missing or contains invalid JSON
- * (e.g. after a storage corruption or schema change).
- * Drops the legacy funded fields, so the next write deletes them.
+ * Reads all funding records from localStorage. Returns an empty map if the
+ * entry is missing or contains invalid JSON.
  */
-const getMetricsData = (): MetricsData => {
+const getFundingRecords = (): FundingRecords => {
   try {
-    const raw = localStorage.getItem(METRICS_DATA);
-    if (!raw) return { ...METRICS_DATA_DEFAULTS };
-    const parsed = JSON.parse(raw) as MetricsData & Record<string, unknown>;
-    LEGACY_METRICS_DATA_FIELDS.forEach((field) => {
-      delete parsed[field];
-    });
-    return parsed;
+    const raw = localStorage.getItem(ACCOUNT_FUNDING_RECORDS_ID);
+    return raw ? (JSON.parse(raw) as FundingRecords) : {};
   } catch {
-    return { ...METRICS_DATA_DEFAULTS };
+    return {};
   }
 };
 
@@ -609,7 +585,7 @@ export const getFundingRecord = (
   network: string,
   publicKey: string,
 ): FundingRecord | undefined =>
-  getMetricsData().fundingRecords?.[getFundingRecordKey(network, publicKey)];
+  getFundingRecords()[getFundingRecordKey(network, publicKey)];
 
 /**
  * Writes the funding record of one account on one network. localStorage is
@@ -622,12 +598,14 @@ export const saveFundingRecord = (
   record: FundingRecord,
 ): void => {
   try {
-    const metricsData = getMetricsData();
-    metricsData.fundingRecords = {
-      ...metricsData.fundingRecords,
+    const fundingRecords = {
+      ...getFundingRecords(),
       [getFundingRecordKey(network, publicKey)]: record,
     };
-    localStorage.setItem(METRICS_DATA, JSON.stringify(metricsData));
+    localStorage.setItem(
+      ACCOUNT_FUNDING_RECORDS_ID,
+      JSON.stringify(fundingRecords),
+    );
   } catch {
     // Storage write failed. The next result writes the record again.
   }
@@ -741,7 +719,13 @@ export const storeAccountMetricsData = (
   publicKey: string,
   allAccounts: Account[],
 ) => {
-  const metricsData: MetricsData = getMetricsData();
+  // Build a new object, not a merge into the stored one. Thus each write
+  // drops fields that the code no longer uses.
+  const metricsData: MetricsData = {
+    accountType: AccountType.FREIGHTER,
+    hwExists: false,
+    importedExists: false,
+  };
 
   let accountType = AccountType.FREIGHTER;
   allAccounts.forEach((acc: Account) => {
