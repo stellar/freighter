@@ -89,6 +89,11 @@ export const EarnSwap = ({
 
   const [activeStep, setActiveStep] = useState(STEPS.AMOUNT);
   const [inputType, setInputType] = useState<InputType>("crypto");
+  // The steps fetch in their own mount effects, and React runs a child's
+  // effects before its parent's, so they render only once the seed below has
+  // reached Redux, as on the Swap route. Otherwise the first fetch would read
+  // the submission as it was before the seed.
+  const [isSeeded, setIsSeeded] = useState(false);
 
   const { isQuoteExpiredAtSubmit } = useSwapSubmitQuoteExpiry({
     onRecover: () => setActiveStep(STEPS.AMOUNT),
@@ -119,6 +124,7 @@ export const EarnSwap = ({
     dispatch(saveDestinationTokenDetails(destinationTokenDetails));
     // Tags the swap's own events (confirm, quote expiry, outcome) as Earn's.
     dispatch(saveSwapSource(SwapSource.Earn));
+    setIsSeeded(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -267,7 +273,9 @@ export const EarnSwap = ({
             />
           </div>
         )}
-        <div className="EarnSwapSheet__body">{renderStep()}</div>
+        <div className="EarnSwapSheet__body">
+          {isSeeded ? renderStep() : null}
+        </div>
       </SheetContent>
     </Sheet>
   );
