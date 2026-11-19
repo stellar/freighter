@@ -270,6 +270,23 @@ test("onboards with a secret key", async ({ page, extensionId, context }) => {
     page.getByRole("link", { name: "Advanced settings" }),
   ).toBeVisible();
   await expect(page.getByText("Show recovery phrase")).toHaveCount(0);
+
+  // Create new wallet can only generate a phrase; there is none to add under.
+  await page.goto(`chrome-extension://${extensionId}/index.html#/`);
+  await page.getByTestId("account-view-account-name").click();
+  await page.getByTestId("add-wallet").click();
+  await page.getByTestId("add-wallet-create").click();
+  await expect(page.getByTestId("create-wallet-generate")).toBeVisible();
+  await expect(page.getByTestId("create-wallet-add-account")).toHaveCount(0);
+
+  // Edit account offers the secret key and no recovery phrase.
+  await page.goto(`chrome-extension://${extensionId}/index.html#/`);
+  await goToSettings(page);
+  await page.getByTestId("settings-accounts-recovery").click();
+  await page.getByTestId("accounts-recovery-edit").click();
+  await expect(page.getByTestId("edit-account")).toBeVisible();
+  await expect(page.getByTestId("edit-account-secret-key")).toBeVisible();
+  await expect(page.getByTestId("edit-account-recovery-phrase")).toHaveCount(0);
 });
 
 test("The import text box masks its value until shown", async ({ page }) => {

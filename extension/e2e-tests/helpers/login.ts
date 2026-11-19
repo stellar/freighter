@@ -4,25 +4,11 @@ import { expect } from "../test-fixtures";
 import { stubAllExternalApis } from "./stubs";
 import { switchNetwork } from "./network";
 import { importWallet } from "./onboarding";
+import { PASSWORD, TEST_ACCOUNT_WORDS } from "./credentials";
 
 const { generateMnemonic } = StellarHDWallet;
 
-export const PASSWORD = "My-password123";
-
-export const TEST_ACCOUNT_WORDS = [
-  "card",
-  "whip",
-  "erosion",
-  "fatal",
-  "reunion",
-  "foil",
-  "doctor",
-  "embark",
-  "plug",
-  "note",
-  "thank",
-  "company",
-];
+export { PASSWORD, TEST_ACCOUNT_WORDS };
 
 /**
  * Creates a new wallet and logs into the extension on Testnet.
