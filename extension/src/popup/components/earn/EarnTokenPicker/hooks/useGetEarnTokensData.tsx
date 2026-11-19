@@ -119,6 +119,12 @@ const buildEarnRows = ({
   const held: EarnTokenOption[] = [];
   const supported: EarnTokenOption[] = [];
 
+  // What the account holds, hidden tokens included. Hiding is a display
+  // preference for Home: a hidden token is still held, can still be
+  // deposited, and already has its trustline, so a swap into it needs no
+  // new one (and no second operation or reserve).
+  const heldBalances = balances.unfilteredBalances ?? balances.balances;
+
   earnOptions.forEach((option) => {
     const offer = option.pools.find((p) => p.id === poolId);
     if (!offer) {
@@ -127,7 +133,7 @@ const buildEarnRows = ({
 
     const balance = getBalanceByKey(
       option.assetId,
-      balances.balances,
+      heldBalances,
       networkDetails,
     );
     const total = balance?.total ? new BigNumber(balance.total) : null;

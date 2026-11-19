@@ -170,6 +170,22 @@ describe("useGetEarnTokensData", () => {
     expect(result.current.state.state).toBe(RequestState.SUCCESS);
   });
 
+  it("lists a token the user has hidden as held, at its balance", async () => {
+    mockFetchBalances.mockResolvedValue({
+      ...balancesOf(xlmBalance),
+      unfilteredBalances: [xlmBalance, usdcBalance],
+    });
+    const { result } = renderData();
+
+    await act(() => result.current.fetchData(true));
+
+    expect(resolvedData(result).held).toEqual([
+      expect.objectContaining({ code: "XLM" }),
+      expect.objectContaining({ code: "USDC", total: "5", hasTrustline: true }),
+    ]);
+    expect(resolvedData(result).supported).toEqual([]);
+  });
+
   it("lists the tokens without waiting for icons, then fills them in", async () => {
     const icons = deferred<Record<string, string | null>>();
     mockResolveEarnAssetIcons.mockReturnValue(icons.promise);
