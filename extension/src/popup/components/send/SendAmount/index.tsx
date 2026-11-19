@@ -965,7 +965,7 @@ export const SendAmount = ({
               dispatch(saveMemoAndType({ memo, memoType: "" }));
               setIsEditingMemo(false);
               // Regenerate the XDR with the new memo (fetchData reads the memo
-              // from Redux). Skipped while the amount is one the build would
+              // from Redux). Skipped while the amount is one that the build would
               // reject; Continue rebuilds before review anyway.
               if (canRebuildTx) {
                 await fetchSimulationData();
