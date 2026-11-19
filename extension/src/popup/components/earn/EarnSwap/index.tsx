@@ -242,7 +242,16 @@ export const EarnSwap = ({
         // `className` is forwarded to the overlay as well as the content by our
         // shadcn wrapper, so `.EarnSwapSheet` styles are scoped by data-slot —
         // the overlay has to keep its dim scrim so the picker shows through.
-        className="EarnSwapSheet"
+        // While the swap is submitting or done, the sheet hugs that status, as
+        // the design draws it (4478:117063, 4478:117082); the loading, failure
+        // and password screens keep the steps' height they're laid out for.
+        className={`EarnSwapSheet${
+          activeStep === EARN_SWAP_STEPS.SWAP_CONFIRM &&
+          (submission.submitStatus === ActionStatus.PENDING ||
+            submission.submitStatus === ActionStatus.SUCCESS)
+            ? " EarnSwapSheet--status"
+            : ""
+        }`}
         // The amount screen focuses its own input; letting radix focus the
         // first tabbable element would steal that.
         onOpenAutoFocus={(e) => e.preventDefault()}

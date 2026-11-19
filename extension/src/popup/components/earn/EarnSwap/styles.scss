@@ -26,6 +26,12 @@
   height: 90dvh;
   max-height: pxToRem(540);
 
+  // Except the swap's status (submitting, done), which the design draws hugging
+  // its content (4478:117063, 4478:117082).
+  &.EarnSwapSheet--status {
+    height: auto;
+  }
+
   // Nothing inside the sheet is a full-height screen any more.
   .View {
     height: 100%;
@@ -122,6 +128,17 @@
 // where the design does: 48px down, clear of the sheet's X.
 .EarnSwapSheet__body .SendingTransaction {
   margin-top: pxToRem(48);
+
+  // Main Swap's offset from the top of the page; the sheet sets its own.
+  &--swap {
+    padding-top: 0;
+  }
+}
+
+// The sheet's "You can close this screen…" note is Text/XS/500 (4478:117063).
+.EarnSwapSheet__body .SendingTransaction__Footer__Subtext {
+  font-size: pxToRem(12);
+  line-height: pxToRem(18);
 }
 
 // The cards between the seam: 12px apart, with a 32px notch in the sheet's

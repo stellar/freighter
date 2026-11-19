@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Button, Icon, Loader } from "@stellar/design-system";
+import { Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
@@ -11,6 +11,7 @@ import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
 import { formatEarnAmount } from "popup/components/earn/helpers/formatEarnAmount";
 import { EarnDepositDetailsSheet } from "popup/components/earn/EarnDepositDetailsSheet";
 import { SlideupModal } from "popup/components/SlideupModal";
+import { TransactionStatus } from "popup/components/TransactionStatus";
 import { RequestState } from "constants/request";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { cleanAmount } from "popup/helpers/formatters";
@@ -185,43 +186,26 @@ export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
         }
       >
         <div className="EarnSubmit">
-          <div className="EarnSubmit__title">
-            {isLoading ? (
-              <>
-                <Loader size="1.75rem" />
-                <span>{t("Deposit in progress")}</span>
-              </>
-            ) : (
-              <>
-                <Icon.CheckCircle className="EarnSubmit__title-success" />
-                <span>{t("Deposit complete")}</span>
-              </>
-            )}
-          </div>
-
-          <div className="EarnSubmit__summary">
-            <div className="EarnSubmit__icons">
-              {/* The cached icon map rather than an empty one, which AssetIcon
-                  reads as a lookup in flight. Warm by the time the flow reaches
-                  here: the deposited asset is held, so the picker and amount
-                  screens have both resolved it. */}
+          <TransactionStatus
+            isPending={isLoading}
+            title={isLoading ? t("Deposit in progress") : t("Deposit complete")}
+            fromIcon={
+              // The cached icon map rather than an empty one, which AssetIcon
+              // reads as a lookup in flight. Warm by the time the flow reaches
+              // here: the deposited asset is held, so the picker and amount
+              // screens have both resolved it.
               <AssetIcon
                 assetIcons={cachedIcons}
                 code={srcAsset.code}
                 issuerKey={srcAsset.issuer}
               />
-              <Icon.ArrowRight className="EarnSubmit__arrow" />
-              <PoolIcon />
-            </div>
-            <div
-              className="EarnSubmit__caption"
-              data-testid="earn-submit-caption"
-            >
-              <span>{`${formatEarnAmount(amount)} ${srcAsset.code}`}</span>
-              <span className="EarnSubmit__caption-verb">{` ${t("to")} `}</span>
-              <span>{formatPoolName(pool?.name, t)}</span>
-            </div>
-          </div>
+            }
+            toIcon={<PoolIcon />}
+            amount={`${formatEarnAmount(amount)} ${srcAsset.code}`}
+            verb={t("to")}
+            target={formatPoolName(pool?.name, t)}
+            captionTestId="earn-submit-caption"
+          />
         </div>
       </View.Content>
 

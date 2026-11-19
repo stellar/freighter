@@ -1,0 +1,84 @@
+@use "../../styles/utils.scss" as *;
+
+.TransactionStatus {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: pxToRem(24);
+
+  // Text/LG/500 under a 28px spinner (at half opacity) or check.
+  &__title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: pxToRem(8);
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(18);
+    line-height: pxToRem(26);
+    font-weight: 500;
+
+    .Loader {
+      opacity: 0.5;
+    }
+  }
+
+  &__check {
+    color: var(--sds-clr-green-09);
+    width: pxToRem(28);
+    height: pxToRem(28);
+  }
+
+  &__summary {
+    width: 100%;
+    background: var(--sds-clr-gray-03);
+    border-radius: pxToRem(16);
+    padding: pxToRem(24);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: pxToRem(24);
+    text-align: center;
+  }
+
+  // 32px icons 16px either side of the arrow.
+  &__icons {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(16);
+
+    // The gap owns the spacing, so AssetIcon's list-row margin would otherwise
+    // leave the arrow off-centre between the two icons. The ring is the
+    // design's 1px border.
+    .AccountAssets__asset--logo {
+      margin-right: 0;
+
+      &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 1px solid var(--sds-clr-gray-06);
+        pointer-events: none;
+      }
+    }
+  }
+
+  &__arrow {
+    width: pxToRem(16);
+    height: pxToRem(16);
+    color: var(--sds-clr-gray-09);
+  }
+
+  // Text/SM/500: the amounts in primary, the verb in secondary.
+  &__caption {
+    font-size: pxToRem(14);
+    line-height: pxToRem(20);
+    font-weight: 500;
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__caption-verb {
+    color: var(--sds-clr-gray-11);
+  }
+}

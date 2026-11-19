@@ -15,6 +15,7 @@ import { AssetIcon } from "popup/components/account/AccountAssets";
 import { EnterPassword } from "popup/components/EnterPassword";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { Loading } from "popup/components/Loading";
+import { TransactionStatus } from "popup/components/TransactionStatus";
 
 import { useGetSubmitAccountData } from "./hooks/useGetSubmitAccountData";
 import { useSubmitTxData } from "./hooks/useSubmitTxData";
@@ -265,33 +266,14 @@ export const SendingTransaction = ({
             </div>
           }
         >
-          <div className="SendingTransaction">
-            <div className="SendingTransaction__Title">
-              {isLoading ? (
-                <>
-                  <Loader size="2rem" />
-                  <span>{isSwap ? t("Swapping") : t("Sending")}</span>
-                </>
-              ) : (
-                <>
-                  <Icon.CheckCircle className="SendingTransaction__Title__Success" />
-                  <span>{isSwap ? t("Swapped!") : t("Sent!")}</span>
-                </>
-              )}
-            </div>
-            <div className="SendingTransaction__Summary">
-              <div
-                className={`SendingTransaction__Summary__Assets ${isCollectible ? "SendingTransaction__Summary__Assets--collectible" : ""}`}
-              >
-                {isCollectible ? (
-                  <div className="SendingTransaction__Summary__Assets__Image">
-                    <CollectibleInfoImage
-                      image={collectibleData.image}
-                      name={collectibleData.name}
-                      isSmall
-                    />
-                  </div>
-                ) : (
+          {isSwap && dstAsset ? (
+            // Main Swap and the swap inside Earn, as Varial draws them
+            // (1523:157348/157365, 4478:117063/117082).
+            <div className="SendingTransaction SendingTransaction--swap">
+              <TransactionStatus
+                isPending={isLoading}
+                title={isLoading ? t("Swap in progress") : t("Swap complete")}
+                fromIcon={
                   <AssetIcon
                     assetIcons={assetIcons}
                     code={srcAsset.code}
@@ -299,11 +281,8 @@ export const SendingTransaction = ({
                     icon={assetIcon}
                     isSuspicious={false}
                   />
-                )}
-                <div className="SendingTransaction__Summary__Assets__Divider">
-                  <Icon.ChevronRightDouble />
-                </div>
-                {isSwap && dstAsset ? (
+                }
+                toIcon={
                   <AssetIcon
                     assetIcons={dstAssetIcons}
                     code={dstAsset.code}
@@ -311,72 +290,91 @@ export const SendingTransaction = ({
                     icon={dstAssetIcon}
                     isSuspicious={false}
                   />
+                }
+                amount={`${amount} ${srcAsset.code}`}
+                verb={isLoading ? t("to") : t("was swapped for")}
+                target={`${destinationAmount} ${dstAsset.code}`}
+                captionTestId="swap-status-caption"
+              />
+            </div>
+          ) : (
+            <div className="SendingTransaction">
+              <div className="SendingTransaction__Title">
+                {isLoading ? (
+                  <>
+                    <Loader size="2rem" />
+                    <span>{t("Sending")}</span>
+                  </>
                 ) : (
-                  <IdenticonImg publicKey={destination} />
+                  <>
+                    <Icon.CheckCircle className="SendingTransaction__Title__Success" />
+                    <span>{t("Sent!")}</span>
+                  </>
                 )}
               </div>
-              <div className="SendingTransaction__Summary__Description">
-                {isLoading && (
-                  <>
-                    <span className="SendingTransaction__Summary__Description__Label">
-                      {summaryDescriptionLabel}
-                    </span>
-                    {isSwap && dstAsset ? (
-                      <>
-                        <span className="SendingTransaction__Summary__Description__Label Verb">
-                          {`${t("to")} `}
-                        </span>
-                        <span className="SendingTransaction__Summary__Description__Label">
-                          {destinationAmount} {dstAsset.code}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="SendingTransaction__Summary__Description__Label Verb">
-                          {`${t("to")} `}
-                        </span>
-                        <span className="SendingTransaction__Summary__Description__Label">
-                          {destinationDisplayLabel}
-                        </span>
-                      </>
-                    )}
-                  </>
-                )}
-                {isSuccess && (
-                  <>
-                    <span
-                      className="SendingTransaction__Summary__Description__Label"
-                      data-testid="sending-transaction-summary-description-label"
-                    >
-                      {summaryDescriptionLabel}
-                    </span>
-                    {isSwap && dstAsset ? (
-                      <>
-                        <span className="SendingTransaction__Summary__Description__Label Verb">
-                          {`${t("was swapped to")} `}
-                        </span>
-                        <span className="SendingTransaction__Summary__Description__Label">
-                          {destinationAmount} {dstAsset.code}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="SendingTransaction__Summary__Description__Label Verb">
-                          {`${t("was sent to")} `}
-                        </span>
-                        <span
-                          className="SendingTransaction__Summary__Description__Label"
-                          data-testid="sending-transaction-summary-description-label-destination-address"
-                        >
-                          {destinationDisplayLabel}
-                        </span>
-                      </>
-                    )}
-                  </>
-                )}
+              <div className="SendingTransaction__Summary">
+                <div
+                  className={`SendingTransaction__Summary__Assets ${isCollectible ? "SendingTransaction__Summary__Assets--collectible" : ""}`}
+                >
+                  {isCollectible ? (
+                    <div className="SendingTransaction__Summary__Assets__Image">
+                      <CollectibleInfoImage
+                        image={collectibleData.image}
+                        name={collectibleData.name}
+                        isSmall
+                      />
+                    </div>
+                  ) : (
+                    <AssetIcon
+                      assetIcons={assetIcons}
+                      code={srcAsset.code}
+                      issuerKey={srcAsset.issuer}
+                      icon={assetIcon}
+                      isSuspicious={false}
+                    />
+                  )}
+                  <div className="SendingTransaction__Summary__Assets__Divider">
+                    <Icon.ChevronRightDouble />
+                  </div>
+                  <IdenticonImg publicKey={destination} />
+                </div>
+                <div className="SendingTransaction__Summary__Description">
+                  {isLoading && (
+                    <>
+                      <span className="SendingTransaction__Summary__Description__Label">
+                        {summaryDescriptionLabel}
+                      </span>
+                      <span className="SendingTransaction__Summary__Description__Label Verb">
+                        {`${t("to")} `}
+                      </span>
+                      <span className="SendingTransaction__Summary__Description__Label">
+                        {destinationDisplayLabel}
+                      </span>
+                    </>
+                  )}
+                  {isSuccess && (
+                    <>
+                      <span
+                        className="SendingTransaction__Summary__Description__Label"
+                        data-testid="sending-transaction-summary-description-label"
+                      >
+                        {summaryDescriptionLabel}
+                      </span>
+                      <span className="SendingTransaction__Summary__Description__Label Verb">
+                        {`${t("was sent to")} `}
+                      </span>
+                      <span
+                        className="SendingTransaction__Summary__Description__Label"
+                        data-testid="sending-transaction-summary-description-label-destination-address"
+                      >
+                        {destinationDisplayLabel}
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </View.Content>
       )}
     </>

@@ -761,12 +761,12 @@ test("completes a swap to a new token and shows the success summary", async ({
   await page.getByTestId("SubmitAction").click();
 
   // Land on the success summary and finish.
-  await expect(page.getByText("was swapped to")).toBeVisible({
+  await expect(page.getByText("Swap complete")).toBeVisible({
     timeout: 40000,
   });
-  await expect(
-    page.getByTestId("sending-transaction-summary-description-label"),
-  ).toBeVisible();
+  await expect(page.getByTestId("swap-status-caption")).toContainText(
+    "was swapped for",
+  );
 
   await page.getByText("Done").click({ force: true });
   await expect(page.getByTestId("account-view")).toBeVisible({

@@ -26,6 +26,9 @@ const swapKeys = [
   "Stellar requires this reserve to add {{tokenCode}}. You can get it back once your {{tokenCode}} balance is zero.",
   "Swap for 0.5 XLM",
   "Copy my wallet address",
+  "Swap in progress",
+  "Swap complete",
+  "was swapped for",
 ];
 
 const earnKeys = [
@@ -62,7 +65,6 @@ const earnKeys = [
   "{{name}} Pool",
   "by Blend",
   "Review deposit",
-  "Insufficient funds",
   "You need XLM to pay fees",
   "You don’t have enough available XLM to cover the transaction fee. Add XLM to continue with your deposit.",
   "Not enough XLM left for the network fee. Reduce your deposit by at least {{amount}} XLM.",
