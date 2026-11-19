@@ -94,7 +94,7 @@ interface ReviewTxProps {
   destinationTokenDetails?: {
     tokenCode: string;
     requiresTrustline: boolean;
-    decimals: number;
+    decimals?: number;
     issuer?: string;
     // Blockaid verdict captured when the destination token was picked; folded
     // into the review security gate alongside the transaction scan.

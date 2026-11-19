@@ -6,7 +6,9 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 // caches; stub it with empty (but well-shaped) cache slices.
 jest.mock("popup/App", () => ({
   store: {
-    getState: () => ({ cache: { tokenLists: [], popularTokens: {} } }),
+    getState: () => ({
+      cache: { tokenLists: [], popularTokens: {}, icons: {} },
+    }),
   },
 }));
 // No verified lists cached -> the hook fetches them; return empty so it proceeds
