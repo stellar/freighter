@@ -187,30 +187,26 @@
     font-size: pxToRem(14px);
     flex: 0 0 auto;
     white-space: nowrap;
+  }
 
-    .Button {
-      border: 0;
-      padding: 0;
-      width: 14px;
-      height: 14px;
-      margin-left: pxToRem(6px);
-      flex-shrink: 0;
+  // Varial 4470:110998: a 12px switch-vertical-01 in Foreground/Primary on a
+  // round Background/Primary chip, 4px after the fiat amount.
+  &__fiat-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-left: pxToRem(4px);
+    padding: pxToRem(2px);
+    border: none;
+    border-radius: 50%;
+    background-color: var(--sds-clr-gray-01);
+    color: var(--sds-clr-gray-09);
+    cursor: pointer;
 
-      // Keep the fiat/crypto toggle's background transparent in every state.
-      // The SDS tertiary variant otherwise paints gray-01/gray-04 + a focus
-      // glow on hover/active/focus; the icon stroke comes from
-      // --Button-color-icon-* (independent of background) so it stays visible.
-      &,
-      &:hover,
-      &:active,
-      &:focus,
-      &:focus-visible {
-        --Button-color-background-default: transparent;
-        --Button-color-background-hover: transparent;
-        --Button-color-background-active: transparent;
-        background-color: transparent !important;
-        box-shadow: none !important;
-      }
+    svg {
+      width: pxToRem(12px);
+      height: pxToRem(12px);
     }
   }
 

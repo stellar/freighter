@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useRef, useState } from "react";
-import { Button, Icon } from "@stellar/design-system";
+import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { AssetIcon } from "popup/components/account/AccountAssets";
@@ -298,11 +298,11 @@ export const AmountCard = ({
               value but cannot toggle input type, so omit the toggle. The toggle
               also needs a usable USD price. */}
           {!isReadOnly && supportsUsd && (
-            <Button
-              size="md"
+            // A plain button: the design's 16px chip is smaller than any SDS
+            // Button size.
+            <button
               type="button"
-              isRounded
-              variant="tertiary"
+              className="AmountCard__fiat-toggle"
               data-testid="amount-fiat-toggle"
               // Do not take focus from the amount input. Pressing this fires a
               // blur that a parent tracking focus reads as the user leaving the
@@ -317,7 +317,7 @@ export const AmountCard = ({
               }}
             >
               <Icon.SwitchVertical01 />
-            </Button>
+            </button>
           )}
         </div>
       </div>
