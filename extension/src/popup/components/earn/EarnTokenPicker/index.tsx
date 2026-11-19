@@ -151,7 +151,9 @@ export const EarnTokenPicker = ({
   );
 
   useEffect(() => {
-    fetchData();
+    // The first load lists what Home already fetched; the refresh after a swap
+    // needs the balances as they are now.
+    fetchData(refreshKey === 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey]);
 
@@ -272,8 +274,14 @@ export const EarnTokenPicker = ({
     </div>
   );
 
-  const notEnoughVariant = notEnoughToken
-    ? resolveNotEnoughVariant(notEnoughToken)
+  // The row as the list has it now: its icon can arrive after the tap.
+  const notEnoughOption = notEnoughToken
+    ? [...data.held, ...data.supported].find(
+        (option) => option.assetId === notEnoughToken.assetId,
+      ) || notEnoughToken
+    : null;
+  const notEnoughVariant = notEnoughOption
+    ? resolveNotEnoughVariant(notEnoughOption)
     : null;
 
   const hasHeld = data.held.length > 0;
@@ -326,15 +334,14 @@ export const EarnTokenPicker = ({
             : undefined
         }
       >
-        {notEnoughToken && notEnoughVariant ? (
+        {notEnoughOption && notEnoughVariant ? (
           <NotEnoughTokenSheet
-            option={notEnoughToken}
+            option={notEnoughOption}
             variant={notEnoughVariant}
             onClose={() => setNotEnoughToken(null)}
             onSwap={() => {
-              const option = notEnoughToken;
               setNotEnoughToken(null);
-              onSwapRequested(option, data);
+              onSwapRequested(notEnoughOption, data);
             }}
           />
         ) : (
