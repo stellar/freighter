@@ -22,7 +22,7 @@ import {
   useBlockaidOverrideState,
   useShouldTreatTxAsUnableToScan,
 } from "popup/helpers/blockaid";
-import { NO_FIAT_VALUE, formatAmount } from "popup/helpers/formatters";
+import { NO_FIAT_VALUE, formatFiatAmount } from "popup/helpers/formatters";
 import { formatRate } from "popup/components/earn/helpers/formatPoolStats";
 import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
 import { formatEarnAmount } from "popup/components/earn/helpers/formatEarnAmount";
@@ -410,7 +410,7 @@ export const EarnReview = ({
                 <div className="EarnReview__secondary">
                   {amountUsd === null
                     ? NO_FIAT_VALUE
-                    : `$${formatAmount(amountUsd)}`}
+                    : formatFiatAmount(amountUsd)}
                 </div>
               </div>
             </div>
