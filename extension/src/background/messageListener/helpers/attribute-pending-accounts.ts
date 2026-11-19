@@ -13,6 +13,7 @@ import {
 import {
   addSecretSource,
   getPhraseSourceId,
+  getPinnedSourceId,
   getSecretKeySourceId,
 } from "background/helpers/secret-sources";
 import { getIsHardwareWalletActive } from "background/helpers/account";
@@ -75,6 +76,19 @@ const findDerivationIndex = (
     accounts with that flag.
   - Any other keystore with `extra.imported` set becomes its own "Secret Key
     N". The phrase older builds stamped into it is not its source.
+
+  Mobile's pass trusts its import flag and makes every flagged account a
+  "Secret Key N", even one the phrase derives. Mobile never flagged derived
+  accounts, so the flag is accurate there. Here a recovered account and a real
+  import look the same on disk, so derivation is the only way to tell them
+  apart.
+
+  If the wallet has an identity keystore whose phrase does not resolve and
+  nothing is pinned yet, imports stay pending until an unlock resolves it or
+  something else takes the pin, so an import never takes the pin that belongs
+  to the phrase. Phrase accounts are still attributed: every
+  pre-V2 non-hardware keystore carries the same wallet phrase, so whichever
+  registers first pins it.
 
   Every write is idempotent and an id leaves the pending list only once its
   provenance is written, so an interrupted pass resumes on the next unlock. A
@@ -172,6 +186,12 @@ export const attributePendingAccounts = async ({
     }
   }
 
+  // Imports wait only while the pin is still open. Once anything is pinned
+  // (the phrase above, or a key imported on V2, whose keystore carries no
+  // phrase), registering an import can't move it.
+  const pinned = await getPinnedSourceId({ localStore });
+  const identityUnresolved = Boolean(identityKeyId) && !identityId && !pinned;
+
   let attributed = false;
 
   // `keyIdList` order, so "Secret Key N" follows the order accounts were added.
@@ -184,6 +204,10 @@ export const attributePendingAccounts = async ({
         : null;
 
       if (key.extra?.imported && index === null) {
+        if (identityUnresolved) {
+          // Left pending: registering it now could pin the import.
+          continue;
+        }
         const sourceId = await getSecretKeySourceId(key.privateKey);
         await addSecretSource({
           localStore,

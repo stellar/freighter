@@ -8,6 +8,7 @@ import {
   getFirstSourceId,
   getPinnedSourceId,
 } from "background/helpers/secret-sources";
+import { getLinkStatus } from "background/helpers/link-status";
 import { getWalletSources } from "background/helpers/wallet-sources";
 
 /*
@@ -42,10 +43,14 @@ export interface SigningIdentity {
  * - The pinned source is held: sign with it. With no pin, as after a failed
  *   pin write, the earliest registered source stands in for it (the source
  *   the next registration or unlock will pin).
- * - That source is not held, as after a restore that recovered only some
- *   sources: sign with the first held source (phrases first) and leave the
- *   pin alone. Nothing re-pins from the server yet, so the pin stays put,
- *   and a source that failed to derive this unlock cannot move it either.
+ * - That source is not held, as when it failed to derive this unlock: sign
+ *   with a held source the server listed in this wallet's cluster
+ *   ("linked"), else one it has not answered for yet, phrases first in each
+ *   case. Never sign with a source the server reported as another user's
+ *   ("conflict"): that would speak as that user. With only those held,
+ *   return null. The pin stays put, so a source that failed to derive this
+ *   unlock cannot move it; moving it waits for account removal, the first
+ *   way a pinned source can leave the wallet for good.
  * - Nothing pinned and nothing registered, as when a request overlaps a
  *   wallet wipe: sign with the first held phrase, or return null when no
  *   phrase is held. Nothing is persisted, so a wrong guess lasts one request.
@@ -85,8 +90,13 @@ export const getSigningIdentity = async ({
     }
 
     captureException("getSigningIdentity: the pinned source is not held");
-    const [{ id: firstHeldId }] = sources;
-    return { sourceId: firstHeldId, keypair: signers.get(firstHeldId)! };
+    const status = await getLinkStatus({ localStore });
+    const fallback =
+      sources.find(({ id }) => status[id] === "linked") ??
+      sources.find(({ id }) => status[id] === undefined);
+    return fallback
+      ? { sourceId: fallback.id, keypair: signers.get(fallback.id)! }
+      : null;
   } catch (e) {
     // A locked or empty wallet is handled above, so anything reaching here
     // is unexpected (a WebCrypto/PBKDF2 failure, a storage read error).
