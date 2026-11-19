@@ -7,11 +7,6 @@
   flex-direction: column;
   gap: pxToRem(24);
 
-  // The centred title sits 24px above the deposit card.
-  > .SheetHeader {
-    padding-bottom: 0;
-  }
-
   &__blocks {
     display: flex;
     flex-direction: column;
@@ -103,48 +98,6 @@
   // reads as the answer.
   &__before {
     color: var(--sds-clr-gray-11);
-  }
-
-  // The details pane carries the whole invocation — auth entries plus every
-  // contract parameter — so it routinely outgrows the popup. SlideupModal sizes
-  // itself to its content's scrollHeight, so without a cap here the sheet runs
-  // off the viewport with nothing to scroll. Capped like `.ReviewTx`, with the
-  // header pinned and only the body scrolling.
-  &--details {
-    max-height: 85vh;
-  }
-
-  &__details-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-bottom: pxToRem(8);
-    color: var(--sds-clr-gray-12);
-    flex: none;
-  }
-
-  &__details-body {
-    flex: 1;
-    // Without this a flex item refuses to shrink below its content height, and
-    // the overflow never engages.
-    min-height: 0;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: pxToRem(12);
-  }
-
-  &__close {
-    width: pxToRem(32);
-    height: pxToRem(32);
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    background: var(--sds-clr-gray-04);
-    color: var(--sds-clr-gray-11);
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 
   &__actions {

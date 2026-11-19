@@ -6,13 +6,13 @@
 // rather than take a solid background and a height.
 [data-slot="sheet-content"].EarnSwapSheet {
   background: var(--sds-clr-gray-01);
-  // A floating card like the flow's other sheets (Varial 4478:116498): 8px off
-  // the sides and bottom, rounded all round.
-  left: pxToRem(8);
-  right: pxToRem(8);
-  bottom: pxToRem(8);
+  // A floating card like the flow's other sheets (Varial 4478:116498): off
+  // the sides and bottom by SlideupModal's gutter, rounded all round.
+  left: var(--slideup-modal--gutter);
+  right: var(--slideup-modal--gutter);
+  bottom: var(--slideup-modal--inset-bottom);
   width: auto;
-  border-radius: 1.5rem;
+  border-radius: var(--slideup-modal--radius);
   box-shadow: none;
   // Deliberately not `overflow: hidden`. The slide-in animation transforms this
   // element, which makes it the containing block for the review SlideupModal
@@ -57,7 +57,7 @@
   // gives that inset an opaque background that would otherwise square off the
   // sheet's rounded top corners.
   .EarnSwapSheet__body > :first-child .View__inset:first-of-type {
-    border-radius: 1.5rem 1.5rem 0 0;
+    border-radius: var(--slideup-modal--radius) var(--slideup-modal--radius) 0 0;
   }
 
   // Balances the 24px X on the left so the title stays centred.
