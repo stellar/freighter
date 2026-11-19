@@ -30,7 +30,10 @@ import {
   EditSettings,
   EditSettingsFormValue,
 } from "popup/components/InternalTransaction/EditSettings";
-import { FeesPane } from "popup/components/InternalTransaction/FeesPane";
+import {
+  FeesPane,
+  buildFeesPaneTotal,
+} from "popup/components/InternalTransaction/FeesPane";
 import { useReviewSettingsHandoff } from "popup/helpers/useReviewSettingsHandoff";
 import { PoolDetailsSheet } from "popup/components/earn/PoolDetailsSheet";
 import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
@@ -747,13 +750,12 @@ export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
         {isShowingFeesPane ? (
           <SheetLayout>
             <FeesPane
-              fee={new BigNumber(draftFee ?? fee)
-                .plus(
-                  simulationState.state === RequestState.ERROR
-                    ? 0
-                    : simulationState.data?.resourceFee || 0,
-                )
-                .toFixed()}
+              fee={buildFeesPaneTotal(
+                draftFee ?? fee,
+                simulationState.state === RequestState.ERROR
+                  ? undefined
+                  : simulationState.data?.resourceFee,
+              )}
               simulationState={simulationState}
               isSoroban
               onClose={() => setIsShowingFeesPane(false)}

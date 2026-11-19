@@ -63,7 +63,10 @@ import { newTabHref } from "helpers/urls";
 import { AMOUNT_ERROR, InputType } from "helpers/transaction";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { EditSettings } from "popup/components/InternalTransaction/EditSettings";
-import { FeesPane } from "popup/components/InternalTransaction/FeesPane";
+import {
+  FeesPane,
+  buildFeesPaneTotal,
+} from "popup/components/InternalTransaction/FeesPane";
 import { EditMemo } from "popup/components/InternalTransaction/EditMemo";
 import { ReviewTx } from "popup/components/InternalTransaction/ReviewTransaction";
 import { AddressTile } from "popup/components/send/AddressTile";
@@ -90,19 +93,6 @@ import { captureException } from "@sentry/browser";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import "../styles.scss";
-
-// Returns the value to show in FeesPane's total row given the user's current
-// draft inclusion fee and the simulated resource fee.  For classic (no
-// resource fee) the inclusion fee IS the total.
-function buildFeesPaneTotal(
-  inclusionFee: string,
-  resourceFee: string | undefined,
-): string {
-  if (!resourceFee) {
-    return inclusionFee;
-  }
-  return new BigNumber(inclusionFee).plus(resourceFee).toFixed();
-}
 
 export const SendAmount = ({
   goBack,
