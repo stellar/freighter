@@ -41,6 +41,8 @@ const renderSend = (
       state={
         {
           transactionSubmission: {
+            // The token icon lookup reads this list.
+            soroswapTokens: [],
             transactionData: {
               asset: "native",
               amount,
@@ -96,6 +98,19 @@ const saveFee = async () => {
   fireEvent.change(input, { target: { value: "0.001" } });
   fireEvent.click(screen.getByRole("button", { name: "Save" }));
 };
+
+// Token and collectible sends also simulate on mount and when the fee sheet
+// opens without a prior result, so count only what Save adds.
+const saveFeeCountingOnlySave = async (fetchSimulationData: jest.Mock) => {
+  fireEvent.click(screen.getByTestId("send-amount-btn-fee"));
+  const input = await screen.findByTestId("edit-tx-settings-fee-input");
+  const callsBeforeSave = fetchSimulationData.mock.calls.length;
+  fireEvent.change(input, { target: { value: "0.001" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save" }));
+  return callsBeforeSave;
+};
+
+const CONTRACT_ID = "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE";
 
 describe("SendAmount memo save", () => {
   beforeEach(() => {
@@ -174,21 +189,63 @@ describe("SendAmount fee settings save", () => {
       isCollectible: true,
       collectibleData: {
         collectionName: "Test Collection",
-        collectionAddress:
-          "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE",
+        collectionAddress: CONTRACT_ID,
         tokenId: 1,
         name: "Test #1",
         image: "",
       },
     });
 
-    // Collectible sends also simulate on mount and when the fee sheet opens
-    // without a prior result, so count only what Save adds.
-    fireEvent.click(screen.getByTestId("send-amount-btn-fee"));
-    const input = await screen.findByTestId("edit-tx-settings-fee-input");
-    const callsBeforeSave = fetchSimulationData.mock.calls.length;
-    fireEvent.change(input, { target: { value: "0.001" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    const callsBeforeSave = await saveFeeCountingOnlySave(fetchSimulationData);
+
+    await waitFor(() =>
+      expect(fetchSimulationData).toHaveBeenCalledTimes(callsBeforeSave + 1),
+    );
+  });
+
+  it("still rebuilds a Soroban token send before an amount is entered", async () => {
+    jest.spyOn(UseGetSendAmountData, "useGetSendAmountData").mockReturnValue({
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          ...sendData,
+          userBalances: {
+            balances: [
+              nativeBalance,
+              {
+                token: { code: "TKN", issuer: { key: CONTRACT_ID } },
+                contractId: CONTRACT_ID,
+                total: new BigNumber("100"),
+                available: new BigNumber("100"),
+                decimals: 7,
+                name: "Token Name",
+                symbol: "TKN",
+              },
+            ],
+          },
+        },
+        error: null,
+      },
+      fetchData: jest.fn().mockResolvedValue(undefined),
+    } as any);
+    const { fetchSimulationData } = renderSend("0", {
+      asset: `TKN:${CONTRACT_ID}`,
+      isToken: true,
+    });
+
+    const callsBeforeSave = await saveFeeCountingOnlySave(fetchSimulationData);
+
+    await waitFor(() =>
+      expect(fetchSimulationData).toHaveBeenCalledTimes(callsBeforeSave + 1),
+    );
+  });
+
+  it("still rebuilds a classic asset sent to a contract before an amount is entered", async () => {
+    const { fetchSimulationData } = renderSend("0", {
+      destination: CONTRACT_ID,
+    });
+
+    const callsBeforeSave = await saveFeeCountingOnlySave(fetchSimulationData);
 
     await waitFor(() =>
       expect(fetchSimulationData).toHaveBeenCalledTimes(callsBeforeSave + 1),
