@@ -84,24 +84,13 @@ const ALLOWED_RAW_COLORS: Record<string, string[]> = {
   "popup/styles/varialPalette.scss": ["*"],
   // Emulates the browser's native focus ring; deliberately not themed.
   "popup/styles/utils.scss": ["rgb(153, 200, 255)"],
-  // USDT0 banner: the campaign's brand green background, the dismiss-button
-  // hover drawn on that fixed green (correct in both themes), and the logo's
-  // drop shadow.
-  "popup/components/account/Usdt0LaunchBanner/styles.scss": [
-    "#002d19",
-    "#a0a0a0", // subtitle on the fixed campaign surface; must not theme-flip
-    "rgba(0, 0, 0, 0.25)",
-    "rgba(255, 255, 255, 0.1)",
-  ],
-  // USDT0 sheet hero: one composite dark artwork (gradient + arcs image +
-  // fade + overlay) whose layers stay fixed-dark together. Colors on the
-  // sheet body below it are tokenized.
-  "popup/components/account/Usdt0LaunchBanner/Usdt0LaunchSheet/styles.scss": [
-    "#002d19",
-    "#161616",
-    "#151616",
-    "rgba(22, 23, 23, 0)",
-    "rgba(21, 22, 22, 0.78)",
+  // Ethena launch banner (Figma 4414:42195): the campaign's fixed near-black
+  // surface and the colors drawn on it, which don't follow the theme.
+  "popup/components/account/EthenaLaunchBanner/styles.scss": [
+    "#070908",
+    "#c7c7c7", // subtitle
+    "#858585", // dismiss X
+    "rgba(255, 255, 255, 0.1)", // dismiss hover
   ],
   // Account avatar artwork; fixed so an avatar looks the same in both themes.
   "popup/components/identicons/IdenticonImg/colors.ts": ["*"],
