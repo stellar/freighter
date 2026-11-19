@@ -1,7 +1,10 @@
 import { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 
-import { FUNDED_ACCOUNTS_REFRESHED_AT_ID } from "constants/localStorageTypes";
+import {
+  FUNDED_ACCOUNTS_REFRESHED_AT_ID,
+  FUNDED_ACCOUNTS_REFRESH_LEASE_ID,
+} from "constants/localStorageTypes";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { DEFAULT_CACHE_STALE_MS } from "helpers/request";
 import { isMainnet } from "helpers/stellar";
@@ -12,9 +15,11 @@ import { useGetWalletsData } from "popup/components/account/AccountSheet/hooks/u
 // view, so the refresh never competes with them.
 export const FUNDED_ACCOUNTS_REFRESH_DELAY_MS = 1000;
 
-// One refresh at a time in this popup, also when the Account view mounts
-// again while a refresh runs.
-let isRefreshInFlight = false;
+// One refresh at a time across all extension pages (popup, sidebar,
+// fullscreen). A page takes the lease in localStorage before it fetches. The
+// lease expires after this time, so a page that closes during a refresh does
+// not block the next refresh for long.
+export const FUNDED_ACCOUNTS_REFRESH_LEASE_MS = 60 * 1000;
 
 /** The time of the last successful refresh, or 0 when none is stored. */
 const getLastRefreshedAt = (): number => {
@@ -44,9 +49,39 @@ export const shouldRefreshFundedAccounts = (now: number): boolean => {
   return last > now || now - last >= DEFAULT_CACHE_STALE_MS;
 };
 
-/** For tests only. */
-export const resetFundedAccountsRefreshState = () => {
-  isRefreshInFlight = false;
+/**
+ * Takes the refresh lease if no other page holds it. Extension pages share
+ * one main thread, and localStorage calls are synchronous, so the read and
+ * the write cannot interleave with another page. Returns false when another
+ * page holds the lease or storage fails.
+ */
+export const acquireRefreshLease = (now: number): boolean => {
+  try {
+    const leaseUntil =
+      Number(localStorage.getItem(FUNDED_ACCOUNTS_REFRESH_LEASE_ID)) || 0;
+    // A lease too far in the future (a clock change) does not block.
+    if (
+      leaseUntil > now &&
+      leaseUntil - now <= FUNDED_ACCOUNTS_REFRESH_LEASE_MS
+    ) {
+      return false;
+    }
+    localStorage.setItem(
+      FUNDED_ACCOUNTS_REFRESH_LEASE_ID,
+      String(now + FUNDED_ACCOUNTS_REFRESH_LEASE_MS),
+    );
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const releaseRefreshLease = () => {
+  try {
+    localStorage.removeItem(FUNDED_ACCOUNTS_REFRESH_LEASE_ID);
+  } catch {
+    // The lease expires by itself.
+  }
 };
 
 /**
@@ -72,10 +107,10 @@ export const useFundedAccountsRefresh = () => {
     }
 
     const timer = setTimeout(async () => {
-      if (isRefreshInFlight || !shouldRefreshFundedAccounts(Date.now())) {
+      const now = Date.now();
+      if (!shouldRefreshFundedAccounts(now) || !acquireRefreshLease(now)) {
         return;
       }
-      isRefreshInFlight = true;
       try {
         // fetchData catches its own errors and returns them.
         const result = (await fetchDataRef.current(true)) as {
@@ -90,7 +125,7 @@ export const useFundedAccountsRefresh = () => {
       } catch {
         // Best effort. The next app open tries again.
       } finally {
-        isRefreshInFlight = false;
+        releaseRefreshLease();
       }
     }, FUNDED_ACCOUNTS_REFRESH_DELAY_MS);
 

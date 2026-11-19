@@ -5,13 +5,17 @@ import {
   MAINNET_NETWORK_DETAILS,
   TESTNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
-import { FUNDED_ACCOUNTS_REFRESHED_AT_ID } from "constants/localStorageTypes";
+import {
+  FUNDED_ACCOUNTS_REFRESHED_AT_ID,
+  FUNDED_ACCOUNTS_REFRESH_LEASE_ID,
+} from "constants/localStorageTypes";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { DEFAULT_CACHE_STALE_MS } from "helpers/request";
 import { useGetWalletsData } from "popup/components/account/AccountSheet/hooks/useGetWalletsData";
 import {
   FUNDED_ACCOUNTS_REFRESH_DELAY_MS,
-  resetFundedAccountsRefreshState,
+  FUNDED_ACCOUNTS_REFRESH_LEASE_MS,
+  acquireRefreshLease,
   shouldRefreshFundedAccounts,
   useFundedAccountsRefresh,
 } from "popup/helpers/useFundedAccountsRefresh";
@@ -35,7 +39,6 @@ describe("useFundedAccountsRefresh", () => {
   beforeEach(() => {
     jest.useFakeTimers();
     localStorage.clear();
-    resetFundedAccountsRefreshState();
     fetchData.mockReset();
     fetchData.mockResolvedValue({ type: AppDataType.RESOLVED });
     (useGetWalletsData as jest.Mock).mockReturnValue({
@@ -71,13 +74,56 @@ describe("useFundedAccountsRefresh", () => {
 
     // A new popup open: the module state is new, the Redux caches are empty,
     // but the stored time persists.
-    resetFundedAccountsRefreshState();
     renderHook(() => useFundedAccountsRefresh());
     await flush();
     expect(fetchData).toHaveBeenCalledTimes(1);
 
     // After the staleness window, the next open refreshes again.
     jest.setSystemTime(Date.now() + DEFAULT_CACHE_STALE_MS);
+    renderHook(() => useFundedAccountsRefresh());
+    await flush();
+    expect(fetchData).toHaveBeenCalledTimes(2);
+  });
+
+  it("starts one refresh when two pages open at the same time", async () => {
+    // The first fetch does not finish while the second page opens.
+    let finish: (value: unknown) => void = () => {};
+    fetchData.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    // Two pages, for example the popup and the sidebar. Each page has its own
+    // module state, so only localStorage is shared.
+    renderHook(() => useFundedAccountsRefresh());
+    renderHook(() => useFundedAccountsRefresh());
+    await flush();
+    expect(fetchData).toHaveBeenCalledTimes(1);
+
+    finish({ type: AppDataType.RESOLVED });
+    await jest.advanceTimersByTimeAsync(0);
+    // The refresh releases the lease when it ends.
+    expect(localStorage.getItem(FUNDED_ACCOUNTS_REFRESH_LEASE_ID)).toBeNull();
+  });
+
+  it("does not refresh while another page holds the lease", async () => {
+    // Another page (popup, sidebar or fullscreen) started a refresh. This page
+    // has its own module state, so only the lease in localStorage stops it.
+    localStorage.setItem(
+      FUNDED_ACCOUNTS_REFRESH_LEASE_ID,
+      String(Date.now() + FUNDED_ACCOUNTS_REFRESH_LEASE_MS),
+    );
+    renderHook(() => useFundedAccountsRefresh());
+    await flush();
+    expect(fetchData).not.toHaveBeenCalled();
+  });
+
+  it("releases the lease after a failed refresh, so the next open retries", async () => {
+    fetchData.mockRejectedValueOnce(new Error("boom"));
+    renderHook(() => useFundedAccountsRefresh());
+    await flush();
+    expect(localStorage.getItem(FUNDED_ACCOUNTS_REFRESH_LEASE_ID)).toBeNull();
+
     renderHook(() => useFundedAccountsRefresh());
     await flush();
     expect(fetchData).toHaveBeenCalledTimes(2);
@@ -172,5 +218,28 @@ describe("shouldRefreshFundedAccounts", () => {
     const now = Date.now();
     localStorage.setItem(FUNDED_ACCOUNTS_REFRESHED_AT_ID, String(now + 60000));
     expect(shouldRefreshFundedAccounts(now)).toBe(true);
+  });
+});
+
+describe("acquireRefreshLease", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("gives the lease to one caller until it expires", () => {
+    const now = 1_000_000;
+    expect(acquireRefreshLease(now)).toBe(true);
+    expect(acquireRefreshLease(now + 1)).toBe(false);
+    // A page that closed during its refresh blocks only until the lease ends.
+    expect(acquireRefreshLease(now + FUNDED_ACCOUNTS_REFRESH_LEASE_MS)).toBe(
+      true,
+    );
+  });
+
+  it("ignores a lease too far in the future (clock change)", () => {
+    const now = 1_000_000;
+    localStorage.setItem(
+      FUNDED_ACCOUNTS_REFRESH_LEASE_ID,
+      String(now + FUNDED_ACCOUNTS_REFRESH_LEASE_MS * 10),
+    );
+    expect(acquireRefreshLease(now)).toBe(true);
   });
 });
