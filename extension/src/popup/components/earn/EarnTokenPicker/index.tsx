@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Icon, Loader, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
 import { BlendCatalogPool } from "@shared/api/types/blend";
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -154,6 +154,7 @@ export const EarnTokenPicker = ({
   refreshKey = 0,
 }: EarnTokenPickerProps) => {
   const { t } = useTranslation();
+  const location = useLocation();
   const { state, fetchData } = useGetEarnTokensData();
   const { recommendedFee } = useNetworkFees();
   const { transactionFee } = useSelector(transactionDataSelector);
@@ -175,7 +176,15 @@ export const EarnTokenPicker = ({
       openTab(newTabHref(state.data.routeTarget));
       closeWindow();
     }
-    return <Navigate to={state.data.routeTarget} replace />;
+    // `from` brings the user back here after unlocking, as every other
+    // reroute does.
+    return (
+      <Navigate
+        to={state.data.routeTarget}
+        state={{ from: location }}
+        replace
+      />
+    );
   }
 
   const isLoading =

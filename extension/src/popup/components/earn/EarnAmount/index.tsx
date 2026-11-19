@@ -9,7 +9,7 @@ import {
 } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
 import { View } from "popup/basics/layout/View";
 import { showToast } from "popup/basics/shadcn/Toast";
@@ -116,6 +116,7 @@ interface EarnAmountProps {
 
 export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
   const { t } = useTranslation();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { state, fetchData } = useGetEarnAmountData();
   const {
@@ -228,7 +229,15 @@ export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
       openTab(newTabHref(state.data.routeTarget));
       closeWindow();
     }
-    return <Navigate to={state.data.routeTarget} replace />;
+    // `from` brings the user back here after unlocking, as every other
+    // reroute does.
+    return (
+      <Navigate
+        to={state.data.routeTarget}
+        state={{ from: location }}
+        replace
+      />
+    );
   }
 
   const isLoading =
