@@ -6,7 +6,8 @@
  *  2. Token picker: held vs supported sections, APY badges
  *  3. "Not enough X" sheet — EURC (swap/receive, no Buy: not Coinbase-listed),
  *     and the Receive sheet it opens in place
- *  4. "Not enough X" sheet — USDC (buy + swap + transfer)
+ *  4. "Not enough X" sheet — USDC (buy + swap + transfer); Buy opens Add Funds
+ *     on USDC, and its X returns to the picker
  *  5. Held-token happy path: Max bounces off the fee guard, then a smaller
  *     amount -> review -> confirm -> Deposit complete
  *  6. Pool details sheet, including its Backstop row
@@ -238,6 +239,15 @@ test("zero-balance USDC offers buy, swap and transfer", async ({
   await expect(page.getByTestId("earn-not-enough-buy")).toBeVisible();
   await expect(page.getByTestId("earn-not-enough-swap")).toBeVisible();
   await expect(page.getByTestId("earn-not-enough-transfer")).toBeVisible();
+
+  // Buy goes through Add Funds, as on mobile, and closing it comes back to
+  // Earn's picker.
+  await page.getByTestId("earn-not-enough-buy").click();
+  await expect(page.getByTestId("add-coinbase-button")).toBeVisible();
+  await expect(page).toHaveURL(/add-funds\?token=USDC/);
+  await page.getByTestId("BackButton").click();
+  await expect(page.getByTestId("earn-token-picker")).toBeVisible();
+  await expect(page.getByTestId("earn-not-enough-sheet")).toBeHidden();
 });
 
 // ---------------------------------------------------------------------------

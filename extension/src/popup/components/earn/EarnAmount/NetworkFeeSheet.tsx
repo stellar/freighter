@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { EarnReceiveSheet } from "popup/components/earn/EarnReceiveSheet";
 import { SheetHeader } from "popup/components/SheetHeader";
 import { SheetLayout } from "popup/components/SheetLayout";
-import { useGetOnrampToken } from "helpers/hooks/useGetOnrampToken";
+import { ROUTES } from "popup/constants/routes";
+import { navigateTo } from "popup/helpers/navigate";
 
 import "../EarnTokenPicker/NotEnoughTokenSheet.scss";
 
@@ -32,7 +34,7 @@ export const NetworkFeeSheet = ({
   canBuyXlm,
 }: NetworkFeeSheetProps) => {
   const { t } = useTranslation();
-  const { fetchData: openOnramp } = useGetOnrampToken({ asset: "XLM" });
+  const navigate = useNavigate();
   // Receive takes over this sheet, as on mobile; its back arrow returns here.
   const [isReceiving, setIsReceiving] = useState(false);
 
@@ -68,7 +70,10 @@ export const NetworkFeeSheet = ({
               variant="secondary"
               isFullWidth
               isRounded
-              onClick={() => openOnramp()}
+              // Add Funds on XLM, the fee's token, as on mobile.
+              onClick={() =>
+                navigateTo(ROUTES.addFunds, navigate, "?token=XLM")
+              }
               data-testid="earn-network-fee-buy"
             >
               {t("Buy with Coinbase")}

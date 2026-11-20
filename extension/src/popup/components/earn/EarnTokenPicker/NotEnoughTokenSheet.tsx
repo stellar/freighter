@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 import { AssetIcon } from "popup/components/account/AccountAssets";
@@ -8,7 +9,8 @@ import { EarnReceiveSheet } from "popup/components/earn/EarnReceiveSheet";
 import { SheetHeader } from "popup/components/SheetHeader";
 import { SheetLayout } from "popup/components/SheetLayout";
 import { NotEnoughVariant } from "popup/constants/earn";
-import { useGetOnrampToken } from "helpers/hooks/useGetOnrampToken";
+import { ROUTES } from "popup/constants/routes";
+import { navigateTo } from "popup/helpers/navigate";
 import { trackEarnFundingActionSelected } from "popup/metrics/earn";
 
 import { EarnTokenOption } from "./hooks/useGetEarnTokensData";
@@ -26,8 +28,9 @@ interface NotEnoughTokenSheetProps {
  * Shown when a pool-supported token the account holds none of is tapped.
  *
  * Which actions appear depends on what is actually possible for this asset —
- * see `getNotEnoughVariant`. Buy opens the Coinbase onramp in a tab rather than
- * routing to Add Funds, which would abandon the Earn flow.
+ * see `getNotEnoughVariant`. Buy opens Add Funds on the token, as on mobile,
+ * which is where a Coinbase session that can't be opened is reported. Its X
+ * returns to the token picker.
  */
 export const NotEnoughTokenSheet = ({
   option,
@@ -36,7 +39,7 @@ export const NotEnoughTokenSheet = ({
   onSwap,
 }: NotEnoughTokenSheetProps) => {
   const { t } = useTranslation();
-  const { fetchData: openOnramp } = useGetOnrampToken({ asset: option.code });
+  const navigate = useNavigate();
   // Receive takes over this sheet, as on mobile; its back arrow returns here.
   const [isReceiving, setIsReceiving] = useState(false);
 
@@ -67,7 +70,7 @@ export const NotEnoughTokenSheet = ({
 
   const handleBuy = () => {
     trackEarnFundingActionSelected({ assetCode: option.code, action: "buy" });
-    openOnramp();
+    navigateTo(ROUTES.addFunds, navigate, `?token=${option.code}`);
   };
   const handleSwap = () => {
     trackEarnFundingActionSelected({ assetCode: option.code, action: "swap" });
