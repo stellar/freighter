@@ -5,7 +5,7 @@ import { captureException } from "@sentry/browser";
 import { ErrorMessage } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { AppDispatch } from "popup/App";
-import { initialState, isError, reducer } from "helpers/request";
+import { initialState, reducer } from "helpers/request";
 import { isMainnet } from "helpers/stellar";
 import {
   trackEarnDepositCompleted,
@@ -18,7 +18,7 @@ import {
   SigningKind,
   SigningSource,
 } from "popup/metrics/signing";
-import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
+import { useGetBalances } from "helpers/hooks/useGetBalances";
 import {
   signFreighterSorobanTransaction,
   submitFreighterSorobanTransaction,
@@ -170,20 +170,19 @@ export function useSubmitEarnTxData({
       });
 
       // The deposit moved funds out of the account, so refresh balances. A
-      // failure here does not affect the deposit itself — log and move on
-      // rather than reporting a successful submission as an error.
-      const balancesResult = await fetchBalances(
-        publicKey,
-        isMainnet(networkDetails),
-        networkDetails,
-        false,
-      );
-
-      if (isError<AccountBalances>(balancesResult)) {
+      // failure here does not affect the deposit itself, so it is caught here
+      // and logged: the fetch throws, and reaching the outer catch would leave
+      // a confirmed deposit on the in-flight screen.
+      try {
+        await fetchBalances(
+          publicKey,
+          isMainnet(networkDetails),
+          networkDetails,
+          false,
+        );
+      } catch (error) {
         captureException(
-          `Failed to fetch balances after earn deposit - ${JSON.stringify(
-            balancesResult.message,
-          )} ${networkDetails.network}`,
+          `Failed to fetch balances after earn deposit - ${error} ${networkDetails.network}`,
         );
       }
 

@@ -384,4 +384,25 @@ describe("useSubmitEarnTxData", () => {
 
     expect(result.current.state.state).toBe(RequestState.SUCCESS);
   });
+
+  // The balance fetch throws on failure. The deposit has already landed, so
+  // that must not turn into an error state, which would leave the success
+  // screen waiting forever.
+  it("reports a success state when the balance refresh after it fails", async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ status: "PENDING", hash: "abc123" }),
+    });
+    mockFetchBalances.mockRejectedValueOnce(
+      new Error("Failed to fetch balances - network down"),
+    );
+    const { result } = renderSubmitHook("AAAA-unsigned");
+
+    await act(async () => {
+      await result.current.fetchData();
+    });
+
+    expect(mockFetchBalances).toHaveBeenCalled();
+    expect(result.current.state.state).toBe(RequestState.SUCCESS);
+  });
 });
