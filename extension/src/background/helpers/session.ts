@@ -266,6 +266,24 @@ export const storeEncryptedTemporaryData = async ({
   });
 };
 
+/* Drops one entry from the temporary store. A no-op when there is none. */
+export const removeEncryptedTemporaryData = async ({
+  localStore,
+  keyName,
+}: {
+  localStore: DataStorageAccess;
+  keyName: string;
+}) => {
+  const temporaryStore = (await localStore.getItem(TEMPORARY_STORE_ID)) || {};
+
+  if (!(keyName in temporaryStore)) {
+    return;
+  }
+
+  const { [keyName]: _removed, ...rest } = temporaryStore;
+  await localStore.setItem(TEMPORARY_STORE_ID, rest);
+};
+
 interface GetEncryptedTemporaryData {
   sessionStore: Store;
   localStore: DataStorageAccess;
@@ -378,6 +396,22 @@ export const addMnemonic = async ({
     hashKey,
     mnemonics: { ...mnemonics, [sourceId]: mnemonic },
   });
+};
+
+/* Drops one phrase from the held map. A no-op when it is not held. */
+export const removeMnemonic = async ({
+  localStore,
+  hashKey,
+  sourceId,
+}: Omit<AddMnemonic, "mnemonic">) => {
+  const mnemonics = await decryptMnemonicMap({ localStore, hashKey });
+
+  if (!(sourceId in mnemonics)) {
+    return;
+  }
+
+  const { [sourceId]: _removed, ...rest } = mnemonics;
+  await storeMnemonics({ localStore, hashKey, mnemonics: rest });
 };
 
 interface GetMnemonics {

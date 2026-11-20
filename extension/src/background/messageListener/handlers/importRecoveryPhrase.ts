@@ -16,7 +16,13 @@ import {
 } from "@shared/api/helpers/mnemonic";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { linkWalletSources } from "background/helpers/link-sources";
-import { SessionTimer } from "background/helpers/session";
+import {
+  SessionTimer,
+  getActiveHashKeyCryptoKey,
+  removeEncryptedTemporaryData,
+  removeMnemonic,
+} from "background/helpers/session";
+import { removeAccountProvenance } from "background/helpers/account-provenance";
 import {
   addSecretSource,
   getPhraseSourceId,
@@ -131,6 +137,8 @@ export const importRecoveryPhrase = async ({
   const previousActiveId = await getActiveAccountId({ localStore });
   // A copy: storeAccount pushes onto the list it reads.
   const previousKeyIds: string[] = [...(await getKeyIdList({ localStore }))];
+  // Imports run one at a time, so a keystore that appears after this is ours.
+  const previousKeystoreIds = await keyManager.loadAllKeyIds();
   const previousState = sessionStore.getState();
   const previousPublicKey = publicKeySelector(previousState);
   const previousAccounts = allAccountsSelector(previousState);
@@ -179,29 +187,64 @@ export const importRecoveryPhrase = async ({
     captureException(`Error importing recovery phrase: ${JSON.stringify(e)}`);
 
     // An account is stored once its keystore id is in the list. If none
-    // made it, undo the registration so a retry starts clean instead of
-    // being refused as already held.
-    try {
+    // made it, undo everything the failed store wrote, so the wallet holds
+    // nothing of the phrase and a retry is not refused as already held.
+    // Storage may still be failing, so each step runs even if another throws.
+    const undo = async (step: () => Promise<unknown>) => {
+      try {
+        await step();
+      } catch (rollbackError) {
+        captureException(
+          `Error rolling back failed import: ${JSON.stringify(rollbackError)}`,
+        );
+      }
+    };
+
+    let storedAny = true;
+    await undo(async () => {
       const keyIds: string[] = await getKeyIdList({ localStore });
-      const storedAny = keyIds.some((id) => !previousKeyIds.includes(id));
-      if (!storedAny) {
-        await removeSecretSource({ localStore, id: sourceId });
-        for (const index of indices) {
-          await releaseDerivationIndex({ localStore, sourceId, index });
+      storedAny = keyIds.some((id) => !previousKeyIds.includes(id));
+    });
+
+    if (!storedAny) {
+      // First: source linking reads the held phrases, and would register
+      // this one with the backend on its next pass.
+      await undo(async () => {
+        const hashKey = await getActiveHashKeyCryptoKey({ sessionStore });
+        if (hashKey !== null) {
+          await removeMnemonic({ localStore, hashKey, sourceId });
         }
-        // storeAccount adds the account to the session before listing it.
-        await sessionStore.dispatch(
+      });
+      await undo(() => removeSecretSource({ localStore, id: sourceId }));
+      for (const index of indices) {
+        await undo(() =>
+          releaseDerivationIndex({ localStore, sourceId, index }),
+        );
+      }
+      // storeAccount adds the account to the session before listing it.
+      await undo(() =>
+        sessionStore.dispatch(
           logIn({
             publicKey: previousPublicKey,
             allAccounts: previousAccounts,
             localStore,
           }) as any,
+        ),
+      );
+      // The keystore, with its private key and provenance.
+      let orphanIds: string[] = [];
+      await undo(async () => {
+        orphanIds = (await keyManager.loadAllKeyIds()).filter(
+          (id) => !previousKeystoreIds.includes(id),
+        );
+      });
+      for (const id of orphanIds) {
+        await undo(() => keyManager.removeKey(id));
+        await undo(() => removeAccountProvenance({ localStore, keyId: id }));
+        await undo(() =>
+          removeEncryptedTemporaryData({ localStore, keyName: id }),
         );
       }
-    } catch (rollbackError) {
-      captureException(
-        `Error rolling back failed import: ${JSON.stringify(rollbackError)}`,
-      );
     }
 
     // storeAccount moves the active account to each account it stores. Put

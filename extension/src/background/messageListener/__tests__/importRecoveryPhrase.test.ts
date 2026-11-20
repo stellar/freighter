@@ -1,5 +1,6 @@
 import { logIn, sessionSlice } from "background/ducks/session";
 import { markDerivationIndexUsed } from "background/helpers/derivation-indices";
+import { getMnemonics } from "background/helpers/session";
 import { popupMessageListener } from "background/messageListener/popupMessageListener";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
@@ -39,6 +40,7 @@ import {
   KEY_ID_LIST,
   REBRAND_ANNOUNCEMENT_STATUS_ID,
   SECRET_SOURCES_ID,
+  TEMPORARY_STORE_ID,
 } from "constants/localStorageTypes";
 import { REBRAND_ANNOUNCEMENT_STATUS } from "constants/rebrandAnnouncement";
 import { PHRASE_ALREADY_HELD_ERROR } from "../handlers/addRecoveryPhraseSource";
@@ -459,6 +461,72 @@ describe("importing an additional recovery phrase", () => {
       wallet2.getPublicKey(0),
       wallet2.getPublicKey(3),
     ]);
+  });
+
+  it("removes the phrase, keystore, private key and provenance when the first store fails at the keystore id list", async () => {
+    fund(3);
+    const heldPhrases = async () =>
+      Object.keys(
+        await getMnemonics({
+          sessionStore: mockSessionStore,
+          localStore: mockDataStorage,
+        }),
+      );
+    const temporaryKeys = async () =>
+      Object.keys(
+        (await mockDataStorage.getItem(TEMPORARY_STORE_ID)) || {},
+      ).sort();
+    const keystoreIds = async () =>
+      (await mockKeyManager.loadAllKeyIds()).sort();
+
+    const phrasesBefore = await heldPhrases();
+    const temporaryKeysBefore = await temporaryKeys();
+    const keystoreIdsBefore = await keystoreIds();
+    const provenanceBefore = await mockDataStorage.getItem(
+      ACCOUNT_PROVENANCE_ID,
+    );
+    // Copied: the mock storage hands out the arrays it holds, and
+    // storeAccount pushes onto the keystore id list it reads.
+    const writes = JSON.parse(JSON.stringify(await snapshotWrites()));
+    const accountsBefore = allAccounts();
+
+    // Everything storeAccount writes before the list has landed by then.
+    // Real storage returns a copy, so there the push is lost with the failed
+    // write; put the list back to match.
+    const keyIdListBefore = [...(await mockDataStorage.getItem(KEY_ID_LIST))];
+    const realSetItem = mockDataStorage.setItem;
+    const setItem = jest
+      .spyOn(mockDataStorage, "setItem")
+      .mockImplementation(async (key, value) => {
+        if (key === KEY_ID_LIST) {
+          await realSetItem(key, keyIdListBefore);
+          throw new Error("disk full");
+        }
+        return realSetItem(key, value);
+      });
+    let res;
+    try {
+      res = await importPhrase(PHRASE_2.mnemonic);
+    } finally {
+      setItem.mockRestore();
+    }
+
+    expect(res.error).toBe(IMPORT_PHRASE_FAILED_ERROR);
+    expect(phrasesBefore).not.toContain(PHRASE_2.userId);
+    expect(await heldPhrases()).toEqual(phrasesBefore);
+    expect(await keystoreIds()).toEqual(keystoreIdsBefore);
+    expect(await temporaryKeys()).toEqual(temporaryKeysBefore);
+    expect(await mockDataStorage.getItem(ACCOUNT_PROVENANCE_ID)).toEqual(
+      provenanceBefore,
+    );
+    expect(await snapshotWrites()).toEqual(writes);
+    expect(allAccounts()).toEqual(accountsBefore);
+
+    const retry = await importPhrase(PHRASE_2.mnemonic);
+    expect(retry.error).toBeUndefined();
+    expect(await heldPhrases()).toContain(PHRASE_2.userId);
+    // One keystore per imported account, none left over from the failure.
+    expect(await keystoreIds()).toHaveLength(keystoreIdsBefore.length + 2);
   });
 
   it("rolls back the session when the first store fails after joining it", async () => {
