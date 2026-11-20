@@ -17,6 +17,7 @@ import {
   AutoLockTimeoutMinutes,
   DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
 } from "@shared/constants/autoLock";
+import { ThemePreference } from "@shared/constants/theme";
 import {
   AssetListResponse,
   AssetsListItem,
@@ -2624,6 +2625,22 @@ export const dismissEthenaLaunchBanner = async (): Promise<{
   }
 
   return { isDismissed: !!isDismissed };
+};
+
+export const saveThemePreference = async (
+  themePreference: ThemePreference,
+): Promise<ThemePreference> => {
+  const { themePreference: saved, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.SAVE_THEME_PREFERENCE,
+    themePreference,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return saved;
 };
 
 export const removeTokenId = async ({
