@@ -1,9 +1,27 @@
+import browser from "webextension-polyfill";
 import {
   DARK_SCHEME_QUERY,
-  followSystemColorScheme,
   getAppliedColorScheme,
   getSystemColorScheme,
+  getThemePreferenceInEffect,
+  initColorScheme,
+  setThemePreference,
+  subscribeToThemePreference,
+  trackUnsavedPick,
 } from "popup/helpers/systemTheme";
+
+jest.mock("webextension-polyfill", () => {
+  const listeners: Array<(changes: object, areaName: string) => void> = [];
+  return {
+    storage: {
+      onChanged: {
+        addListener: (l: (typeof listeners)[number]) => listeners.push(l),
+        emit: (changes: object, areaName: string) =>
+          listeners.forEach((l) => l(changes, areaName)),
+      },
+    },
+  };
+});
 
 type ChangeHandler = (e: { matches: boolean }) => void;
 
@@ -27,9 +45,21 @@ const mockMatchMedia = ({ prefersDark }: { prefersDark: boolean }) => {
   };
 };
 
+// The background saved a value to chrome.storage.local, e.g. for another page.
+const emitStorageChange = (
+  changes: Record<string, { newValue?: unknown }>,
+  areaName = "local",
+) =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (browser.storage.onChanged as any).emit(changes, areaName);
+
+const writeFromOtherPage = (value: string) =>
+  emitStorageChange({ themePreference: { newValue: value } });
+
 describe("systemTheme", () => {
   afterEach(() => {
     document.body.className = "";
+    setThemePreference("system");
   });
 
   describe("getSystemColorScheme", () => {
@@ -63,12 +93,12 @@ describe("systemTheme", () => {
     });
   });
 
-  describe("followSystemColorScheme", () => {
+  describe("initColorScheme", () => {
     it("replaces the static light class with the device scheme", () => {
       document.body.className = "sds-theme-light";
       mockMatchMedia({ prefersDark: true });
 
-      followSystemColorScheme();
+      initColorScheme();
 
       expect(document.body.classList.contains("sds-theme-dark")).toBe(true);
       expect(document.body.classList.contains("sds-theme-light")).toBe(false);
@@ -78,7 +108,7 @@ describe("systemTheme", () => {
       document.body.className = "sds-theme-light";
       const { emitChange } = mockMatchMedia({ prefersDark: false });
 
-      followSystemColorScheme();
+      initColorScheme();
       expect(document.body.classList.contains("sds-theme-light")).toBe(true);
 
       emitChange({ prefersDark: true });
@@ -94,16 +124,118 @@ describe("systemTheme", () => {
       document.body.className = "sds-theme-light some-other-class";
       mockMatchMedia({ prefersDark: true });
 
-      followSystemColorScheme();
+      initColorScheme();
 
       expect(document.body.classList.contains("some-other-class")).toBe(true);
     });
   });
 
+  describe("theme preference", () => {
+    const isDark = () => document.body.classList.contains("sds-theme-dark");
+    const isLight = () => document.body.classList.contains("sds-theme-light");
+
+    it("defaults to system when nothing is stored", () => {
+      mockMatchMedia({ prefersDark: true });
+      initColorScheme();
+      expect(getThemePreferenceInEffect()).toBe("system");
+      expect(isDark()).toBe(true);
+    });
+
+    it("falls back to system for an unknown stored value", () => {
+      mockMatchMedia({ prefersDark: false });
+      initColorScheme();
+      setThemePreference("dark");
+      writeFromOtherPage("sepia");
+      expect(getThemePreferenceInEffect()).toBe("system");
+      expect(isLight()).toBe(true);
+    });
+
+    it("ignores live system changes while pinned", () => {
+      const { emitChange } = mockMatchMedia({ prefersDark: false });
+      initColorScheme();
+      setThemePreference("light");
+
+      emitChange({ prefersDark: true });
+      expect(isLight()).toBe(true);
+      expect(isDark()).toBe(false);
+    });
+
+    it("resumes following the device after switching back to system", () => {
+      const { emitChange } = mockMatchMedia({ prefersDark: false });
+      initColorScheme();
+      setThemePreference("dark");
+      expect(isDark()).toBe(true);
+
+      setThemePreference("system");
+      expect(isLight()).toBe(true);
+
+      emitChange({ prefersDark: true });
+      expect(isDark()).toBe(true);
+    });
+
+    it("applies a change made in another extension page", () => {
+      mockMatchMedia({ prefersDark: false });
+      initColorScheme();
+      expect(isLight()).toBe(true);
+
+      writeFromOtherPage("dark");
+      expect(getThemePreferenceInEffect()).toBe("dark");
+      expect(isDark()).toBe(true);
+    });
+
+    it("ignores other storage keys and areas", () => {
+      mockMatchMedia({ prefersDark: false });
+      initColorScheme();
+
+      emitStorageChange({ isHideDustEnabled: { newValue: true } });
+      emitStorageChange({ themePreference: { newValue: "dark" } }, "session");
+      expect(getThemePreferenceInEffect()).toBe("system");
+    });
+
+    it("ignores a late event for this page's own earlier, unsaved pick", async () => {
+      mockMatchMedia({ prefersDark: false });
+      initColorScheme();
+      let finishSave: () => void = () => {};
+      setThemePreference("dark");
+      const save = trackUnsavedPick(
+        "dark",
+        new Promise<void>((resolve) => {
+          finishSave = resolve;
+        }),
+      );
+      setThemePreference("light");
+
+      writeFromOtherPage("dark");
+      expect(getThemePreferenceInEffect()).toBe("light");
+      expect(isLight()).toBe(true);
+
+      finishSave();
+      await save;
+      writeFromOtherPage("dark");
+      expect(getThemePreferenceInEffect()).toBe("dark");
+    });
+  });
+
+  describe("subscribeToThemePreference", () => {
+    it("notifies on local changes and changes from another page", () => {
+      mockMatchMedia({ prefersDark: false });
+      initColorScheme();
+      const listener = jest.fn();
+      const unsubscribe = subscribeToThemePreference(listener);
+
+      setThemePreference("dark");
+      writeFromOtherPage("light");
+      expect(listener).toHaveBeenCalledTimes(2);
+
+      unsubscribe();
+      setThemePreference("system");
+      expect(listener).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe("getAppliedColorScheme", () => {
     it("reports the class actually on the body, not the media query", () => {
-      // The applied class is the source of truth: #38's manual override will
-      // set the class without the media query changing.
+      // A pinned preference sets the class without the media query changing.
       mockMatchMedia({ prefersDark: false });
       document.body.className = "sds-theme-dark";
       expect(getAppliedColorScheme()).toBe("dark");

@@ -320,3 +320,86 @@ test("lock screen and Forgot password sheet follow the color scheme", async ({
     page: BASE_00.dark,
   });
 });
+
+// Preferences theme picker (freighter-private#38).
+test("theme picker pins light/dark, syncs open pages, and returns to system", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  const body = page.locator("body");
+  await page.emulateMedia({ colorScheme: "light" });
+  await loginToTestAccount({ page, extensionId, context });
+  await goToSettings(page);
+  await page.getByRole("link", { name: "Preferences" }).click();
+  await expect(page.getByTestId("themeOption-system")).toBeChecked();
+
+  // Pin dark while the device is light; a device change must not override it.
+  await page.getByText("Dark", { exact: true }).click();
+  await expect(body).toHaveClass(/sds-theme-dark/);
+  await page.emulateMedia({ colorScheme: "light" });
+  await expect(body).toHaveClass(/sds-theme-dark/);
+
+  // Another extension page opened after the change starts in the pinned theme.
+  const second = await context.newPage();
+  await second.emulateMedia({ colorScheme: "light" });
+  await second.goto(`chrome-extension://${extensionId}/index.html`);
+  await expect(second.locator("body")).toHaveClass(/sds-theme-dark/);
+
+  // A change in one open page reaches the other without a reload.
+  await page.getByText("Light", { exact: true }).click();
+  await expect(second.locator("body")).toHaveClass(/sds-theme-light/);
+
+  // Back to system: follows the device again, including live changes.
+  await page.getByText("Auto(System)", { exact: true }).click();
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect(body).toHaveClass(/sds-theme-dark/);
+  await page.emulateMedia({ colorScheme: "light" });
+  await expect(body).toHaveClass(/sds-theme-light/);
+  await second.close();
+});
+
+test("restores a pinned theme from chrome.storage on reload", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await loginToTestAccount({ page, extensionId, context });
+  await goToSettings(page);
+  await page.getByRole("link", { name: "Preferences" }).click();
+  await page.getByText("Dark", { exact: true }).click();
+  await expect(page.locator("body")).toHaveClass(/sds-theme-dark/);
+
+  await page.reload();
+  await expect(page.locator("body")).toHaveClass(/sds-theme-dark/);
+});
+
+test("theme radios follow a change made in another open page", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  await page.emulateMedia({ colorScheme: "light" });
+  await loginToTestAccount({ page, extensionId, context });
+  await goToSettings(page);
+  await page.getByRole("link", { name: "Preferences" }).click();
+
+  const second = await context.newPage();
+  await second.emulateMedia({ colorScheme: "light" });
+  await second.goto(`chrome-extension://${extensionId}/index.html`);
+  await goToSettings(second);
+  await second.getByRole("link", { name: "Preferences" }).click();
+  await expect(second.getByTestId("themeOption-system")).toBeChecked();
+
+  await page.getByText("Dark", { exact: true }).click();
+  await expect(second.getByTestId("themeOption-dark")).toBeChecked();
+
+  // This page opened on Auto(System); switching back to it must still work.
+  await second.getByText("Auto(System)", { exact: true }).click();
+  await expect(second.locator("body")).toHaveClass(/sds-theme-light/);
+  await expect(page.getByTestId("themeOption-system")).toBeChecked();
+  await second.close();
+});

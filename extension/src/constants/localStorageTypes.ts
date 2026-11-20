@@ -42,3 +42,4 @@ export const HAS_SEEN_DISCOVER_WELCOME = "hasSeenDiscoverWelcome";
 export const REBRAND_ANNOUNCEMENT_STATUS_ID = "rebrandAnnouncementStatus";
 export const ETHENA_LAUNCH_PROMO_STATUS_ID = "ethenaLaunchPromoStatus";
 export const AUTO_LOCK_TIMEOUT_MINUTES_ID = "autoLockTimeoutMinutes";
+export const THEME_PREFERENCE_ID = "themePreference";

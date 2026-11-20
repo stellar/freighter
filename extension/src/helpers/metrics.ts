@@ -15,7 +15,11 @@ import { BUNDLE_ID_USER_PROPERTY_KEY, getBundleId } from "helpers/analytics";
 import { isDev } from "@shared/helpers/dev";
 import { truncatedPublicKey } from "helpers/stellar";
 import { isSidebarMode } from "popup/helpers/isSidebarMode";
-import { getAppliedColorScheme } from "popup/helpers/systemTheme";
+import { ThemePreference } from "@shared/constants/theme";
+import {
+  getAppliedColorScheme,
+  getThemePreferenceInEffect,
+} from "popup/helpers/systemTheme";
 import {
   settingsDataSharingSelector,
   settingsNetworkDetailsSelector,
@@ -343,7 +347,12 @@ export const initAmplitude = async () => {
       if (allowed !== lastDataSharingAllowed) {
         lastDataSharingAllowed = allowed;
         amplitude.setOptOut(!allowed);
-        if (allowed) emitAppOpenedOnce();
+        if (allowed) {
+          emitAppOpenedOnce();
+          // Account-load sends run before settings hydrate, so consent is
+          // still false there; this is where the trait first gets through.
+          syncPreferredThemeTrait(getThemePreferenceInEffect());
+        }
       }
     };
     store.subscribe(syncDataSharing);
@@ -383,6 +392,39 @@ export const deriveIdentifyTraits = (allAccounts: Account[]) => {
 
 // Only re-send Identify when a durable trait actually changed.
 let lastIdentifiedTraits: string | null = null;
+
+let lastIdentifiedThemePreference: ThemePreference | null = null;
+
+/**
+ * Sends the Settings theme choice as the `preferred_theme` user property.
+ * Unlike `color_scheme` (event-level, flips with the device), this only changes
+ * when the user changes the setting. Same consent and dirty-check rules as
+ * syncIdentifyTraits.
+ *
+ * `force` skips the dirty-check. The check only knows what this page sent,
+ * while every open extension page shares one Amplitude profile, so a pick
+ * must always send: another page may have changed the profile since.
+ */
+export const syncPreferredThemeTrait = (
+  preference: ThemePreference,
+  { force = false }: { force?: boolean } = {},
+): void => {
+  if (!force && preference === lastIdentifiedThemePreference) return;
+  if (!AMPLITUDE_KEY || !hasInitialized) return;
+  if (!settingsDataSharingSelector(store.getState())) return;
+
+  try {
+    const identify = new amplitude.Identify();
+    identify.set("preferred_theme", preference);
+    amplitude.identify(identify);
+    lastIdentifiedThemePreference = preference;
+  } catch (e) {
+    console.error(
+      `${LOG_MESSAGES.AMPLITUDE_PREFIX} ${LOG_MESSAGES.IDENTIFY_FAILED}`,
+      e,
+    );
+  }
+};
 
 /** Sends durable wallet-composition traits to Amplitude Identify (dirty-checked). */
 export const syncIdentifyTraits = (allAccounts: Account[]): void => {
@@ -732,4 +774,5 @@ export const storeAccountMetricsData = (
   localStorage.setItem(METRICS_DATA, JSON.stringify(metricsData));
 
   syncIdentifyTraits(allAccounts);
+  syncPreferredThemeTrait(getThemePreferenceInEffect());
 };
