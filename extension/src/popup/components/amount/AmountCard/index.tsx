@@ -1,4 +1,10 @@
-import React, { useLayoutEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -108,21 +114,37 @@ export const AmountCard = ({
   const [inputWidthCrypto, setInputWidthCrypto] = useState(0);
   const [inputWidthFiat, setInputWidthFiat] = useState(0);
 
+  const measureInputs = useCallback(() => {
+    if (cryptoSpanRef.current) {
+      setInputWidthCrypto(cryptoSpanRef.current.offsetWidth + 2);
+    }
+    if (fiatSpanRef.current) {
+      setInputWidthFiat(fiatSpanRef.current.offsetWidth + 4);
+    }
+  }, []);
+
   // Re-measure on font-class changes too (not just value changes): the
   // read-only receive card's inputType flips from the sell card's toggle
   // without its own value changing, so a font-size-bucket change would
   // otherwise leave a stale width and clip the value.
   useLayoutEffect(() => {
-    if (cryptoSpanRef.current) {
-      setInputWidthCrypto(cryptoSpanRef.current.offsetWidth + 2);
-    }
-  }, [amount, amountFontSizeClass]);
+    measureInputs();
+  }, [amount, amountUsd, amountFontSizeClass, measureInputs]);
 
-  useLayoutEffect(() => {
-    if (fiatSpanRef.current) {
-      setInputWidthFiat(fiatSpanRef.current.offsetWidth + 4);
-    }
-  }, [amountUsd, amountFontSizeClass]);
+  // And again whenever a mirror's size changes. Under a `display: none`
+  // ancestor a mirror measures 0, so a value that changes there sizes the
+  // input to nothing: Earn keeps its deposit screen mounted but hidden while a
+  // swap resets the amount, and the screen came back with its "0" clipped to a
+  // sliver until the next keystroke. Being shown again resizes the mirrors.
+  useEffect(() => {
+    const observer = new ResizeObserver(measureInputs);
+    [cryptoSpanRef.current, fiatSpanRef.current].forEach((span) => {
+      if (span) {
+        observer.observe(span);
+      }
+    });
+    return () => observer.disconnect();
+  }, [measureInputs]);
 
   const isSuspicious =
     securityLevel === SecurityLevel.MALICIOUS ||
