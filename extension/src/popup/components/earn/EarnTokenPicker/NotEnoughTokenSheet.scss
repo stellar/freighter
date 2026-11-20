@@ -1,0 +1,59 @@
+@use "../../../styles/utils.scss" as *;
+
+// Figma: Varial 4478:115689 (and its variants 115752, 115815, 115883). The
+// network-fee sheet (EarnAmount/NetworkFeeSheet) shares this layout.
+.NotEnoughTokenSheet {
+  display: flex;
+  flex-direction: column;
+
+  // The token at 40px with the design's ring, leading the header.
+  .SheetHeader__leading .AccountAssets__asset--logo {
+    @include asset-logo-size(40);
+    margin: 0;
+
+    @include asset-logo-ring;
+  }
+
+  // Text/MD/400 in secondary, 12px under the title and 24px over the actions.
+  &__body {
+    margin: pxToRem(12) 0 pxToRem(24);
+    @include text(md);
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8);
+  }
+
+  &__actions-row {
+    display: flex;
+    gap: pxToRem(8);
+  }
+
+  &__or {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(8);
+    color: var(--sds-clr-gray-11);
+    @include text(sm, semi-bold);
+
+    &::before,
+    &::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--sds-clr-gray-06);
+    }
+  }
+
+  &__text-action {
+    height: pxToRem(36);
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--sds-clr-gray-11);
+    @include text(sm, semi-bold);
+  }
+}

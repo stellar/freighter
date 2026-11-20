@@ -1,0 +1,10 @@
+@use "../../../styles/utils.scss" as *;
+
+// The protocol marks carry their own colour, so no plate behind them — matching
+// the design, where the pool icon sits directly on the card. The size comes from
+// the element's width/height attributes.
+.PoolIcon {
+  flex: none;
+  display: block;
+  object-fit: contain;
+}

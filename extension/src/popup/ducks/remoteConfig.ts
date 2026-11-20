@@ -6,6 +6,7 @@ import {
 } from "@reduxjs/toolkit";
 import type { Variant } from "@amplitude/experiment-js-client";
 
+import { DEV_EXTENSION } from "@shared/constants/services";
 import { getExperimentClient } from "helpers/experimentClient";
 import { BUNDLE_ID_USER_PROPERTY_KEY, getBundleId } from "helpers/analytics";
 import {
@@ -27,7 +28,11 @@ const ON_VARIANT_VALUES = ["on", "true", "enabled", "yes"];
  * Boolean flags — variant value is checked against ON_VARIANT_VALUES.
  * Add flag names here as new boolean flags are introduced.
  */
-const BOOLEAN_FLAGS = ["use_balances_v2", "use_token_price_history"] as const;
+const BOOLEAN_FLAGS = [
+  "use_balances_v2",
+  "earn_deposit",
+  "use_token_price_history",
+] as const;
 
 /**
  * Version flags — variant value is parsed from underscore format (1_2_3 → 1.2.3).
@@ -87,6 +92,9 @@ const initialState: RemoteConfigState = {
   // can flip it on to opt into the v2 account-balances endpoint without a
   // release.
   use_balances_v2: false,
+  // Earn's entry point on Home. OFF in production until Amplitude turns it on;
+  // ON in dev builds, which usually run without Amplitude's keys.
+  earn_deposit: DEV_EXTENSION,
   // Token price-history chart on AssetDetail. Ships ON — a kill switch, not
   // launch choreography (§11 of the token-price-graphs design).
   use_token_price_history: true,
@@ -249,6 +257,14 @@ export const balancesV2Selector = createSelector(
 export const tokenPriceHistoryEnabledSelector = killSwitchSelector(
   "use_token_price_history",
 );
+
+/**
+ * Whether the Earn deposit flow is exposed: off in production until Amplitude
+ * turns it on, on in dev builds. Read fail-closed, so the Home tile stays
+ * hidden until the flags settle rather than flashing in before Amplitude has
+ * answered.
+ */
+export const earnDepositSelector = killSwitchSelector("earn_deposit");
 
 /**
  * Returns true once the Experiment flags have been fetched (or failed).

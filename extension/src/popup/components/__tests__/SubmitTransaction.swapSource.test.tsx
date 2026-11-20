@@ -142,7 +142,33 @@ describe("swap.completed source property", () => {
     );
   });
 
-  it("omits source entirely for swaps entered elsewhere", async () => {
+  it("carries source: earn when the swap was opened inside Earn", async () => {
+    renderSwapSubmit("earn");
+
+    await waitFor(() =>
+      expect(mockedEmitMetric).toHaveBeenCalledWith(
+        "swap.completed",
+        expect.objectContaining({
+          from_asset_code: "XLM",
+          to_asset_code: "USDC",
+          source: "earn",
+        }),
+      ),
+    );
+  });
+
+  it("carries source: home when the swap was opened from Home", async () => {
+    renderSwapSubmit("home");
+
+    await waitFor(() =>
+      expect(mockedEmitMetric).toHaveBeenCalledWith(
+        "swap.completed",
+        expect.objectContaining({ source: "home" }),
+      ),
+    );
+  });
+
+  it("omits source entirely when no swap host set one", async () => {
     renderSwapSubmit(null);
 
     // Absence is the whole point of this case, and objectContaining cannot
@@ -198,7 +224,7 @@ describe("swap receive amount on the submit screen", () => {
       "1.3746270",
     );
 
-    expect(await findByText("Swapped!")).toBeInTheDocument();
+    expect(await findByText("Swap complete")).toBeInTheDocument();
     expect(getByText("1.374627 USDC")).toBeInTheDocument();
     expect(queryByText("1.3746270 USDC")).toBeNull();
   });

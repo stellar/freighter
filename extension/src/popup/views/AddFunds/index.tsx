@@ -21,12 +21,15 @@ export const AddFunds = () => {
 
   const params = new URLSearchParams(search);
   const isAddXlm = params.get("isAddXlm") === "true";
+  // The token Coinbase opens on: the caller's when it names one (Earn's Buy),
+  // XLM for an unfunded account, otherwise Coinbase's own choice. As on mobile.
+  const onrampAsset = params.get("token") || (isAddXlm ? "XLM" : undefined);
 
   const {
     isLoading: isTokenRequestLoading,
     fetchData,
     tokenError,
-  } = useGetOnrampToken({ ...(isAddXlm ? { asset: "XLM" } : {}) });
+  } = useGetOnrampToken({ ...(onrampAsset ? { asset: onrampAsset } : {}) });
 
   const handleOnrampClick = async () => {
     await fetchData();

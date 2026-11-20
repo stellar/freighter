@@ -5,9 +5,16 @@ import { useSelector } from "react-redux";
 import { Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
+import { isEarnSupportedNetwork } from "@shared/constants/blend";
+
 import { ROUTES } from "popup/constants/routes";
-import { maintenanceBannerSelector } from "popup/ducks/remoteConfig";
+import {
+  earnDepositSelector,
+  maintenanceBannerSelector,
+} from "popup/ducks/remoteConfig";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { View } from "popup/basics/layout/View";
+import IconEarn from "popup/assets/icon-earn.svg?react";
 import { navigateTo } from "popup/helpers/navigate";
 import { AccountChip } from "popup/components/account/AccountChip";
 import { AccountSheet } from "popup/components/account/AccountSheet";
@@ -18,8 +25,9 @@ import { MaintenanceBanner } from "popup/components/MaintenanceBanner";
 
 import "./styles.scss";
 
-// The Add / Send / Swap tiles under the balance. The labels are existing
-// translation keys, translated at render.
+// The Add / Send / Swap tiles under the balance, plus Earn where it is offered
+// (see EARN_TILE). The labels are existing translation keys, translated at
+// render.
 const ACTION_TILES = [
   {
     route: ROUTES.addFunds,
@@ -40,6 +48,15 @@ const ACTION_TILES = [
     testId: "nav-link-swap",
   },
 ];
+
+// Fourth tile, shown only while the `earn_deposit` flag is on and the network
+// has an allowlisted Blend pool (pubnet and testnet).
+const EARN_TILE = {
+  route: ROUTES.earn,
+  icon: <IconEarn className="AccountHeader__earn-icon" />,
+  label: "Earn",
+  testId: "nav-link-earn",
+};
 
 interface AccountHeaderProps {
   allowList: string[];
@@ -65,6 +82,12 @@ export const AccountHeader = ({
   // MaintenanceBanner renders under the same condition.
   const { enabled, content } = useSelector(maintenanceBannerSelector);
   const hasBanner = enabled && !!content;
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const isEarnDepositEnabled = useSelector(earnDepositSelector);
+  const actionTiles =
+    isEarnDepositEnabled && isEarnSupportedNetwork(networkDetails)
+      ? [...ACTION_TILES, EARN_TILE]
+      : ACTION_TILES;
 
   return (
     <>
@@ -116,7 +139,7 @@ export const AccountHeader = ({
             {roundedTotalBalanceUsd}
           </div>
           <div className="AccountHeader__actions">
-            {ACTION_TILES.map(({ route, icon, label, testId }) => (
+            {actionTiles.map(({ route, icon, label, testId }) => (
               <NavLink
                 key={testId}
                 to={route}

@@ -1,5 +1,11 @@
-import React, { useLayoutEffect, useRef, useState } from "react";
-import { Button, Icon } from "@stellar/design-system";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { AssetIcon } from "popup/components/account/AccountAssets";
@@ -41,6 +47,13 @@ export interface AmountCardProps {
   /** Pre-formatted max-spendable amount shown in the insufficient-balance
    * error (e.g. "123.23"); the token code is taken from assetCode. */
   maxSpendableText?: string;
+  /**
+   * The asset cannot be changed from this card, so the pill renders as a plain
+   * label — no chevron, not focusable. Used by the Earn swap sheet, where the
+   * receive token was chosen on the screen before and swapping it here would
+   * buy something the pool does not accept.
+   */
+  isAssetLocked?: boolean;
   isReadOnly?: boolean;
   autoFocus?: boolean;
   /** Optional handle to the amount input so a parent can focus it (e.g. the
@@ -77,6 +90,7 @@ export const AmountCard = ({
   isAmountTooHigh,
   isAmountLoading = false,
   maxSpendableText = "",
+  isAssetLocked = false,
   isReadOnly = false,
   autoFocus = true,
   amountInputRef,
@@ -100,26 +114,60 @@ export const AmountCard = ({
   const [inputWidthCrypto, setInputWidthCrypto] = useState(0);
   const [inputWidthFiat, setInputWidthFiat] = useState(0);
 
+  const measureInputs = useCallback(() => {
+    if (cryptoSpanRef.current) {
+      setInputWidthCrypto(cryptoSpanRef.current.offsetWidth + 2);
+    }
+    if (fiatSpanRef.current) {
+      setInputWidthFiat(fiatSpanRef.current.offsetWidth + 4);
+    }
+  }, []);
+
   // Re-measure on font-class changes too (not just value changes): the
   // read-only receive card's inputType flips from the sell card's toggle
   // without its own value changing, so a font-size-bucket change would
   // otherwise leave a stale width and clip the value.
   useLayoutEffect(() => {
-    if (cryptoSpanRef.current) {
-      setInputWidthCrypto(cryptoSpanRef.current.offsetWidth + 2);
-    }
-  }, [amount, amountFontSizeClass]);
+    measureInputs();
+  }, [amount, amountUsd, amountFontSizeClass, measureInputs]);
 
-  useLayoutEffect(() => {
-    if (fiatSpanRef.current) {
-      setInputWidthFiat(fiatSpanRef.current.offsetWidth + 4);
-    }
-  }, [amountUsd, amountFontSizeClass]);
+  // And again whenever a mirror's size changes. Under a `display: none`
+  // ancestor a mirror measures 0, so a value that changes there sizes the
+  // input to nothing: Earn keeps its deposit screen mounted but hidden while a
+  // swap resets the amount, and the screen came back with its "0" clipped to a
+  // sliver until the next keystroke. Being shown again resizes the mirrors.
+  useEffect(() => {
+    const observer = new ResizeObserver(measureInputs);
+    [cryptoSpanRef.current, fiatSpanRef.current].forEach((span) => {
+      if (span) {
+        observer.observe(span);
+      }
+    });
+    return () => observer.disconnect();
+  }, [measureInputs]);
 
   const isSuspicious =
     securityLevel === SecurityLevel.MALICIOUS ||
     securityLevel === SecurityLevel.SUSPICIOUS;
   const isMalicious = securityLevel === SecurityLevel.MALICIOUS;
+
+  // The icon-plus-code pair is identical whether the pill is a button or the
+  // locked label, and only the chevron differs.
+  const assetPill = (
+    <>
+      <AssetIcon
+        assetIcons={
+          !isNativeAssetPair(assetCode, assetIssuerKey) ? assetIcons : {}
+        }
+        code={assetCode}
+        issuerKey={assetIssuerKey}
+        icon={assetIcon}
+        isSuspicious={isSuspicious}
+        isMalicious={isMalicious}
+      />
+      <span className="AmountCard__asset-code">{assetCode}</span>
+    </>
+  );
 
   const fontClass = `AmountCard__input-amount AmountCard__${amountFontSizeClass}`;
 
@@ -245,39 +293,36 @@ export const AmountCard = ({
               <div className={fontClass}>--</div>
             ))}
         </div>
-        <button
-          type="button"
-          className={`AmountCard__asset-selector-inline${
-            assetCode ? "" : " AmountCard__asset-selector-inline--empty"
-          }`}
-          onClick={onSelectAsset}
-          data-testid="send-amount-edit-dest-asset"
-          aria-label={assetCode ? t("Change asset") : t("Select")}
-        >
-          {assetCode ? (
-            <>
-              <AssetIcon
-                assetIcons={
-                  !isNativeAssetPair(assetCode, assetIssuerKey)
-                    ? assetIcons
-                    : {}
-                }
-                code={assetCode}
-                issuerKey={assetIssuerKey}
-                icon={assetIcon}
-                isSuspicious={isSuspicious}
-                isMalicious={isMalicious}
-              />
-              <span className="AmountCard__asset-code">{assetCode}</span>
-              <Icon.ChevronDown />
-            </>
-          ) : (
-            <>
-              <span className="AmountCard__asset-code">{t("Select")}</span>
-              <Icon.ChevronDown />
-            </>
-          )}
-        </button>
+        {isAssetLocked ? (
+          <div
+            className="AmountCard__asset-selector-inline AmountCard__asset-selector-inline--locked"
+            data-testid="send-amount-dest-asset-locked"
+          >
+            {assetPill}
+          </div>
+        ) : (
+          <button
+            type="button"
+            className={`AmountCard__asset-selector-inline${
+              assetCode ? "" : " AmountCard__asset-selector-inline--empty"
+            }`}
+            onClick={onSelectAsset}
+            data-testid="send-amount-edit-dest-asset"
+            aria-label={assetCode ? t("Change asset") : t("Select")}
+          >
+            {assetCode ? (
+              <>
+                {assetPill}
+                <Icon.ChevronRight />
+              </>
+            ) : (
+              <>
+                <span className="AmountCard__asset-code">{t("Select")}</span>
+                <Icon.ChevronRight />
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       {/* The fiat line is always shown (callers pass "$0.00"/"--" when there is
@@ -293,19 +338,26 @@ export const AmountCard = ({
               value but cannot toggle input type, so omit the toggle. The toggle
               also needs a usable USD price. */}
           {!isReadOnly && supportsUsd && (
-            <Button
-              size="md"
+            // A plain button: the design's 16px chip is smaller than any SDS
+            // Button size.
+            <button
               type="button"
-              isRounded
-              variant="tertiary"
+              className="AmountCard__fiat-toggle"
               data-testid="amount-fiat-toggle"
+              // Do not take focus from the amount input. Pressing this fires a
+              // blur that a parent tracking focus reads as the user leaving the
+              // field — the swap CTA disables itself only while the input is
+              // focused, so it would flash enabled for a frame before the
+              // re-mounted input (crypto and fiat are separate inputs, each
+              // autoFocused) takes focus back.
+              onMouseDown={(e) => e.preventDefault()}
               onClick={(e) => {
                 e.preventDefault();
                 onToggleInputType();
               }}
             >
-              <Icon.RefreshCw03 />
-            </Button>
+              <Icon.SwitchVertical01 />
+            </button>
           )}
         </div>
       </div>

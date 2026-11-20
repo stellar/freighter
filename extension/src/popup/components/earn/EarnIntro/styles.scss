@@ -1,0 +1,208 @@
+@use "../../../styles/utils.scss" as *;
+
+// Figma: Varial 4464:110421 "Blend intro (first time user only)", 360x600.
+.EarnIntro {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: pxToRem(24);
+  // The glow bleeds past every edge, so the view clips horizontally. Vertically
+  // it scrolls instead of clipping: at the longest translations the column runs
+  // a little past 600px, and pushing the CTA below the fold degrades far better
+  // than truncating the last feature mid-sentence.
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// The glow's centre sits 115.5px from the top in the mock (a 401px disc whose
+// top edge is at -85px), 0.5px right of centre.
+.EarnIntro__glow {
+  position: absolute;
+  left: 50%;
+  top: pxToRem(115.5);
+  transform: translate(-50%, -50%);
+  z-index: 0;
+}
+
+// The X sits at the top right, 16px in from the edge.
+.EarnIntro__header {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: flex-end;
+  margin-right: pxToRem(-8);
+}
+
+// Starts 108px from the top, as in the mock: 24 padding + 24 header + 60.
+// Grows to absorb the space between the copy and the footer button; never
+// shrinks, since overflow is the view's to scroll, not this column's to clip.
+.EarnIntro__content {
+  position: relative;
+  z-index: 1;
+  flex: 1 0 auto;
+  margin-top: pxToRem(60);
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(40);
+}
+
+.EarnIntro__intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: pxToRem(32);
+}
+
+// The mark and its three sparkles. The sparkles are placed off the 88px logo's
+// own box, at the offsets the mock gives them.
+.EarnIntro__mark {
+  position: relative;
+  width: pxToRem(88);
+  height: pxToRem(88);
+}
+
+.EarnIntro__logo {
+  width: pxToRem(88);
+  height: pxToRem(88);
+  display: block;
+}
+
+.EarnIntro__sparkle {
+  position: absolute;
+  display: block;
+
+  &--top {
+    left: pxToRem(-1.3);
+    top: pxToRem(2.15);
+    width: pxToRem(9.7);
+    height: pxToRem(9.7);
+    color: #a8c6ff;
+  }
+
+  &--right {
+    left: pxToRem(114.65);
+    top: pxToRem(20.15);
+    width: pxToRem(9.7);
+    height: pxToRem(9.7);
+    color: #d8f3f6;
+  }
+
+  &--left {
+    left: pxToRem(-15.35);
+    top: pxToRem(70.15);
+    width: pxToRem(13.7);
+    height: pxToRem(13.7);
+    color: #5bb98c;
+  }
+}
+
+// No gap between the two: the mock stacks them flush and lets the line heights
+// do the spacing.
+.EarnIntro__copy {
+  width: 100%;
+  text-align: center;
+}
+
+// Display/XS/600: 24/32 with -4% tracking.
+.EarnIntro__title {
+  margin: 0;
+  font-size: pxToRem(24);
+  line-height: pxToRem(32);
+  font-weight: 600;
+  letter-spacing: pxToRem(-0.96);
+  color: var(--sds-clr-gray-12);
+}
+
+// Figma's Text/SM/400, which is 14/20 where SDS's Text--sm is 14/22.
+.EarnIntro__subtitle {
+  @include text(sm);
+  color: var(--sds-clr-gray-11);
+}
+
+.EarnIntro__features {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(24);
+}
+
+.EarnIntro__feature {
+  display: flex;
+  align-items: center;
+  gap: pxToRem(12);
+
+  // SDS gives every `li` a "-" marker; the design has none.
+  &::before {
+    content: none !important;
+  }
+}
+
+.EarnIntro__feature__icon {
+  flex: 0 0 auto;
+  width: pxToRem(40);
+  height: pxToRem(40);
+  border-radius: pxToRem(5);
+  background: var(--sds-clr-gray-03);
+  color: var(--sds-clr-gray-09);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    width: pxToRem(18);
+    height: pxToRem(18);
+  }
+}
+
+.EarnIntro__feature__copy {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(2);
+}
+
+// Text/SM/600.
+.EarnIntro__feature__title {
+  @include text(sm, semi-bold);
+  color: var(--sds-clr-gray-12);
+}
+
+// Text/XS/400.
+.EarnIntro__feature__body {
+  margin: 0;
+  @include text(xs);
+  color: var(--sds-clr-gray-11);
+}
+
+.EarnIntro__footer {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  padding-top: pxToRem(24);
+}
+
+// The dark frame darkens the sparkles rather than keeping the light ones, which
+// would glare against black.
+.sds-theme-dark .EarnIntro__sparkle {
+  &--top {
+    color: #19478d;
+  }
+
+  &--right {
+    color: #07303b;
+  }
+
+  &--left {
+    color: #236e4a;
+  }
+}

@@ -1,0 +1,22 @@
+@use "../../../styles/utils.scss" as *;
+
+// Figma: Varial 4470:111555 (in progress) and 4470:111569 (complete). The
+// status and summary are TransactionStatus; this places them, 96px from the
+// top with the view's own 24px.
+.EarnSubmit {
+  padding-top: pxToRem(72);
+
+  &__footer {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8);
+
+    // Text/SM/500 in secondary, 16px above Close.
+    &-note {
+      color: var(--sds-clr-gray-11);
+      @include text(sm, medium);
+      text-align: center;
+      padding-bottom: pxToRem(8);
+    }
+  }
+}

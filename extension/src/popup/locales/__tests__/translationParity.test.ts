@@ -26,7 +26,108 @@ const swapKeys = [
   "Stellar requires this reserve to add {{tokenCode}}. You can get it back once your {{tokenCode}} balance is zero.",
   "Swap for 0.5 XLM",
   "Copy my wallet address",
+  "Swap in progress",
+  "Swap complete",
+  "was swapped for",
 ];
+
+const earnKeys = [
+  "Choose a token",
+  "Select a token to deposit and earn yield.",
+  "Deposit into",
+  "In your wallet",
+  "Supported tokens",
+  "No supported assets in your wallet",
+  "Add a supported asset to start earning.",
+  "*APY is variable and subject to change.",
+  "{{rate}}% APY*",
+  "Put your tokens to work",
+  "Supply tokens to Blend and earn variable yield.",
+  "Earn variable yield",
+  "Supply supported tokens and earn based on current APY.",
+  "Stay in control",
+  "Manage and withdraw your supplied tokens from your wallet.",
+  "Not enough {{code}}",
+  "Get {{code}} to deposit into this pool.",
+  "Swap, buy or transfer {{code}} to continue.",
+  "Swap or transfer {{code}} to continue.",
+  "Buy or transfer {{code}} to continue.",
+  "Transfer {{code}} to continue.",
+  "Swap for {{code}}",
+  "Buy {{code}}",
+  "Receive {{code}}",
+  "Receive funds",
+  "This address supports Stellar network.",
+  "Deposit",
+  "You deposit",
+  "{{amount}} {{code}} available",
+  "Current APY: {{rate}}",
+  "{{name}} Pool",
+  "by Blend",
+  "Review deposit",
+  "You need XLM to pay fees",
+  "You don’t have enough available XLM to cover the transaction fee. Add XLM to continue with your deposit.",
+  "Not enough XLM left for the network fee. Reduce your deposit by at least {{amount}} XLM.",
+  "Not enough XLM to cover the network fee. Try depositing a smaller amount.",
+  "Not enough {{code}} for this deposit. Try a smaller amount.",
+  "The pool can’t take this deposit right now. Try again later.",
+  "Transaction failed. Try again.",
+  "Description",
+  "Deposit supported tokens into this Blend pool to earn yield. APY may change over time. Withdraw anytime.",
+  "View pool details",
+  "Current yield",
+  "Deposit APY",
+  "Pool liquidity",
+  "Supplied",
+  "Borrowed",
+  "Backstop",
+  "You are depositing",
+  "Position",
+  "Current APY",
+  "Monthly earnings (est.)",
+  "Yearly earnings (est.)",
+  "Deposit in progress",
+  "Deposit complete",
+  "Deposited {{code}}",
+  "Deposited",
+  "{{from}} swapped to {{amount}} {{to}}",
+];
+
+describe("earn i18n parity", () => {
+  it("defines every earn key in en and pt", () => {
+    earnKeys.forEach((k) => {
+      expect(en).toHaveProperty([k]);
+      expect(pt).toHaveProperty([k]);
+    });
+  });
+});
+
+// An empty value is never correct. i18next returns "" for a key whose value is
+// empty, so the UI renders BLANK — whereas a missing key falls back to the key
+// itself and at least reads. The i18next scanner adds newly-seen keys with empty
+// values on every build, so without this check a feature ships with unlabelled
+// buttons and nothing fails.
+const findEmptyValues = (bundle: Record<string, string>) =>
+  Object.entries(bundle)
+    .filter(([, value]) => value === "")
+    .map(([key]) => key);
+
+describe("i18n empty values", () => {
+  it.each([
+    ["en", en],
+    ["pt", pt],
+  ])("has no empty translation values in %s", (_name, bundle) => {
+    expect(findEmptyValues(bundle as Record<string, string>)).toEqual([]);
+  });
+
+  it("detects an empty value", () => {
+    // Guards the guard, as above: a check that never fires would let the
+    // scanner's blank entries through unnoticed.
+    expect(findEmptyValues({ Filled: "Preenchido", Blank: "" })).toEqual([
+      "Blank",
+    ]);
+  });
+});
 
 describe("swap i18n parity", () => {
   it("defines every swap key in en and pt", () => {

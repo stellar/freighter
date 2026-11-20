@@ -1,8 +1,11 @@
 @use "../../styles/utils.scss" as *;
 
-// Values from the Varial frames: title Text/MD/600 in Text/Primary, X a 28px
-// icon in a 32px box in Foreground/Primary (gray 9).
-$close-size: 32px;
+// Values from the Varial frames: title Text/MD/600 in Text/Primary, the X a
+// bare 24px icon in Gray/12 at the card's padding edge (e.g. 4517:121782), as
+// mobile's BottomSheetHeader draws it. The header's other icon buttons
+// (settings, back) keep a 32px box.
+$close-size: 24px;
+$action-size: 32px;
 
 .SheetHeader {
   display: flex;
@@ -21,9 +24,9 @@ $close-size: 32px;
     justify-content: center;
 
     .SheetHeader__title {
-      // Room for the X (and a leading button) plus a gap, so a long title
-      // never touches the icons.
-      padding: 0 pxToRem($close-size + 16px);
+      // Room for the widest icon button (a leading action) plus a gap, so a
+      // long title never touches the icons.
+      padding: 0 pxToRem($action-size + 16px);
       text-align: center;
     }
 
@@ -50,8 +53,8 @@ $close-size: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: pxToRem($close-size);
-    height: pxToRem($close-size);
+    width: pxToRem($action-size);
+    height: pxToRem($action-size);
     padding: 0;
     border: 0;
     background: none;
@@ -86,6 +89,22 @@ $close-size: 32px;
     line-height: pxToRem(24px);
   }
 
+  // The title with a subtitle under it, taking the title's place in the row.
+  &__titles {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  // Text/XS/500 in Text/Secondary.
+  &__subtitle {
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(12px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(18px);
+  }
+
   &__close {
     display: flex;
     flex-shrink: 0;
@@ -98,12 +117,23 @@ $close-size: 32px;
     padding: 0;
     border: 0;
     background: none;
-    color: var(--sds-clr-gray-09);
+    color: var(--sds-clr-gray-12);
     cursor: pointer;
 
     svg {
-      width: pxToRem(28px);
-      height: pxToRem(28px);
+      width: pxToRem($close-size);
+      height: pxToRem($close-size);
     }
+  }
+
+  // A sheet that draws all its header icons in one colour (iconTone).
+  &--icons-primary &__action,
+  &--icons-primary &__close {
+    color: var(--sds-clr-gray-12);
+  }
+
+  &--icons-secondary &__action,
+  &--icons-secondary &__close {
+    color: var(--sds-clr-gray-09);
   }
 }

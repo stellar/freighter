@@ -5,7 +5,11 @@ import { Button, Input } from "@stellar/design-system";
 import { Field, FieldProps, Form, Formik } from "formik";
 import { object as YupObject, string as YupString } from "yup";
 
-import { SheetHeader, SheetHeaderLayout } from "popup/components/SheetHeader";
+import {
+  SheetHeader,
+  SheetHeaderIconTone,
+  SheetHeaderLayout,
+} from "popup/components/SheetHeader";
 import { AppDispatch } from "popup/App";
 import { Account } from "@shared/api/types";
 import { updateAccountName } from "popup/ducks/accountServices";
@@ -65,6 +69,8 @@ export const RenameWallet = ({
         layout={SheetHeaderLayout.Centered}
         title={t("Rename wallet")}
         onClose={onClose}
+        // In the account sheet's icon colour, like its other bodies.
+        iconTone={SheetHeaderIconTone.Secondary}
         closeTestId="rename-wallet-close"
       />
 

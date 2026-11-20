@@ -92,6 +92,7 @@ import { TruncatedMemo } from "popup/components/TruncatedMemo";
 import { SheetHeader, SheetHeaderLayout } from "popup/components/SheetHeader";
 import { SheetLayout } from "popup/components/SheetLayout";
 import { SlideupModal } from "popup/components/SlideupModal";
+import { TransactionDetailsButton } from "popup/components/TransactionDetailsButton";
 import { Summary } from "./Preview/Summary";
 import { Details } from "./Preview/Details";
 
@@ -663,13 +664,11 @@ export const SignTransaction = () => {
                           </div>
                         </div>
                       </div>
-                      <div
+                      <TransactionDetailsButton
                         className="SignTransaction__TransactionDetailsBtn"
+                        testId="sign-transaction-details-btn"
                         onClick={() => setActivePaneIndex(1)}
-                      >
-                        <Icon.List />
-                        <span>{t("Transaction details")}</span>
-                      </div>
+                      />
                     </div>
                   </div>,
                   <div className="SignTransaction__Body">

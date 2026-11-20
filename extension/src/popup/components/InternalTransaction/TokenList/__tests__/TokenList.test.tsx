@@ -78,9 +78,15 @@ describe("TokenList", () => {
       render(<TokenList {...defaultProps} tokens={tokens} />);
 
       const rows = screen.getAllByTestId(/^SendRow-/);
-      expect(rows[0]).toHaveAttribute("data-testid", `SendRow-${USDC_CANONICAL}`);
+      expect(rows[0]).toHaveAttribute(
+        "data-testid",
+        `SendRow-${USDC_CANONICAL}`,
+      );
       expect(rows[1]).toHaveAttribute("data-testid", "SendRow-native");
-      expect(rows[2]).toHaveAttribute("data-testid", `SendRow-${AQUA_CANONICAL}`);
+      expect(rows[2]).toHaveAttribute(
+        "data-testid",
+        `SendRow-${AQUA_CANONICAL}`,
+      );
     });
 
     it("preserves original order when tokenPrices is empty", () => {
@@ -90,8 +96,14 @@ describe("TokenList", () => {
 
       const rows = screen.getAllByTestId(/^SendRow-/);
       expect(rows[0]).toHaveAttribute("data-testid", "SendRow-native");
-      expect(rows[1]).toHaveAttribute("data-testid", `SendRow-${USDC_CANONICAL}`);
-      expect(rows[2]).toHaveAttribute("data-testid", `SendRow-${AQUA_CANONICAL}`);
+      expect(rows[1]).toHaveAttribute(
+        "data-testid",
+        `SendRow-${USDC_CANONICAL}`,
+      );
+      expect(rows[2]).toHaveAttribute(
+        "data-testid",
+        `SendRow-${AQUA_CANONICAL}`,
+      );
     });
 
     it("sorts priced assets before unpriced ones", () => {
@@ -101,15 +113,25 @@ describe("TokenList", () => {
       const tokens = [XLM_BALANCE, AQUA_BALANCE, USDC_BALANCE] as any[];
 
       render(
-        <TokenList {...defaultProps} tokens={tokens} tokenPrices={partialPrices} />,
+        <TokenList
+          {...defaultProps}
+          tokens={tokens}
+          tokenPrices={partialPrices}
+        />,
       );
 
       const rows = screen.getAllByTestId(/^SendRow-/);
       // USDC (priced) comes first
-      expect(rows[0]).toHaveAttribute("data-testid", `SendRow-${USDC_CANONICAL}`);
+      expect(rows[0]).toHaveAttribute(
+        "data-testid",
+        `SendRow-${USDC_CANONICAL}`,
+      );
       // Unpriced assets preserve input order
       expect(rows[1]).toHaveAttribute("data-testid", "SendRow-native");
-      expect(rows[2]).toHaveAttribute("data-testid", `SendRow-${AQUA_CANONICAL}`);
+      expect(rows[2]).toHaveAttribute(
+        "data-testid",
+        `SendRow-${AQUA_CANONICAL}`,
+      );
     });
   });
 
@@ -121,7 +143,10 @@ describe("TokenList", () => {
 
       const rows = screen.getAllByTestId(/^SendRow-/);
       expect(rows).toHaveLength(2);
-      expect(rows[0]).toHaveAttribute("data-testid", `SendRow-${USDC_CANONICAL}`);
+      expect(rows[0]).toHaveAttribute(
+        "data-testid",
+        `SendRow-${USDC_CANONICAL}`,
+      );
       expect(rows[1]).toHaveAttribute("data-testid", "SendRow-native");
     });
 
@@ -130,14 +155,21 @@ describe("TokenList", () => {
       const hiddenAssets = [USDC_CANONICAL];
 
       render(
-        <TokenList {...defaultProps} tokens={tokens} hiddenAssets={hiddenAssets} />,
+        <TokenList
+          {...defaultProps}
+          tokens={tokens}
+          hiddenAssets={hiddenAssets}
+        />,
       );
 
       const rows = screen.getAllByTestId(/^SendRow-/);
       expect(rows).toHaveLength(2);
       // USDC is hidden, XLM and AQUA remain (sorted by value)
       expect(rows[0]).toHaveAttribute("data-testid", "SendRow-native");
-      expect(rows[1]).toHaveAttribute("data-testid", `SendRow-${AQUA_CANONICAL}`);
+      expect(rows[1]).toHaveAttribute(
+        "data-testid",
+        `SendRow-${AQUA_CANONICAL}`,
+      );
     });
   });
 
@@ -153,7 +185,8 @@ describe("TokenList", () => {
 
   describe("USD value", () => {
     it("values a SEP-41 balance in whole units, not the raw integer", () => {
-      const solvBtcId = "CBIJBDNZNF4X35BJ4FFZWCDBSCKOP5NB4PLG4SNENRMLAPYG4P5FM6VN";
+      const solvBtcId =
+        "CBIJBDNZNF4X35BJ4FFZWCDBSCKOP5NB4PLG4SNENRMLAPYG4P5FM6VN";
       const solvBtcCanonical = `SolvBTC:${solvBtcId}`;
       const solvBtc = {
         token: { code: "SolvBTC", issuer: { key: solvBtcId } },
@@ -179,9 +212,13 @@ describe("TokenList", () => {
       );
 
       const row = screen.getByTestId(`SendRow-${solvBtcCanonical}`);
-      expect(row.querySelector(".TokenList__AssetRow__UsdValue")).toHaveTextContent(/^\$0\.19$/);
+      expect(
+        row.querySelector(".TokenList__AssetRow__UsdValue"),
+      ).toHaveTextContent(/^\$0\.19$/);
       const usdcRow = screen.getByTestId(`SendRow-${USDC_CANONICAL}`);
-      expect(usdcRow.querySelector(".TokenList__AssetRow__UsdValue")).toHaveTextContent(/^\$200\.00$/);
+      expect(
+        usdcRow.querySelector(".TokenList__AssetRow__UsdValue"),
+      ).toHaveTextContent(/^\$200\.00$/);
     });
   });
 });

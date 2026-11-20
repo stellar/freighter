@@ -9,6 +9,21 @@ import { SheetHeader } from "popup/components/SheetHeader";
 
 import "./styles.scss";
 
+/**
+ * The value for FeesPane's total row, given the draft inclusion fee and the
+ * simulated resource fee. With no resource fee (classic, or before
+ * simulation) the inclusion fee IS the total.
+ */
+export const buildFeesPaneTotal = (
+  inclusionFee: string,
+  resourceFee: string | undefined,
+): string => {
+  if (!resourceFee) {
+    return inclusionFee;
+  }
+  return new BigNumber(inclusionFee).plus(resourceFee).toFixed();
+};
+
 export interface FeesPaneProps {
   fee: string;
   simulationState: State<SimulateTxData, string>;

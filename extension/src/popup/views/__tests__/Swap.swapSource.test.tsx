@@ -68,10 +68,21 @@ describe("Swap — ?source= to swapSource", () => {
     );
   });
 
-  it("lets the mount reset clear a source the query param does not re-set", async () => {
+  it("records Home when there is no source param", async () => {
+    renderSwap("");
+    await waitFor(() =>
+      expect(screen.getByTestId("swap-source-probe")).toHaveTextContent(
+        SwapSource.Home,
+      ),
+    );
+  });
+
+  it("treats a source outside the whitelist as Home, over a stale one", async () => {
     renderSwap("?source=token_details_evil", SwapSource.TokenDetails);
     await waitFor(() =>
-      expect(screen.getByTestId("swap-source-probe")).toHaveTextContent("none"),
+      expect(screen.getByTestId("swap-source-probe")).toHaveTextContent(
+        SwapSource.Home,
+      ),
     );
   });
 });

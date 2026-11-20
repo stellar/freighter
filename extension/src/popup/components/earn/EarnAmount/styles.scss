@@ -1,0 +1,115 @@
+@use "../../../styles/utils.scss" as *;
+@use "../compactAmountCard" as *;
+
+.EarnAmount {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(12);
+
+  &__error {
+    margin-bottom: pxToRem(4);
+  }
+
+  &__loader {
+    display: flex;
+    justify-content: center;
+    padding-top: pxToRem(48);
+  }
+
+  // The shared amount card, drawn as the deposit design has it
+  // (Varial 4470:110993): a 20/28 amount, and pills on the page's white.
+  @include compact-amount-card(
+    $amount-size: 20,
+    $amount-line-height: 28,
+    $pill-background: var(--sds-clr-base-00)
+  );
+}
+
+// The deposit screen's header (Varial 4470:110993): 72px with the X 16px from
+// the left edge, its title at 16/24, and the card right below it. Set on the
+// step's View, which declares these variables for itself.
+[data-step="earn-amount"] .View {
+  @include compact-view-header;
+}
+
+.EarnAmount__title {
+  @include text(md, semi-bold);
+  color: var(--sds-clr-gray-12);
+}
+
+.PoolCard {
+  display: flex;
+  flex-direction: column;
+
+  // A tab above the card: inset 16px each side so the card's own rounded
+  // corners sit outside it, flush with the card. Text/XS/500 in Success/Text on
+  // a pale green fill.
+  &__ribbon {
+    align-self: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(100% - #{pxToRem(32)});
+    padding: pxToRem(4) pxToRem(12);
+    border-radius: pxToRem(16) pxToRem(16) 0 0;
+    background: var(--sds-clr-green-04);
+    color: var(--sds-clr-green-11);
+    @include text(xs, medium);
+    text-align: center;
+  }
+
+  &__body {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: pxToRem(16);
+    width: 100%;
+    padding: pxToRem(12) pxToRem(16);
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    background: var(--sds-clr-gray-02);
+    border-radius: pxToRem(16);
+  }
+
+  .PoolIcon {
+    border-radius: 50%;
+  }
+
+  // The row is space-between with three children, so the identity claims the
+  // slack and keeps the icon beside it rather than at the opposite edge.
+  &__identity {
+    margin-right: auto;
+  }
+
+  // Text/SM/500, primary.
+  &__name {
+    @include text(sm, medium);
+    color: var(--sds-clr-gray-12);
+  }
+
+  // Text/XS/500, secondary.
+  &__provider {
+    @include text(xs, medium);
+    color: var(--sds-clr-gray-11);
+  }
+
+  // A 28px white circle with a 12px glyph.
+  &__chevron {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: pxToRem(28);
+    height: pxToRem(28);
+    border-radius: 50%;
+    background: var(--sds-clr-base-00);
+    color: var(--sds-clr-gray-09);
+
+    svg {
+      width: pxToRem(12);
+      height: pxToRem(12);
+    }
+  }
+}

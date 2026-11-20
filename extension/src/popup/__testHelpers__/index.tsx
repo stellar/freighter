@@ -16,6 +16,7 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { reducer as tokenPaymentSimulation } from "popup/ducks/token-payment";
 import { reducer as remoteConfig } from "popup/ducks/remoteConfig";
+import { reducer as earn } from "popup/ducks/earn";
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { Account } from "@shared/api/types";
 
@@ -39,6 +40,7 @@ const rootReducer = combineReducers({
   tokenPaymentSimulation,
   cache,
   remoteConfig,
+  earn,
 });
 
 export const makeDummyStore = (state: any) =>
@@ -74,6 +76,7 @@ export const Wrapper: React.FunctionComponent<any> = ({
       isInitialized: true,
       use_balances_v2: false,
       use_token_price_history: false,
+      earn_deposit: false,
       maintenance_banner: { enabled: false, payload: undefined },
       maintenance_screen: { enabled: false, payload: undefined },
     },

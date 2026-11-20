@@ -30,6 +30,10 @@ export const METRIC_NAMES = {
   paymentSimulationFailed: "payment.simulation_failed",
 
   // -- Swap (first-class; also the home of routed/path-payment outcomes) ---
+  // Every swap event carries `source`, where the swap was opened from:
+  // "home", "token_details" or "earn" (popup/metrics/swap.ts). The
+  // picker events say what opened the picker as `trigger`, and the selection
+  // events which list the token came from as `list`.
   swapPickerOpened: "swap.picker_opened",
   swapSourceSelected: "swap.source_selected",
   swapDestinationSelected: "swap.destination_selected",
@@ -39,6 +43,37 @@ export const METRIC_NAMES = {
   swapQuoteExpired: "swap.quote_expired",
   swapCompleted: "swap.completed",
   swapFailed: "swap.failed",
+
+  // -- Earn ----------------------------------------------------------------
+  // In funnel order. The stage-to-stage drop-off is read from `screen.viewed`
+  // (earn_intro → earn_select_token → earn_amount → earn_review →
+  // earn_processing → earn_success); the events below carry what a screen name
+  // cannot — which asset and pool, which remedy an unfunded user picked, and why
+  // an attempt ended. Emitted through popup/metrics/earn.ts, never inline.
+  earnTokenSelected: "earn.token_selected",
+  // A supported token the account holds none of was tapped; `variant` is the set
+  // of remedies the sheet actually offered.
+  earnBalanceInsufficientShown: "earn.balance_insufficient_shown",
+  // Which remedy was chosen on that sheet: buy | swap | transfer.
+  earnFundingActionSelected: "earn.funding_action_selected",
+  // The swap inside Earn reports the regular swap events, tagged
+  // `source: "earn"` (popup/metrics/swap.ts).
+  earnPoolDetailsOpened: "earn.pool_details_opened",
+  // The Max tap on the amount screen, and only that tap — the 25/50/75
+  // shortcuts emit nothing, matching Send, Swap and mobile (RFC #2883, D5).
+  // `percent` is always 100; it is kept for payload symmetry with mobile.
+  earnMaxAmountSelected: "earn.max_amount_selected",
+  // The deposit cannot cover its own network fee; `reason` separates an account
+  // with no spendable XLM from an amount that leaves less than the resource fee.
+  earnXlmFeeInsufficientShown: "earn.xlm_fee_insufficient_shown",
+  earnSimulationFailed: "earn.simulation_failed",
+  earnDepositCompleted: "earn.deposit_completed",
+  earnDepositFailed: "earn.deposit_failed",
+  // The in-flight screen was closed before the submission settled. The deposit
+  // itself is not abandoned — it was already submitted — so a completed/failed
+  // event for the same attempt normally still follows. Only closing the popup
+  // outright loses the outcome.
+  earnDepositDismissed: "earn.deposit_processing_dismissed",
 
   // -- Collectibles --------------------------------------------------------
   collectibleSendCompleted: "collectible_send.completed",

@@ -12,6 +12,7 @@ export enum ROUTES {
   discover = "/discover",
   sendPayment = "/account/sendPayment",
   swap = "/swap",
+  earn = "/earn",
   addAccount = "/add-account",
   addToken = "/add-token",
   signTransaction = "/sign-transaction",

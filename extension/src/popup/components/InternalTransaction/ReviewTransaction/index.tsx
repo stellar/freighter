@@ -41,7 +41,13 @@ import { View } from "popup/basics/layout/View";
 import { SheetHeader, SheetHeaderLayout } from "popup/components/SheetHeader";
 import { SheetLayout } from "popup/components/SheetLayout";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
-import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
+import {
+  accountNameSelector,
+  hardwareWalletTypeSelector,
+  publicKeySelector,
+} from "popup/ducks/accountServices";
+import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
+import { TransactionDetailsButton } from "popup/components/TransactionDetailsButton";
 import { useValidateTransactionMemo } from "popup/helpers/useValidateTransactionMemo";
 import {
   BlockaidWarning,
@@ -140,6 +146,9 @@ export const ReviewTx = ({
   const dispatch = useDispatch();
   const submission = useSelector(transactionSubmissionSelector);
   const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
+  // The account that signs: Send and Swap always spend from the active one.
+  const publicKey = useSelector(publicKeySelector);
+  const accountName = useSelector(accountNameSelector);
   const isHardwareWallet = !!hardwareWalletType;
 
   const {
@@ -468,7 +477,7 @@ export const ReviewTx = ({
             />
           </div>
           <div className="ReviewTx__Divider">
-            <Icon.ChevronDownDouble />
+            <Icon.ArrowDown />
           </div>
           <div
             className="ReviewTx__SendDestination"
@@ -517,6 +526,21 @@ export const ReviewTx = ({
         )}
       </div>
       <div className="ReviewTx__Details">
+        {/* The signing account, as on mobile's Send and Swap reviews. */}
+        <div className="ReviewTx__Details__Row" data-testid="review-tx-wallet">
+          <div className="ReviewTx__Details__Row__Title">
+            <Icon.Wallet01 />
+            {t("Wallet")}
+          </div>
+          <div className="ReviewTx__Details__Row__Value ReviewTx__Details__Row__Value--wallet">
+            <span className="ReviewTx__Wallet__Avatar">
+              <IdenticonImg publicKey={publicKey} />
+            </span>
+            <span className="ReviewTx__Wallet__Name">
+              {accountName || truncatedPublicKey(publicKey)}
+            </span>
+          </div>
+        </div>
         {/* Swaps don't carry a memo; hide the row entirely. For Send, hide it
             only when memo is disabled (e.g., for all M addresses). */}
         {!isSwap && !isMemoDisabled && (
@@ -570,15 +594,11 @@ export const ReviewTx = ({
             not duplicated as a row here. */}
       </div>
       {detailTx && (
-        <button
-          type="button"
+        <TransactionDetailsButton
           className="ReviewTx__TxDetailsBtn"
-          data-testid="review-tx-details-btn"
+          testId="review-tx-details-btn"
           onClick={() => setIsOnDetailsPane(true)}
-        >
-          <Icon.List />
-          <span>{t("Transaction details")}</span>
-        </button>
+        />
       )}
     </>
   );

@@ -3,7 +3,7 @@ import { validateSwapAmount } from "../swapAmountValidation";
 import {
   getAmountFontSizeClass,
   buildFiatLineText,
-} from "../swapAmountDisplay";
+} from "popup/components/amount/helpers/amountDisplay";
 
 describe("validateSwapAmount", () => {
   it("returns null for a valid amount", () => {
