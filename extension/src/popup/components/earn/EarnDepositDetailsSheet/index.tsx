@@ -10,6 +10,7 @@ import { isCustomNetwork } from "@shared/helpers/stellar";
 import { stroopToXlm } from "helpers/stellar";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { EarnTransactionDetails } from "popup/components/earn/EarnTransactionDetails";
+import { formatDepositDate } from "popup/components/earn/helpers/formatDepositDate";
 import { formatEarnAmount } from "popup/components/earn/helpers/formatEarnAmount";
 import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
 import { StatRow } from "popup/components/earn/StatRow";
@@ -37,17 +38,6 @@ interface EarnDepositDetailsSheetProps {
   onClose: () => void;
 }
 
-// "Aug 28 2026 · 2:33pm", as the design writes it.
-const formatDepositDate = (createdAt: string) => {
-  const date = new Date(createdAt);
-  const day = date.toDateString().split(" ").slice(1).join(" ");
-  const time = date
-    .toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
-    .replace(" ", "")
-    .toLowerCase();
-  return `${day} · ${time}`;
-};
-
 /**
  * The deposit's own record, opened from "View transaction" on the success
  * screen, as on mobile: where it went, how much, its status and fee, the full
@@ -68,7 +58,10 @@ export const EarnDepositDetailsSheet = ({
   networkDetails,
   onClose,
 }: EarnDepositDetailsSheetProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  // What i18next actually fell back to, so the date reads in the same
+  // language as the strings around it.
+  const language = i18n.resolvedLanguage || i18n.language;
   const [onChain, setOnChain] = useState<{
     createdAt: string;
     feeCharged: string;
@@ -161,7 +154,9 @@ export const EarnDepositDetailsSheet = ({
           }
           title={t("Deposited {{code}}", { code: assetCode })}
           subtitle={
-            onChain ? formatDepositDate(onChain.createdAt) : NO_FIAT_VALUE
+            onChain
+              ? formatDepositDate(onChain.createdAt, language)
+              : NO_FIAT_VALUE
           }
           subtitleTestId="earn-deposit-details-date"
           onClose={onClose}
