@@ -689,15 +689,24 @@ export const useSwapTokenLookup = () => {
       });
 
     // Held rows come from the caller's balances, never from a cache another
-    // caller or account filled.
+    // caller or account filled. Only the idle entry is shared across callers;
+    // a search entry's yourTokens is term-filtered, so it is served as cached.
     const serveCached = (result: SwapTokenLookupResult) =>
-      serve({
-        ...result,
-        sections: {
-          ...result.sections,
-          yourTokens: balancesToHeldRecords({ balances, icons, tokenPrices }),
-        },
-      });
+      serve(
+        isIdle
+          ? {
+              ...result,
+              sections: {
+                ...result.sections,
+                yourTokens: balancesToHeldRecords({
+                  balances,
+                  icons,
+                  tokenPrices,
+                }),
+              },
+            }
+          : result,
+      );
 
     if (cachedResult) {
       serveCached(cachedResult);

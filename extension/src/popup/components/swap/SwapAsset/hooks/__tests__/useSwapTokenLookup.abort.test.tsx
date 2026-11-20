@@ -156,6 +156,47 @@ describe("useSwapTokenLookup fetchData — abort race (§ batch4 task 7)", () =>
     ).toEqual(["XLM"]);
   });
 
+  it("serves a cached search repaint with its term-filtered held tokens", async () => {
+    const store = makeDummyStore({ settings: { assetsLists: {} } });
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <Provider store={store}>{children}</Provider>
+    );
+    const { result } = renderHook(() => useSwapTokenLookup(), { wrapper });
+    const args = {
+      balances: [
+        {
+          token: { code: "USDC", issuer: { key: "GUSD" } },
+          total: "100",
+        } as any,
+        { token: { type: "native", code: "XLM" }, total: "50" } as any,
+      ],
+      publicKey: "GADUMMY",
+      networkDetails: TESTNET,
+      searchTerm: "usd",
+    };
+
+    (splitVerifiedAssetCurrency as jest.Mock).mockResolvedValueOnce({
+      verifiedAssets: [],
+      unverifiedAssets: [],
+    });
+    await act(async () => {
+      await result.current.fetchData(args);
+    });
+    expect(
+      result.current.state.data?.sections.yourTokens.map((r) => r.code),
+    ).toEqual(["USDC"]);
+
+    (splitVerifiedAssetCurrency as jest.Mock).mockReturnValueOnce(
+      new Promise(() => {}),
+    );
+    await act(async () => {
+      void result.current.fetchData(args);
+    });
+    expect(
+      result.current.state.data?.sections.yourTokens.map((r) => r.code),
+    ).toEqual(["USDC"]);
+  });
+
   it("does not commit a superseded search's sections over the current one", async () => {
     const store = makeDummyStore({ settings: { assetsLists: {} } });
     const wrapper = ({ children }: { children: React.ReactNode }) => (
