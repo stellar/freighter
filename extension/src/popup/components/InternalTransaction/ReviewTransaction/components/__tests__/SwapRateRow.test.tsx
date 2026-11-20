@@ -44,6 +44,11 @@ describe("SwapRateRow", () => {
     ).toBeInTheDocument();
   });
 
+  it("labels the row with the swap rate key", () => {
+    renderRow({});
+    expect(screen.getByText("Swap details rate")).toBeInTheDocument();
+  });
+
   it("derives the value font-size from the rendered rate length", () => {
     renderRow({
       srcCode: "LONGTOKENA",

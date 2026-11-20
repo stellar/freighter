@@ -150,3 +150,67 @@ export interface V2AccountBalances {
   subentry_count: number;
   balances: V2Balance[];
 }
+
+// freighter-backend-v2 `POST /swap/quotes` wire types; mirror
+// internal/types/swap.go. Assets are "XLM", "CODE:ISSUER" or a "C…" contract ID.
+export type SwapQuoteMode = "send" | "receive";
+
+export interface SwapHop {
+  venue: string;
+  from: string;
+  to: string;
+  pool?: string;
+  /** Estimated output of this hop, in `to`'s display units (not base units). Set on every hop of a LI.FI route or on none. */
+  toAmount?: string;
+}
+
+export interface SwapPath {
+  share: string;
+  hops: SwapHop[];
+}
+
+export interface SwapFee {
+  name: string;
+  amount: string;
+  asset: string;
+}
+
+export interface SwapRoute {
+  source: string;
+  fromAmount: string;
+  toAmount: string;
+  paths: SwapPath[];
+  fees: SwapFee[];
+  /** LI.FI only: the simulated Soroban resource fee, in XLM. */
+  resourceFee?: string;
+}
+
+export interface SwapUnavailable {
+  source: string;
+  reason: string;
+}
+
+export interface SwapQuotesResponse {
+  routes: SwapRoute[];
+  unavailable: SwapUnavailable[];
+}
+
+// `POST /swap/tx`. `fee` is the user's network fee setting in XLM; classic
+// builds split it across the operations, LI.FI builds add the resource fee.
+export interface SwapTxRequest {
+  account: string;
+  source: string;
+  fromAsset: string;
+  toAsset: string;
+  amount: string;
+  minOut: string;
+  fee: string;
+  slippage: string;
+  timeout: number;
+  paths?: SwapPath[];
+}
+
+export interface SwapTxResponse {
+  xdr: string;
+  addsTrustline: boolean;
+}

@@ -4,12 +4,12 @@ import BigNumber from "bignumber.js";
 
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
-import { Wrapper } from "popup/__testHelpers__";
+import { Wrapper, getTestStore } from "popup/__testHelpers__";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
 import * as UseGetSwapAmountData from "popup/components/swap/SwapAmount/hooks/useGetSwapAmountData";
 import * as UseSimulateSwapData from "popup/components/swap/SwapAmount/hooks/useSimulateSwapData";
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
-import * as HorizonGetBestPath from "popup/helpers/horizonGetBestPath";
+import * as FetchBackendV2 from "@shared/api/helpers/fetchBackendV2";
 
 const USDC_ISSUER = "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
 const USDC_CANONICAL = `USDC:${USDC_ISSUER}`;
@@ -23,6 +23,19 @@ const usdcBalance = {
   token: { code: "USDC", issuer: { key: USDC_ISSUER } },
   total: new BigNumber("50"),
   available: new BigNumber("50"),
+};
+
+const TOKEN_CONTRACT =
+  "CBI7UCH5KGSVQRO5H4SUCZUTZABCITZLRHQQZTWL2TK4RZ72TAR6IHRV";
+const TOKEN_CANONICAL = `TKN:${TOKEN_CONTRACT}`;
+const tokenBalance = {
+  token: { code: "TKN", issuer: { key: TOKEN_CONTRACT } },
+  contractId: TOKEN_CONTRACT,
+  total: new BigNumber("5000000000000000000"),
+  available: new BigNumber("5000000000000000000"),
+  decimals: 18,
+  name: "Token",
+  symbol: "TKN",
 };
 
 const makeSwapData = (balances: unknown[]) => ({
@@ -40,6 +53,7 @@ const renderAmount = (transactionData: Record<string, unknown>) =>
       state={
         {
           transactionSubmission: {
+            soroswapTokens: [],
             transactionData: {
               asset: "native",
               amount: "5",
@@ -84,9 +98,10 @@ describe("SwapAmount direction toggle", () => {
       fetchData: jest.fn().mockResolvedValue(undefined),
     } as any);
     // Avoid the live-quote network call when a destination + amount are set.
-    jest
-      .spyOn(HorizonGetBestPath, "horizonGetBestPath")
-      .mockResolvedValue(null as any);
+    jest.spyOn(FetchBackendV2, "fetchBackendV2").mockResolvedValue({
+      status: 200,
+      body: { data: { routes: [], unavailable: [] } },
+    });
   });
   afterEach(() => jest.restoreAllMocks());
 
@@ -142,5 +157,37 @@ describe("SwapAmount direction toggle", () => {
     expect(within(sell).getByText("Select")).toBeInTheDocument();
     expect(within(receive).getByText("XLM")).toBeInTheDocument();
     expect(within(sell).queryByText("USDC")).toBeNull();
+  });
+
+  // isToken drives the review's contract memo/muxed check against the SOURCE
+  // (getContractIdFromTransactionData reads srcAsset), so it follows the
+  // token that lands in the sell slot.
+  const isToken = () =>
+    getTestStore()!.getState().transactionSubmission.transactionData.isToken;
+
+  it("sets isToken when a held contract token moves into the sell slot", async () => {
+    mockAmountData([nativeBalance, tokenBalance]);
+    renderAmount({ destinationAsset: TOKEN_CANONICAL, isToken: false });
+
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText("Swap direction"));
+    });
+
+    expect(isToken()).toBe(true);
+  });
+
+  it("clears isToken when a classic asset moves into the sell slot", async () => {
+    mockAmountData([nativeBalance, tokenBalance]);
+    renderAmount({
+      asset: TOKEN_CANONICAL,
+      destinationAsset: "native",
+      isToken: true,
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText("Swap direction"));
+    });
+
+    expect(isToken()).toBe(false);
   });
 });
