@@ -239,7 +239,9 @@ const lockScreenColors = async (page: Page) => ({
   page: await backdrop(page.getByTestId("unlock-account")),
 });
 
-// The Varial header: a bare X in gray-09 and the title in gray-12, no badge.
+// The Varial header: a bare X and the title, both in gray-12, no badge. The
+// shared sheet header draws every sheet's X in the primary text color, as in
+// the Varial frames and mobile's BottomSheetHeader.
 const sheetColors = async (page: Page) => ({
   surface: await backdrop(page.getByTestId("forgot-password-sheet")),
   closeColor: await computed(
@@ -295,7 +297,7 @@ test("lock screen and Forgot password sheet follow the color scheme", async ({
   await expect(page.getByTestId("forgot-password-sheet")).toBeVisible();
   expect(await sheetColors(page)).toEqual({
     surface: GRAY_01.light,
-    closeColor: "rgb(143, 143, 143)", // gray-09 light
+    closeColor: "rgb(23, 23, 23)", // gray-12 light
     titleColor: "rgb(23, 23, 23)", // gray-12 light
     resetBackground: "rgb(229, 72, 77)", // red-09, the destructive button
   });
@@ -306,7 +308,7 @@ test("lock screen and Forgot password sheet follow the color scheme", async ({
   await expect(page.locator("body")).toHaveClass(/sds-theme-dark/);
   expect(await sheetColors(page)).toEqual({
     surface: GRAY_01.dark,
-    closeColor: "rgb(112, 112, 112)", // gray-09 dark
+    closeColor: "rgb(237, 237, 237)", // gray-12 dark
     titleColor: "rgb(237, 237, 237)", // gray-12 dark
     resetBackground: "rgb(229, 72, 77)", // red-09 is the same in both themes
   });
