@@ -267,9 +267,10 @@ test("Swap shows correct balances for assets", async ({
   // not the reserve-adjusted available balance.
   await expect(page.getByTestId("SwapTokenRow-XLM")).toContainText("999");
 
-  // The source "Your tokens" list is classic-only: Soroban contract tokens
-  // (carrying a contractId, e.g. PBT) are excluded, so PBT does NOT appear here.
-  await expect(page.getByTestId("SwapTokenRow-PBT")).toHaveCount(0);
+  // Held Soroban contract tokens are swap sources too; the balance is `total`
+  // shifted by `decimals` (9899700 at 5 decimals).
+  await expect(page.getByTestId("SwapTokenRow-PBT")).toBeVisible();
+  await expect(page.getByTestId("SwapTokenRow-PBT")).toContainText("98.997");
 });
 test("Send doesn't throw error when account is unfunded", async ({
   page,
@@ -1127,8 +1128,6 @@ test("Swap resets state when navigating back to account", async ({
 
   // Open the "Swap from" picker via the sell card's asset selector
   // (send-amount-edit-dest-asset is shared by both cards, so it must be scoped).
-  // USDC is stubbed without a contractId: heldToRecord drops any balance carrying
-  // a contractId, so a contractId-bearing USDC would never render as SwapTokenRow-USDC.
   await page
     .getByTestId("swap-sell-card")
     .getByTestId("send-amount-edit-dest-asset")

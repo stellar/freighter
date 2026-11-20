@@ -82,7 +82,7 @@ describe("ReviewTx Wallet row", () => {
 
     const card = screen.getByTestId("review-tx-wallet").parentElement!;
     expect(card.firstElementChild).toBe(screen.getByTestId("review-tx-wallet"));
-    // Rate and Fee follow it.
-    expect(card).toHaveTextContent(/Wallet.*Rate.*Fee/);
+    // Rate (its "Swap details rate" key) and Fee follow it.
+    expect(card).toHaveTextContent(/Wallet.*Swap details rate.*Fee/);
   });
 });

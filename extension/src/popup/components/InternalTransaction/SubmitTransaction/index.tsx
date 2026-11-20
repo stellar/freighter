@@ -27,6 +27,7 @@ import {
   publicKeySelector,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { formatAmount, trimTrailingZeros } from "popup/helpers/formatters";
 import {
   resetSubmission,
   transactionSubmissionSelector,
@@ -293,7 +294,7 @@ export const SendingTransaction = ({
                 }
                 amount={`${amount} ${srcAsset.code}`}
                 verb={isLoading ? t("to") : t("was swapped for")}
-                target={`${destinationAmount} ${dstAsset.code}`}
+                target={`${formatAmount(trimTrailingZeros(destinationAmount))} ${dstAsset.code}`}
                 captionTestId="swap-status-caption"
               />
             </div>

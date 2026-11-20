@@ -25,6 +25,8 @@ import {
   SoroswapToken,
 } from "@shared/api/types";
 
+import { SwapQuotesResponse } from "@shared/api/types/backend-api";
+import type { SwapQuoteKey } from "popup/helpers/swapQuote";
 import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 import { isCustomNetwork } from "@shared/helpers/stellar";
@@ -32,9 +34,8 @@ import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
 import { SwapSource } from "popup/constants/swap";
 import { DEFAULT_TX_TIMEOUT } from "popup/constants/transaction";
 
-import { encodeSep53Message, getCanonicalFromAsset } from "helpers/stellar";
+import { encodeSep53Message } from "helpers/stellar";
 import { INDEXER_URL } from "@shared/constants/mercury";
-import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
 import { isQuoteExpiredError } from "popup/helpers/quoteExpiry";
 import {
   soroswapGetBestPath,
@@ -391,35 +392,6 @@ export const getSoroswapTokens = createAsyncThunk<
   return tokenData.assets;
 });
 
-// returns the full record so can save the best path and its rate
-export const getBestPath = createAsyncThunk<
-  Horizon.ServerApi.PaymentPathRecord,
-  {
-    amount: string;
-    sourceAsset: string;
-    destAsset: string;
-    networkDetails: NetworkDetails;
-  },
-  { rejectValue: ErrorMessage }
->(
-  "getBestPath",
-  async ({ amount, sourceAsset, destAsset, networkDetails }, thunkApi) => {
-    try {
-      return await horizonGetBestPath({
-        amount,
-        sourceAsset,
-        destAsset,
-        networkDetails,
-      });
-    } catch (e) {
-      const message = e instanceof Error ? e.message : JSON.stringify(e);
-      return thunkApi.rejectWithValue({
-        errorMessage: message,
-      });
-    }
-  },
-);
-
 export const getBestSoroswapPath = createAsyncThunk<
   {
     amountIn?: string;
@@ -485,8 +457,8 @@ export interface DestinationTokenDetails {
   tokenCode: string;
   // true when the user has no trustline for this destination yet.
   requiresTrustline: boolean;
-  // 7 for classic assets.
-  decimals: number;
+  // 7 for classic assets; unset when the picked row didn't say.
+  decimals?: number;
   // omitted for native XLM.
   issuer?: string;
   // from the pick-time Blockaid bulk scan.
@@ -538,6 +510,16 @@ interface TransactionData {
   // Analytics-only: where the swap flow was entered from (`source` on
   // swap.completed). Reset with the rest of the submission on Swap mount.
   swapSource: SwapSource | null;
+  // The backend response behind `path`/`destinationAmount`; null on custom
+  // networks and whenever the quote is cleared.
+  swapQuotes: SwapQuotesResponse | null;
+  swapQuoteKey: SwapQuoteKey | null;
+  // The best route's resource fee from the last quote, kept past a new
+  // amount so Max can hold it back before that amount's quote lands.
+  swapLastQuotedFee: {
+    key: SwapQuoteKey;
+    resourceFee: string | null;
+  } | null;
 }
 
 interface HardwareWalletData {
@@ -602,6 +584,9 @@ export const initialState: InitialState = {
     isSoroswap: false,
     manualTransactionFee: null,
     swapSource: null,
+    swapQuotes: null,
+    swapQuoteKey: null,
+    swapLastQuotedFee: null,
   },
   transactionSimulation: {
     response: null,
@@ -639,6 +624,10 @@ const transactionSubmissionSlice = createSlice({
     },
     clearSwapQuoteExpired: (state) => {
       state.isSwapQuoteExpired = false;
+    },
+    // The quote no longer builds, so the next review must re-quote.
+    clearSwapQuoteKey: (state) => {
+      state.transactionData.swapQuoteKey = null;
     },
     saveDestination: (state, action) => {
       state.transactionData.destination = action.payload;
@@ -741,10 +730,28 @@ const transactionSubmissionSlice = createSlice({
     saveBalancesToMigrate: (state, action) => {
       state.transactionData.balancesToMigrate = action.payload;
     },
-    saveSwapBestPath: (state, action) => {
+    saveSwapBestPath: (
+      state,
+      action: PayloadAction<{
+        path: string[];
+        destinationAmount: string;
+        quotes?: SwapQuotesResponse | null;
+        key?: SwapQuoteKey | null;
+      }>,
+    ) => {
       state.transactionData.path = action.payload.path;
       state.transactionData.destinationAmount =
         action.payload.destinationAmount;
+      state.transactionData.swapQuotes = action.payload.quotes ?? null;
+      state.transactionData.swapQuoteKey = action.payload.key ?? null;
+      const { quotes, key } = action.payload;
+      // An answer with no route says nothing about the pair's fee.
+      if (quotes?.routes[0] && key) {
+        state.transactionData.swapLastQuotedFee = {
+          key,
+          resourceFee: quotes.routes[0].resourceFee ?? null,
+        };
+      }
     },
     saveDestinationTokenDetails: (
       state,
@@ -764,6 +771,9 @@ const transactionSubmissionSlice = createSlice({
       // instead of dead-ending in SubmitFail. These op codes only arise from
       // swap path payments, so this is a no-op for sends.
       state.isSwapQuoteExpired = isQuoteExpiredError(action.payload);
+      if (state.isSwapQuoteExpired) {
+        state.transactionData.swapQuoteKey = null;
+      }
     });
     builder.addCase(submitFreighterTransaction.fulfilled, (state, action) => {
       state.submitStatus = ActionStatus.SUCCESS;
@@ -803,11 +813,6 @@ const transactionSubmissionSlice = createSlice({
         state.error = action.payload;
       },
     );
-    builder.addCase(getBestPath.rejected, (state) => {
-      state.transactionData.path = initialState.transactionData.path;
-      state.transactionData.destinationAmount =
-        initialState.transactionData.destinationAmount;
-    });
     builder.addCase(getBestSoroswapPath.rejected, (state) => {
       state.transactionData.path = initialState.transactionData.path;
       state.transactionData.destinationAmount =
@@ -820,27 +825,6 @@ const transactionSubmissionSlice = createSlice({
         ...state,
         soroswapTokens,
       };
-    });
-    builder.addCase(getBestPath.fulfilled, (state, action) => {
-      if (!action.payload) {
-        state.transactionData.path = [];
-        state.transactionData.destinationAmount = "";
-        return;
-      }
-
-      // store in canonical form for easier use
-      const path: string[] = [];
-      action.payload.path.forEach((p) => {
-        if (!p.asset_code && !p.asset_issuer) {
-          path.push(p.asset_type);
-        } else {
-          path.push(getCanonicalFromAsset(p.asset_code, p.asset_issuer));
-        }
-      });
-
-      state.transactionData.path = path;
-      state.transactionData.destinationAmount =
-        action.payload.destination_amount;
     });
     builder.addCase(getBestSoroswapPath.fulfilled, (state, action) => {
       if (!action.payload) {
@@ -867,6 +851,7 @@ export const {
   resetSubmitStatus,
   setSubmitError,
   clearSwapQuoteExpired,
+  clearSwapQuoteKey,
   saveDestination,
   saveRecipientName,
   saveFederationAddress,
