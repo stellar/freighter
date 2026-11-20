@@ -8,12 +8,15 @@ import { hash, xdr } from "stellar-sdk";
 import browser from "webextension-polyfill";
 
 import { store } from "popup/App";
-import { METRICS_DATA, METRICS_USER_ID } from "constants/localStorageTypes";
+import {
+  ACCOUNT_FUNDING_RECORDS_ID,
+  METRICS_DATA,
+  METRICS_USER_ID,
+} from "constants/localStorageTypes";
 import { AMPLITUDE_KEY, APP_VERSION } from "constants/env";
 import { initExperimentClient } from "helpers/experimentClient";
 import { BUNDLE_ID_USER_PROPERTY_KEY, getBundleId } from "helpers/analytics";
 import { isDev } from "@shared/helpers/dev";
-import { truncatedPublicKey } from "helpers/stellar";
 import { isSidebarMode } from "popup/helpers/isSidebarMode";
 import { getAppliedColorScheme } from "popup/helpers/systemTheme";
 import {
@@ -103,14 +106,30 @@ export function registerHandler<State>(
   (handlersLookup[type] ??= []).push(handler);
 }
 
+/**
+ * Client-side funding state of one own account on one network. The key is
+ * `${network}:${account_id_hash}`, so no G address is stored.
+ */
+export interface FundingRecord {
+  /**
+   * Event state. Only results from the active-account fetch change it.
+   * - not set: no active-account result yet
+   * - unfunded: the last active-account result was unfunded
+   * - pending: a transition to funded occurred, but consent dropped the event
+   * - funded: the last active-account result was funded, and nothing is left
+   *   to report
+   */
+  status?: "unfunded" | "pending" | "funded";
+  /** Last known funded state from any source. Feeds funded_account_count. */
+  funded?: boolean;
+}
+
+export type FundingRecords = Record<string, FundingRecord>;
+
 export interface MetricsData {
   accountType: AccountType;
   hwExists: boolean;
   importedExists: boolean;
-  hwFunded: boolean;
-  importedFunded: boolean;
-  freighterFunded: boolean;
-  unfundedFreighterAccounts: string[];
 }
 
 let hasInitialized = false;
@@ -362,8 +381,34 @@ export const initAmplitude = async () => {
   }
 };
 
+/** The network that has prices, so the only network with funding records. */
+export const FUNDING_NETWORK = "PUBLIC";
+
+/** The key of the funding record of one account on one network. */
+export const getFundingRecordKey = (network: string, publicKey: string) =>
+  `${network}:${getAccountIdHash(publicKey)}`;
+
+/**
+ * The number of own accounts whose funding record on mainnet has
+ * `funded: true`. An account without a `funded` value does not count. An
+ * account that the user removed does not count, because only `allAccounts`
+ * is read.
+ */
+export const getFundedAccountCount = (
+  allAccounts: Account[],
+  fundingRecords: FundingRecords = {},
+): number =>
+  allAccounts.filter(
+    (acc) =>
+      fundingRecords[getFundingRecordKey(FUNDING_NETWORK, acc.publicKey)]
+        ?.funded === true,
+  ).length;
+
 /** Derives the durable Identify traits from the full account list. */
-export const deriveIdentifyTraits = (allAccounts: Account[]) => {
+export const deriveIdentifyTraits = (
+  allAccounts: Account[],
+  fundingRecords: FundingRecords = {},
+) => {
   let hasHardware = false;
   let hasImported = false;
   allAccounts.forEach((acc) => {
@@ -377,6 +422,7 @@ export const deriveIdentifyTraits = (allAccounts: Account[]) => {
     wallet_count: allAccounts.length,
     has_hardware_wallet: hasHardware,
     has_imported_account: hasImported,
+    funded_account_count: getFundedAccountCount(allAccounts, fundingRecords),
   };
 };
 
@@ -385,7 +431,7 @@ let lastIdentifiedTraits: string | null = null;
 
 /** Sends durable wallet-composition traits to Amplitude Identify (dirty-checked). */
 export const syncIdentifyTraits = (allAccounts: Account[]): void => {
-  const traits = deriveIdentifyTraits(allAccounts);
+  const traits = deriveIdentifyTraits(allAccounts, getFundingRecords());
   const fingerprint = JSON.stringify(traits);
   if (fingerprint === lastIdentifiedTraits) return;
 
@@ -407,6 +453,7 @@ export const syncIdentifyTraits = (allAccounts: Account[]): void => {
     identify.set("wallet_count", traits.wallet_count);
     identify.set("has_hardware_wallet", traits.has_hardware_wallet);
     identify.set("has_imported_account", traits.has_imported_account);
+    identify.set("funded_account_count", traits.funded_account_count);
     amplitude.identify(identify);
 
     lastIdentifiedTraits = fingerprint;
@@ -520,28 +567,47 @@ export const buildCommonContext = (
 // localStorage helpers
 // ---------------------------------------------------------------------------
 
-const METRICS_DATA_DEFAULTS: MetricsData = {
-  accountType: AccountType.FREIGHTER,
-  hwExists: false,
-  importedExists: false,
-  hwFunded: false,
-  importedFunded: false,
-  freighterFunded: false,
-  unfundedFreighterAccounts: [],
+/**
+ * Reads all funding records from localStorage. Returns an empty map if the
+ * entry is missing or contains invalid JSON.
+ */
+const getFundingRecords = (): FundingRecords => {
+  try {
+    const raw = localStorage.getItem(ACCOUNT_FUNDING_RECORDS_ID);
+    return raw ? (JSON.parse(raw) as FundingRecords) : {};
+  } catch {
+    return {};
+  }
 };
 
+/** Reads the funding record of one account on one network. */
+export const getFundingRecord = (
+  network: string,
+  publicKey: string,
+): FundingRecord | undefined =>
+  getFundingRecords()[getFundingRecordKey(network, publicKey)];
+
 /**
- * Reads and parses metrics data from localStorage.
- * Returns safe defaults if the entry is missing or contains invalid JSON
- * (e.g. after a storage corruption or schema change).
+ * Writes the funding record of one account on one network. localStorage is
+ * synchronous, so a read and a write in one call cannot interleave with
+ * another update.
  */
-const getMetricsData = (): MetricsData => {
+export const saveFundingRecord = (
+  network: string,
+  publicKey: string,
+  record: FundingRecord,
+): void => {
   try {
-    const raw = localStorage.getItem(METRICS_DATA);
-    if (!raw) return { ...METRICS_DATA_DEFAULTS };
-    return JSON.parse(raw) as MetricsData;
+    const fundingRecords = {
+      ...getFundingRecords(),
+      [getFundingRecordKey(network, publicKey)]: record,
+    };
+    localStorage.setItem(
+      ACCOUNT_FUNDING_RECORDS_ID,
+      JSON.stringify(fundingRecords),
+    );
   } catch {
-    return { ...METRICS_DATA_DEFAULTS };
+    // Storage write failed. The next result writes the record again.
   }
 };
 
@@ -554,8 +620,14 @@ const getMetricsData = (): MetricsData => {
  * Respects the user's data-sharing preference; no-ops if disabled.
  * @param name The event name for the Amplitude dashboard.
  * @param body Optional object containing event-specific metadata.
+ * @returns `false` when the event was dropped: data sharing is off, or the
+ * SDK is not initialized. `true` when the event was sent, or logged because
+ * no Amplitude key exists (development).
  */
-export const emitMetric = (name: string, body?: Record<string, unknown>) => {
+export const emitMetric = (
+  name: string,
+  body?: Record<string, unknown>,
+): boolean => {
   const state = store.getState();
 
   const eventProperties = {
@@ -565,15 +637,16 @@ export const emitMetric = (name: string, body?: Record<string, unknown>) => {
 
   const isDataSharingAllowed = settingsDataSharingSelector(state);
   if (!isDataSharingAllowed) {
-    return;
+    return false;
   }
 
   if (!AMPLITUDE_KEY || !hasInitialized) {
     console.log(LOG_MESSAGES.EVENT_NOT_UPLOADED, name, eventProperties);
-    return;
+    return !AMPLITUDE_KEY;
   }
 
   amplitude.track(name, eventProperties);
+  return true;
 };
 
 // ---------------------------------------------------------------------------
@@ -636,54 +709,6 @@ export const emitScreenViewed = (
 };
 
 /**
- * Persists balance-related metrics data for a given account.
- * Tracks whether HW, imported, or Freighter accounts are funded, and
- * emits a one-time event when a previously unfunded Freighter account
- * receives its first funding.
- * @param publicKey The Stellar public key (G-address) of the account.
- * @param accountFunded Whether the account currently has a balance.
- */
-export const storeBalanceMetricData = (
-  publicKey: string,
-  accountFunded: boolean,
-) => {
-  const metricsData: MetricsData = getMetricsData();
-  const accountType = metricsData.accountType;
-
-  if (accountFunded && accountType === AccountType.HW) {
-    metricsData.hwFunded = true;
-  }
-  if (accountFunded && accountType === AccountType.IMPORTED) {
-    metricsData.importedFunded = true;
-  }
-  if (accountType === AccountType.FREIGHTER) {
-    // Track previously-unfunded Freighter accounts so we can fire a one-time
-    // "funded" event. Keys are truncated before storage to avoid persisting
-    // full G-addresses to localStorage.
-    const unfundedFreighterAccounts =
-      metricsData.unfundedFreighterAccounts || [];
-    const truncated = truncatedPublicKey(publicKey);
-    const idx = unfundedFreighterAccounts.indexOf(truncated);
-
-    if (accountFunded) {
-      metricsData.freighterFunded = true;
-      if (idx !== -1) {
-        emitMetric(METRIC_NAMES.accountFirstFunded, {
-          account_id_hash: getAccountIdHash(publicKey),
-        });
-        unfundedFreighterAccounts.splice(idx, 1);
-      }
-    }
-    if (!accountFunded && idx === -1) {
-      unfundedFreighterAccounts.push(truncated);
-    }
-    metricsData.unfundedFreighterAccounts = unfundedFreighterAccounts;
-  }
-
-  localStorage.setItem(METRICS_DATA, JSON.stringify(metricsData));
-};
-
-/**
  * Persists account-type metrics data derived from the user's full account list.
  * Records whether HW or imported accounts exist, and sets the active account
  * type for subsequent metric emissions.
@@ -694,7 +719,13 @@ export const storeAccountMetricsData = (
   publicKey: string,
   allAccounts: Account[],
 ) => {
-  const metricsData: MetricsData = getMetricsData();
+  // Build a new object, not a merge into the stored one. Thus each write
+  // drops fields that the code no longer uses.
+  const metricsData: MetricsData = {
+    accountType: AccountType.FREIGHTER,
+    hwExists: false,
+    importedExists: false,
+  };
 
   let accountType = AccountType.FREIGHTER;
   allAccounts.forEach((acc: Account) => {

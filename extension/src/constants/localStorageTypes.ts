@@ -42,3 +42,9 @@ export const HAS_SEEN_DISCOVER_WELCOME = "hasSeenDiscoverWelcome";
 export const REBRAND_ANNOUNCEMENT_STATUS_ID = "rebrandAnnouncementStatus";
 export const ETHENA_LAUNCH_PROMO_STATUS_ID = "ethenaLaunchPromoStatus";
 export const AUTO_LOCK_TIMEOUT_MINUTES_ID = "autoLockTimeoutMinutes";
+// Funding records of the account.funded event and funded_account_count
+export const ACCOUNT_FUNDING_RECORDS_ID = "accountFundingRecords";
+// Time (ms) of the last successful app-open refresh of funded_account_count
+export const FUNDED_ACCOUNTS_REFRESHED_AT_ID = "fundedAccountsRefreshedAt";
+// Time (ms) until which a running app-open refresh holds the lease
+export const FUNDED_ACCOUNTS_REFRESH_LEASE_ID = "fundedAccountsRefreshLease";
