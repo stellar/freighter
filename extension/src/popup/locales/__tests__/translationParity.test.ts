@@ -4,7 +4,6 @@ import pt from "popup/locales/pt/translation.json";
 const swapKeys = [
   "Quote has expired, please try again to get a new quote",
   "Token discovery is temporarily unavailable. You can still swap between tokens you already hold.",
-  "Soroban contract tokens aren't supported for swaps yet. Try searching for a Classic token instead.",
   "No tokens match {{term}}",
   "Select a token",
   "You sell",
@@ -13,6 +12,7 @@ const swapKeys = [
   "Insufficient balance. Maximum spendable: {{amount}} {{symbol}}",
   "Not enough XLM for network fees",
   "No quote available",
+  "Swaps are temporarily unavailable",
   "The token you're receiving was flagged as malicious by Blockaid.",
   "The token you're receiving was flagged as suspicious by Blockaid.",
   "The token you're receiving couldn't be scanned for security risks.",
@@ -34,6 +34,12 @@ describe("swap i18n parity", () => {
       expect(en).toHaveProperty([k]);
       expect(pt).toHaveProperty([k]);
     });
+  });
+
+  // "Taxa" would read as a second fee next to the network fee row.
+  it("labels the Details sheet's rate as a quote rate, not a fee", () => {
+    expect(en).toHaveProperty(["Swap details rate"], "Rate");
+    expect(pt).toHaveProperty(["Swap details rate"], "Cotação");
   });
 });
 

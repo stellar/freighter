@@ -23,9 +23,13 @@ jest.mock("popup/components/BalanceRow", () => ({
 }));
 
 jest.mock("popup/components/AssetListRow", () => ({
-  AssetListRow: ({ code }: { code: string }) => (
-    <div data-testid={`row-${code}`} />
-  ),
+  AssetListRow: ({
+    code,
+    domain,
+  }: {
+    code: string;
+    domain?: string | null;
+  }) => <div data-testid={`row-${code}`} data-domain={domain ?? ""} />,
 }));
 
 const rec = (code: string, isHeld = false) => ({
@@ -44,7 +48,6 @@ const emptyResult = {
   popular: [],
   verified: [],
   unverified: [],
-  hadSorobanMatches: false,
   isFallback: false,
   isNewAccount: false,
 };
@@ -52,11 +55,41 @@ const emptyResult = {
 const baseProps = {
   onClickAsset: jest.fn(),
   stellarExpertUrl: "https://stellar.expert/explorer/public",
-  // Destination picker triggers the Soroban empty states; the source picker is covered by a dedicated test.
-  isDestination: true,
 };
 
 describe("SwapPickerSections", () => {
+  it("subtitles a classic token with its home domain, a contract token with its shortened contract ID", () => {
+    const contract = "CBI7UCH5KGSVQRO5H4SUCZUTZABCITZLRHQQZTWL2TK4RZ72TAR6IHRV";
+    render(
+      <SwapPickerSections
+        {...baseProps}
+        searchTerm="t"
+        result={{
+          ...emptyResult,
+          unverified: [
+            rec("USDC"),
+            {
+              ...rec("TKN"),
+              canonical: `TKN:${contract}`,
+              issuer: contract,
+              domain: "lookalike.org",
+              isContract: true,
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId("row-USDC")).toHaveAttribute(
+      "data-domain",
+      "example.org",
+    );
+    expect(screen.getByTestId("row-TKN")).toHaveAttribute(
+      "data-domain",
+      "CBI7…IHRV",
+    );
+  });
+
   it("idle: renders Your tokens then Popular sections in order", () => {
     render(
       <SwapPickerSections
@@ -131,44 +164,15 @@ describe("SwapPickerSections", () => {
     );
   });
 
-  it("Soroban empty state shown when hadSorobanMatches", () => {
+  it("shows the generic empty state for a pasted contract id with no matches", () => {
     render(
       <SwapPickerSections
         {...baseProps}
-        searchTerm="CABC"
-        result={{ ...emptyResult, hadSorobanMatches: true }}
-      />,
-    );
-
-    expect(screen.getByTestId("swap-picker-empty-soroban")).toBeInTheDocument();
-  });
-
-  it("Soroban empty state shown when the search term is a contract id with no results", () => {
-    render(
-      <SwapPickerSections
-        {...baseProps}
-        // A pasted contract id that returned no records (hadSorobanMatches false)
         searchTerm="CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA"
-        result={{ ...emptyResult, hadSorobanMatches: false }}
+        result={emptyResult}
       />,
     );
 
-    expect(screen.getByTestId("swap-picker-empty-soroban")).toBeInTheDocument();
-    expect(screen.queryByTestId("swap-picker-empty")).toBeNull();
-  });
-
-  it("source picker: a pasted contract id with no matches shows the generic empty state, not the Soroban one", () => {
-    render(
-      <SwapPickerSections
-        {...baseProps}
-        isDestination={false}
-        searchTerm="CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA"
-        result={{ ...emptyResult, hadSorobanMatches: false }}
-      />,
-    );
-
-    // The Soroban "not supported" copy only makes sense on the swap-TO picker.
-    expect(screen.queryByTestId("swap-picker-empty-soroban")).toBeNull();
     expect(screen.getByTestId("swap-picker-empty")).toBeInTheDocument();
   });
 
@@ -227,6 +231,32 @@ describe("SwapPickerSections", () => {
     expect(screen.getByTestId("row-USDC")).toBeInTheDocument();
     // Discover sections still drop hidden assets (AQUA) but keep the rest.
     expect(screen.queryByTestId("row-AQUA")).toBeNull();
+    expect(screen.getByTestId("row-DOGET")).toBeInTheDocument();
+  });
+
+  it("excludes a hidden contract token by its contract, whatever code the row carries", () => {
+    const contract = "CAZXEHTSQATVQVWDPWWDTFSY6CM764JD4MZ6HUVPO3QKS64QEEP4KJH7";
+    render(
+      <SwapPickerSections
+        {...baseProps}
+        searchTerm=""
+        hiddenAssets={[`SYM:${contract}`]}
+        result={{
+          ...emptyResult,
+          popular: [
+            {
+              ...rec("ABC"),
+              canonical: `ABC:${contract}`,
+              issuer: contract,
+              isContract: true,
+            },
+            rec("DOGET"),
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.queryByTestId("row-ABC")).toBeNull();
     expect(screen.getByTestId("row-DOGET")).toBeInTheDocument();
   });
 
