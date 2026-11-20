@@ -268,13 +268,20 @@ describe("buildSwapSections — off mainnet", () => {
     decimals: 7,
   } as any;
 
-  it("leaves unheld contract tokens out of search and Popular, keeping held ones", () => {
+  it("keeps contract tokens off mainnet; the picker host filters them", () => {
     const search = buildSwapSections({
       searchTerm: "wrap",
       balances: [heldWrap],
       networkDetails: TESTNET,
       verifiedAssets: [{ code: "USDC", issuer: "GUSD", domain: null }],
-      unverifiedAssets: [{ ...wrap, code: "WRAP2" }],
+      // A distinct contract: the same one as the held WRAP would dedupe away.
+      unverifiedAssets: [
+        {
+          ...wrap,
+          code: "WRAP2",
+          issuer: "CBI7UCH5KGSVQRO5H4SUCZUTZABCITZLRHQQZTWL2TK4RZ72TAR6IHRV",
+        },
+      ],
     });
     const idle = buildSwapSections({
       searchTerm: "",
@@ -286,8 +293,8 @@ describe("buildSwapSections — off mainnet", () => {
 
     expect(search.sections.yourTokens.map((r) => r.code)).toEqual(["WRAP"]);
     expect(search.sections.verified.map((r) => r.code)).toEqual(["USDC"]);
-    expect(search.sections.unverified).toEqual([]);
-    expect(idle.sections.popular).toEqual([]);
+    expect(search.sections.unverified.map((r) => r.code)).toEqual(["WRAP2"]);
+    expect(idle.sections.popular.map((r) => r.code)).toEqual(["WRAP"]);
   });
 });
 

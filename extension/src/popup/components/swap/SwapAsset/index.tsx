@@ -318,9 +318,16 @@ export const SwapAsset = ({
   // Build the flat sections result for SwapPickerSections
   const lookupData = lookupState.data;
   const heldBalancesForNewAccount = resolvedFromData?.balances.balances || [];
+  // Only mainnet has a source (LI.FI) that routes contract tokens; off it a
+  // non-held one can't be picked, so it isn't listed. Held rows stay.
+  const routable = (rows: SwapTokenRecord[]) =>
+    isMainnet(networkDetails) ? rows : rows.filter((r) => !r.isContract);
   const pickerResult: SwapPickerSectionsResult = lookupData
     ? {
         ...lookupData.sections,
+        popular: routable(lookupData.sections.popular),
+        verified: routable(lookupData.sections.verified),
+        unverified: routable(lookupData.sections.unverified),
         isFallback: lookupData.isFallback,
         isNewAccount: heldBalancesForNewAccount.length === 0,
       }

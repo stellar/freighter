@@ -9,7 +9,10 @@ import {
 import { captureException } from "@sentry/browser";
 
 import { Wrapper } from "popup/__testHelpers__";
-import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import {
+  MAINNET_NETWORK_DETAILS,
+  TESTNET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import * as UseSwapFromData from "popup/components/swap/SwapAsset/hooks/useSwapFromData";
@@ -344,7 +347,10 @@ describe("SwapAsset destination: a contract token the account doesn't hold", () 
       },
     } as any);
     render(
-      <Wrapper state={{}} routes={["/"]}>
+      <Wrapper
+        state={{ settings: { networkDetails: MAINNET_NETWORK_DETAILS } }}
+        routes={["/"]}
+      >
         <SwapAsset
           selectionType="destination"
           hiddenAssets={[]}
@@ -555,7 +561,10 @@ describe("SwapAsset destination: a held contract token found by another code", (
     } as any);
     const onClickAsset = jest.fn();
     render(
-      <Wrapper state={{}} routes={["/"]}>
+      <Wrapper
+        state={{ settings: { networkDetails: MAINNET_NETWORK_DETAILS } }}
+        routes={["/"]}
+      >
         <SwapAsset
           selectionType="destination"
           hiddenAssets={[]}
@@ -630,6 +639,7 @@ describe("SwapAsset destination: a pick before the account data resolves", () =>
     render(
       <Wrapper
         state={{
+          settings: { networkDetails: MAINNET_NETWORK_DETAILS },
           auth: {
             allAccounts: ["GACCOUNT"],
             publicKey: "GACCOUNT",
@@ -1200,5 +1210,78 @@ describe("SwapAsset source: View details", () => {
 
     expect(screen.getByTestId("SwapTokenRow-USDC")).toBeInTheDocument();
     expect(screen.queryByTestId("SwapTokenRow-USDC-view-details")).toBeNull();
+  });
+});
+
+describe("SwapAsset destination: contract tokens off mainnet", () => {
+  const CONTRACT = "CBI7UCH5KGSVQRO5H4SUCZUTZABCITZLRHQQZTWL2TK4RZ72TAR6IHRV";
+  const wrap = {
+    code: "WRAP",
+    issuer: CONTRACT,
+    contract: CONTRACT,
+    domain: null,
+    canonical: `WRAP:${CONTRACT}`,
+    isHeld: false,
+    isContract: true,
+    requiresTrustline: false,
+  };
+  const usdc = {
+    code: "USDC",
+    issuer: "GUSD",
+    domain: "circle.com",
+    canonical: "USDC:GUSD",
+    isHeld: false,
+    isContract: false,
+    requiresTrustline: true,
+  };
+
+  afterEach(() => jest.restoreAllMocks());
+
+  const renderPicker = (networkDetails: typeof MAINNET_NETWORK_DETAILS) => {
+    jest.spyOn(UseSwapFromData, "useGetSwapFromData").mockReturnValue({
+      state: resolvedFromState,
+      fetchData: jest.fn().mockResolvedValue(undefined),
+      filterBalances: jest.fn(),
+    } as any);
+    jest.spyOn(UseSwapTokenLookup, "useSwapTokenLookup").mockReturnValue({
+      fetchData: jest.fn().mockResolvedValue(undefined),
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          sections: {
+            yourTokens: [],
+            popular: [wrap, usdc],
+            verified: [],
+            unverified: [],
+          },
+          isSearch: false,
+          isFallback: false,
+        },
+        error: null,
+      },
+    } as any);
+    render(
+      <Wrapper state={{ settings: { networkDetails } }} routes={["/"]}>
+        <SwapAsset
+          selectionType="destination"
+          hiddenAssets={[]}
+          onClickAsset={jest.fn()}
+          goBack={jest.fn()}
+        />
+      </Wrapper>,
+    );
+  };
+
+  it("hides a non-held contract token from Popular on testnet", () => {
+    renderPicker(TESTNET_NETWORK_DETAILS);
+
+    expect(screen.queryByTestId("SwapTokenRow-WRAP")).toBeNull();
+    expect(screen.getByTestId("SwapTokenRow-USDC")).toBeInTheDocument();
+  });
+
+  it("lists the same contract token on mainnet", () => {
+    renderPicker(MAINNET_NETWORK_DETAILS);
+
+    expect(screen.getByTestId("SwapTokenRow-WRAP")).toBeInTheDocument();
   });
 });

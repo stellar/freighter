@@ -221,7 +221,6 @@ const currencyToRecord = (
 export const buildSwapSections = ({
   searchTerm,
   balances,
-  networkDetails,
   popular = [],
   verifiedAssets = [],
   unverifiedAssets = [],
@@ -246,9 +245,6 @@ export const buildSwapSections = ({
   const heldKeys = new Set(
     heldRecords.map((r) => swapIdentityKey(r.canonical)),
   );
-  // Only mainnet has a source (LI.FI) that routes contract tokens.
-  const isDiscoverable = (r: SwapTokenRecord) =>
-    !r.isContract || isMainnet(networkDetails);
 
   if (!isSearch) {
     // IDLE mode
@@ -269,7 +265,6 @@ export const buildSwapSections = ({
         }),
       )
       .map((a) => currencyToRecord(a, false))
-      .filter(isDiscoverable)
       .filter((r) => {
         const key = swapIdentityKey(r.canonical);
         return !heldKeys.has(key) && verifiedKeys.has(key);
@@ -317,7 +312,6 @@ export const buildSwapSections = ({
         const { canonical } = currencyToRecord(a, false);
         return currencyToRecord(a, heldKeys.has(swapIdentityKey(canonical)));
       })
-      .filter(isDiscoverable)
       .filter((r) => {
         const key = swapIdentityKey(r.canonical);
         if (heldSearchKeys.has(key) || seen.has(key)) {
