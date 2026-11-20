@@ -160,6 +160,8 @@ describe("per-source derivation indices", () => {
     mockSessionStore.dispatch(sessionSlice.actions.reset());
     global.fetch = jest.fn(() =>
       Promise.resolve({
+        ok: true,
+        status: 200,
         json: () => Promise.resolve({ account_id: "funded" }),
       }),
     ) as unknown as typeof fetch;

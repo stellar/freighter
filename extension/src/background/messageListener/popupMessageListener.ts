@@ -89,6 +89,8 @@ import { getMigratedMnemonicPhrase } from "./handlers/getMigratedMnemonicPhrase"
 import { generateRecoveryPhrase } from "./handlers/generateRecoveryPhrase";
 import { clearPendingRecoveryPhrase } from "./handlers/clearPendingRecoveryPhrase";
 import { addRecoveryPhraseSource } from "./handlers/addRecoveryPhraseSource";
+import { importRecoveryPhrase } from "./handlers/importRecoveryPhrase";
+import { discoverPhraseAccounts } from "./handlers/discoverPhraseAccounts";
 import { migrateAccounts } from "./handlers/migrateAccounts";
 import { addAssetsList } from "./handlers/addAssetsList";
 import { modifyAssetsList } from "./handlers/modifyAssetsList";
@@ -115,6 +117,7 @@ import { getCachedSwapTopTokens } from "./handlers/getCachedSwapTopTokens";
 import { cacheSwapTopTokens } from "./handlers/cacheSwapTopTokens";
 
 const numOfPublicKeysToCheck = 5;
+const phraseImportDiscoveryDepth = 50;
 
 let sidebarWindowId: number | null = null;
 
@@ -169,6 +172,7 @@ const ACTIVE_KEY_INDEPENDENT_SERVICE_TYPES: ReadonlySet<SERVICE_TYPES> =
     SERVICE_TYPES.IMPORT_ACCOUNT,
     SERVICE_TYPES.IMPORT_HARDWARE_WALLET,
     SERVICE_TYPES.ADD_RECOVERY_PHRASE_SOURCE,
+    SERVICE_TYPES.IMPORT_RECOVERY_PHRASE,
   ]);
 
 export const popupMessageListener = (
@@ -270,6 +274,32 @@ export const popupMessageListener = (
         return { error: "Unauthorized" };
       }
       return clearPendingRecoveryPhrase({ request, sessionStore });
+    }
+    case SERVICE_TYPES.DISCOVER_PHRASE_ACCOUNTS: {
+      // Off the lock and read-only, but it fans out to Horizon, so only our
+      // own pages may start it.
+      if (!isFromExtensionPage && !isFromDevServer) {
+        return { error: "Unauthorized" };
+      }
+      return discoverPhraseAccounts({
+        request,
+        localStore,
+        discoveryDepth: phraseImportDiscoveryDepth,
+      });
+    }
+    case SERVICE_TYPES.IMPORT_RECOVERY_PHRASE: {
+      // Same gate as GENERATE_RECOVERY_PHRASE.
+      if (!isFromExtensionPage && !isFromDevServer) {
+        return { error: "Unauthorized" };
+      }
+      return importRecoveryPhrase({
+        request,
+        localStore,
+        sessionStore,
+        keyManager,
+        sessionTimer,
+        discoveryDepth: phraseImportDiscoveryDepth,
+      });
     }
     case SERVICE_TYPES.IMPORT_ACCOUNT: {
       return importAccount({

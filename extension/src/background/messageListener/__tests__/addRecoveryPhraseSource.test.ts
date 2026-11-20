@@ -163,6 +163,8 @@ describe("adding a generated recovery phrase source", () => {
     lastPendingPhraseId = "";
     global.fetch = jest.fn(() =>
       Promise.resolve({
+        ok: true,
+        status: 200,
         json: () => Promise.resolve({ account_id: "funded" }),
       }),
     ) as unknown as typeof fetch;
@@ -501,6 +503,8 @@ describe("adding an account with a chosen name", () => {
     mockGenerated.length = 0;
     global.fetch = jest.fn(() =>
       Promise.resolve({
+        ok: true,
+        status: 200,
         json: () => Promise.resolve({ account_id: "funded" }),
       }),
     ) as unknown as typeof fetch;

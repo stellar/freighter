@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { Keypair } from "stellar-sdk";
 
 import { SERVICE_TYPES } from "@shared/constants/services";
+import { PHRASE_ALREADY_HELD_ERROR } from "@shared/constants/errors";
 import {
   ACCOUNT_SOURCE_VECTORS,
   AUTH_KEYPAIR_VECTORS,
@@ -108,9 +109,12 @@ jest.mock("background/helpers/link-sources", () => ({
 }));
 
 // StellarHDWallet.fromMnemonic cannot run under jest (bip39 CJS interop), so
-// derive from the pinned (mnemonic, index) rows.
+// derive from the pinned (mnemonic, index) rows, and past them from a
+// deterministic seed per (mnemonic, index). Only the pinned phrases resolve.
 const mockGenerated: string[] = [];
 jest.mock("stellar-hd-wallet", () => {
+  const { createHash } = jest.requireActual("crypto");
+  const { Keypair: MockKeypair } = jest.requireActual("stellar-sdk");
   const { ACCOUNT_SOURCE_VECTORS: vectors } = jest.requireActual(
     "@shared/api/helpers/authKeypairVectors",
   );
@@ -118,13 +122,35 @@ jest.mock("stellar-hd-wallet", () => {
     generateMnemonic: () => mockGenerated.shift(),
     fromMnemonic: (mnemonic: string) => {
       const rows = vectors.find((v: any) => v.mnemonic === mnemonic).accounts;
+      const keypair = (i: number) =>
+        MockKeypair.fromRawEd25519Seed(
+          createHash("sha256").update(`${mnemonic}:${i}`).digest(),
+        );
       return {
-        getPublicKey: (i: number) => rows[i].publicKey,
-        getSecret: (i: number) => rows[i].secret,
+        getPublicKey: (i: number) =>
+          rows[i] ? rows[i].publicKey : keypair(i).publicKey(),
+        getSecret: (i: number) =>
+          rows[i] ? rows[i].secret : keypair(i).secret(),
       };
     },
   };
 });
+
+// Only the pinned rows are funded, so a phrase import stores just those.
+const PINNED_KEYS = new Set<string>(
+  ACCOUNT_SOURCE_VECTORS.flatMap(({ accounts }) =>
+    accounts.map(({ publicKey }) => publicKey),
+  ),
+);
+const horizonResponse = (url: string) => {
+  const isFunded = PINNED_KEYS.has(String(url).split("/accounts/")[1]);
+  return {
+    ok: isFunded,
+    status: isFunded ? 200 : 404,
+    json: () =>
+      Promise.resolve(isFunded ? { account_id: "funded" } : { status: 404 }),
+  };
+};
 
 if (!global.crypto.randomUUID) {
   Object.defineProperty(global.crypto, "randomUUID", { value: randomUUID });
@@ -191,6 +217,30 @@ const importKey = (secret: string, activePublicKey: string) =>
     privateKey: secret,
   });
 
+// Discovery answers only our own pages; a sender with no tab and no id is
+// one.
+const discover = (mnemonicPhrase: string) =>
+  mockMessageListener(
+    { type: SERVICE_TYPES.DISCOVER_PHRASE_ACCOUNTS, mnemonicPhrase },
+    {},
+  );
+
+const importDiscovered = (
+  mnemonicPhrase: string,
+  activePublicKey: string,
+  fundedIndices: number[],
+) =>
+  mockMessageListener(
+    {
+      type: SERVICE_TYPES.IMPORT_RECOVERY_PHRASE,
+      activePublicKey,
+      password: PASSWORD,
+      mnemonicPhrase,
+      fundedIndices,
+    },
+    {},
+  );
+
 const addAccount = (sourceId: string, activePublicKey: string) =>
   send({
     type: SERVICE_TYPES.ADD_ACCOUNT,
@@ -213,10 +263,8 @@ describe("concurrent account-mutating messages", () => {
     await mockSession.clear();
     mockGenerated.length = 0;
     mockAlarms.clear();
-    global.fetch = jest.fn(() =>
-      Promise.resolve({
-        json: () => Promise.resolve({ account_id: "funded" }),
-      }),
+    global.fetch = jest.fn((url: string) =>
+      Promise.resolve(horizonResponse(url)),
     ) as unknown as typeof fetch;
     await createWallet();
   });
@@ -307,6 +355,38 @@ describe("concurrent account-mutating messages", () => {
     );
   });
 
+  it("stores one set of accounts when the same phrase is imported twice at once", async () => {
+    // Both windows discover before either imports, so neither discovery
+    // sees the phrase as held; the lock has to settle it.
+    const active = activeKey();
+    const [first, second] = await Promise.all([
+      discover(PHRASE_2.mnemonic),
+      discover(PHRASE_2.mnemonic),
+    ]);
+
+    const results = await Promise.all([
+      importDiscovered(PHRASE_2.mnemonic, active, first.fundedIndices),
+      importDiscovered(PHRASE_2.mnemonic, active, second.fundedIndices),
+    ]);
+
+    expect(results.map((r) => r.error).sort()).toEqual(
+      [PHRASE_ALREADY_HELD_ERROR, undefined].sort(),
+    );
+
+    const sources = Object.values(
+      local(SECRET_SOURCES_ID) as Record<string, SecretSource>,
+    );
+    expect(sources.filter(({ id }) => id === PHRASE_2.userId)).toHaveLength(1);
+
+    const publicKeys = allAccounts().map(({ publicKey }) => publicKey);
+    expect(new Set(publicKeys).size).toBe(publicKeys.length);
+    expect(publicKeys).toContain(ROWS_2[0].publicKey);
+
+    const keyIds = local(KEY_ID_LIST) as string[];
+    expect(new Set(keyIds).size).toBe(keyIds.length);
+    expect(keyIds).toHaveLength(publicKeys.length);
+  });
+
   it("gives a concurrent add and import distinct names and provenance", async () => {
     const key = Keypair.random();
     const active = activeKey();
@@ -364,6 +444,33 @@ describe("concurrent account-mutating messages", () => {
 
     expect(signOutResult.error).toBeUndefined();
     expect(session().publicKey).toBeFalsy();
+  });
+
+  it("signs out without waiting for a phrase discovery's lookups", async () => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    global.fetch = jest.fn(async (url: string) => {
+      await gate;
+      return horizonResponse(url);
+    }) as unknown as typeof fetch;
+    const order: string[] = [];
+
+    const discovering = discover(PHRASE_2.mnemonic).then(() =>
+      order.push("discover"),
+    );
+    const signOutResult = await send({
+      type: SERVICE_TYPES.SIGN_OUT,
+      activePublicKey: activeKey(),
+    });
+    order.push("signOut");
+    release();
+    await discovering;
+
+    expect(signOutResult.error).toBeUndefined();
+    expect(session().publicKey).toBeFalsy();
+    expect(order).toEqual(["signOut", "discover"]);
   });
 
   it("still refuses a signing request carrying the key an import replaced", async () => {

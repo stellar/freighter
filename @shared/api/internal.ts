@@ -330,6 +330,80 @@ export const addRecoveryPhraseSource = async ({
   return result;
 };
 
+/** Finds a phrase's funded indices ahead of `importRecoveryPhrase`. */
+export const discoverPhraseAccounts = async ({
+  mnemonicPhrase,
+}: {
+  mnemonicPhrase: string;
+}): Promise<number[]> => {
+  let response = { error: "", fundedIndices: [] as number[] };
+
+  try {
+    response = await sendMessageToBackground({
+      activePublicKey: null,
+      mnemonicPhrase,
+      type: SERVICE_TYPES.DISCOVER_PHRASE_ACCOUNTS,
+    });
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+
+  if (response.error) {
+    throw new Error(response.error);
+  }
+
+  return response.fundedIndices;
+};
+
+/** Imports a further recovery phrase; see `ImportRecoveryPhraseMessage`. */
+export const importRecoveryPhrase = async ({
+  activePublicKey,
+  password,
+  mnemonicPhrase,
+  fundedIndices,
+}: {
+  activePublicKey: string;
+  password: string;
+  mnemonicPhrase: string;
+  fundedIndices: number[];
+}): Promise<{
+  publicKey: string;
+  activeAccountId: string;
+  allAccounts: Array<Account>;
+  hasPrivateKey: boolean;
+  secretSources: SecretSource[];
+}> => {
+  let response = {
+    error: "",
+    publicKey: "",
+    activeAccountId: "",
+    allAccounts: [] as Array<Account>,
+    hasPrivateKey: false,
+    secretSources: [] as SecretSource[],
+  };
+
+  try {
+    response = await sendMessageToBackground({
+      activePublicKey,
+      password,
+      mnemonicPhrase,
+      fundedIndices,
+      type: SERVICE_TYPES.IMPORT_RECOVERY_PHRASE,
+    });
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+
+  const { error, ...result } = response;
+  if (error) {
+    throw new Error(error);
+  }
+
+  return result;
+};
+
 export const importAccount = async ({
   password,
   privateKey,

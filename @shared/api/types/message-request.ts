@@ -160,6 +160,24 @@ export interface ClearPendingRecoveryPhraseMessage extends BaseMessage {
   pendingPhraseId: string;
 }
 
+/**
+ * Adds a recovery phrase the user typed as a new phrase source, with its
+ * index 0 and every funded index up to the discovery depth. Nothing already
+ * in the wallet changes.
+ */
+export interface DiscoverPhraseAccountsMessage extends BaseMessage {
+  type: SERVICE_TYPES.DISCOVER_PHRASE_ACCOUNTS;
+  mnemonicPhrase: string;
+}
+
+export interface ImportRecoveryPhraseMessage extends BaseMessage {
+  type: SERVICE_TYPES.IMPORT_RECOVERY_PHRASE;
+  password: string;
+  mnemonicPhrase: string;
+  /** From DISCOVER_PHRASE_ACCOUNTS. */
+  fundedIndices: number[];
+}
+
 export interface ImportAccountMessage extends BaseMessage {
   type: SERVICE_TYPES.IMPORT_ACCOUNT;
   password: string;
@@ -599,6 +617,8 @@ export type ServiceMessageRequest =
   | GenerateRecoveryPhraseMessage
   | AddRecoveryPhraseSourceMessage
   | ClearPendingRecoveryPhraseMessage
+  | DiscoverPhraseAccountsMessage
+  | ImportRecoveryPhraseMessage
   | ImportAccountMessage
   | ImportHardWareWalletMessage
   | MakeAccountActiveMessage

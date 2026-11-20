@@ -137,6 +137,19 @@ export const stubAssetSearchWithContractId = async (
   });
 };
 
+// Phrase discovery looks up each derived address on mainnet Horizon from the
+// background service worker, so it must be intercepted on the BrowserContext;
+// page.route only sees the popup. A 404 is an unfunded address. Scoped to
+// Horizon account ids so it leaves the worker's /accounts/balances call alone.
+export const stubHorizonAccountDiscovery = async (context: BrowserContext) => {
+  await context.route(
+    /^https:\/\/horizon\.stellar\.org\/accounts\/G[A-Z2-7]{55}$/,
+    async (route) => {
+      await route.fulfill({ status: 404, json: { status: 404 } });
+    },
+  );
+};
+
 export const stubHorizonAccounts = async (page: Page) => {
   await page.route("**/accounts/**", async (route) => {
     await route.fulfill({
