@@ -83,7 +83,45 @@ case SERVICE_TYPES.GET_NEW_DATA:
   return handleGetNewData(request);
 ```
 
-### Step 4: Send from the Popup
+### Step 4: Decide Whether It Takes the Account Mutation Lock
+
+`initExtensionMessageListener` in `extension/src/background/index.ts` wraps any
+message whose type is in `ACCOUNT_MUTATING_SERVICE_TYPES` in
+`withAccountMutationLock`. Those handlers run one at a time, and the listener
+waits for the session store to flush before the next one starts. Every other
+message runs concurrently.
+
+Add the new type to the set if its handler does either of these:
+
+- dispatches to the session store
+- reads, changes and writes back the account lists in `storage.local`
+
+```typescript
+// extension/src/background/helpers/account-mutation-lock.ts
+export const ACCOUNT_MUTATING_SERVICE_TYPES: ReadonlySet<string> = new Set([
+  // ... existing types
+  SERVICE_TYPES.RENAME_ALL_ACCOUNTS,
+]);
+```
+
+Each message builds its own session store and flushes the whole state back, so a
+mutating handler left off the set can overwrite another surface's account, name,
+index or lock state. Unit tests will not catch that. Leave read-only handlers
+off the set, or a slow holder such as an import's Scrypt will stall them.
+
+A handler on the lock has three rules:
+
+- Do not await a network call without a timeout. Sign-out and the auto-lock
+  alarm queue behind the current holder.
+- Run best-effort requests detached, and have them write only to
+  `storage.local`.
+- Do not call `withAccountMutationLock` from inside a locked handler. The lock
+  is not reentrant, so the inner call waits on the outer one forever.
+
+The comment at the top of `account-mutation-lock.ts` has the current list and
+the reasoning.
+
+### Step 5: Send from the Popup
 
 Use `sendMessageToBackground()` from `@shared/api/helpers/extensionMessaging`:
 

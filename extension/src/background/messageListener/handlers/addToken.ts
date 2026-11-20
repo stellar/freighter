@@ -48,7 +48,6 @@ export const addToken = async ({
       args: {
         contractId: tokenQueueItem.token.contractId,
         network: networkDetails.network,
-        publicKey,
       },
       localStore,
     });

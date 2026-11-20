@@ -7,9 +7,11 @@ let alarmHandler:
   | undefined;
 
 const mockSendMessage = jest.fn().mockResolvedValue(undefined);
+const mockGetAlarm = jest.fn().mockResolvedValue(undefined);
 
 jest.mock("webextension-polyfill", () => ({
   alarms: {
+    get: (...args: any[]) => mockGetAlarm(...args),
     onAlarm: {
       addListener: jest.fn((handler) => {
         alarmHandler = handler;
@@ -32,6 +34,7 @@ jest.mock("background/helpers/session", () => {
 
 jest.mock("background/store", () => ({
   buildStore: jest.fn().mockResolvedValue({}),
+  flushSessionStore: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock("background/helpers/dataStorageAccess", () => ({
@@ -48,6 +51,7 @@ describe("initAlarmListener", () => {
   beforeEach(() => {
     mockSendMessage.mockClear();
     mockClearSession.mockClear();
+    mockGetAlarm.mockReset().mockResolvedValue(undefined);
     alarmHandler = undefined;
     initAlarmListener();
   });
@@ -67,7 +71,9 @@ describe("initAlarmListener", () => {
 
   it("swallows sendMessage errors when no UI is open to receive the broadcast", async () => {
     mockSendMessage.mockRejectedValueOnce(
-      new Error("Could not establish connection. Receiving end does not exist."),
+      new Error(
+        "Could not establish connection. Receiving end does not exist.",
+      ),
     );
 
     await expect(
@@ -80,6 +86,18 @@ describe("initAlarmListener", () => {
   it("ignores unrelated alarms", async () => {
     await alarmHandler!({ name: "some-other-alarm" });
 
+    expect(mockClearSession).not.toHaveBeenCalled();
+    expect(mockSendMessage).not.toHaveBeenCalled();
+  });
+  it("skips a firing that a rearm superseded while it waited", async () => {
+    mockGetAlarm.mockResolvedValueOnce({
+      name: SESSION_ALARM_NAME,
+      scheduledTime: Date.now() + 60_000,
+    });
+
+    await alarmHandler!({ name: SESSION_ALARM_NAME });
+
+    expect(mockGetAlarm).toHaveBeenCalledWith(SESSION_ALARM_NAME);
     expect(mockClearSession).not.toHaveBeenCalled();
     expect(mockSendMessage).not.toHaveBeenCalled();
   });

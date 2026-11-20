@@ -9,13 +9,12 @@ export const addTokenId = async ({
   request: AddTokenIdMessage;
   localStore: DataStorageAccess;
 }) => {
-  const { tokenId, network, publicKey } = request;
+  const { tokenId, network } = request;
 
   const response = await addTokenWithContractId({
     args: {
       contractId: tokenId,
       network,
-      publicKey,
     },
     localStore,
   });

@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Icon } from "@stellar/design-system";
+import { Icon, Notification } from "@stellar/design-system";
 import browser from "webextension-polyfill";
 
 import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
 import { View } from "popup/basics/layout/View";
+import { showToast } from "popup/basics/shadcn/Toast";
 import { ROUTES } from "popup/constants/routes";
 import { signOut } from "popup/ducks/accountServices";
 import { navigateTo, openSidebar, openTab } from "popup/helpers/navigate";
@@ -121,16 +122,28 @@ export const Settings = () => {
     typeof globalThis.chrome?.sidePanel?.open === "function" ||
     typeof (browser as any)?.sidebarAction?.open === "function";
 
+  // Leaves Settings only once the background confirms the session is locked.
+  // Moving on after a failed sign-out would show the unlock screen over a
+  // session that is still unlocked.
+  const signOutThenNavigate = async (route: ROUTES) => {
+    const result = await dispatch(signOut());
+    if (signOut.rejected.match(result)) {
+      showToast(() => (
+        <Notification variant="error" title={t("Unable to sign out")} />
+      ));
+      return;
+    }
+    navigateTo(route, navigate);
+  };
+
   const lockFreighter = async (e: React.MouseEvent) => {
     e.preventDefault();
-    await dispatch(signOut());
-    navigateTo(ROUTES.unlockAccount, navigate);
+    await signOutThenNavigate(ROUTES.unlockAccount);
   };
 
   const signOutAndClose = async (e: React.MouseEvent) => {
     e.preventDefault();
-    await dispatch(signOut());
-    navigateTo(ROUTES.account, navigate);
+    await signOutThenNavigate(ROUTES.account);
   };
 
   return (

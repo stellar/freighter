@@ -18,6 +18,7 @@ export const NETWORKS_LIST_ID = "networksList";
 export const METRICS_DATA = "metricsData";
 export const TOKEN_ID_LIST = "tokenIdList";
 export const STORAGE_VERSION = "storageVersion";
+// Retired. Kept for the old migrations that wrote it and the one that removes it.
 export const HAS_ACCOUNT_SUBSCRIPTION = "hasAccountSubscription";
 export const ASSETS_LISTS_ID = "assetsLists";
 export const IS_HASH_SIGNING_ENABLED_ID = "isHashSigningEnabled";

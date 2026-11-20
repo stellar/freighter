@@ -39,6 +39,11 @@ class MockStorage {
       };
     }
   };
+  remove = async (keys: string | string[]) => {
+    for (const key of Array.isArray(keys) ? keys : [keys]) {
+      delete this.storage[key];
+    }
+  };
   clear = async () => {
     this.storage = {};
   };
@@ -229,6 +234,26 @@ describe("Storage migrations", () => {
     expect(storedAssetList[ASSETS_LISTS_ID]).toEqual(DEFAULT_ASSETS_LISTS);
     expect(storedVersion[STORAGE_VERSION]).toEqual("4.1.0");
   });
+  it("removeAccountSubscriptions removes the retired key below 5.53.0", async () => {
+    await mockStorage.set({
+      [STORAGE_VERSION]: "5.50.0",
+      [HAS_ACCOUNT_SUBSCRIPTION]: { "key-1": true },
+    });
+    await DataStorage.removeAccountSubscriptions();
+    const storedAccountSubs = await mockStorage.get(HAS_ACCOUNT_SUBSCRIPTION);
+    const storedVersion = await mockStorage.get(STORAGE_VERSION);
+    expect(storedAccountSubs[HAS_ACCOUNT_SUBSCRIPTION]).toBeUndefined();
+    expect(storedVersion[STORAGE_VERSION]).toEqual("5.53.0");
+  });
+  it("removeAccountSubscriptions leaves storage alone at 5.53.0 and above", async () => {
+    await mockStorage.set({
+      [STORAGE_VERSION]: "5.53.0",
+      [HAS_ACCOUNT_SUBSCRIPTION]: {},
+    });
+    await DataStorage.removeAccountSubscriptions();
+    const storedAccountSubs = await mockStorage.get(HAS_ACCOUNT_SUBSCRIPTION);
+    expect(storedAccountSubs[HAS_ACCOUNT_SUBSCRIPTION]).toEqual({});
+  });
   describe("markRebrandAnnouncementEligibility", () => {
     it("marks a wallet that pre-dates the Varial build as pending", async () => {
       await mockStorage.set({ [KEY_ID_LIST]: ["key-1"] });
@@ -348,12 +373,12 @@ describe("Storage migrations", () => {
       "0.1": { type: "FREIGHTER", sourceId: "source-1" },
       "hw:GDEF": { type: "HW" },
     });
-    expect(storedVersion[STORAGE_VERSION]).toEqual("5.50.0");
+    expect(storedVersion[STORAGE_VERSION]).toEqual("5.53.0");
   });
-  it("versionedMigration ends at the multi-source model version", async () => {
+  it("versionedMigration ends at the latest migration version", async () => {
     await mockStorage.set({ [STORAGE_VERSION]: "5.33.5" });
     await DataStorage.versionedMigration();
     const storedVersion = await mockStorage.get(STORAGE_VERSION);
-    expect(storedVersion[STORAGE_VERSION]).toEqual("5.50.0");
+    expect(storedVersion[STORAGE_VERSION]).toEqual("5.53.0");
   });
 });

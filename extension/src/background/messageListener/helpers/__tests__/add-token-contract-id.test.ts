@@ -1,20 +1,9 @@
 import { KEY_ID, TOKEN_ID_LIST } from "constants/localStorageTypes";
 import { addTokenWithContractId } from "../add-token-contract-id";
 
-const mockSubscribeTokenBalance = jest.fn();
-const mockSubscribeTokenHistory = jest.fn();
-
-jest.mock("background/helpers/account", () => ({
-  subscribeTokenBalance: (...args: unknown[]) =>
-    mockSubscribeTokenBalance(...args),
-  subscribeTokenHistory: (...args: unknown[]) =>
-    mockSubscribeTokenHistory(...args),
-}));
-
 const KEY = "key-1";
 const NETWORK = "TESTNET";
 const CONTRACT = "C-TOKEN";
-const PUBLIC_KEY = "G-PUBLIC-KEY";
 
 const makeLocalStore = (tokenIdList: Record<string, unknown> = {}) => {
   const store: Record<string, unknown> = {
@@ -32,41 +21,25 @@ const makeLocalStore = (tokenIdList: Record<string, unknown> = {}) => {
 };
 
 describe("addTokenWithContractId", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockSubscribeTokenBalance.mockResolvedValue(undefined);
-    mockSubscribeTokenHistory.mockResolvedValue(undefined);
-  });
-
-  it("stores the token and resolves WITHOUT waiting on slow subscriptions", async () => {
-    // A subscription that never settles must not delay the result — otherwise
-    // the dApp response is sent after the popup closes and reads as "declined".
-    let resolveBalanceSub: () => void = () => {};
-    mockSubscribeTokenBalance.mockReturnValue(
-      new Promise<void>((resolve) => {
-        resolveBalanceSub = resolve;
-      }),
-    );
+  it("stores the token for the active account", async () => {
     const localStore = makeLocalStore();
 
     const result = await addTokenWithContractId({
-      args: { contractId: CONTRACT, network: NETWORK, publicKey: PUBLIC_KEY },
+      args: { contractId: CONTRACT, network: NETWORK },
       localStore,
     });
 
     expect(result).toEqual({ accountTokenIdList: [CONTRACT] });
-    expect(result.error).toBeUndefined();
-    // Token was persisted before resolving.
-    expect(localStore.setItem).toHaveBeenCalledTimes(1);
-
-    resolveBalanceSub();
+    expect(localStore.setItem).toHaveBeenCalledWith(TOKEN_ID_LIST, {
+      [NETWORK]: { [KEY]: [CONTRACT] },
+    });
   });
 
   it("returns no error when the token is already stored (re-add after removal)", async () => {
     const localStore = makeLocalStore({ [NETWORK]: { [KEY]: [CONTRACT] } });
 
     const result = await addTokenWithContractId({
-      args: { contractId: CONTRACT, network: NETWORK, publicKey: PUBLIC_KEY },
+      args: { contractId: CONTRACT, network: NETWORK },
       localStore,
     });
 
@@ -84,7 +57,7 @@ describe("addTokenWithContractId", () => {
     jest.spyOn(console, "error").mockImplementation(() => undefined);
 
     const result = await addTokenWithContractId({
-      args: { contractId: CONTRACT, network: NETWORK, publicKey: PUBLIC_KEY },
+      args: { contractId: CONTRACT, network: NETWORK },
       localStore,
     });
 
