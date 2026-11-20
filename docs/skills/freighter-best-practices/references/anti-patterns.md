@@ -64,6 +64,11 @@ time. Any variable declared outside a function will be reset.
 **Use `browser.storage.session`** for ephemeral data or
 **`browser.storage.local`** for persistent data.
 
+The `tail` promise in
+`extension/src/background/helpers/account-mutation-lock.ts` is module-level on
+purpose. A worker restart ends every in-flight handler along with the chain, and
+nothing reads it across restarts.
+
 ## 5. Direct browser.runtime.sendMessage from Popup
 
 ```typescript
@@ -243,3 +248,29 @@ is exempt in `eslint.config.js` as a belt-and-braces safeguard, not a necessity
 `NATIVE_ASSET_CODE`), which aren't in the rule's identifier list, so the rule
 would not fire there regardless. The exemption is deliberate, self-documenting
 policy: keep it.
+
+## 12. Mutating Handler Left Off the Account Mutation Lock
+
+```typescript
+// WRONG: the handler dispatches to the session store, but its type is not in
+// ACCOUNT_MUTATING_SERVICE_TYPES, so it runs alongside other mutations
+case SERVICE_TYPES.RENAME_ALL_ACCOUNTS:
+  return renameAllAccounts({ request, sessionStore, localStore });
+```
+
+Each message builds its own session store and flushes the whole state back on
+every dispatch, and the account lists in `storage.local` are read-modify-writes.
+Two mutations from different surfaces (popup, sidebar, fullscreen) can
+interleave, and the later writer drops the earlier one's account, name, index or
+lock state. Unit tests run one handler at a time and pass.
+
+```typescript
+// CORRECT: extension/src/background/helpers/account-mutation-lock.ts
+export const ACCOUNT_MUTATING_SERVICE_TYPES: ReadonlySet<string> = new Set([
+  // ... existing types
+  SERVICE_TYPES.RENAME_ALL_ACCOUNTS,
+]);
+```
+
+See "Decide Whether It Takes the Account Mutation Lock" in `messaging.md` for
+the membership test and the rules a locked handler has to follow.
