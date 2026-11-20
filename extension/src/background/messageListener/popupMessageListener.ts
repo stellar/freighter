@@ -288,6 +288,10 @@ export const popupMessageListener = (
       });
     }
     case SERVICE_TYPES.IMPORT_RECOVERY_PHRASE: {
+      // Same gate as GENERATE_RECOVERY_PHRASE.
+      if (!isFromExtensionPage && !isFromDevServer) {
+        return { error: "Unauthorized" };
+      }
       return importRecoveryPhrase({
         request,
         localStore,

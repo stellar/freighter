@@ -125,18 +125,28 @@ const discover = (mnemonicPhrase: string) =>
     {},
   ) as Promise<any>;
 
-/** The import message alone, with the indices discovery would pass. */
+/**
+ * The import message alone, with the indices discovery would pass. Sent from
+ * one of our own pages, as `discover` is.
+ */
 const importWithIndices = (
   mnemonicPhrase: string,
   fundedIndices: unknown,
   password = PASSWORD,
 ) =>
-  send({
-    type: SERVICE_TYPES.IMPORT_RECOVERY_PHRASE,
-    password,
-    mnemonicPhrase,
-    fundedIndices,
-  });
+  popupMessageListener(
+    {
+      type: SERVICE_TYPES.IMPORT_RECOVERY_PHRASE,
+      password,
+      mnemonicPhrase,
+      fundedIndices,
+    } as any,
+    mockSessionStore,
+    mockDataStorage,
+    mockKeyManager,
+    testAlarm as any,
+    {},
+  ) as Promise<any>;
 
 /** What the popup does: discover, then import with the result. */
 const importPhrase = async (mnemonicPhrase: string, password = PASSWORD) => {
@@ -615,6 +625,32 @@ describe("importing an additional recovery phrase", () => {
 
     expect((res as { error?: string }).error).toBe("Unauthorized");
     expect(horizonLookups()).toHaveLength(0);
+  });
+
+  it("refuses the import from a web page and writes nothing", async () => {
+    const writes = await snapshotWrites();
+
+    const res = await popupMessageListener(
+      {
+        type: SERVICE_TYPES.IMPORT_RECOVERY_PHRASE,
+        password: PASSWORD,
+        mnemonicPhrase: PHRASE_2.mnemonic,
+        fundedIndices: [],
+      } as any,
+      mockSessionStore,
+      mockDataStorage,
+      mockKeyManager,
+      testAlarm as any,
+      {
+        id: "fake-extension-id",
+        tab: {},
+        url: "https://evil.example",
+      },
+    );
+
+    expect((res as { error?: string }).error).toBe("Unauthorized");
+    expect(await snapshotWrites()).toEqual(writes);
+    expect(newAccounts()).toHaveLength(0);
   });
 
   it("does not touch application state or the rebrand announcement status", async () => {

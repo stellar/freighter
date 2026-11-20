@@ -230,13 +230,16 @@ const importDiscovered = (
   activePublicKey: string,
   fundedIndices: number[],
 ) =>
-  send({
-    type: SERVICE_TYPES.IMPORT_RECOVERY_PHRASE,
-    activePublicKey,
-    password: PASSWORD,
-    mnemonicPhrase,
-    fundedIndices,
-  });
+  mockMessageListener(
+    {
+      type: SERVICE_TYPES.IMPORT_RECOVERY_PHRASE,
+      activePublicKey,
+      password: PASSWORD,
+      mnemonicPhrase,
+      fundedIndices,
+    },
+    {},
+  );
 
 const addAccount = (sourceId: string, activePublicKey: string) =>
   send({
