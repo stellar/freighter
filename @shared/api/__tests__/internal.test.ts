@@ -8,6 +8,7 @@ import * as GetLedgerKeyAccounts from "../helpers/getLedgerKeyAccounts";
 import * as internalApi from "../internal";
 import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
 import { SERVICE_TYPES } from "@shared/constants/services";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { makeHistory } from "./fixtures/tokenPriceHistory";
 
 // §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
@@ -170,6 +171,59 @@ describe("internalApi", () => {
       await expect(internalApi.resetWallet()).resolves.toEqual({
         error: "port closed",
       });
+    });
+  });
+
+  describe("signOut", () => {
+    // Only the background's own reply means the session is locked. Every
+    // other outcome must resolve `{ error }`, and none may reject.
+    it("sends SIGN_OUT and resolves the background's reply", async () => {
+      const reply = {
+        publicKey: "",
+        applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+      };
+      mockedSend.mockResolvedValue(reply);
+
+      await expect(
+        internalApi.signOut({ activePublicKey: "G123" }),
+      ).resolves.toEqual(reply);
+
+      expect(mockedSend).toHaveBeenCalledTimes(1);
+      expect(mockedSend).toHaveBeenCalledWith({
+        activePublicKey: "G123",
+        type: SERVICE_TYPES.SIGN_OUT,
+      });
+    });
+
+    it("passes the background's error through", async () => {
+      mockedSend.mockResolvedValue({ error: "Unauthorized" });
+
+      await expect(
+        internalApi.signOut({ activePublicKey: "G123" }),
+      ).resolves.toEqual({ error: "Unauthorized" });
+    });
+
+    it.each([[undefined], [null]])(
+      "resolves an error, not a locked session, when the background sends no reply (%s)",
+      async (noReply) => {
+        mockedSend.mockResolvedValue(noReply);
+
+        await expect(
+          internalApi.signOut({ activePublicKey: "G123" }),
+        ).resolves.toEqual({ error: "No response from background" });
+      },
+    );
+
+    it("resolves the error's message instead of a locked session when the send throws", async () => {
+      const consoleError = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => undefined);
+      mockedSend.mockRejectedValue(new Error("Failed to flush session"));
+
+      await expect(
+        internalApi.signOut({ activePublicKey: "G123" }),
+      ).resolves.toEqual({ error: "Failed to flush session" });
+      expect(consoleError).toHaveBeenCalledTimes(1);
     });
   });
 

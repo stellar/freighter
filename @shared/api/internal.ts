@@ -2366,28 +2366,32 @@ export const loadLastUsedAccount = async (): Promise<{
   });
 };
 
+type SignOutResponse =
+  | { publicKey: string; applicationState: APPLICATION_STATE }
+  | { error: string };
+
+/**
+ * Locks the wallet. Never rejects: resolves the background's reply when one
+ * arrives, and `{ error }` when sending throws or no reply arrives at all
+ * (`runtime.sendMessage` resolves `undefined` if the port closes first). Only
+ * the background's own reply with an empty `publicKey` means the session is
+ * locked, so there is no default that could read as one.
+ */
 export const signOut = async ({
   activePublicKey,
 }: {
   activePublicKey: string;
-}): Promise<{
-  publicKey: string;
-  applicationState: APPLICATION_STATE;
-}> => {
-  let response = {
-    publicKey: "",
-    applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
-  };
+}): Promise<SignOutResponse> => {
   try {
-    response = await sendMessageToBackground({
+    const response = await sendMessageToBackground<SignOutResponse>({
       activePublicKey,
       type: SERVICE_TYPES.SIGN_OUT,
     });
+    return response ?? { error: "No response from background" };
   } catch (e) {
     console.error(e);
+    return { error: e instanceof Error ? e.message : String(e) };
   }
-
-  return response;
 };
 
 /**

@@ -152,6 +152,35 @@ describe("signOut", () => {
     expect(store.getState().auth.publicKey).toBe("GBTEST");
   });
 
+  // The wrapper reports a handler that threw and a reply that never arrived
+  // as `{ error }`. Neither confirms the background locked the session.
+  it.each([
+    ["the background handler throws", "Failed to flush session"],
+    ["no reply arrives", "No response from background"],
+  ])("rejects when %s", async (_case, error) => {
+    const store = makeStore();
+    jest.spyOn(ApiInternal, "signOut").mockResolvedValue({ error });
+
+    const action = await (store.dispatch as any)(signOut());
+
+    expect(action.type).toBe(signOut.rejected.type);
+    expect(store.getState().auth.publicKey).toBe("GBTEST");
+    expect(store.getState().auth.hasPrivateKey).toBe(true);
+  });
+
+  it("rejects when the background still reports an active key", async () => {
+    const store = makeStore();
+    jest.spyOn(ApiInternal, "signOut").mockResolvedValue({
+      publicKey: "GBTEST",
+      applicationState: "MNEMONIC_PHRASE_CONFIRMED",
+    } as any);
+
+    const action = await (store.dispatch as any)(signOut());
+
+    expect(action.type).toBe(signOut.rejected.type);
+    expect(store.getState().auth.publicKey).toBe("GBTEST");
+  });
+
   it("clears the session when the background signs out", async () => {
     const store = makeStore();
     jest.spyOn(ApiInternal, "signOut").mockResolvedValue({

@@ -495,27 +495,20 @@ export const signOut = createAsyncThunk<
   undefined,
   { rejectValue: ErrorMessage; state: AppState }
 >("auth/signOut", async (_, { getState, rejectWithValue }) => {
-  let res = {
-    publicKey: "",
-    applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
-  };
   const activePublicKey = publicKeySelector(getState());
+  const res = await signOutService({ activePublicKey });
 
-  try {
-    res = await signOutService({ activePublicKey });
-  } catch (e) {
-    console.error(e);
-  }
-
-  // A refusal carries `error` and no `publicKey`; treating it as success
-  // would show the lock screen while the background stays unlocked.
-  if (res?.publicKey || (res && "error" in res)) {
+  // Only the background's own reply with no key left means the session is
+  // locked. A refusal, a handler that threw and a reply that never arrived
+  // all come back as `error`; treating any of them as success would show the
+  // lock screen while the background stays unlocked.
+  if ("error" in res || res.publicKey) {
     return rejectWithValue({
       errorMessage: i18n.t("Unable to sign out"),
     });
   }
 
-  return res?.applicationState;
+  return res.applicationState;
 });
 
 export const resetWallet = createAsyncThunk<
