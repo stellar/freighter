@@ -26,6 +26,10 @@ import { reRouteOnboarding } from "popup/helpers/route";
 import { balancesSelector } from "popup/ducks/cache";
 import { useHiddenAssets } from "popup/helpers/useHiddenAssets";
 
+import { RequestState as LookupRequestState } from "constants/request";
+import { SecurityLevel } from "popup/constants/blockaid";
+import { useSwapTokenLookup } from "popup/components/swap/SwapAsset/hooks/useSwapTokenLookup";
+
 import { ManageAssetRows } from "../ManageAssetRows";
 import { HiddenAssets } from "popup/components/account/HiddenAssets";
 import { SearchInput, SearchResults } from "../AssetResults";
@@ -79,6 +83,9 @@ export const SearchAsset = () => {
   });
 
   const { state: tokenState, fetchData: fetchTokenData } = useAssetLookup();
+
+  const { fetchData: lookupFetchData, state: lookupState } =
+    useSwapTokenLookup();
 
   const { isAssetHidden, setAssetVisibility, refreshHiddenAssets } =
     useHiddenAssets();
@@ -158,6 +165,24 @@ export const SearchAsset = () => {
     refreshHiddenAssets();
   }, [cachedBalances]);
 
+  // Idle lookup = the swap picker's Popular list, from its caches. Re-run with
+  // the balances so a just-added token leaves the list.
+  useEffect(() => {
+    const resolved = state.data;
+    // useGetSearchData never stamps `type` on a resolved payload, so test for
+    // the reroute variant instead of RESOLVED.
+    if (!resolved || resolved.type === AppDataType.REROUTE) return;
+    lookupFetchData({
+      searchTerm: "",
+      balances: resolved.balances.balances,
+      publicKey: resolved.publicKey,
+      networkDetails: resolved.networkDetails,
+    });
+    // lookupFetchData is recreated each render; state.data changes when the
+    // account data (re)resolves, which is the trigger wanted.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.data]);
+
   if (
     state.state === RequestState.IDLE ||
     state.state === RequestState.LOADING
@@ -214,6 +239,13 @@ export const SearchAsset = () => {
     !tokenState.data.verifiedAssetRows.length &&
     !tokenState.data.unverifiedAssetRows.length;
 
+  const popularRows = (lookupState.data?.sections.popular ?? []).map((r) => ({
+    ...r,
+    isSuspicious: r.securityLevel === SecurityLevel.SUSPICIOUS,
+    isMalicious: r.securityLevel === SecurityLevel.MALICIOUS,
+  }));
+  const isPopularLoading = lookupState.state === LookupRequestState.LOADING;
+
   return (
     <>
       <SubviewHeader title={t("Choose asset")} />
@@ -262,12 +294,30 @@ export const SearchAsset = () => {
                   ) : null}
                 </div>
                 <SearchResults
-                  isSearching={tokenState.state === "LOADING"}
+                  isSearching={
+                    tokenState.state === "LOADING" ||
+                    (!dirty && isPopularLoading)
+                  }
                   resultsRef={ResultsRef}
                 >
-                  {tokenState.data &&
-                  (tokenState.data.verifiedAssetRows.length ||
-                    tokenState.data.unverifiedAssetRows.length) ? (
+                  {!dirty && popularRows.length ? (
+                    <ManageAssetRows
+                      balances={data!.balances}
+                      header={
+                        <div
+                          className="ManageAssetRows__list-header SearchAsset__popular-header"
+                          data-testid="search-asset-popular"
+                        >
+                          <span>{t("Popular tokens")}</span>
+                        </div>
+                      }
+                      verifiedAssetRows={popularRows}
+                      unverifiedAssetRows={[]}
+                      shouldSplitAssetsByVerificationStatus={false}
+                    />
+                  ) : tokenState.data &&
+                    (tokenState.data.verifiedAssetRows.length ||
+                      tokenState.data.unverifiedAssetRows.length) ? (
                     <ManageAssetRows
                       balances={data!.balances}
                       header={

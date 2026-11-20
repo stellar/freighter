@@ -8,6 +8,7 @@ import {
   getTestStore,
   mockAccounts,
   mockBalances,
+  TEST_USDC_CANONICAL,
   Wrapper,
 } from "popup/__testHelpers__";
 import { saveBalancesForAccount } from "popup/ducks/cache";
@@ -18,6 +19,9 @@ import {
   NETWORKS,
 } from "@shared/constants/stellar";
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
+import * as UseSwapTokenLookup from "popup/components/swap/SwapAsset/hooks/useSwapTokenLookup";
+import { RequestState } from "constants/request";
+import { SecurityLevel } from "popup/constants/blockaid";
 
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
@@ -32,7 +36,72 @@ jest.mock("react-router-dom", () => ({
   })),
 }));
 
+const aqua = {
+  code: "AQUA",
+  issuer: "GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
+  domain: "aquarius.world",
+  canonical: "AQUA:GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
+  isHeld: false,
+  isContract: false,
+  requiresTrustline: true,
+  securityLevel: SecurityLevel.SAFE,
+};
+const lookupWith = (popular: unknown[], extra = {}) => ({
+  fetchData: jest.fn().mockResolvedValue(undefined),
+  state: {
+    state: RequestState.SUCCESS,
+    error: null,
+    data: {
+      sections: { yourTokens: [], popular, verified: [], unverified: [] },
+      isSearch: false,
+      isFallback: false,
+      ...extra,
+    },
+  },
+});
+const renderSearchAsset = () =>
+  render(
+    <Wrapper
+      routes={[ROUTES.searchAsset]}
+      state={{
+        auth: {
+          error: null,
+          applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+          publicKey: "G1",
+          hasPrivateKey: true,
+          allAccounts: mockAccounts,
+        },
+        settings: {
+          networkDetails: MAINNET_NETWORK_DETAILS,
+          networksList: DEFAULT_NETWORKS,
+          assetsLists: { [NETWORKS.PUBLIC]: [] },
+        },
+      }}
+    >
+      <SearchAsset />
+    </Wrapper>,
+  );
+
 describe("SearchAsset", () => {
+  // The real lookup needs token-list settings the older tests don't seed.
+  beforeEach(() => {
+    jest
+      .spyOn(UseSwapTokenLookup, "useSwapTokenLookup")
+      .mockReturnValue(lookupWith([]) as any);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+    jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockBalances));
+    jest
+      .spyOn(ApiInternal, "getHiddenAssets")
+      .mockImplementation(() =>
+        Promise.resolve({ hiddenAssets: {}, error: "" }),
+      );
+  });
+
   jest
     .spyOn(ApiInternal, "getAccountBalances")
     .mockImplementation(() => Promise.resolve(mockBalances));
@@ -284,6 +353,112 @@ describe("SearchAsset", () => {
         "USDC",
       );
       expect(screen.getByTestId("ManageAssetCode")).toHaveTextContent("XLM");
+    });
+  });
+  describe("Popular tokens", () => {
+    it("lists Popular tokens before typing and runs the idle lookup with the account's balances", async () => {
+      const lookup = lookupWith([aqua]);
+      jest
+        .spyOn(UseSwapTokenLookup, "useSwapTokenLookup")
+        .mockReturnValue(lookup as any);
+      renderSearchAsset();
+
+      expect(
+        await screen.findByTestId("search-asset-popular"),
+      ).toHaveTextContent("Popular tokens");
+      expect(
+        screen.getByTestId("ManageAssetRow-AQUA-body"),
+      ).toBeInTheDocument();
+      expect(screen.queryByTestId("asset-on-list")).toBeNull();
+      await waitFor(() =>
+        expect(lookup.fetchData).toHaveBeenCalledWith(
+          expect.objectContaining({
+            searchTerm: "",
+            publicKey: expect.any(String),
+            balances: expect.any(Array),
+          }),
+        ),
+      );
+    });
+
+    it("hides Popular once the user types and restores it when cleared", async () => {
+      const searchSpy = jest
+        .spyOn(ApiInternal, "getStellarExpertAssets")
+        .mockResolvedValue({ _embedded: { records: [] } });
+      const lookup = lookupWith([aqua]);
+      jest
+        .spyOn(UseSwapTokenLookup, "useSwapTokenLookup")
+        .mockReturnValue(lookup as any);
+      renderSearchAsset();
+      await screen.findByTestId("search-asset-popular");
+      await waitFor(() => expect(lookup.fetchData).toHaveBeenCalled());
+      const callsBefore = lookup.fetchData.mock.calls.length;
+
+      fireEvent.change(screen.getByTestId("search-asset-input"), {
+        target: { value: "USDC" },
+      });
+      await waitFor(() =>
+        expect(screen.queryByTestId("search-asset-popular")).toBeNull(),
+      );
+      await waitFor(() => expect(searchSpy).toHaveBeenCalled(), {
+        timeout: 2000,
+      });
+
+      fireEvent.change(screen.getByTestId("search-asset-input"), {
+        target: { value: "" },
+      });
+      expect(
+        await screen.findByTestId("search-asset-popular"),
+      ).toBeInTheDocument();
+      expect(lookup.fetchData.mock.calls.length).toBe(callsBefore);
+    });
+
+    it("shows the loader while Popular is cold-loading", async () => {
+      jest.spyOn(UseSwapTokenLookup, "useSwapTokenLookup").mockReturnValue({
+        fetchData: jest.fn().mockResolvedValue(undefined),
+        state: { state: RequestState.LOADING, error: null, data: null },
+      } as any);
+      const { container } = renderSearchAsset();
+
+      await waitFor(() =>
+        expect(
+          container.querySelector(".SearchResults__loader"),
+        ).not.toBeNull(),
+      );
+    });
+
+    it("shows nothing when discovery is down", async () => {
+      jest
+        .spyOn(UseSwapTokenLookup, "useSwapTokenLookup")
+        .mockReturnValue(lookupWith([], { isFallback: true }) as any);
+      const { container } = renderSearchAsset();
+
+      await screen.findByTestId("hidden-assets-btn");
+      expect(screen.queryByTestId("search-asset-popular")).toBeNull();
+      expect(container.querySelector(".SearchResults__loader")).toBeNull();
+      expect(screen.queryByText(/Unable to find your asset/)).toBeNull();
+    });
+
+    it("passes hidden held tokens to the lookup so Popular leaves them out", async () => {
+      jest.spyOn(ApiInternal, "getHiddenAssets").mockResolvedValue({
+        hiddenAssets: { [TEST_USDC_CANONICAL]: "hidden" },
+        error: "",
+      } as any);
+      const lookup = lookupWith([aqua]);
+      jest
+        .spyOn(UseSwapTokenLookup, "useSwapTokenLookup")
+        .mockReturnValue(lookup as any);
+      renderSearchAsset();
+
+      await waitFor(() => {
+        const call = lookup.fetchData.mock.calls.find(
+          ([arg]) => arg.searchTerm === "" && arg.balances.length,
+        );
+        expect(call).toBeDefined();
+        expect(call![0].balances.map((b: any) => b.token?.code)).toContain(
+          "USDC",
+        );
+      });
     });
   });
 });
