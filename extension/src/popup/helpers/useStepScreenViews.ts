@@ -13,17 +13,18 @@ export type ScreenByStep<S extends string> = Partial<
  * screen, say, whose stages its own hook reports.
  *
  * Only a step change emits. `extraProps` (e.g. where a swap was opened from)
- * is read as it is at that moment.
+ * is read as it is at that moment. A null step, for a flow still deciding
+ * where it opens, emits nothing.
  */
 export const useStepScreenViews = <S extends string>(
-  activeStep: S,
+  activeStep: S | null,
   screenByStep: ScreenByStep<S>,
   extraProps: ScreenViewedProps = {},
 ) => {
   const lastEmittedStep = useRef<S | null>(null);
 
   useEffect(() => {
-    if (activeStep === lastEmittedStep.current) {
+    if (activeStep === null || activeStep === lastEmittedStep.current) {
       return;
     }
     lastEmittedStep.current = activeStep;

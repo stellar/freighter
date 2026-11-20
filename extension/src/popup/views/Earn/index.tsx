@@ -84,13 +84,13 @@ export const Earn = () => {
   const { pool, selectedAssetId } = useSelector(earnSelector);
   const tokenPrices = useSelector(tokenPricesSelector);
 
-  // Start on CHOOSE_TOKEN and only fall back to the interstitial once the
-  // persisted flag has actually resolved to false. Defaulting to INTRO instead
-  // would flash it for every returning user while the background round-trip is
-  // in flight.
-  const [activeStep, setActiveStep] = useState<STEPS>(STEPS.CHOOSE_TOKEN);
+  // No step until the persisted intro flag has resolved: the flow opens on the
+  // interstitial only once it is known to be unseen. Opening on either step
+  // first would flash it — the intro for every returning user, or the picker
+  // for a first visit — and report that screen's view ahead of the right one.
+  const [activeStep, setActiveStep] = useState<STEPS | null>(null);
   const [visitedSteps, setVisitedSteps] = useState<Record<STEPS, boolean>>(
-    () => ({ [STEPS.CHOOSE_TOKEN]: true }) as Record<STEPS, boolean>,
+    () => ({}) as Record<STEPS, boolean>,
   );
   const [enterAnim, setEnterAnim] = useState<EnterAnim>("from-bottom");
   // The picker stays mounted across the swap branch, so it needs an explicit
@@ -103,7 +103,6 @@ export const Earn = () => {
     source: string;
   } | null>(null);
 
-  const hasResolvedIntro = useRef(false);
   const isFirstSubmitStatusRun = useRef(true);
   // True while a submission the swap branch started is unsettled. The swap and
   // the deposit share the submission slice, so this is how a swap's outcome is
@@ -128,14 +127,11 @@ export const Earn = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    if (hasResolvedIntro.current || hasSeenIntro === null) {
+    if (activeStep !== null || hasSeenIntro === null) {
       return;
     }
-    hasResolvedIntro.current = true;
-
-    if (!hasSeenIntro) {
-      goToStep(STEPS.INTRO, "from-bottom");
-    }
+    goToStep(hasSeenIntro ? STEPS.CHOOSE_TOKEN : STEPS.INTRO, "from-bottom");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasSeenIntro]);
 
   // A failed submission returns to the amount screen with a banner rather than

@@ -40,4 +40,18 @@ describe("useStepScreenViews", () => {
 
     expect(emitScreenViewed).not.toHaveBeenCalled();
   });
+
+  it("waits for a step that is still undecided", () => {
+    const { rerender } = renderHook(
+      ({ step }: { step: Step | null }) => useStepScreenViews(step, screens),
+      { initialProps: { step: null as Step | null } },
+    );
+    expect(emitScreenViewed).not.toHaveBeenCalled();
+
+    rerender({ step: "review" });
+
+    expect((emitScreenViewed as jest.Mock).mock.calls).toEqual([
+      ["x_review", { flow: "swap" }],
+    ]);
+  });
 });
