@@ -35,8 +35,11 @@ export function useGetEarnAmountData() {
     initialState,
   );
   const { fetchData: fetchAppData } = useGetAppData();
+  // Hidden tokens included: Earn's picker lists a token hidden on Home at its
+  // balance, as mobile's does, so the deposit screen needs that balance to
+  // deposit it.
   const { fetchData: fetchBalances } = useGetBalances({
-    showHidden: false,
+    showHidden: true,
     includeIcons: true,
   });
   const { fetchData: fetchTokenPrices } = useGetTokenPrices();

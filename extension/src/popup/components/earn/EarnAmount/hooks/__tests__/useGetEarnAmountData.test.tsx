@@ -19,9 +19,13 @@ jest.mock("helpers/hooks/useGetAppData", () => ({
   useGetAppData: () => ({ fetchData: mockFetchAppData }),
 }));
 
+const mockUseGetBalancesOptions = jest.fn();
 jest.mock("helpers/hooks/useGetBalances", () => ({
   ...jest.requireActual("helpers/hooks/useGetBalances"),
-  useGetBalances: () => ({ fetchData: mockFetchBalances }),
+  useGetBalances: (options: unknown) => {
+    mockUseGetBalancesOptions(options);
+    return { fetchData: mockFetchBalances };
+  },
 }));
 
 jest.mock("helpers/hooks/useGetTokenPrices", () => ({
@@ -68,6 +72,17 @@ describe("useGetEarnAmountData", () => {
       settings: { networkDetails: TESTNET_NETWORK_DETAILS },
     });
     mockFetchBalances.mockResolvedValue(balances);
+  });
+
+  // Earn's picker lists a token hidden on Home at its balance, so the deposit
+  // screen must see that balance too.
+  it("loads balances with hidden tokens included", async () => {
+    mockFetchTokenPrices.mockResolvedValue({ tokenPrices: {} });
+    await fetchResolved();
+
+    expect(mockUseGetBalancesOptions).toHaveBeenCalledWith(
+      expect.objectContaining({ showHidden: true }),
+    );
   });
 
   it("passes the fetched prices through", async () => {
