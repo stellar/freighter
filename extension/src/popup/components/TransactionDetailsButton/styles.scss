@@ -7,7 +7,9 @@
   align-items: center;
   gap: pxToRem(4);
   width: 100%;
-  padding: pxToRem(8) pxToRem(10);
+  // The design's 8px/10px padding includes its stroke (Figma draws it inside),
+  // so the 1px border comes out of the padding: 36px tall, as drawn.
+  padding: pxToRem(7) pxToRem(9);
   border: 1px solid var(--sds-clr-gray-05);
   border-radius: pxToRem(16);
   background: var(--sds-clr-gray-01);
