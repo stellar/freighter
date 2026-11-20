@@ -6,6 +6,7 @@ import {
 } from "@reduxjs/toolkit";
 import type { Variant } from "@amplitude/experiment-js-client";
 
+import { DEV_EXTENSION } from "@shared/constants/services";
 import { getExperimentClient } from "helpers/experimentClient";
 import { BUNDLE_ID_USER_PROPERTY_KEY, getBundleId } from "helpers/analytics";
 import {
@@ -91,9 +92,9 @@ const initialState: RemoteConfigState = {
   // can flip it on to opt into the v2 account-balances endpoint without a
   // release.
   use_balances_v2: false,
-  // Earn entry point on Home. Ships ON; Amplitude can turn it off without a
-  // release.
-  earn_deposit: true,
+  // Earn's entry point on Home. OFF in production until Amplitude turns it on;
+  // ON in dev builds, which usually run without Amplitude's keys.
+  earn_deposit: DEV_EXTENSION,
   // Token price-history chart on AssetDetail. Ships ON — a kill switch, not
   // launch choreography (§11 of the token-price-graphs design).
   use_token_price_history: true,
@@ -258,9 +259,10 @@ export const tokenPriceHistoryEnabledSelector = killSwitchSelector(
 );
 
 /**
- * Whether the Earn deposit flow is exposed. Defaults to true and is read
- * fail-closed, so the Home tile stays hidden until the flags settle rather
- * than flashing in before Amplitude can turn it off.
+ * Whether the Earn deposit flow is exposed: off in production until Amplitude
+ * turns it on, on in dev builds. Read fail-closed, so the Home tile stays
+ * hidden until the flags settle rather than flashing in before Amplitude has
+ * answered.
  */
 export const earnDepositSelector = killSwitchSelector("earn_deposit");
 
