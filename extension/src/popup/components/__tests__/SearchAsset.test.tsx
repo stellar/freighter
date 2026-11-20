@@ -381,6 +381,20 @@ describe("SearchAsset", () => {
       );
     });
 
+    it.each([
+      [SecurityLevel.MALICIOUS, "ScamAssetIcon--malicious"],
+      [SecurityLevel.SUSPICIOUS, "ScamAssetIcon--suspicious"],
+    ])("badges a %s Popular record", async (securityLevel, badgeClass) => {
+      jest
+        .spyOn(UseSwapTokenLookup, "useSwapTokenLookup")
+        .mockReturnValue(lookupWith([{ ...aqua, securityLevel }]) as any);
+      renderSearchAsset();
+
+      expect(await screen.findByTestId("ScamAssetIcon")).toHaveClass(
+        badgeClass,
+      );
+    });
+
     it("hides Popular once the user types and restores it when cleared", async () => {
       const searchSpy = jest
         .spyOn(ApiInternal, "getStellarExpertAssets")

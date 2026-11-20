@@ -113,6 +113,49 @@ describe("useSwapTokenLookup fetchData — abort race (§ batch4 task 7)", () =>
     expect(result.current.state.data?.sections.verified).toEqual([]);
   });
 
+  it("serves the cached repaint with the caller's own held tokens", async () => {
+    const store = makeDummyStore({ settings: { assetsLists: {} } });
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <Provider store={store}>{children}</Provider>
+    );
+    const { result } = renderHook(() => useSwapTokenLookup(), { wrapper });
+    const heldUsdc = {
+      token: { code: "USDC", issuer: { key: "GUSD" } },
+      total: "100",
+    } as any;
+    const heldXlm = {
+      token: { type: "native", code: "XLM" },
+      total: "50",
+    } as any;
+    const args = {
+      publicKey: "GADUMMY",
+      networkDetails: TESTNET,
+      searchTerm: "",
+    };
+
+    (splitVerifiedAssetCurrency as jest.Mock).mockResolvedValueOnce({
+      verifiedAssets: [],
+      unverifiedAssets: [],
+    });
+    await act(async () => {
+      await result.current.fetchData({ ...args, balances: [heldUsdc] });
+    });
+    expect(
+      result.current.state.data?.sections.yourTokens.map((r) => r.code),
+    ).toEqual(["USDC"]);
+
+    // Revalidation never settles, so what is on screen is the cached repaint.
+    (splitVerifiedAssetCurrency as jest.Mock).mockReturnValueOnce(
+      new Promise(() => {}),
+    );
+    await act(async () => {
+      void result.current.fetchData({ ...args, balances: [heldXlm] });
+    });
+    expect(
+      result.current.state.data?.sections.yourTokens.map((r) => r.code),
+    ).toEqual(["XLM"]);
+  });
+
   it("does not commit a superseded search's sections over the current one", async () => {
     const store = makeDummyStore({ settings: { assetsLists: {} } });
     const wrapper = ({ children }: { children: React.ReactNode }) => (

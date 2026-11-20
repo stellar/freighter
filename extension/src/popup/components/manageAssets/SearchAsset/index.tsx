@@ -241,7 +241,9 @@ export const SearchAsset = () => {
 
   const popularRows = (lookupState.data?.sections.popular ?? []).map((r) => ({
     ...r,
-    isSuspicious: r.securityLevel === SecurityLevel.SUSPICIOUS,
+    isSuspicious:
+      r.securityLevel === SecurityLevel.SUSPICIOUS ||
+      r.securityLevel === SecurityLevel.MALICIOUS,
     isMalicious: r.securityLevel === SecurityLevel.MALICIOUS,
   }));
   const isPopularLoading = lookupState.state === LookupRequestState.LOADING;

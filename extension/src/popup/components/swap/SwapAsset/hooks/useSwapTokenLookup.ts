@@ -217,6 +217,9 @@ const currencyToRecord = (
  * Idle (no searchTerm):  yourTokens + popular (volume7d ∩ verified, held filtered out)
  * Search (searchTerm):   yourTokens + verified + unverified (mutually exclusive, deduped)
  * Fallback:              yourTokens only (held-in-memory filter), popular/verified/unverified empty
+ *
+ * Contract tokens are returned off mainnet because each consumer filters what
+ * it cannot use: the swap picker host drops them, Add token lists them.
  */
 export const buildSwapSections = ({
   searchTerm,
@@ -685,8 +688,19 @@ export const useSwapTokenLookup = () => {
         payload: omitHiddenFromSections(result, hiddenAssets),
       });
 
+    // Held rows come from the caller's balances, never from a cache another
+    // caller or account filled.
+    const serveCached = (result: SwapTokenLookupResult) =>
+      serve({
+        ...result,
+        sections: {
+          ...result.sections,
+          yourTokens: balancesToHeldRecords({ balances, icons, tokenPrices }),
+        },
+      });
+
     if (cachedResult) {
-      serve(cachedResult);
+      serveCached(cachedResult);
     }
 
     // Token discovery (Popular + search) only exists on Mainnet / Testnet.
@@ -968,7 +982,7 @@ export const useSwapTokenLookup = () => {
       // transient failure instead of dropping Popular to held-only; fall back
       // to held-only only when there's nothing cached.
       if (cachedResult) {
-        serve(cachedResult);
+        serveCached(cachedResult);
         return;
       }
       // Graceful fallback: stellar.expert or Blockaid unreachable → held-only
