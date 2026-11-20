@@ -3,6 +3,7 @@ import { Keypair } from "stellar-sdk";
 
 import { test, expect } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
+import { stubHorizonAccountDiscovery } from "./helpers/stubs";
 import {
   addAccountToPhrase,
   generateRecoveryPhraseSource,
@@ -133,6 +134,7 @@ test("Imports a second recovery phrase without changing the first", async ({
 }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId, context });
+  await stubHorizonAccountDiscovery(context);
 
   await openSheet(page);
   // With one phrase the sheet may not label the group, so record every row.
@@ -151,7 +153,7 @@ test("Imports a second recovery phrase without changing the first", async ({
     words: generateMnemonic().split(" "),
   });
 
-  // Discovery looks up ~49 addresses on mainnet before the view returns.
+  // Discovery's lookups are stubbed as unfunded, so only index 0 is added.
   await openSheet(page);
   await expect(page.getByTestId("account-sheet-group-toggle")).toHaveText([
     "Recovery phrase 1",
@@ -170,6 +172,7 @@ test("Refuses a recovery phrase the wallet already holds", async ({
 }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId, context });
+  await stubHorizonAccountDiscovery(context);
 
   const words = generateMnemonic().split(" ");
   await openSheet(page);
