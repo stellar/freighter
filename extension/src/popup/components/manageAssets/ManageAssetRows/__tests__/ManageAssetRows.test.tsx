@@ -64,6 +64,7 @@ const renderRows = (
   verifiedAssetRows: any[] = [
     { code: "USDC", issuer: ISSUER, domain: "centre.io" },
   ],
+  shouldSplit = true,
   onBalancesChanged?: () => void,
 ) =>
   render(
@@ -87,6 +88,7 @@ const renderRows = (
       <ManageAssetRows
         verifiedAssetRows={verifiedAssetRows}
         unverifiedAssetRows={[]}
+        shouldSplitAssetsByVerificationStatus={shouldSplit}
         balances={
           { balances: [], subentryCount: 0, localOnlyTokenIds: [] } as any
         }
@@ -126,7 +128,7 @@ describe("ManageAssetRows row tap", () => {
 describe("ManageAssetRows after a hide or remove from the sheet", () => {
   it("tells its screen, which refreshes the rows", () => {
     const onBalancesChanged = jest.fn();
-    renderRows(true, true, undefined, onBalancesChanged);
+    renderRows(true, true, undefined, true, onBalancesChanged);
 
     fireEvent.click(screen.getByTestId("ManageAssetRow-USDC-body"));
     fireEvent.click(screen.getByTestId("asset-detail-hide"));
@@ -254,5 +256,38 @@ describe("ManageAssetRows hidden state in the sheet", () => {
       "data-hidden",
       "true",
     );
+  });
+});
+
+describe("ManageAssetRows unsplit list", () => {
+  // AssetListRow defaults an omitted isMalicious to red, so the discriminating
+  // row is the suspicious one: it only stays amber if the flag is forwarded.
+  it("forwards the malicious verdict to the row badge", () => {
+    renderRows(
+      false,
+      true,
+      [
+        {
+          code: "SCAM",
+          issuer: ISSUER,
+          domain: null,
+          isSuspicious: true,
+          isMalicious: true,
+        },
+        {
+          code: "MEH",
+          issuer: ISSUER,
+          domain: null,
+          isSuspicious: true,
+          isMalicious: false,
+        },
+      ],
+      false,
+    );
+
+    const badges = screen.getAllByTestId("ScamAssetIcon");
+    expect(badges[0]).toHaveClass("ScamAssetIcon--malicious");
+    expect(badges[1]).toHaveClass("ScamAssetIcon--suspicious");
+    expect(screen.queryByTestId("asset-on-list")).toBeNull();
   });
 });

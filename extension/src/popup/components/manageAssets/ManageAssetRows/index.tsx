@@ -499,6 +499,7 @@ const AssetRows = ({
           name = "",
           contract = "",
           isSuspicious,
+          isMalicious,
           price,
           isUnableToScan,
         }) => {
@@ -534,6 +535,7 @@ const AssetRows = ({
                 isContract,
                 issuer,
                 isSuspicious,
+                isMalicious,
                 isRemovable: getIsRemovable({
                   contract,
                   isSac,
