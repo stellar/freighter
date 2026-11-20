@@ -116,9 +116,16 @@ interface EarnAmountProps {
   onClose: () => void;
   /** Confirmed on the review sheet — hand off to the submit step. */
   onConfirm: () => void;
+  /** Bumped by the caller after a swap so the screen re-fetches its balances. */
+  refreshKey?: number;
 }
 
-export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
+export const EarnAmount = ({
+  goBack,
+  onClose,
+  onConfirm,
+  refreshKey = 0,
+}: EarnAmountProps) => {
   const { t } = useTranslation();
   const location = useLocation();
   const dispatch = useDispatch();
@@ -181,10 +188,12 @@ export const EarnAmount = ({ goBack, onClose, onConfirm }: EarnAmountProps) => {
     latestFieldRef.current = { amount, asset };
   }, [amount, asset]);
 
+  // Again after a swap: the screen stays mounted behind the picker, so the
+  // balances it loaded on its first visit would outlive the swap.
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [refreshKey]);
 
   // A different asset means the previous asset's rejection no longer describes
   // anything: the amount and simulation have been cleared with it. The screen

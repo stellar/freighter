@@ -93,9 +93,11 @@ export const Earn = () => {
     () => ({}) as Record<STEPS, boolean>,
   );
   const [enterAnim, setEnterAnim] = useState<EnterAnim>("from-bottom");
-  // The picker stays mounted across the swap branch, so it needs an explicit
-  // nudge to re-fetch balances once a swap lands.
-  const [pickerRefreshKey, setPickerRefreshKey] = useState(0);
+  // The picker stays mounted across the swap branch, and so does the deposit
+  // screen once visited, so both need an explicit nudge to re-fetch balances
+  // once a swap lands. Otherwise the token a swap just bought reads as 0
+  // available on its deposit screen.
+  const [balancesRefreshKey, setBalancesRefreshKey] = useState(0);
   const [swapTarget, setSwapTarget] = useState<{
     canonical: string;
     details: DestinationTokenDetails;
@@ -176,7 +178,7 @@ export const Earn = () => {
         // it so the deposit doesn't start from it, and re-read balances in
         // case the swap went through.
         dispatch(resetSubmitStatus());
-        setPickerRefreshKey((key) => key + 1);
+        setBalancesRefreshKey((key) => key + 1);
       }
       return;
     }
@@ -242,7 +244,7 @@ export const Earn = () => {
       case STEPS.CHOOSE_TOKEN:
         return (
           <EarnTokenPicker
-            refreshKey={pickerRefreshKey}
+            refreshKey={balancesRefreshKey}
             onClose={closeEarnFlow}
             onSelect={(option, resolved) => {
               trackEarnTokenSelected({
@@ -309,6 +311,7 @@ export const Earn = () => {
       case STEPS.AMOUNT:
         return (
           <EarnAmount
+            refreshKey={balancesRefreshKey}
             goBack={() => goToStep(STEPS.CHOOSE_TOKEN, "from-left")}
             onClose={closeEarnFlow}
             onConfirm={() => {
@@ -394,9 +397,10 @@ export const Earn = () => {
                 })}
               />
             ));
-            // The picker stayed mounted underneath, so it needs an explicit
-            // nudge to pick up the balance the swap just created.
-            setPickerRefreshKey((key) => key + 1);
+            // The picker stayed mounted underneath, and the deposit screen
+            // too if it was visited, so they need an explicit nudge to pick
+            // up the balance the swap just created.
+            setBalancesRefreshKey((key) => key + 1);
           }}
         />
       )}
