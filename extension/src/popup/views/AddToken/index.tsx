@@ -331,6 +331,7 @@ export const AddToken = () => {
         key: assetIssuer,
         code: assetCode,
         networkDetails,
+        cache: false,
       });
 
       setAssetIcon(iconUrl || "");

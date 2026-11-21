@@ -334,7 +334,7 @@ export interface GetCachedAssetIconMessage extends BaseMessage {
 export interface CacheAssetIconMessage extends BaseMessage {
   type: SERVICE_TYPES.CACHE_ASSET_ICON;
   assetCanonical: string;
-  iconUrl: string;
+  iconUrl: string | null;
 }
 
 export interface GetCachedSwapTopTokensMessage extends BaseMessage {
