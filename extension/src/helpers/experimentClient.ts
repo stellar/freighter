@@ -5,13 +5,20 @@ import {
 } from "@amplitude/experiment-js-client";
 
 import { AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY } from "constants/env";
+import { EXPERIMENT_ANONYMOUS_DEVICE_ID } from "constants/localStorageTypes";
 import { isDev } from "@shared/helpers/dev";
 
 const TEST_EXPERIMENT_DEPLOYMENT_KEY = "playwright-test-deployment-key";
 
 // Balance and price fetches wait on the flags, so a slow Amplitude host holds
-// the spinner for this long before falling back to the default flags.
-const CONFIG: ExperimentConfig = { fetchTimeoutMillis: 1500 };
+// the spinner for this long before falling back to the default flags. No
+// retries: the SDK would re-send the user captured at fetch time, identity
+// included, for up to a minute after the thunk has already fallen back, by
+// which point data sharing may have been turned off.
+const CONFIG: ExperimentConfig = {
+  fetchTimeoutMillis: 1500,
+  retryFetchOnFailure: false,
+};
 
 // Console log message constants
 const LOG_MESSAGES = {
@@ -34,9 +41,11 @@ const isRuntimeTestEnv = (): boolean => {
 };
 
 /**
- * Initializes the Amplitude Experiment client using the paired analytics SDK.
- * Must be called after `amplitude.init()` so that the experiment client can
- * share the same user identity.
+ * Initializes the Amplitude Experiment client with no automatic identity
+ * source. `initializeWithAmplitudeAnalytics` would copy the analytics SDK's
+ * user_id and device_id into every flag fetch, which bypasses the
+ * data-sharing setting (setOptOut only stops event upload). The identity is
+ * instead passed explicitly, consent-gated, by `fetchFeatureFlags`.
  *
  * Silently skips initialization in development when no key is configured.
  */
@@ -55,15 +64,51 @@ export const initExperimentClient = (): void => {
   }
 
   try {
-    client = AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY
-      ? Experiment.initializeWithAmplitudeAnalytics(deploymentKey, CONFIG)
-      : Experiment.initialize(deploymentKey, CONFIG);
+    client = Experiment.initialize(deploymentKey, CONFIG);
   } catch (e) {
     console.error(
       `${LOG_MESSAGES.EXPERIMENT_PREFIX} ${LOG_MESSAGES.INIT_FAILED}`,
       e,
     );
   }
+};
+
+let sessionAnonymousDeviceId: string | null = null;
+
+// 128 random bits as hex; getRandomValues is available in every surface
+// this runs in, unlike randomUUID.
+const randomHexId = (): string =>
+  Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) =>
+    b.toString(16).padStart(2, "0"),
+  ).join("");
+
+/**
+ * A random per-install id for bucketing flag fetches while data sharing is
+ * off. Amplitude's evaluation can't bucket a user with no id at all and
+ * falls to the segment default, which would turn kill switches and the
+ * maintenance screen off for every opted-out user. This id is not the
+ * analytics device_id, is never replaced by the wallet-derived user id, and
+ * is sent only on the Experiment fetch.
+ */
+export const getAnonymousExperimentDeviceId = (): string => {
+  if (sessionAnonymousDeviceId) return sessionAnonymousDeviceId;
+  try {
+    const stored = localStorage.getItem(EXPERIMENT_ANONYMOUS_DEVICE_ID);
+    if (stored) {
+      sessionAnonymousDeviceId = stored;
+      return stored;
+    }
+  } catch {
+    // Storage unavailable: fall through and hold the id for this popup only.
+  }
+  const fresh = randomHexId();
+  try {
+    localStorage.setItem(EXPERIMENT_ANONYMOUS_DEVICE_ID, fresh);
+  } catch {
+    // see above
+  }
+  sessionAnonymousDeviceId = fresh;
+  return fresh;
 };
 
 /**

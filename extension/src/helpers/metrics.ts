@@ -246,19 +246,18 @@ export const reconcileAnalyticsUserId = async (): Promise<void> => {
 
     localStorage.setItem(METRICS_USER_ID, authUserId);
     sessionUserId = authUserId;
-    // amplitude.setUserId is local-only (setOptOut governs upload), so this
-    // runs regardless of the data-sharing consent setting.
+
+    // Consent-gate both identity writes. When data-sharing is off,
+    // ErrorTracking owns the opted-out Sentry identity (setUser(null) +
+    // close()), and amplitude keeps whatever id it had; the consent
+    // subscription in initAmplitude re-identifies it from storage if sharing
+    // is turned on later this session.
+    const isDataSharingAllowed = settingsDataSharingSelector(store.getState());
+    if (!isDataSharingAllowed) return;
     if (hasInitialized && AMPLITUDE_KEY) {
       amplitude.setUserId(authUserId);
     }
-
-    // Consent-gate the Sentry write: when data-sharing is off, ErrorTracking
-    // owns the opted-out identity (setUser(null) + close()) — don't
-    // re-identify the user behind its back.
-    const isDataSharingAllowed = settingsDataSharingSelector(store.getState());
-    if (isDataSharingAllowed) {
-      Sentry.setUser({ id: authUserId });
-    }
+    Sentry.setUser({ id: authUserId });
   } catch {
     return; // never throw into callers
   }
@@ -348,6 +347,9 @@ export const initAmplitude = async () => {
         lastDataSharingAllowed = allowed;
         amplitude.setOptOut(!allowed);
         if (allowed) {
+          // reconcileAnalyticsUserId skips amplitude while sharing is off, so
+          // the persisted id may be newer than the one set at init.
+          amplitude.setUserId(getUserId());
           emitAppOpenedOnce();
           // Account-load sends run before settings hydrate, so consent is
           // still false there; this is where the trait first gets through.

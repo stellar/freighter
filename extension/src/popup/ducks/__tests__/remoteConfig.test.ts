@@ -25,11 +25,16 @@ jest.mock("constants/env", () => ({
 
 jest.mock("helpers/experimentClient", () => ({
   getExperimentClient: jest.fn(),
+  getAnonymousExperimentDeviceId: jest.fn(() => "anonymous-install-id"),
 }));
 
 jest.mock("popup/helpers/maintenance/parseMaintenanceContent", () => ({
   parseBannerPayload: jest.fn(),
   parseScreenPayload: jest.fn(),
+}));
+
+jest.mock("@amplitude/analytics-browser", () => ({
+  getDeviceId: jest.fn(() => "device-uuid"),
 }));
 
 // Typed references to the mocked functions
@@ -48,6 +53,8 @@ const { parseBannerPayload, parseScreenPayload } = jest.requireMock<
 function makeStore() {
   return configureStore({ reducer: { remoteConfig: reducer } });
 }
+
+const OPTED_OUT = { isDataSharingAllowed: false };
 
 type TestStore = ReturnType<typeof makeStore>;
 
@@ -102,7 +109,7 @@ describe("remoteConfig duck — fetchFeatureFlags when experiment client is null
 
   it("sets isInitialized: true and keeps flags disabled", async () => {
     const store = makeStore();
-    await store.dispatch(fetchFeatureFlags());
+    await store.dispatch(fetchFeatureFlags(OPTED_OUT));
     const state = getState(store);
     expect(state.isInitialized).toBe(true);
     expect(state.maintenance_banner.enabled).toBe(false);
@@ -129,14 +136,15 @@ describe("remoteConfig duck — fetchFeatureFlags with live client", () => {
 
   afterEach(() => jest.clearAllMocks());
 
-  it("calls client.fetch() with user_properties and client.all()", async () => {
+  it("calls client.fetch() with the anonymous install id, not the analytics identity, when data sharing is off", async () => {
     const client = makeClient();
     (getExperimentClient as jest.Mock).mockReturnValue(client);
 
     const store = makeStore();
-    await store.dispatch(fetchFeatureFlags());
+    await store.dispatch(fetchFeatureFlags(OPTED_OUT));
     expect(client.fetch).toHaveBeenCalledTimes(1);
     expect(client.fetch).toHaveBeenCalledWith({
+      device_id: "anonymous-install-id",
       user_properties: {
         "Bundle Id": "extension.development",
       },
@@ -144,11 +152,26 @@ describe("remoteConfig duck — fetchFeatureFlags with live client", () => {
     expect(client.all).toHaveBeenCalledTimes(1);
   });
 
+  it("calls client.fetch() with the analytics user_id and device_id when data sharing is on", async () => {
+    const client = makeClient();
+    (getExperimentClient as jest.Mock).mockReturnValue(client);
+
+    const store = makeStore();
+    await store.dispatch(fetchFeatureFlags({ isDataSharingAllowed: true }));
+    expect(client.fetch).toHaveBeenCalledWith({
+      user_id: "test-user-id",
+      device_id: "device-uuid",
+      user_properties: {
+        "Bundle Id": "extension.development",
+      },
+    });
+  });
+
   it("marks as initialized after a successful fetch", async () => {
     (getExperimentClient as jest.Mock).mockReturnValue(makeClient());
 
     const store = makeStore();
-    await store.dispatch(fetchFeatureFlags());
+    await store.dispatch(fetchFeatureFlags(OPTED_OUT));
     expect(getState(store).isInitialized).toBe(true);
   });
 
@@ -160,7 +183,7 @@ describe("remoteConfig duck — fetchFeatureFlags with live client", () => {
     );
 
     const store = makeStore();
-    await store.dispatch(fetchFeatureFlags());
+    await store.dispatch(fetchFeatureFlags(OPTED_OUT));
     const flag = getState(store).maintenance_banner;
     expect(flag.enabled).toBe(true);
     expect(flag.payload).toEqual(bannerPayload);
@@ -174,7 +197,7 @@ describe("remoteConfig duck — fetchFeatureFlags with live client", () => {
     );
 
     const store = makeStore();
-    await store.dispatch(fetchFeatureFlags());
+    await store.dispatch(fetchFeatureFlags(OPTED_OUT));
     const flag = getState(store).maintenance_screen;
     expect(flag.enabled).toBe(true);
     expect(flag.payload).toEqual(screenPayload);
@@ -190,7 +213,7 @@ describe("remoteConfig duck — fetchFeatureFlags with live client", () => {
       );
 
       const store = makeStore();
-      await store.dispatch(fetchFeatureFlags());
+      await store.dispatch(fetchFeatureFlags(OPTED_OUT));
       expect(getState(store).maintenance_banner.enabled).toBe(true);
     },
   );
@@ -203,7 +226,7 @@ describe("remoteConfig duck — fetchFeatureFlags with live client", () => {
     );
 
     const store = makeStore();
-    await store.dispatch(fetchFeatureFlags());
+    await store.dispatch(fetchFeatureFlags(OPTED_OUT));
     expect(getState(store).maintenance_banner.enabled).toBe(false);
     expect(getState(store).maintenance_banner.payload).toBeUndefined();
   });
@@ -216,7 +239,7 @@ describe("remoteConfig duck — fetchFeatureFlags with live client", () => {
     );
 
     const store = makeStore();
-    await store.dispatch(fetchFeatureFlags());
+    await store.dispatch(fetchFeatureFlags(OPTED_OUT));
     expect(getState(store).maintenance_banner.payload).toBeUndefined();
   });
 
@@ -229,7 +252,7 @@ describe("remoteConfig duck — fetchFeatureFlags with live client", () => {
     );
 
     const store = makeStore();
-    await store.dispatch(fetchFeatureFlags());
+    await store.dispatch(fetchFeatureFlags(OPTED_OUT));
     const state = getState(store);
     expect(state.maintenance_banner.enabled).toBe(true);
     expect(state.maintenance_screen.enabled).toBe(true);
@@ -246,7 +269,7 @@ describe("remoteConfig duck — error handling", () => {
     });
 
     const store = makeStore();
-    await store.dispatch(fetchFeatureFlags());
+    await store.dispatch(fetchFeatureFlags(OPTED_OUT));
     const state = getState(store);
     expect(state.isInitialized).toBe(true);
     expect(state.maintenance_banner.enabled).toBe(false);
@@ -292,7 +315,7 @@ describe("remoteConfig selectors", () => {
     );
 
     const store = makeStore();
-    await store.dispatch(fetchFeatureFlags());
+    await store.dispatch(fetchFeatureFlags(OPTED_OUT));
 
     const result = maintenanceBannerSelector(store.getState());
     expect(parseBannerPayload).toHaveBeenCalledWith({ raw: true });
@@ -308,7 +331,7 @@ describe("remoteConfig selectors", () => {
     );
 
     const store = makeStore();
-    await store.dispatch(fetchFeatureFlags());
+    await store.dispatch(fetchFeatureFlags(OPTED_OUT));
 
     const result = maintenanceScreenSelector(store.getState());
     expect(parseScreenPayload).toHaveBeenCalledWith({ raw: true });
@@ -324,7 +347,7 @@ describe("remoteConfig selectors", () => {
     );
 
     const store = makeStore();
-    await store.dispatch(fetchFeatureFlags());
+    await store.dispatch(fetchFeatureFlags(OPTED_OUT));
 
     const result = maintenanceBannerSelector(store.getState());
     expect(result).toEqual({ enabled: false, content: null });
@@ -341,7 +364,7 @@ describe("remoteConfig selectors", () => {
     );
 
     const store = makeStore();
-    await store.dispatch(fetchFeatureFlags());
+    await store.dispatch(fetchFeatureFlags(OPTED_OUT));
 
     // The selector catches the throw and returns safe defaults.
     const result = maintenanceBannerSelector(store.getState());
@@ -359,7 +382,7 @@ describe("remoteConfig selectors", () => {
     );
 
     const store = makeStore();
-    await store.dispatch(fetchFeatureFlags());
+    await store.dispatch(fetchFeatureFlags(OPTED_OUT));
 
     // The selector catches the throw and returns safe defaults.
     const result = maintenanceScreenSelector(store.getState());
@@ -379,7 +402,7 @@ describe("remoteConfig selectors", () => {
     );
 
     const store = makeStore();
-    await store.dispatch(fetchFeatureFlags());
+    await store.dispatch(fetchFeatureFlags(OPTED_OUT));
     expect(balancesV2Selector(store.getState())).toBe(true);
   });
 
@@ -391,7 +414,7 @@ describe("remoteConfig selectors", () => {
     );
 
     const store = makeStore();
-    await store.dispatch(fetchFeatureFlags());
+    await store.dispatch(fetchFeatureFlags(OPTED_OUT));
     expect(balancesV2Selector(store.getState())).toBe(false);
   });
 
@@ -406,7 +429,7 @@ describe("remoteConfig selectors", () => {
       (getExperimentClient as jest.Mock).mockReturnValue(makeClient());
 
       const store = makeStore();
-      await store.dispatch(fetchFeatureFlags());
+      await store.dispatch(fetchFeatureFlags(OPTED_OUT));
       expect(tokenPriceHistoryEnabledSelector(store.getState())).toBe(true);
     });
 
@@ -416,7 +439,7 @@ describe("remoteConfig selectors", () => {
       );
 
       const store = makeStore();
-      await store.dispatch(fetchFeatureFlags());
+      await store.dispatch(fetchFeatureFlags(OPTED_OUT));
       expect(tokenPriceHistoryEnabledSelector(store.getState())).toBe(false);
     });
 
@@ -427,7 +450,7 @@ describe("remoteConfig selectors", () => {
       });
 
       const store = makeStore();
-      await store.dispatch(fetchFeatureFlags());
+      await store.dispatch(fetchFeatureFlags(OPTED_OUT));
       expect(getState(store).isInitialized).toBe(true);
       expect(tokenPriceHistoryEnabledSelector(store.getState())).toBe(true);
     });
