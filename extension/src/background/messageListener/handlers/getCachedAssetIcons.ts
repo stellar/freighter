@@ -1,6 +1,6 @@
 import { GetCachedAssetIconMessage } from "@shared/api/types/message-request";
+import { readAssetIconCache } from "background/helpers/assetIconCache";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import { CACHED_ASSET_ICONS_ID } from "constants/localStorageTypes";
 
 export const getCachedAssetIcon = async ({
   request,
@@ -10,11 +10,9 @@ export const getCachedAssetIcon = async ({
   localStore: DataStorageAccess;
 }) => {
   const { assetCanonical } = request;
-
-  const assetIconCache =
-    (await localStore.getItem(CACHED_ASSET_ICONS_ID)) || {};
+  const icons = await readAssetIconCache(localStore);
 
   return {
-    iconUrl: assetIconCache[assetCanonical] || "",
+    iconUrl: icons[assetCanonical] || "",
   };
 };

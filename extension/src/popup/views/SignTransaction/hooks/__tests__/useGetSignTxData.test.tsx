@@ -31,6 +31,7 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import * as TokenListHelpers from "@shared/api/helpers/token-list";
 import * as GetIconUrlFromIssuerHelpers from "@shared/api/helpers/getIconUrlFromIssuer";
 import * as GetIconFromTokenListHelpers from "@shared/api/helpers/getIconFromTokenList";
+import * as ExtensionMessaging from "@shared/api/helpers/extensionMessaging";
 
 import { mockAccounts } from "../../../../__testHelpers__";
 import { RequestState } from "helpers/hooks/useGetBalances";
@@ -186,8 +187,8 @@ describe("useGetSignTxData", () => {
       .mockResolvedValue("");
 
     jest
-      .spyOn(GetIconFromTokenListHelpers, "getIconFromTokenLists")
-      .mockResolvedValue({
+      .spyOn(GetIconFromTokenListHelpers, "findTokenListIcon")
+      .mockReturnValue({
         icon: "https://example.com/icon.png",
         canonicalAsset: TEST_CANONICAL,
       });
@@ -296,8 +297,8 @@ describe("useGetSignTxData", () => {
       .mockResolvedValue("");
 
     jest
-      .spyOn(GetIconFromTokenListHelpers, "getIconFromTokenLists")
-      .mockResolvedValue({
+      .spyOn(GetIconFromTokenListHelpers, "findTokenListIcon")
+      .mockReturnValue({
         icon: "https://example.com/icon.png",
         canonicalAsset: TEST_CANONICAL,
       });
@@ -318,6 +319,142 @@ describe("useGetSignTxData", () => {
       subentryCount: 3,
     });
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
+  });
+
+  it("looks up a changeTrust icon without persisting it to the background cache", async () => {
+    jest.spyOn(BlockaidHelpers, "useScanTx").mockReturnValue({
+      scanTx: () =>
+        Promise.resolve({
+          simulation: null,
+          validation: null,
+          request_id: "1",
+        }),
+    } as any);
+    const getIconUrlFromIssuer = jest
+      .spyOn(GetIconUrlFromIssuerHelpers, "getIconUrlFromIssuer")
+      .mockResolvedValue("https://issuer.example/icon.png");
+    jest
+      .spyOn(GetIconFromTokenListHelpers, "findTokenListIcon")
+      .mockReturnValue({ icon: undefined, canonicalAsset: undefined });
+
+    const { result } = renderHook(
+      () =>
+        useGetSignTxData(
+          { xdr: changeTrustTx, url: "https://not-connected.example" },
+          { showHidden: false, includeIcons: false },
+          "G123",
+        ),
+      { wrapper: Wrapper(store) },
+    );
+
+    await act(async () => {
+      await result.current.fetchData();
+    });
+
+    // @ts-ignore
+    expect(result.current.state.data?.icons).toEqual({
+      "RUBTC:GAL3BSXUPXXCP6UYPUDKJP655KE5CFLL6HQ64YAXVQ4XM7NREBKQRUSS":
+        "https://issuer.example/icon.png",
+    });
+    expect(getIconUrlFromIssuer).toHaveBeenCalledTimes(1);
+    expect(getIconUrlFromIssuer).toHaveBeenCalledWith(
+      expect.objectContaining({ cache: false }),
+    );
+  });
+
+  it("looks up an asset-diff icon without persisting it to the background cache", async () => {
+    jest.spyOn(BlockaidHelpers, "useScanTx").mockReturnValue({
+      scanTx: () =>
+        Promise.resolve({
+          simulation: {
+            status: "Success",
+            assets_diffs: {
+              [TEST_PUBLIC_KEY]: [
+                { asset: { code: "TEST", issuer: TEST_CANONICAL } },
+              ],
+            },
+          },
+          validation: null,
+          request_id: "1",
+        }),
+    } as any);
+    const getIconUrlFromIssuer = jest
+      .spyOn(GetIconUrlFromIssuerHelpers, "getIconUrlFromIssuer")
+      .mockResolvedValue("https://issuer.example/icon.png");
+    jest
+      .spyOn(GetIconFromTokenListHelpers, "findTokenListIcon")
+      .mockReturnValue({ icon: undefined, canonicalAsset: undefined });
+
+    const { result } = renderHook(
+      () =>
+        useGetSignTxData(
+          { xdr: setOptionsTx, url: "https://not-connected.example" },
+          { showHidden: false, includeIcons: true },
+          "G123",
+        ),
+      { wrapper: Wrapper(store) },
+    );
+
+    await act(async () => {
+      await result.current.fetchData();
+    });
+
+    expect(getIconUrlFromIssuer).toHaveBeenCalledWith(
+      expect.objectContaining({ cache: false }),
+    );
+  });
+
+  it("uses the token-list icon for a listed changeTrust asset, ahead of the cache and the issuer toml", async () => {
+    jest.spyOn(BlockaidHelpers, "useScanTx").mockReturnValue({
+      scanTx: () =>
+        Promise.resolve({
+          simulation: null,
+          validation: null,
+          request_id: "1",
+        }),
+    } as any);
+    const getIconUrlFromIssuer = jest
+      .spyOn(GetIconUrlFromIssuerHelpers, "getIconUrlFromIssuer")
+      .mockResolvedValue("https://issuer.example/icon.png");
+    jest
+      .spyOn(GetIconFromTokenListHelpers, "findTokenListIcon")
+      .mockReturnValue({
+        icon: "https://list.example/icon.png",
+        canonicalAsset: TEST_CANONICAL,
+      });
+    const sendMessageToBackground = jest
+      .spyOn(ExtensionMessaging, "sendMessageToBackground")
+      .mockResolvedValue({} as any);
+
+    const poisonedStore = makeDummyStore({
+      ...preloadedState,
+      cache: {
+        ...preloadedState.cache,
+        icons: { [TEST_CANONICAL]: "https://attacker.example/icon.png" },
+      },
+    });
+    const { result } = renderHook(
+      () =>
+        useGetSignTxData(
+          { xdr: changeTrustTx, url: "https://example.com" },
+          { showHidden: false, includeIcons: false },
+          "G123",
+        ),
+      { wrapper: Wrapper(poisonedStore) },
+    );
+
+    await act(async () => {
+      await result.current.fetchData();
+    });
+
+    // @ts-ignore
+    expect(result.current.state.data?.icons).toEqual({
+      [TEST_CANONICAL]: "https://list.example/icon.png",
+    });
+    expect(getIconUrlFromIssuer).not.toHaveBeenCalled();
+    expect(sendMessageToBackground).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "CACHE_ASSET_ICON" }),
+    );
   });
 
   it("handles balance fetch failure gracefully and returns success with undefined balances", async () => {
@@ -418,6 +555,9 @@ describe("useGetSignTxData", () => {
     const getIconUrlFromIssuer = jest
       .spyOn(GetIconUrlFromIssuerHelpers, "getIconUrlFromIssuer")
       .mockResolvedValue("https://example.com/aqua.png");
+    jest
+      .spyOn(GetIconFromTokenListHelpers, "findTokenListIcon")
+      .mockReturnValue({ icon: undefined, canonicalAsset: undefined });
 
     const { result } = renderHook(
       () =>
@@ -486,6 +626,9 @@ describe("useGetSignTxData", () => {
     const getIconUrlFromIssuer = jest
       .spyOn(GetIconUrlFromIssuerHelpers, "getIconUrlFromIssuer")
       .mockResolvedValue("https://example.com/aqua.png");
+    jest
+      .spyOn(GetIconFromTokenListHelpers, "findTokenListIcon")
+      .mockReturnValue({ icon: undefined, canonicalAsset: undefined });
 
     const { result } = renderHook(
       () =>
@@ -617,6 +760,9 @@ describe("useGetSignTxData site scan / icon fetch interleaving", () => {
     jest
       .spyOn(GetIconUrlFromIssuerHelpers, "getIconUrlFromIssuer")
       .mockReturnValue(icon.promise as any);
+    jest
+      .spyOn(GetIconFromTokenListHelpers, "findTokenListIcon")
+      .mockReturnValue({ icon: undefined, canonicalAsset: undefined });
 
     return { siteScan, icon };
   };

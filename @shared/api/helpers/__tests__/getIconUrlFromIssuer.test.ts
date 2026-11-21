@@ -91,3 +91,67 @@ describe("getIconUrlFromIssuer", () => {
     expect(iconUrl).toBe("http://tomldomain.com/baz.png");
   });
 });
+
+describe("getIconUrlFromIssuer cache writes", () => {
+  const ISSUER = "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH";
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("does not send CACHE_ASSET_ICON when cache is false", async () => {
+    const send = jest
+      .spyOn(ExtensionMessaging, "sendMessageToBackground")
+      .mockResolvedValue({} as any);
+
+    const iconUrl = await getIconUrlFromIssuer({
+      key: ISSUER,
+      code: "USDC",
+      networkDetails: TESTNET_NETWORK_DETAILS,
+      homeDomain: "home.com",
+      cache: false,
+    });
+
+    expect(iconUrl).toBe("http://tomldomain.com/baz.png");
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "GET_CACHED_ASSET_ICON" }),
+    );
+  });
+
+  it("sends CACHE_ASSET_ICON by default", async () => {
+    const send = jest
+      .spyOn(ExtensionMessaging, "sendMessageToBackground")
+      .mockResolvedValue({} as any);
+
+    await getIconUrlFromIssuer({
+      key: ISSUER,
+      code: "USDC",
+      networkDetails: TESTNET_NETWORK_DETAILS,
+      homeDomain: "home.com",
+    });
+
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "CACHE_ASSET_ICON",
+        iconUrl: "http://tomldomain.com/baz.png",
+      }),
+    );
+  });
+
+  it("still returns the url when the cache write rejects", async () => {
+    jest
+      .spyOn(ExtensionMessaging, "sendMessageToBackground")
+      .mockResolvedValueOnce({} as any)
+      .mockRejectedValueOnce(new Error("QUOTA_BYTES quota exceeded"));
+
+    const iconUrl = await getIconUrlFromIssuer({
+      key: ISSUER,
+      code: "USDC",
+      networkDetails: TESTNET_NETWORK_DETAILS,
+      homeDomain: "home.com",
+    });
+
+    expect(iconUrl).toBe("http://tomldomain.com/baz.png");
+  });
+});
