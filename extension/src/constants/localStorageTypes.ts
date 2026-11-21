@@ -37,6 +37,9 @@ export const OVERRIDDEN_BLOCKAID_RESPONSE_ID = "overriddenBlockaidResponse";
 export const COLLECTIBLES_ID = "collectibles";
 export const IS_OPEN_SIDEBAR_BY_DEFAULT_ID = "isOpenSidebarByDefault";
 export const METRICS_USER_ID = "metrics_user_id";
+// Random per-install id used only to bucket Experiment flag fetches while
+// data sharing is off. Never derived from the wallet, never sent to analytics.
+export const EXPERIMENT_ANONYMOUS_DEVICE_ID = "experiment_anonymous_device_id";
 export const RECENT_PROTOCOLS = "recentProtocols";
 export const HAS_SEEN_DISCOVER_WELCOME = "hasSeenDiscoverWelcome";
 export const REBRAND_ANNOUNCEMENT_STATUS_ID = "rebrandAnnouncementStatus";
