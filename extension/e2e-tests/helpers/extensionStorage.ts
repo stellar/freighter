@@ -9,8 +9,8 @@ import { launchExtensionContext } from "./launch";
  * `background/helpers/dataStorage.ts`) and the one before it. Bump both with
  * the next migration.
  */
-export const LATEST_STORAGE_VERSION = "5.50.0";
-export const PREVIOUS_STORAGE_VERSION = "5.33.5";
+export const LATEST_STORAGE_VERSION = "5.53.0";
+export const PREVIOUS_STORAGE_VERSION = "5.50.0";
 
 export interface ExtensionSession {
   context: BrowserContext;
@@ -101,10 +101,13 @@ const waitForInstallPass = async (
  *
  * On an already-migrated wallet the multi-source pass is a no-op and leaves
  * nothing in storage to wait on, so a storage version already at the latest
- * is rewound to the previous migration first. `migrateToMultiSourceModel`
- * reads the version only to decide whether to write it back after the pass,
- * so the pass behaves the same, and the version reaching the latest again
- * marks this launch's pass as finished. Any other version is left alone.
+ * is rewound to the previous migration first. The multi-source pass runs on
+ * every launch whatever the version, so it behaves the same. The migration
+ * after it, `removeAccountSubscriptions`, then sees the older version and
+ * writes the latest one back, and since it runs after the pass, the version
+ * reaching the latest again marks this launch's pass as finished. All it
+ * redoes is removing a storage key nothing reads. Any other version is left
+ * alone.
  */
 export const relaunchExtension = async (
   session: ExtensionSession,
