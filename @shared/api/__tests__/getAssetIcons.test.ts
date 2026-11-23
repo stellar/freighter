@@ -56,7 +56,9 @@ describe("getAssetIcons", () => {
     (sendMessageToBackground as jest.Mock).mockRejectedValueOnce(
       new Error("port closed"),
     );
-    jest.spyOn(console, "error").mockImplementation(() => {});
+    const consoleError = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     const icons = await getAssetIcons({
       balances,
@@ -66,6 +68,7 @@ describe("getAssetIcons", () => {
     });
 
     expect(icons[USDC]).toBe(LIST_ICON);
+    consoleError.mockRestore();
   });
 
   it("lets a token-list icon win over a cached one for an unheld extra", async () => {

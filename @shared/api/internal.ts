@@ -1601,7 +1601,8 @@ export const getAssetIconCache = async ({
 /**
  * Persists a token-list icon so cache-only `getAssetIcons` calls (no lists
  * passed) can serve it. The background skips the write when it already
- * holds this value.
+ * holds this value. Not awaited: the lookup must not wait on one message
+ * per listed asset.
  */
 const persistTokenListIcon = async ({
   canonical,
@@ -1668,7 +1669,7 @@ export const getAssetIcons = async ({
           });
           if (tokenListIcon.icon && tokenListIcon.canonicalAsset) {
             assetIcons[tokenListIcon.canonicalAsset] = tokenListIcon.icon;
-            await persistTokenListIcon({
+            void persistTokenListIcon({
               canonical: tokenListIcon.canonicalAsset,
               icon: tokenListIcon.icon,
             });
@@ -1720,7 +1721,7 @@ export const getAssetIcons = async ({
       });
       if (tokenListIcon.icon) {
         assetIcons[canonical] = tokenListIcon.icon;
-        await persistTokenListIcon({
+        void persistTokenListIcon({
           canonical,
           icon: tokenListIcon.icon,
         });

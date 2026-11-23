@@ -444,8 +444,15 @@ export const migrateAssetIconCache = async (
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
   if (shouldRunMigration({ storageVersion, migrationVersion: "5.53.0" })) {
-    const stored = (await localStore.getItem(CACHED_ASSET_ICONS_ID)) || {};
-    await localStore.setItem(CACHED_ASSET_ICONS_ID, boundAssetIconMap(stored));
+    try {
+      const stored = (await localStore.getItem(CACHED_ASSET_ICONS_ID)) || {};
+      await localStore.setItem(
+        CACHED_ASSET_ICONS_ID,
+        boundAssetIconMap(stored),
+      );
+    } catch (error) {
+      console.error(error);
+    }
     await migrateDataStorageVersion("5.53.0", localStore);
   }
 };

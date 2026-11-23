@@ -30,7 +30,7 @@ export const cacheAssetIcon = async ({
       return;
     }
     delete icons[assetCanonical];
-    await localStore.setItem(CACHED_ASSET_ICONS_ID, icons);
+    await localStore.setItem(CACHED_ASSET_ICONS_ID, boundAssetIconMap(icons));
     return;
   }
 
