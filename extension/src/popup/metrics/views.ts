@@ -88,11 +88,6 @@ const SCREEN_BY_ROUTE: Partial<Record<ROUTES, ScreenDef>> = {
     screen_name: "recover_account",
     flow: "onboarding",
   },
-  [ROUTES.recoverAccountSuccess]: {
-    screen_name: "recover_account_success",
-    flow: "onboarding",
-    step: "success",
-  },
   [ROUTES.displayBackupPhrase]: {
     // Canonical cross-platform name (RFC #2883): mobile uses show_recovery_phrase.
     screen_name: "show_recovery_phrase",

@@ -154,7 +154,6 @@ const NO_APP_LAYOUT_ROUTES = [
   ROUTES.accountCreator,
   ROUTES.accountMigration,
   ROUTES.recoverAccount,
-  ROUTES.recoverAccountSuccess,
   ROUTES.welcome,
 ];
 
@@ -299,10 +298,6 @@ export const Router = () => (
           element={<RecoverAccount />}
         ></Route>
         <Route path={ROUTES.verifyAccount} element={<VerifyAccount />}></Route>
-        <Route
-          path={ROUTES.recoverAccountSuccess}
-          element={<OnboardingStatus status="ready" />}
-        ></Route>
         <Route
           path={`${ROUTES.sendPayment}/*`}
           element={

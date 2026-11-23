@@ -551,14 +551,14 @@ describe("emitScreenViewed (screen.viewed consolidation)", () => {
   });
 
   it("emits a step property for completion/success screens", () => {
-    emitScreenViewed("recover_account_success", {
+    emitScreenViewed("account_creator_finished", {
       flow: "onboarding",
       step: "success",
     });
 
     const [, body] = (amplitude.track as jest.Mock).mock.calls[0];
     expect(body).toMatchObject({
-      screen_name: "recover_account_success",
+      screen_name: "account_creator_finished",
       step: "success",
     });
   });
