@@ -153,12 +153,15 @@ const resolveAccountType = (account: Account): AccountType => {
 // User identity (mirrors mobile's src/services/analytics/user.ts)
 // ---------------------------------------------------------------------------
 
-/** Mirrors mobile's `generateRandomUserId` — a numeric decimal string. */
+/**
+ * Mirrors mobile's `generateRandomUserId` — a numeric decimal string.
+ * `crypto.getRandomValues`, not `Math.random()`: this id is sent as the
+ * analytics `user_id` until the seed-derived id replaces it.
+ */
 const generateRandomUserId = (): string =>
-  // Math.random() can yield values < 1e-6 (exponential notation, e.g. "4e-7")
-  // or exactly 0 ("0"), where `split(".")[1]` is undefined. Fall back to "0"
-  // so we never persist or hand Sentry/Amplitude an undefined user id.
-  Math.random().toString().split(".")[1] ?? "0";
+  Array.from(crypto.getRandomValues(new Uint32Array(2)), (n) =>
+    n.toString(),
+  ).join("");
 
 /** Session-level cache, mirrors mobile's module-level `sessionUserId` fallback. */
 let sessionUserId: string | null = null;

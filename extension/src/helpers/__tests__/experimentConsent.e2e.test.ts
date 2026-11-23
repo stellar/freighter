@@ -97,7 +97,11 @@ const runFlagFetch = async (isDataSharingAllowed: boolean) => {
     remoteConfig!.fetchFeatureFlags({ isDataSharingAllowed }),
   );
 
-  const flagRequest = requests.find((r) => r.url.includes("lab.amplitude.com"));
+  const flagRequest = requests.find(
+    (r) =>
+      URL.canParse(r.url) &&
+      new URL(r.url).hostname === "api.lab.amplitude.com",
+  );
   return { user: decodeExpUser(flagRequest), amplitude: amplitude! };
 };
 
