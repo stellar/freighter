@@ -450,10 +450,12 @@ export const migrateAssetIconCache = async (
         CACHED_ASSET_ICONS_ID,
         boundAssetIconMap(stored),
       );
+      await migrateDataStorageVersion("5.53.0", localStore);
     } catch (error) {
+      // Version not bumped, so the next onInstalled retries it, until a
+      // later migration moves STORAGE_VERSION past 5.53.0.
       console.error(error);
     }
-    await migrateDataStorageVersion("5.53.0", localStore);
   }
 };
 

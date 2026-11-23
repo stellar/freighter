@@ -72,4 +72,27 @@ describe("migrateAssetIconCache", () => {
 
     expect(localStore.setItem).not.toHaveBeenCalled();
   });
+
+  it("leaves the version alone when the rewrite fails, so the next update retries", async () => {
+    const localStore = makeLocalStore({
+      [STORAGE_VERSION]: "5.33.5",
+      [CACHED_ASSET_ICONS_ID]: { [USDT0]: null },
+    });
+    localStore.setItem.mockRejectedValueOnce(new Error("QUOTA_BYTES"));
+    const consoleError = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    try {
+      await migrateAssetIconCache(localStore);
+
+      expect(localStore.setItem).toHaveBeenCalledWith(
+        CACHED_ASSET_ICONS_ID,
+        {},
+      );
+      expect(localStore.data[STORAGE_VERSION]).toBe("5.33.5");
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
 });
