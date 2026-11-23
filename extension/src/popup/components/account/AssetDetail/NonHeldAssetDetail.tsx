@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Asset } from "stellar-sdk";
 import { useTranslation } from "react-i18next";
-import { CopyText, Icon, Link, Notification } from "@stellar/design-system";
+import { CopyText, Icon, Link } from "@stellar/design-system";
 
 import { getTokenPrices } from "@shared/api/internal";
 import {
@@ -107,18 +107,6 @@ export const NonHeldAssetDetail = ({
     asset.name ||
     (asset.contractId ? truncateString(asset.contractId) : "");
   const title = isNative ? t("Stellar Lumens") : asset.name || fallbackTitle;
-  const flaggedWarning = asset.isMalicious
-    ? {
-        variant: "error" as const,
-        title: t("A token was flagged as malicious"),
-      }
-    : asset.isSuspicious
-      ? {
-          variant: "warning" as const,
-          title: t("A token was flagged as suspicious"),
-        }
-      : null;
-
   return (
     <View>
       <SubviewHeader
@@ -174,14 +162,6 @@ export const NonHeldAssetDetail = ({
       />
       <View.Content>
         <div className="AssetDetail__wrapper" data-testid="NonHeldAssetDetail">
-          {flaggedWarning ? (
-            <div data-testid="NonHeldAssetDetail__warning">
-              <Notification
-                variant={flaggedWarning.variant}
-                title={flaggedWarning.title}
-              />
-            </div>
-          ) : null}
           <AssetDetailBody
             token={asset.canonical}
             networkDetails={networkDetails}
@@ -193,6 +173,8 @@ export const NonHeldAssetDetail = ({
             isPricePlaceholder={!price && !!asset.contractId}
             assetDomain={assetDomain}
             isChartShown={isChartShown}
+            isMalicious={asset.isMalicious}
+            isSuspicious={asset.isSuspicious}
           />
         </div>
       </View.Content>

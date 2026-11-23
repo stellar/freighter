@@ -305,6 +305,110 @@ describe("AssetDetail", () => {
     expect(screen.getByText("Copy address")).toBeInTheDocument();
   });
 
+  it.each([
+    ["Malicious", "This token was flagged as malicious"],
+    ["Warning", "This token was flagged as suspicious"],
+  ])(
+    "shows the flagged-token warning for a held asset Blockaid marked %s",
+    async (resultType, copy) => {
+      jest
+        .spyOn(ApiInternal, "getAccountBalances")
+        .mockImplementation(() => Promise.resolve(mockBalances));
+      const props = {
+        handleClose: jest.fn(),
+        accountBalances: {
+          balances: [
+            {
+              available: new BigNumber(100),
+              token: {
+                code: "USDC",
+                issuer: {
+                  key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+                },
+              },
+              total: new BigNumber(100),
+              blockaidData: { result_type: resultType },
+            },
+          ],
+        } as any,
+        selectedAsset:
+          "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+        historyData: mockHistoryData,
+      };
+
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey: "G1",
+              allAccounts: mockAccounts,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+            },
+          }}
+        >
+          <AssetDetail {...props} />
+        </Wrapper>,
+      );
+      await screen.findByTestId("AssetDetail");
+      expect(screen.getByTestId("AssetDetail__warning")).toHaveTextContent(
+        copy,
+      );
+    },
+  );
+
+  it("shows no flagged-token warning for a held asset Blockaid marked Benign", async () => {
+    jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockBalances));
+    const props = {
+      handleClose: jest.fn(),
+      accountBalances: {
+        balances: [
+          {
+            available: new BigNumber(100),
+            token: {
+              code: "USDC",
+              issuer: {
+                key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+              },
+            },
+            total: new BigNumber(100),
+            blockaidData: { result_type: "Benign" },
+          },
+        ],
+      } as any,
+      selectedAsset:
+        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      historyData: mockHistoryData,
+    };
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+          },
+        }}
+      >
+        <AssetDetail {...props} />
+      </Wrapper>,
+    );
+    await screen.findByTestId("AssetDetail");
+    expect(screen.queryByTestId("AssetDetail__warning")).toBeNull();
+  });
+
   describe("hide outcome", () => {
     const usdcCanonical =
       "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";

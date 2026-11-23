@@ -177,15 +177,26 @@ describe("NonHeldAssetDetail", () => {
     );
   });
 
-  it("shows the malicious warning only for a flagged descriptor", async () => {
-    const { unmount } = renderDetail({ ...shx, isMalicious: true });
-    const warning = await screen.findByTestId("NonHeldAssetDetail__warning");
-    expect(warning).toHaveTextContent("A token was flagged as malicious");
-    unmount();
+  it("shows the flagged-token warning only for a flagged descriptor", async () => {
+    const malicious = renderDetail({ ...shx, isMalicious: true });
+    const warning = await screen.findByTestId("AssetDetail__warning");
+    expect(warning).toHaveTextContent("This token was flagged as malicious");
+    // Between the header and the chart, where mobile puts its banner.
+    const price = screen.getByTestId("AssetDetail__price");
+    expect(
+      price.compareDocumentPosition(warning) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    malicious.unmount();
+
+    const suspicious = renderDetail({ ...shx, isSuspicious: true });
+    expect(await screen.findByTestId("AssetDetail__warning")).toHaveTextContent(
+      "This token was flagged as suspicious",
+    );
+    suspicious.unmount();
 
     renderDetail(shx);
     await waitFor(() => screen.getByTestId("AssetDetail__price"));
-    expect(screen.queryByTestId("NonHeldAssetDetail__warning")).toBeNull();
+    expect(screen.queryByTestId("AssetDetail__warning")).toBeNull();
   });
 
   it("hides the chart, About and stats when the flag is off", async () => {

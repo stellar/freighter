@@ -11,6 +11,7 @@ import {
   Link,
   Notification,
 } from "@stellar/design-system";
+import { isAssetMalicious, isAssetSuspicious } from "popup/helpers/blockaid";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
@@ -229,6 +230,12 @@ export const AssetDetail = ({
     canonical,
     accountBalances.balances,
   ) as Exclude<AssetType, LiquidityPoolShareAsset>;
+  const blockaidData =
+    selectedBalance && "blockaidData" in selectedBalance
+      ? selectedBalance.blockaidData
+      : null;
+  const isMalicious = isAssetMalicious(blockaidData);
+  const isSuspicious = isAssetSuspicious(blockaidData);
 
   const icons = assetIcons || {};
   const assetIconUrl = isNativeBalance(selectedBalance)
@@ -522,6 +529,8 @@ export const AssetDetail = ({
               isPricePlaceholder={isPricePlaceholder}
               assetDomain={assetDomain}
               isChartShown={isChartShown}
+              isMalicious={isMalicious}
+              isSuspicious={isSuspicious}
             >
               <div className="AssetDetail__balance-info">
                 <div

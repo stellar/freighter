@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from "react";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
+import { Notification } from "@stellar/design-system";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import IconSoroban from "popup/assets/icon-soroban.svg?react";
@@ -48,6 +49,9 @@ export interface AssetDetailBodyProps {
   assetDomain?: string;
   /** flag && mainnet && !LP — owner decides; the body only renders. */
   isChartShown: boolean;
+  /** Blockaid verdict for the token; malicious wins when both are set. */
+  isMalicious?: boolean;
+  isSuspicious?: boolean;
   /** Rendered between the chart and the About card (the held Balance/Value rows). */
   children?: React.ReactNode;
 }
@@ -63,6 +67,8 @@ export const AssetDetailBody = ({
   isPricePlaceholder: isSpotPricePlaceholder,
   assetDomain,
   isChartShown,
+  isMalicious = false,
+  isSuspicious = false,
   children,
 }: AssetDetailBodyProps) => {
   const { t } = useTranslation();
@@ -102,6 +108,18 @@ export const AssetDetailBody = ({
   const headerPrice = inspectedHeaderPrice ?? spotPrice?.currentPrice;
   // An inspected price fills the header, so the spot-only placeholder yields.
   const isPricePlaceholder = !headerPrice && isSpotPricePlaceholder;
+
+  const flaggedWarning = isMalicious
+    ? {
+        variant: "error" as const,
+        title: t("This token was flagged as malicious"),
+      }
+    : isSuspicious
+      ? {
+          variant: "warning" as const,
+          title: t("This token was flagged as suspicious"),
+        }
+      : null;
 
   return (
     <>
@@ -161,6 +179,18 @@ export const AssetDetailBody = ({
           data-testid="AssetDetail__delta"
         >
           {formatAmount(roundUsdValue(spotPrice.percentagePriceChange24h))}%
+        </div>
+      ) : null}
+      {/* Between the header and the chart, where mobile puts its banner. */}
+      {flaggedWarning ? (
+        <div
+          className="AssetDetail__warning"
+          data-testid="AssetDetail__warning"
+        >
+          <Notification
+            variant={flaggedWarning.variant}
+            title={flaggedWarning.title}
+          />
         </div>
       ) : null}
       {isChartShown ? (

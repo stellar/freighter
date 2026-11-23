@@ -396,3 +396,7 @@
 [data-radix-popper-content-wrapper]:has(.AssetDetail__options-actions) {
   z-index: 100 !important;
 }
+
+.AssetDetail__warning {
+  margin-top: pxToRem(16px);
+}
