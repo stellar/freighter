@@ -70,14 +70,17 @@ type RecoveryResponse = {
   error: string;
 };
 
-const send = (message: object) =>
+// A web page relayed by the content script, as dev builds allow.
+const WEB_PAGE_SENDER = { tab: { id: 1 }, url: "https://example.com" };
+
+const send = (message: object, sender: object = {}) =>
   popupMessageListener(
     message as any,
     mockSessionStore,
     mockDataStorage,
     mockKeyManager,
     testAlarm as any,
-    { id: "fake-extension-id" },
+    sender as any,
   ) as Promise<RecoveryResponse>;
 
 const recoverFromSecretKey = (
@@ -204,6 +207,27 @@ describe("Recover account from secret key message listener", () => {
       expect(res.error).toBe("Invalid secret key");
       expect(await snapshotWallet()).toEqual(before);
     }
+  });
+
+  it("refuses a web page and leaves the wallet untouched", async () => {
+    await recoverFromPhrase();
+    const before = await mockStorageApi.get(null);
+
+    const res = await send(
+      {
+        type: SERVICE_TYPES.RECOVER_ACCOUNT_FROM_SECRET_KEY,
+        password: "attacker",
+        secretKey: SECRET,
+        isOverwritingAccount: true,
+      },
+      WEB_PAGE_SENDER,
+    );
+
+    expect(res).toEqual({ error: "Unauthorized" });
+    expect(await mockStorageApi.get(null)).toEqual(before);
+    expect(mockSessionStore.getState().session.publicKey).not.toBe(
+      Keypair.fromSecret(SECRET).publicKey(),
+    );
   });
 
   it("replaces an existing wallet when overwriting", async () => {

@@ -231,6 +231,12 @@ export const popupMessageListener = (
       return fundAccount({ request, localStore });
     }
     case SERVICE_TYPES.CREATE_ACCOUNT: {
+      // With `isOverwritingAccount` this clears the wallet without a password,
+      // so only our own pages may send it: dev builds forward any type from
+      // any page (see `isFromDevServer` above).
+      if (!isFromExtensionPage && !isFromDevServer) {
+        return { error: "Unauthorized" };
+      }
       return createAccount({
         request,
         localStore,
@@ -385,6 +391,12 @@ export const popupMessageListener = (
       });
     }
     case SERVICE_TYPES.RECOVER_ACCOUNT: {
+      // Recovery replaces the whole wallet and has no password to verify, so
+      // only our own pages may send it: dev builds forward any type from any
+      // page (see `isFromDevServer` above).
+      if (!isFromExtensionPage && !isFromDevServer) {
+        return { error: "Unauthorized" };
+      }
       return recoverAccount({
         request,
         sessionStore,
@@ -395,6 +407,11 @@ export const popupMessageListener = (
       });
     }
     case SERVICE_TYPES.RECOVER_ACCOUNT_FROM_SECRET_KEY: {
+      // Same as RECOVER_ACCOUNT: this replaces the wallet with the submitted
+      // key and has no password to verify.
+      if (!isFromExtensionPage && !isFromDevServer) {
+        return { error: "Unauthorized" };
+      }
       return recoverAccountFromSecretKey({
         request,
         sessionStore,
