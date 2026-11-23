@@ -40,7 +40,7 @@ interface PasswordFormProps {
   isShowingOverwriteWarning: boolean;
   isShowingOnboardingWarning?: boolean;
   // Label for an extra required checkbox under the Terms of Use, e.g. the
-  // secret-key import's "can't be recovered" acknowledgement.
+  // onboarding import's "can't be recovered" acknowledgement.
   acknowledgement?: string;
 }
 
@@ -190,10 +190,10 @@ export const PasswordForm = ({
                           data-testid="account-creator-importAcknowledgement-input"
                           fieldSize="md"
                           autoComplete="off"
-                          error={
-                            touched.importAcknowledgement
-                              ? errors.importAcknowledgement
-                              : null
+                          // Red state only; the message isn't shown.
+                          isError={
+                            !!touched.importAcknowledgement &&
+                            !!errors.importAcknowledgement
                           }
                           id="importAcknowledgement-input"
                           onKeyDown={(e) => {

@@ -14,7 +14,5 @@ export const termsOfUse = YupBool().oneOf(
   "Agreeing to the Terms of Use and the Privacy Policy is required",
 );
 
-export const importAcknowledgement = YupBool().oneOf(
-  [true],
-  "Confirming that an imported secret key can't be recovered is required",
-);
+// No message: the unchecked box and the disabled button are the feedback.
+export const importAcknowledgement = YupBool().oneOf([true]);

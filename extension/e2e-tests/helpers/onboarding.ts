@@ -51,7 +51,7 @@ export const fillPasswordAndConfirm = async ({
     .locator("#confirm-password-input")
     .fill(confirmPassword ?? password);
   await page.locator("#termsOfUse-input").check({ force: true });
-  // Only a secret-key import shows the "can't be recovered" checkbox.
+  // Imports show the "can't be recovered" checkbox; wallet creation doesn't.
   const acknowledgement = page.locator("#importAcknowledgement-input");
   if (await acknowledgement.count()) {
     await acknowledgement.check({ force: true });

@@ -342,6 +342,7 @@
   "Horizon is temporarily experiencing issues": "O Horizon está temporariamente com problemas",
   "HORIZON RPC URL": "URL RPC HORIZON",
   "I have read and agree to": "Li e concordo com",
+  "I understand imported recovery phrases can't be recovered and must be stored securely": "Entendo que frases de recuperação importadas não podem ser recuperadas e devem ser guardadas com segurança",
   "I understand imported secret keys can't be recovered and must be stored securely": "Entendo que chaves secretas importadas não podem ser recuperadas e devem ser guardadas com segurança",
   "I understand that sharing my recovery phrase could result in <strong>permanent loss of funds</strong>.": "Entendo que compartilhar minha frase de recuperação pode resultar na <strong>perda permanente de fundos</strong>.",
   "I understand that sharing my secret key could result in <strong>permanent loss of funds</strong>.": "Entendo que compartilhar minha chave secreta pode resultar na <strong>perda permanente de fundos</strong>.",
