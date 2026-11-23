@@ -455,6 +455,7 @@ describe("useGetSignTxData", () => {
     expect(sendMessageToBackground).not.toHaveBeenCalledWith(
       expect.objectContaining({ type: "CACHE_ASSET_ICON" }),
     );
+    sendMessageToBackground.mockRestore();
   });
 
   it("handles balance fetch failure gracefully and returns success with undefined balances", async () => {

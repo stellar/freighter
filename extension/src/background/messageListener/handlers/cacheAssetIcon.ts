@@ -6,7 +6,7 @@ import {
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { CACHED_ASSET_ICONS_ID } from "constants/localStorageTypes";
 
-export const cacheAssetIcon = async ({
+const writeAssetIcon = async ({
   request,
   localStore,
 }: {
@@ -42,4 +42,15 @@ export const cacheAssetIcon = async ({
   delete icons[assetCanonical];
   icons[assetCanonical] = value;
   await localStore.setItem(CACHED_ASSET_ICONS_ID, boundAssetIconMap(icons));
+};
+
+// Writes are serialised: the popup sends one message per asset without
+// waiting, and concurrent read-modify-writes of the map would each read the
+// same snapshot and keep only the last one.
+let pendingWrite: Promise<unknown> = Promise.resolve();
+
+export const cacheAssetIcon = (args: Parameters<typeof writeAssetIcon>[0]) => {
+  const write = pendingWrite.then(() => writeAssetIcon(args));
+  pendingWrite = write.catch(() => undefined);
+  return write;
 };

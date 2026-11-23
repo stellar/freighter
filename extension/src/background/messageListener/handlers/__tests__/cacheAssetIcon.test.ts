@@ -134,4 +134,43 @@ describe("cacheAssetIcon", () => {
 
     expect(Object.keys(lastWrite(localStore))).toEqual(["A:GA", USDC]);
   });
+
+  it("serialises concurrent writes so none is lost", async () => {
+    // getAssetIcons fires one message per listed asset without awaiting;
+    // the handlers would otherwise all read the same snapshot.
+    const data: Record<string, unknown> = {};
+    const localStore = {
+      getItem: jest.fn(async (key: string) => {
+        const snapshot = data[key];
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        return snapshot;
+      }),
+      setItem: jest.fn(async (key: string, value: unknown) => {
+        data[key] = value;
+      }),
+      remove: jest.fn(),
+      clear: jest.fn(),
+      getAllKeys: jest.fn(),
+    };
+    const send = (assetCanonical: string, iconUrl: string) =>
+      cacheAssetIcon({
+        request: {
+          type: SERVICE_TYPES.CACHE_ASSET_ICON,
+          activePublicKey: null,
+          assetCanonical,
+          iconUrl,
+        } as any,
+        localStore,
+      });
+
+    await Promise.all([
+      send("A:GA", "https://icons.example/a.png"),
+      send("B:GB", "https://icons.example/b.png"),
+    ]);
+
+    expect(data[CACHED_ASSET_ICONS_ID]).toEqual({
+      "A:GA": "https://icons.example/a.png",
+      "B:GB": "https://icons.example/b.png",
+    });
+  });
 });
