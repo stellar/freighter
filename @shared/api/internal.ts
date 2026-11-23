@@ -1600,28 +1600,16 @@ export const getAssetIconCache = async ({
 
 /**
  * Persists a token-list icon so cache-only `getAssetIcons` calls (no lists
- * passed) can serve it. The write is skipped when the cache already holds
- * it, since the lists are consulted on every lookup.
+ * passed) can serve it. The background skips the write when it already
+ * holds this value.
  */
 const persistTokenListIcon = async ({
   canonical,
   icon,
-  cachedIcons,
 }: {
   canonical: string;
   icon: string;
-  cachedIcons: Record<string, string | null>;
 }) => {
-  // The background stores the parsed href, so compare against that form.
-  let href = icon;
-  try {
-    href = new URL(icon).href;
-  } catch {
-    // not a url; the background will drop it
-  }
-  if (cachedIcons[canonical] === href) {
-    return;
-  }
   try {
     await sendMessageToBackground({
       activePublicKey: null,
@@ -1683,7 +1671,6 @@ export const getAssetIcons = async ({
             await persistTokenListIcon({
               canonical: tokenListIcon.canonicalAsset,
               icon: tokenListIcon.icon,
-              cachedIcons,
             });
             continue;
           }
@@ -1736,7 +1723,6 @@ export const getAssetIcons = async ({
         await persistTokenListIcon({
           canonical,
           icon: tokenListIcon.icon,
-          cachedIcons,
         });
         continue;
       }

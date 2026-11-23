@@ -52,37 +52,20 @@ describe("getAssetIcons", () => {
     );
   });
 
-  it("does not rewrite a cached entry that already matches the list", async () => {
-    await getAssetIcons({
+  it("still returns the list icon when the cache write fails", async () => {
+    (sendMessageToBackground as jest.Mock).mockRejectedValueOnce(
+      new Error("port closed"),
+    );
+    jest.spyOn(console, "error").mockImplementation(() => {});
+
+    const icons = await getAssetIcons({
       balances,
       networkDetails: MAINNET_NETWORK_DETAILS,
       assetsListsData,
-      cachedIcons: { [USDC]: LIST_ICON },
+      cachedIcons: {},
     });
 
-    expect(sendMessageToBackground).not.toHaveBeenCalledWith(
-      expect.objectContaining({ type: "CACHE_ASSET_ICON" }),
-    );
-  });
-
-  it("compares against the href the background stores", async () => {
-    await getAssetIcons({
-      balances,
-      networkDetails: MAINNET_NETWORK_DETAILS,
-      assetsListsData: [
-        {
-          ...assetsListsData[0],
-          assets: [
-            { code: "USDC", issuer: ISSUER, icon: "https://List.Example" },
-          ],
-        },
-      ],
-      cachedIcons: { [USDC]: "https://list.example/" },
-    });
-
-    expect(sendMessageToBackground).not.toHaveBeenCalledWith(
-      expect.objectContaining({ type: "CACHE_ASSET_ICON" }),
-    );
+    expect(icons[USDC]).toBe(LIST_ICON);
   });
 
   it("lets a token-list icon win over a cached one for an unheld extra", async () => {
