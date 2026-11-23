@@ -25,7 +25,6 @@ jest.mock("constants/env", () => ({
 
 jest.mock("helpers/experimentClient", () => ({
   getExperimentClient: jest.fn(),
-  getAnonymousExperimentDeviceId: jest.fn(() => "anonymous-install-id"),
 }));
 
 jest.mock("popup/helpers/maintenance/parseMaintenanceContent", () => ({
@@ -136,7 +135,7 @@ describe("remoteConfig duck — fetchFeatureFlags with live client", () => {
 
   afterEach(() => jest.clearAllMocks());
 
-  it("calls client.fetch() with the anonymous install id, not the analytics identity, when data sharing is off", async () => {
+  it("calls client.fetch() with only user_properties when data sharing is off", async () => {
     const client = makeClient();
     (getExperimentClient as jest.Mock).mockReturnValue(client);
 
@@ -144,7 +143,6 @@ describe("remoteConfig duck — fetchFeatureFlags with live client", () => {
     await store.dispatch(fetchFeatureFlags(OPTED_OUT));
     expect(client.fetch).toHaveBeenCalledTimes(1);
     expect(client.fetch).toHaveBeenCalledWith({
-      device_id: "anonymous-install-id",
       user_properties: {
         "Bundle Id": "extension.development",
       },

@@ -12,12 +12,7 @@ jest.mock("@amplitude/experiment-js-client", () => ({
 }));
 
 import { Experiment } from "@amplitude/experiment-js-client";
-import { EXPERIMENT_ANONYMOUS_DEVICE_ID } from "constants/localStorageTypes";
-import {
-  getAnonymousExperimentDeviceId,
-  getExperimentClient,
-  initExperimentClient,
-} from "../experimentClient";
+import { getExperimentClient, initExperimentClient } from "../experimentClient";
 
 describe("initExperimentClient", () => {
   it("initializes the client without the analytics identity integration", () => {
@@ -33,15 +28,5 @@ describe("initExperimentClient", () => {
     );
     expect(Experiment.initializeWithAmplitudeAnalytics).not.toHaveBeenCalled();
     expect(getExperimentClient()).toEqual({ client: "plain" });
-  });
-});
-
-describe("getAnonymousExperimentDeviceId", () => {
-  it("is a random hex id persisted under its own key and stable across calls", () => {
-    const id = getAnonymousExperimentDeviceId();
-
-    expect(id).toMatch(/^[0-9a-f]{32}$/);
-    expect(localStorage.getItem(EXPERIMENT_ANONYMOUS_DEVICE_ID)).toBe(id);
-    expect(getAnonymousExperimentDeviceId()).toBe(id);
   });
 });

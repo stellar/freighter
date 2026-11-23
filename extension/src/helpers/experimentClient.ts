@@ -5,7 +5,6 @@ import {
 } from "@amplitude/experiment-js-client";
 
 import { AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY } from "constants/env";
-import { EXPERIMENT_ANONYMOUS_DEVICE_ID } from "constants/localStorageTypes";
 import { isDev } from "@shared/helpers/dev";
 
 const TEST_EXPERIMENT_DEPLOYMENT_KEY = "playwright-test-deployment-key";
@@ -71,44 +70,6 @@ export const initExperimentClient = (): void => {
       e,
     );
   }
-};
-
-let sessionAnonymousDeviceId: string | null = null;
-
-// 128 random bits as hex; getRandomValues is available in every surface
-// this runs in, unlike randomUUID.
-const randomHexId = (): string =>
-  Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) =>
-    b.toString(16).padStart(2, "0"),
-  ).join("");
-
-/**
- * A random per-install id for bucketing flag fetches while data sharing is
- * off. Amplitude's evaluation can't bucket a user with no id at all and
- * falls to the segment default, which would turn kill switches and the
- * maintenance screen off for every opted-out user. This id is not the
- * analytics device_id, is never replaced by the wallet-derived user id, and
- * is sent only on the Experiment fetch.
- */
-export const getAnonymousExperimentDeviceId = (): string => {
-  if (sessionAnonymousDeviceId) return sessionAnonymousDeviceId;
-  try {
-    const stored = localStorage.getItem(EXPERIMENT_ANONYMOUS_DEVICE_ID);
-    if (stored) {
-      sessionAnonymousDeviceId = stored;
-      return stored;
-    }
-  } catch {
-    // Storage unavailable: fall through and hold the id for this popup only.
-  }
-  const fresh = randomHexId();
-  try {
-    localStorage.setItem(EXPERIMENT_ANONYMOUS_DEVICE_ID, fresh);
-  } catch {
-    // see above
-  }
-  sessionAnonymousDeviceId = fresh;
-  return fresh;
 };
 
 /**

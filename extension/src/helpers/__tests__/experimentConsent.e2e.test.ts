@@ -116,18 +116,10 @@ describe("feature-flag fetch identity vs data-sharing consent", () => {
 
     expect(amplitude.getOptOut()).toBe(true);
     expect(user).not.toHaveProperty("user_id");
-    expect(user.device_id).toBeDefined();
-    expect(user.device_id).not.toBe(amplitude.getDeviceId());
+    expect(user).not.toHaveProperty("device_id");
     expect(user.user_properties).toEqual(
       expect.objectContaining({ "Bundle Id": "extension.development" }),
     );
-  });
-
-  it("buckets opted-out fetches on the same per-install id each time", async () => {
-    const first = await runFlagFetch(false);
-    const second = await runFlagFetch(false);
-
-    expect(second.user.device_id).toBe(first.user.device_id);
   });
 
   it("sends the analytics user_id and device_id when data sharing is on", async () => {

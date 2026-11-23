@@ -7,10 +7,7 @@ import {
 import type { Variant } from "@amplitude/experiment-js-client";
 import * as amplitude from "@amplitude/analytics-browser";
 
-import {
-  getAnonymousExperimentDeviceId,
-  getExperimentClient,
-} from "helpers/experimentClient";
+import { getExperimentClient } from "helpers/experimentClient";
 import { BUNDLE_ID_USER_PROPERTY_KEY, getBundleId } from "helpers/analytics";
 import { getUserId } from "helpers/metrics";
 import {
@@ -127,13 +124,14 @@ export const fetchFeatureFlags = createAsyncThunk(
 
     // The Experiment client has no identity of its own (see
     // initExperimentClient), so the analytics identity only reaches the flag
-    // fetch when data sharing is on. Opted-out users are bucketed on a random
-    // per-install id instead. The SDK still attaches its browser context
+    // fetch when data sharing is on. With no id at all Amplitude serves the
+    // segment default: fully rolled-out flags still evaluate, partial
+    // rollouts resolve to off. The SDK still attaches its browser context
     // (user agent, language, first-seen time) either way.
     await client.fetch({
       ...(isDataSharingAllowed
         ? { user_id: getUserId(), device_id: amplitude.getDeviceId() }
-        : { device_id: getAnonymousExperimentDeviceId() }),
+        : {}),
       user_properties: {
         [BUNDLE_ID_USER_PROPERTY_KEY]: getBundleId(),
       },
