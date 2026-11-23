@@ -1,7 +1,6 @@
 import { CacheAssetIconMessage } from "@shared/api/types/message-request";
 import {
-  MAX_CACHED_ASSET_ICONS,
-  readAssetIconCache,
+  boundAssetIconMap,
   toStorableIconUrl,
 } from "background/helpers/assetIconCache";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
@@ -23,25 +22,24 @@ export const cacheAssetIcon = async ({
     return;
   }
 
-  const icons = await readAssetIconCache(localStore);
+  const icons: Record<string, unknown> = {
+    ...((await localStore.getItem(CACHED_ASSET_ICONS_ID)) || {}),
+  };
   if (value === null) {
     if (!(assetCanonical in icons)) {
       return;
     }
     delete icons[assetCanonical];
-  } else {
-    if (icons[assetCanonical] === value) {
-      return;
-    }
-    // Delete-then-set moves a re-cached canonical to the end; eviction is
-    // oldest-written first (a hit does not refresh an entry's position).
-    delete icons[assetCanonical];
-    icons[assetCanonical] = value;
-    const keys = Object.keys(icons);
-    for (let i = 0; i < keys.length - MAX_CACHED_ASSET_ICONS; i += 1) {
-      delete icons[keys[i]];
-    }
+    await localStore.setItem(CACHED_ASSET_ICONS_ID, icons);
+    return;
   }
 
-  await localStore.setItem(CACHED_ASSET_ICONS_ID, icons);
+  if (icons[assetCanonical] === value) {
+    return;
+  }
+  // Delete-then-set moves a re-cached canonical to the end; eviction is
+  // oldest-written first (a hit does not refresh an entry's position).
+  delete icons[assetCanonical];
+  icons[assetCanonical] = value;
+  await localStore.setItem(CACHED_ASSET_ICONS_ID, boundAssetIconMap(icons));
 };

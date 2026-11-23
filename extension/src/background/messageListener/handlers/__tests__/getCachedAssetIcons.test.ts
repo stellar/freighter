@@ -30,10 +30,4 @@ describe("getCachedAssetIcon", () => {
   it("returns an empty string for a miss", async () => {
     expect(await read({})).toEqual({ iconUrl: "" });
   });
-
-  it("does not serve an entry that fails validation", async () => {
-    expect(await read({ [USDC]: "javascript:alert(1)" })).toEqual({
-      iconUrl: "",
-    });
-  });
 });

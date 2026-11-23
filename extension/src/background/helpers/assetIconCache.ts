@@ -1,6 +1,3 @@
-import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import { CACHED_ASSET_ICONS_ID } from "constants/localStorageTypes";
-
 // The map shares Chrome's 10 MB storage.local quota with the key store, so
 // both the entry count and the entry size are bounded. The values come from
 // issuer-controlled stellar.toml files.
@@ -30,17 +27,12 @@ export const toStorableIconUrl = (iconUrl: unknown): string | null => {
 };
 
 /**
- * Loads the icon map with every entry validated and the oldest entries
- * dropped past the cap, and writes it back when that changed anything. The
- * bound is applied on reads as well as writes because a wallet whose held
- * assets are all cached never writes.
+ * The map with every entry validated and the oldest entries dropped past the
+ * cap. Object key order is insertion order, so the first keys are the oldest.
  */
-export const readAssetIconCache = async (
-  localStore: DataStorageAccess,
-): Promise<Record<string, string>> => {
-  const stored: Record<string, unknown> =
-    (await localStore.getItem(CACHED_ASSET_ICONS_ID)) || {};
-
+export const boundAssetIconMap = (
+  stored: Record<string, unknown>,
+): Record<string, string> => {
   const icons: Record<string, string> = {};
   for (const [canonical, entry] of Object.entries(stored)) {
     const url = toStorableIconUrl(entry);
@@ -48,22 +40,9 @@ export const readAssetIconCache = async (
       icons[canonical] = url;
     }
   }
-  // Object key order is insertion order, so the first keys are the oldest.
   const keys = Object.keys(icons);
   for (let i = 0; i < keys.length - MAX_CACHED_ASSET_ICONS; i += 1) {
     delete icons[keys[i]];
-  }
-
-  const changed =
-    Object.keys(stored).length !== Object.keys(icons).length ||
-    Object.entries(icons).some(([canonical, url]) => stored[canonical] !== url);
-  if (changed) {
-    try {
-      await localStore.setItem(CACHED_ASSET_ICONS_ID, icons);
-    } catch (e) {
-      // The caller asked to read; a failed shrink must not cost it the icons.
-      console.error(e);
-    }
   }
   return icons;
 };
