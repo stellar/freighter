@@ -74,14 +74,23 @@ const makeState = (isChartEnabled = true) => ({
 
 const renderDetail = (
   asset: NonHeldAssetDescriptor,
-  { isChartEnabled = true } = {},
+  {
+    isChartEnabled = true,
+    swapTo,
+  }: {
+    isChartEnabled?: boolean;
+    swapTo?: { code: string; onSelect: () => void };
+  } = {},
 ) =>
   render(
     <Wrapper routes={[ROUTES.account]} state={makeState(isChartEnabled)}>
       <NonHeldAssetDetail
         asset={asset}
-        source={TokenChartSource.AddToken}
+        source={
+          swapTo ? TokenChartSource.SwapPicker : TokenChartSource.AddToken
+        }
         handleClose={() => null}
+        swapTo={swapTo}
       />
     </Wrapper>,
   );
@@ -91,6 +100,23 @@ describe("NonHeldAssetDetail", () => {
     getTokenPricesSpy.mockReset();
     getTokenPricesSpy.mockImplementation(() => Promise.resolve({}));
     mockCopy.mockClear();
+  });
+
+  it("renders a Swap to footer only when the caller offers it", async () => {
+    const onSelect = jest.fn();
+    const { unmount } = renderDetail(shx, {
+      swapTo: { code: "SHX", onSelect },
+    });
+    await waitFor(() => screen.getByTestId("AssetDetail__price"));
+    const button = screen.getByTestId("asset-detail-swap-to-button");
+    expect(button).toHaveTextContent(/Swap to/);
+    fireEvent.click(button);
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    unmount();
+
+    renderDetail(shx);
+    await waitFor(() => screen.getByTestId("AssetDetail__price"));
+    expect(screen.queryByTestId("asset-detail-swap-to-button")).toBeNull();
   });
 
   it("renders the body with no Balance or Value rows and no Hide/Remove", async () => {

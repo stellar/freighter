@@ -13,6 +13,8 @@ import {
 } from "@stellar/design-system";
 import { isAssetMalicious, isAssetSuspicious } from "popup/helpers/blockaid";
 
+import { SwapToAction, SwapToFooter } from "./SwapToFooter";
+
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
   getNativeContractId,
@@ -149,6 +151,8 @@ interface AssetDetailProps {
   hasHistoryError?: boolean;
   /** Where the sheet was opened from; only Balances offers Send, Swap, Hide and Remove. */
   source?: TokenChartSource;
+  /** Renders the Swap To footer; set by the swap picker only. */
+  swapTo?: SwapToAction;
 }
 
 export const AssetDetail = ({
@@ -158,6 +162,7 @@ export const AssetDetail = ({
   handleClose,
   hasHistoryError = false,
   source = TokenChartSource.Balances,
+  swapTo,
 }: AssetDetailProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -633,6 +638,7 @@ export const AssetDetail = ({
             )}
           </div>
         )}
+        {swapTo ? <SwapToFooter {...swapTo} /> : null}
         {isNative && (
           <SlideupModal
             isModalOpen={isModalOpen}

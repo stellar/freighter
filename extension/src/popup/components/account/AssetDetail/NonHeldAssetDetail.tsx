@@ -24,6 +24,7 @@ import { tokenPriceHistoryEnabledSelector } from "popup/ducks/remoteConfig";
 import { TokenChartSource } from "popup/components/account/TokenPriceChart/constants";
 
 import { AssetDetailBody, AssetDetailBodyProps } from "./AssetDetailBody";
+import { SwapToAction, SwapToFooter } from "./SwapToFooter";
 
 import "./styles.scss";
 
@@ -43,10 +44,13 @@ export const NonHeldAssetDetail = ({
   asset,
   source,
   handleClose,
+  swapTo,
 }: {
   asset: NonHeldAssetDescriptor;
   source: TokenChartSource;
   handleClose: () => void;
+  /** Renders the Swap To footer; set by the swap picker only. */
+  swapTo?: SwapToAction;
 }) => {
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -178,6 +182,7 @@ export const NonHeldAssetDetail = ({
           />
         </div>
       </View.Content>
+      {swapTo ? <SwapToFooter {...swapTo} /> : null}
     </View>
   );
 };

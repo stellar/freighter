@@ -299,10 +299,62 @@ describe("AssetDetail", () => {
     await screen.findByTestId("AssetDetail");
     expect(screen.queryByTestId("asset-detail-send-button")).toBeNull();
     expect(screen.queryByTestId("asset-detail-swap-button")).toBeNull();
+    expect(screen.queryByTestId("asset-detail-swap-to-button")).toBeNull();
     await userEvent.click(screen.getByAltText("asset options"));
     expect(screen.queryByTestId("AssetDetail__hide")).toBeNull();
     expect(screen.queryByTestId("asset-detail-remove-button")).toBeNull();
     expect(screen.getByText("Copy address")).toBeInTheDocument();
+  });
+
+  it("renders a Swap to footer for a held asset when the caller offers it", async () => {
+    const onSelect = jest.fn();
+    const props = {
+      accountBalances: {
+        balances: [
+          {
+            available: new BigNumber(100),
+            token: {
+              code: "USDC",
+              issuer: {
+                key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+              },
+            },
+            total: new BigNumber(100),
+          },
+        ],
+      } as any,
+      selectedAsset:
+        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      historyData: mockHistoryData,
+      handleClose: () => null,
+    };
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+          },
+        }}
+      >
+        <AssetDetail
+          {...props}
+          source={TokenChartSource.SwapPicker}
+          swapTo={{ code: "USDC", onSelect }}
+        />
+      </Wrapper>,
+    );
+    await screen.findByTestId("AssetDetail");
+    const button = screen.getByTestId("asset-detail-swap-to-button");
+    expect(button).toHaveTextContent(/Swap to/);
+    await userEvent.click(button);
+    expect(onSelect).toHaveBeenCalledTimes(1);
   });
 
   it.each([

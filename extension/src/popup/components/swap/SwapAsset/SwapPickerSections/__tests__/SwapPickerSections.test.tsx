@@ -325,7 +325,7 @@ describe("SwapPickerSections", () => {
     expect(screen.queryByTestId("SwapTokenRow-AQUA-menu")).toBeNull();
     fireEvent.click(screen.getByTestId("SwapTokenRow-AQUA-view-details"));
 
-    expect(onViewDetails).toHaveBeenCalledWith(aqua);
+    expect(onViewDetails).toHaveBeenCalledWith(aqua, "popular");
   });
 
   it("View details on a Your tokens row calls onViewDetails with that record", () => {
@@ -342,7 +342,7 @@ describe("SwapPickerSections", () => {
 
     fireEvent.click(screen.getByTestId("SwapTokenRow-USDC-view-details"));
 
-    expect(onViewDetails).toHaveBeenCalledWith(usdc);
+    expect(onViewDetails).toHaveBeenCalledWith(usdc, "balances");
   });
 
   it("without onViewDetails, held rows have no info button and discover rows keep the menu", () => {

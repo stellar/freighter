@@ -16,6 +16,7 @@ import {
 } from "popup/components/account/AssetDetail/NonHeldAssetDetail";
 import { TokenChartSource } from "popup/components/account/TokenPriceChart/constants";
 import { getBalanceByAsset } from "popup/helpers/balance";
+import { SwapToAction } from "popup/components/account/AssetDetail/SwapToFooter";
 import { useGetAccountHistoryData } from "popup/views/Account/hooks/useGetAccountHistoryData";
 
 interface AssetDetailSheetProps {
@@ -23,6 +24,8 @@ interface AssetDetailSheetProps {
   accountBalances: AccountBalances;
   source: TokenChartSource;
   onClose: () => void;
+  /** Swap To footer for the open asset; the swap picker sets it. */
+  swapTo?: SwapToAction;
 }
 
 export const AssetDetailSheet = ({
@@ -30,6 +33,7 @@ export const AssetDetailSheet = ({
   accountBalances,
   source,
   onClose,
+  swapTo,
 }: AssetDetailSheetProps) => {
   const { state, fetchData } = useGetAccountHistoryData();
   const canonical = asset?.canonical;
@@ -77,12 +81,14 @@ export const AssetDetailSheet = ({
                 selectedAsset={asset.canonical}
                 source={source}
                 handleClose={onClose}
+                swapTo={swapTo}
               />
             ) : (
               <NonHeldAssetDetail
                 asset={asset}
                 source={source}
                 handleClose={onClose}
+                swapTo={swapTo}
               />
             )}
           </>

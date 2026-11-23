@@ -27,6 +27,7 @@ jest.mock("popup/components/account/AssetDetail", () => ({
     source,
     hasHistoryError,
     historyData,
+    swapTo,
   }: any) => (
     <div
       data-testid="asset-detail"
@@ -34,16 +35,20 @@ jest.mock("popup/components/account/AssetDetail", () => ({
       data-source={source}
       data-error={String(hasHistoryError)}
       data-history={String(historyData)}
+      data-swap-to={swapTo?.code ?? ""}
+      onClick={swapTo?.onSelect}
     />
   ),
 }));
 
 jest.mock("popup/components/account/AssetDetail/NonHeldAssetDetail", () => ({
-  NonHeldAssetDetail: ({ asset, source }: any) => (
+  NonHeldAssetDetail: ({ asset, source, swapTo }: any) => (
     <div
       data-testid="non-held-detail"
       data-asset={asset.canonical}
       data-source={source}
+      data-swap-to={swapTo?.code ?? ""}
+      onClick={swapTo?.onSelect}
     />
   ),
 }));
@@ -66,6 +71,7 @@ const descriptor = (canonical: string) => ({
 const renderSheet = (
   asset: ReturnType<typeof descriptor> | null,
   onClose = jest.fn(),
+  swapTo?: { code: string; onSelect: () => void },
 ) =>
   render(
     <Wrapper routes={[ROUTES.account]} state={{}}>
@@ -74,6 +80,7 @@ const renderSheet = (
         accountBalances={accountBalances}
         source={TokenChartSource.SwapPicker}
         onClose={onClose}
+        swapTo={swapTo}
       />
     </Wrapper>,
   );
@@ -137,6 +144,36 @@ describe("AssetDetailSheet", () => {
     expect(detail.getAttribute("data-source")).toBe("swap_picker");
     expect(screen.queryByTestId("asset-detail")).toBeNull();
     expect(mockFetchData).not.toHaveBeenCalled();
+  });
+
+  it("hands swapTo to whichever view it renders", () => {
+    const onSelect = jest.fn();
+    const { unmount } = renderSheet(descriptor("native"), jest.fn(), {
+      code: "XLM",
+      onSelect,
+    });
+    const held = screen.getByTestId("asset-detail");
+    expect(held.getAttribute("data-swap-to")).toBe("XLM");
+    fireEvent.click(held);
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    unmount();
+
+    renderSheet(
+      descriptor(
+        "ZZZ:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      ),
+      jest.fn(),
+      { code: "ZZZ", onSelect },
+    );
+    expect(
+      screen.getByTestId("non-held-detail").getAttribute("data-swap-to"),
+    ).toBe("ZZZ");
+
+    unmount();
+    renderSheet(descriptor("native"));
+    expect(
+      screen.getByTestId("asset-detail").getAttribute("data-swap-to"),
+    ).toBe("");
   });
 
   it("renders nothing while closed and calls onClose when the sheet closes", () => {

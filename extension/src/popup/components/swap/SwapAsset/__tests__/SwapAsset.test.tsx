@@ -22,12 +22,23 @@ jest.mock("@sentry/browser", () => ({ captureException: jest.fn() }));
 jest.mock("popup/components/account/AssetDetail/AssetDetailSheet", () => ({
   AssetDetailSheet: ({
     asset,
+    swapTo,
   }: {
     asset: { canonical: string; name?: string } | null;
+    swapTo?: { code: string; onSelect: () => void };
   }) =>
     asset ? (
       <div data-testid="asset-detail-sheet" data-name={asset.name}>
         {asset.canonical}
+        {swapTo ? (
+          <button
+            type="button"
+            data-testid="asset-detail-swap-to-button"
+            onClick={swapTo.onSelect}
+          >
+            {swapTo.code}
+          </button>
+        ) : null}
       </div>
     ) : null,
 }));
@@ -668,7 +679,11 @@ describe("SwapAsset destination: View details", () => {
 
   afterEach(() => jest.restoreAllMocks());
 
-  const renderPicker = (priceHistory: boolean, mainnet = true) =>
+  const renderPicker = (
+    priceHistory: boolean,
+    mainnet = true,
+    onClickAsset: jest.Mock = jest.fn(),
+  ) =>
     render(
       <Wrapper
         state={{
@@ -688,11 +703,35 @@ describe("SwapAsset destination: View details", () => {
         <SwapAsset
           selectionType="destination"
           hiddenAssets={[]}
-          onClickAsset={jest.fn()}
+          onClickAsset={onClickAsset}
           goBack={jest.fn()}
         />
       </Wrapper>,
     );
+
+  it("Swap to in the sheet picks the token as the row would, and closes the sheet", async () => {
+    const onClickAsset = jest.fn();
+    renderPicker(true, true, onClickAsset);
+
+    fireEvent.click(
+      await screen.findByTestId("SwapTokenRow-USDC-view-details"),
+    );
+    const button = screen.getByTestId("asset-detail-swap-to-button");
+    expect(button).toHaveTextContent("USDC");
+    fireEvent.click(button);
+
+    expect(onClickAsset).toHaveBeenCalledWith(
+      USDC,
+      false,
+      expect.objectContaining({
+        tokenCode: "USDC",
+        issuer: USDC_ISSUER,
+        requiresTrustline: true,
+        source: "popular",
+      }),
+    );
+    expect(screen.queryByTestId("asset-detail-sheet")).toBeNull();
+  });
 
   it("opens the detail sheet for the chosen Popular row and keeps the search term", async () => {
     renderPicker(true);

@@ -35,8 +35,11 @@ import {
   balancesToHeldRecords,
 } from "./hooks/useSwapTokenLookup";
 import type { SwapTokenRecord } from "./hooks/useSwapTokenLookup";
-import { SwapPickerSections } from "./SwapPickerSections";
-import type { SwapPickerSectionsResult } from "./SwapPickerSections";
+import { SwapPickerSections, buildSelection } from "./SwapPickerSections";
+import type {
+  PickerSource,
+  SwapPickerSectionsResult,
+} from "./SwapPickerSections";
 
 import "./styles.scss";
 
@@ -91,8 +94,13 @@ export const SwapAsset = ({
   const isDiscoverySupported =
     isMainnet(networkDetails) || isTestnet(networkDetails);
   const isDestination = selectionType === "destination";
-  const [detailsAsset, setDetailsAsset] =
-    useState<NonHeldAssetDescriptor | null>(null);
+  // The open details sheet, with the record and section it came from so its
+  // Swap To picks exactly as the row would.
+  const [details, setDetails] = useState<{
+    asset: NonHeldAssetDescriptor;
+    record: SwapTokenRecord;
+    source: PickerSource;
+  } | null>(null);
   const isDetailsOffered =
     useSelector(tokenPriceHistoryEnabledSelector) && isMainnet(networkDetails);
   const title = isDestination ? t("Swap to") : t("Swap from");
@@ -443,7 +451,12 @@ export const SwapAsset = ({
                 isDiscoverySupported={isDiscoverySupported}
                 onViewDetails={
                   isDetailsOffered
-                    ? (r) => setDetailsAsset(toDescriptor(r))
+                    ? (r, source) =>
+                        setDetails({
+                          asset: toDescriptor(r),
+                          record: r,
+                          source,
+                        })
                     : undefined
                 }
               />
@@ -461,10 +474,26 @@ export const SwapAsset = ({
       </View.Content>
       {isDestination && (
         <AssetDetailSheet
-          asset={detailsAsset}
+          asset={details?.asset ?? null}
           accountBalances={sheetBalances}
           source={TokenChartSource.SwapPicker}
-          onClose={() => setDetailsAsset(null)}
+          onClose={() => setDetails(null)}
+          swapTo={
+            details
+              ? {
+                  code: details.record.code ?? "",
+                  onSelect: () => {
+                    const { record, source } = details;
+                    setDetails(null);
+                    handleDestinationPick(
+                      record.canonical,
+                      record.isContract,
+                      buildSelection(record, source),
+                    );
+                  },
+                }
+              : undefined
+          }
         />
       )}
     </>

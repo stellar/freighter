@@ -19,10 +19,10 @@ import type { SwapPickerSelection } from "../index";
 import "./styles.scss";
 
 /** Which picker section a clicked row came from (used for telemetry). */
-type PickerSource = "balances" | "popular" | "search";
+export type PickerSource = "balances" | "popular" | "search";
 
 /** Builds the destination descriptor passed up to the Swap view on pick. */
-const buildSelection = (
+export const buildSelection = (
   r: SwapTokenRecord,
   source: PickerSource,
 ): SwapPickerSelection => ({
@@ -75,7 +75,8 @@ export interface SwapPickerSectionsProps {
    * unavailable notice is suppressed: the network simply has no Popular list, so
    * it's hidden gracefully rather than flagged as a (transient) outage. */
   isDiscoverySupported?: boolean;
-  onViewDetails?: (record: SwapTokenRecord) => void;
+  /** Opens the row's details; `source` lets a Swap To from there pick like the row. */
+  onViewDetails?: (record: SwapTokenRecord, source: PickerSource) => void;
 }
 
 export const SwapPickerSections = ({
@@ -106,7 +107,11 @@ export const SwapPickerSections = ({
 
   // The info button at the end of a row (Swap to, 4827:102907) opens the
   // token's details. The row body still selects.
-  const renderInfoButton = (r: SwapTokenRecord, code: string) =>
+  const renderInfoButton = (
+    r: SwapTokenRecord,
+    code: string,
+    source: PickerSource,
+  ) =>
     onViewDetails ? (
       <button
         type="button"
@@ -115,7 +120,7 @@ export const SwapPickerSections = ({
         aria-label={t("View details")}
         onClick={(e) => {
           e.stopPropagation();
-          onViewDetails(r);
+          onViewDetails(r, source);
         }}
       >
         <Icon.InfoCircle />
@@ -148,7 +153,7 @@ export const SwapPickerSections = ({
           }
         />
       );
-      const info = renderInfoButton(r, code);
+      const info = renderInfoButton(r, code, source);
       return info ? (
         <div key={r.canonical} className="SwapPickerSections__row">
           {row}
@@ -190,7 +195,7 @@ export const SwapPickerSections = ({
           }
           rightElement={
             onViewDetails && r.issuer ? (
-              renderInfoButton(r, code)
+              renderInfoButton(r, code, source)
             ) : (
               <SwapTokenMenu
                 code={code}
