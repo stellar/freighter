@@ -44,6 +44,7 @@ import {
   LAST_USED_ACCOUNT,
   METRICS_DATA,
   METRICS_USER_ID,
+  EXPERIMENT_ANONYMOUS_DEVICE_ID,
   NETWORK_ID,
   NETWORKS_LIST_ID,
   OVERRIDDEN_BLOCKAID_RESPONSE_ID,
@@ -320,6 +321,7 @@ describe("RESET_WALLET", () => {
     const notInStorageLocal = [
       METRICS_DATA,
       METRICS_USER_ID,
+      EXPERIMENT_ANONYMOUS_DEVICE_ID,
       TEMPORARY_STORE_EXTRA_ID,
     ];
     const allConstants = (Object.values(storageKeys) as unknown[]).filter(
