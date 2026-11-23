@@ -36,31 +36,4 @@ describe("SwapTokenMenu", () => {
 
     expect(openTab).toHaveBeenCalledWith(`${EXPERT}/contract/${contract}`);
   });
-
-  it("shows View details first only when a handler is given", () => {
-    const onViewDetails = jest.fn();
-    const { unmount } = render(
-      <SwapTokenMenu
-        code="USDC"
-        issuerKey="G123"
-        stellarExpertUrl={EXPERT}
-        onViewDetails={onViewDetails}
-      />,
-    );
-    fireEvent.click(screen.getByTestId("SwapTokenRow-USDC-menu"));
-    const items = screen.getAllByRole("button", { name: /./ });
-    const first = items.find((el) =>
-      el.className.includes("SwapTokenMenu__item"),
-    );
-    expect(first).toBe(screen.getByTestId("SwapTokenRow-USDC-view-details"));
-    fireEvent.click(screen.getByTestId("SwapTokenRow-USDC-view-details"));
-    expect(onViewDetails).toHaveBeenCalledTimes(1);
-    unmount();
-
-    render(
-      <SwapTokenMenu code="USDC" issuerKey="G123" stellarExpertUrl={EXPERT} />,
-    );
-    fireEvent.click(screen.getByTestId("SwapTokenRow-USDC-menu"));
-    expect(screen.queryByTestId("SwapTokenRow-USDC-view-details")).toBeNull();
-  });
 });

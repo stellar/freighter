@@ -12,19 +12,17 @@ interface SwapTokenMenuProps {
   code: string;
   issuerKey?: string;
   stellarExpertUrl: string;
-  onViewDetails?: () => void;
 }
 
 /**
  * The "…" overflow menu shown on the right of a non-held token row in the Swap
- * destination picker: copy the issuer (or contract) address, or view the token
- * on stellar.expert.
+ * picker while token details are not offered there: copy the issuer (or
+ * contract) address, or view the token on stellar.expert.
  */
 export const SwapTokenMenu = ({
   code,
   issuerKey = "",
   stellarExpertUrl,
-  onViewDetails,
 }: SwapTokenMenuProps) => {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
@@ -69,18 +67,6 @@ export const SwapTokenMenu = ({
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content className="SwapTokenMenu__content" sideOffset={4}>
-          {onViewDetails && (
-            <Popover.Close asChild>
-              <button
-                type="button"
-                className="SwapTokenMenu__item"
-                data-testid={`SwapTokenRow-${code}-view-details`}
-                onClick={onViewDetails}
-              >
-                {t("View details")}
-              </button>
-            </Popover.Close>
-          )}
           <Tooltip
             isVisible={copied}
             placement="top"

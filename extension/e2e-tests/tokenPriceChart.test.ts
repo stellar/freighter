@@ -300,7 +300,6 @@ test("View details on a swap picker row shows the chart for a non-held token", a
     .click({ force: true });
   await expect(page.getByText("Swap to")).toBeVisible();
 
-  await page.getByTestId("SwapTokenRow-AQUA-menu").click();
   await page.getByTestId("SwapTokenRow-AQUA-view-details").click();
 
   await expect(page.getByTestId("TokenPriceChart__polyline")).toBeVisible({

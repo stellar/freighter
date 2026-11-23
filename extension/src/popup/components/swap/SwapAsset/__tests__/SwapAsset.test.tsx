@@ -639,7 +639,7 @@ describe("SwapAsset destination: View details", () => {
     requiresTrustline: true,
   };
 
-  const mockLookup = (popular: any[]) => {
+  const mockLookup = (popular: any[], yourTokens: any[] = []) => {
     jest.spyOn(UseSwapFromData, "useGetSwapFromData").mockReturnValue({
       state: resolvedFromState,
       fetchData: jest.fn().mockResolvedValue(undefined),
@@ -651,7 +651,7 @@ describe("SwapAsset destination: View details", () => {
         state: RequestState.SUCCESS,
         data: {
           sections: {
-            yourTokens: [],
+            yourTokens,
             popular,
             verified: popular,
             unverified: [],
@@ -703,11 +703,49 @@ describe("SwapAsset destination: View details", () => {
     // The loader replaces the list from the keystroke until the debounced
     // lookup starts; wait for the searched list to come back.
     expect(screen.queryByTestId("swap-picker-sections")).toBeNull();
-    fireEvent.click(await screen.findByTestId("SwapTokenRow-USDC-menu"));
-    fireEvent.click(screen.getByTestId("SwapTokenRow-USDC-view-details"));
+    fireEvent.click(
+      await screen.findByTestId("SwapTokenRow-USDC-view-details"),
+    );
 
     expect(screen.getByTestId("asset-detail-sheet")).toHaveTextContent(USDC);
     expect(screen.getByTestId("swap-from-search")).toHaveValue("US");
+  });
+
+  it("opens the detail sheet from a Your tokens row", async () => {
+    const heldUsdc = {
+      ...usdcRecord,
+      isHeld: true,
+      requiresTrustline: false,
+      tokenAmount: "12.5",
+    };
+    mockLookup([], [heldUsdc]);
+    // A funded account, or the picker treats it as new and hides Your tokens.
+    jest.spyOn(UseSwapFromData, "useGetSwapFromData").mockReturnValue({
+      state: {
+        ...resolvedFromState,
+        data: {
+          ...resolvedFromState.data,
+          balances: {
+            balances: [
+              {
+                token: { code: "USDC", issuer: { key: USDC_ISSUER } },
+                total: "12.5",
+              },
+            ],
+            icons: {},
+          },
+        },
+      },
+      fetchData: jest.fn().mockResolvedValue(undefined),
+      filterBalances: jest.fn(),
+    } as any);
+    renderPicker(true);
+
+    fireEvent.click(
+      await screen.findByTestId("SwapTokenRow-USDC-view-details"),
+    );
+
+    expect(screen.getByTestId("asset-detail-sheet")).toHaveTextContent(USDC);
   });
 
   it.each([
@@ -734,18 +772,19 @@ describe("SwapAsset destination: View details", () => {
     expect(screen.queryByTestId("SwapTokenRow-FOO-view-details")).toBeNull();
     expect(screen.getByTestId("SwapTokenRow-FOO-copy")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByTestId("SwapTokenRow-USDC-menu"));
     expect(
       screen.getByTestId("SwapTokenRow-USDC-view-details"),
     ).toBeInTheDocument();
+    expect(screen.queryByTestId("SwapTokenRow-USDC-menu")).toBeNull();
   });
 
   it("titles a classic record by code: a non-contract record's name is dropped", async () => {
     mockLookup([{ ...usdcRecord, name: `USDC:${USDC_ISSUER}` }]);
     renderPicker(true);
 
-    fireEvent.click(await screen.findByTestId("SwapTokenRow-USDC-menu"));
-    fireEvent.click(screen.getByTestId("SwapTokenRow-USDC-view-details"));
+    fireEvent.click(
+      await screen.findByTestId("SwapTokenRow-USDC-view-details"),
+    );
 
     expect(screen.getByTestId("asset-detail-sheet")).not.toHaveAttribute(
       "data-name",
@@ -768,8 +807,9 @@ describe("SwapAsset destination: View details", () => {
     ]);
     renderPicker(true);
 
-    fireEvent.click(await screen.findByTestId("SwapTokenRow-KALE-menu"));
-    fireEvent.click(screen.getByTestId("SwapTokenRow-KALE-view-details"));
+    fireEvent.click(
+      await screen.findByTestId("SwapTokenRow-KALE-view-details"),
+    );
 
     expect(screen.getByTestId("asset-detail-sheet")).toHaveAttribute(
       "data-name",

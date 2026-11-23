@@ -321,9 +321,45 @@ describe("SwapPickerSections", () => {
       />,
     );
 
-    fireEvent.click(screen.getByTestId("SwapTokenRow-AQUA-menu"));
+    // The info button replaces the row's menu.
+    expect(screen.queryByTestId("SwapTokenRow-AQUA-menu")).toBeNull();
     fireEvent.click(screen.getByTestId("SwapTokenRow-AQUA-view-details"));
 
     expect(onViewDetails).toHaveBeenCalledWith(aqua);
+  });
+
+  it("View details on a Your tokens row calls onViewDetails with that record", () => {
+    const onViewDetails = jest.fn();
+    const usdc = rec("USDC", true);
+    render(
+      <SwapPickerSections
+        {...baseProps}
+        searchTerm=""
+        onViewDetails={onViewDetails}
+        result={{ ...emptyResult, yourTokens: [usdc] }}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("SwapTokenRow-USDC-view-details"));
+
+    expect(onViewDetails).toHaveBeenCalledWith(usdc);
+  });
+
+  it("without onViewDetails, held rows have no info button and discover rows keep the menu", () => {
+    render(
+      <SwapPickerSections
+        {...baseProps}
+        searchTerm=""
+        result={{
+          ...emptyResult,
+          yourTokens: [rec("USDC", true)],
+          popular: [rec("AQUA")],
+        }}
+      />,
+    );
+
+    expect(screen.queryByTestId("SwapTokenRow-USDC-view-details")).toBeNull();
+    expect(screen.queryByTestId("SwapTokenRow-AQUA-view-details")).toBeNull();
+    expect(screen.getByTestId("SwapTokenRow-AQUA-menu")).toBeInTheDocument();
   });
 });

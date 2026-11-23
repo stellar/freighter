@@ -104,16 +104,35 @@ export const SwapPickerSections = ({
   const verified = result.verified.filter(isShown);
   const unverified = result.unverified.filter(isShown);
 
+  // The info button at the end of a row (Swap to, 4827:102907) opens the
+  // token's details. The row body still selects.
+  const renderInfoButton = (r: SwapTokenRecord, code: string) =>
+    onViewDetails ? (
+      <button
+        type="button"
+        className="SwapPickerSections__info"
+        data-testid={`SwapTokenRow-${code}-view-details`}
+        aria-label={t("View details")}
+        onClick={(e) => {
+          e.stopPropagation();
+          onViewDetails(r);
+        }}
+      >
+        <Icon.InfoCircle />
+      </button>
+    ) : null;
+
   // Held "Your tokens" rows use BalanceRow, matching the account-home balances
   // list, divided like it but with no line after the last row, where the next
-  // section's header starts.
+  // section's header starts. The info button sits outside the row so the
+  // divider ends before it.
   const renderBalanceRows = (
     records: SwapTokenRecord[],
     source: PickerSource,
   ) =>
     records.map((r, index) => {
       const code = r.code ?? "";
-      return (
+      const row = (
         <BalanceRow
           key={r.canonical}
           data-testid={`SwapTokenRow-${code}`}
@@ -129,10 +148,20 @@ export const SwapPickerSections = ({
           }
         />
       );
+      const info = renderInfoButton(r, code);
+      return info ? (
+        <div key={r.canonical} className="SwapPickerSections__row">
+          {row}
+          {info}
+        </div>
+      ) : (
+        row
+      );
     });
 
   // Non-held discover rows (Popular / Verified / Unverified) use the shared
-  // AssetListRow with an overflow menu on the right.
+  // AssetListRow. On the right: the info button while details are offered,
+  // otherwise the overflow menu (copy address, stellar.expert).
   const renderDiscoverRows = (
     records: SwapTokenRecord[],
     source: PickerSource,
@@ -160,14 +189,15 @@ export const SwapPickerSections = ({
             onClickAsset(r.canonical, r.isContract, buildSelection(r, source))
           }
           rightElement={
-            <SwapTokenMenu
-              code={code}
-              issuerKey={r.issuer}
-              stellarExpertUrl={stellarExpertUrl}
-              onViewDetails={
-                onViewDetails && r.issuer ? () => onViewDetails(r) : undefined
-              }
-            />
+            onViewDetails && r.issuer ? (
+              renderInfoButton(r, code)
+            ) : (
+              <SwapTokenMenu
+                code={code}
+                issuerKey={r.issuer}
+                stellarExpertUrl={stellarExpertUrl}
+              />
+            )
           }
         />
       );
