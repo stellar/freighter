@@ -251,7 +251,7 @@ describe("AssetDetail", () => {
     });
   });
 
-  it("hides Send, Swap, Hide and Remove when opened from the swap picker", async () => {
+  it("hides Send and Swap but keeps Hide, Remove and Stellar.expert when opened from the swap picker", async () => {
     jest
       .spyOn(ApiInternal, "getAccountBalances")
       .mockImplementation(() => Promise.resolve(mockBalances));
@@ -301,9 +301,14 @@ describe("AssetDetail", () => {
     expect(screen.queryByTestId("asset-detail-swap-button")).toBeNull();
     expect(screen.queryByTestId("asset-detail-swap-to-button")).toBeNull();
     await userEvent.click(screen.getByAltText("asset options"));
-    expect(screen.queryByTestId("AssetDetail__hide")).toBeNull();
-    expect(screen.queryByTestId("asset-detail-remove-button")).toBeNull();
+    // Hide and Remove follow the held balance, not the entry point
+    // (design 2026-11-23).
+    expect(screen.getByTestId("AssetDetail__hide")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("asset-detail-remove-button"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Copy address")).toBeInTheDocument();
+    expect(screen.getByText("Stellar.expert")).toBeInTheDocument();
   });
 
   it("renders a Swap to footer for a held asset when the caller offers it", async () => {

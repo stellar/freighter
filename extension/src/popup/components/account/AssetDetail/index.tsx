@@ -149,7 +149,7 @@ interface AssetDetailProps {
   handleClose: () => void;
   /** The account history request failed; shows an error, not a skeleton. */
   hasHistoryError?: boolean;
-  /** Where the sheet was opened from; only Balances offers Send, Swap, Hide and Remove. */
+  /** Where the sheet was opened from; only Balances offers Send and Swap. */
   source?: TokenChartSource;
   /** Renders the Swap To footer; set by the swap picker only. */
   swapTo?: SwapToAction;
@@ -423,7 +423,7 @@ export const AssetDetail = ({
   // hiding it would make Send and Swap report insufficient XLM; the Hidden
   // tokens sheet doesn't list LP shares, so a hidden one could never be
   // unhidden. Same as mobile, where neither opens token details' Hide.
-  const canOfferHide = isIssuedToken && isBalancesSource;
+  const canOfferHide = isIssuedToken;
 
   return (
     <React.Fragment>
@@ -492,7 +492,7 @@ export const AssetDetail = ({
                     </button>
                   </div>
                 ) : null}
-                {isRemovable && isBalancesSource ? (
+                {isRemovable ? (
                   <div className="AssetDetail__options-actions__row AssetDetail__options-actions__row--destructive">
                     <button
                       type="button"
