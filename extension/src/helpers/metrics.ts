@@ -311,8 +311,8 @@ export const initAmplitude = async () => {
 
     hasInitialized = true;
 
-    // Initialize Experiment client now that analytics is ready.
-    // initializeWithAmplitudeAnalytics requires the analytics SDK to be started first.
+    // The Experiment client carries no identity of its own; it is created
+    // here only so getExperimentClient() is set before the first flag fetch.
     initExperimentClient();
 
     // Resolve the surface once (async) so getSurface() is synchronous afterward.
