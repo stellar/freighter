@@ -71,7 +71,7 @@ const descriptor = (canonical: string) => ({
 const renderSheet = (
   asset: ReturnType<typeof descriptor> | null,
   onClose = jest.fn(),
-  swapTo?: { code: string; onSelect: () => void },
+  swapTo?: { code: string; side: "to" | "from"; onSelect: () => void },
 ) =>
   render(
     <Wrapper routes={[ROUTES.account]} state={{}}>
@@ -150,6 +150,7 @@ describe("AssetDetailSheet", () => {
     const onSelect = jest.fn();
     const { unmount } = renderSheet(descriptor("native"), jest.fn(), {
       code: "XLM",
+      side: "to",
       onSelect,
     });
     const held = screen.getByTestId("asset-detail");
@@ -163,7 +164,7 @@ describe("AssetDetailSheet", () => {
         "ZZZ:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
       ),
       jest.fn(),
-      { code: "ZZZ", onSelect },
+      { code: "ZZZ", side: "to", onSelect },
     );
     expect(
       screen.getByTestId("non-held-detail").getAttribute("data-swap-to"),

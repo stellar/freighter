@@ -670,6 +670,7 @@
   "Swap source token logo": "Logotipo do token de origem da troca",
   "Swap to": "Trocar para",
   "Swap to {{code}}": "Trocar para {{code}}",
+  "Swap from {{code}}": "Trocar de {{code}}",
   "Swapped!": "Trocado!",
   "Swapping": "Trocando",
   "Swaps are temporarily unavailable": "As trocas estão temporariamente indisponíveis",

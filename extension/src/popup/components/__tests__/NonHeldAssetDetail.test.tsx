@@ -79,7 +79,7 @@ const renderDetail = (
     swapTo,
   }: {
     isChartEnabled?: boolean;
-    swapTo?: { code: string; onSelect: () => void };
+    swapTo?: { code: string; side: "to" | "from"; onSelect: () => void };
   } = {},
 ) =>
   render(
@@ -105,7 +105,7 @@ describe("NonHeldAssetDetail", () => {
   it("renders a Swap to footer only when the caller offers it", async () => {
     const onSelect = jest.fn();
     const { unmount } = renderDetail(shx, {
-      swapTo: { code: "SHX", onSelect },
+      swapTo: { code: "SHX", side: "to", onSelect },
     });
     await waitFor(() => screen.getByTestId("AssetDetail__price"));
     const button = screen.getByTestId("asset-detail-swap-to-button");
@@ -113,6 +113,15 @@ describe("NonHeldAssetDetail", () => {
     fireEvent.click(button);
     expect(onSelect).toHaveBeenCalledTimes(1);
     unmount();
+
+    const fromSide = renderDetail(shx, {
+      swapTo: { code: "SHX", side: "from", onSelect },
+    });
+    await waitFor(() => screen.getByTestId("AssetDetail__price"));
+    expect(screen.getByTestId("asset-detail-swap-to-button")).toHaveTextContent(
+      /Swap from/,
+    );
+    fromSide.unmount();
 
     renderDetail(shx);
     await waitFor(() => screen.getByTestId("AssetDetail__price"));

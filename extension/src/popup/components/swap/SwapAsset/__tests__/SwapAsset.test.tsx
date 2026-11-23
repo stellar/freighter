@@ -25,7 +25,7 @@ jest.mock("popup/components/account/AssetDetail/AssetDetailSheet", () => ({
     swapTo,
   }: {
     asset: { canonical: string; name?: string } | null;
-    swapTo?: { code: string; onSelect: () => void };
+    swapTo?: { code: string; side: "to" | "from"; onSelect: () => void };
   }) =>
     asset ? (
       <div data-testid="asset-detail-sheet" data-name={asset.name}>
@@ -34,6 +34,7 @@ jest.mock("popup/components/account/AssetDetail/AssetDetailSheet", () => ({
           <button
             type="button"
             data-testid="asset-detail-swap-to-button"
+            data-side={swapTo.side}
             onClick={swapTo.onSelect}
           >
             {swapTo.code}
@@ -854,5 +855,84 @@ describe("SwapAsset destination: View details", () => {
       "data-name",
       "Kale",
     );
+  });
+});
+
+describe("SwapAsset source: View details", () => {
+  const USDC_ISSUER =
+    "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+  const heldUsdc = {
+    token: { code: "USDC", issuer: { key: USDC_ISSUER } },
+    total: "12.5",
+  };
+
+  beforeEach(() => {
+    jest.spyOn(UseSwapFromData, "useGetSwapFromData").mockReturnValue({
+      state: {
+        ...resolvedFromState,
+        data: {
+          ...resolvedFromState.data,
+          balances: { balances: [heldUsdc], icons: {} },
+          // The source picker lists the search-filtered held balances.
+          filteredBalances: [heldUsdc],
+        },
+      },
+      fetchData: jest.fn().mockResolvedValue(undefined),
+      filterBalances: jest.fn(),
+    } as any);
+    jest.spyOn(UseSwapTokenLookup, "useSwapTokenLookup").mockReturnValue({
+      fetchData: jest.fn().mockResolvedValue(undefined),
+      state: { state: RequestState.IDLE, data: null, error: null },
+    } as any);
+  });
+
+  afterEach(() => jest.restoreAllMocks());
+
+  const renderSourcePicker = (
+    priceHistory: boolean,
+    onClickAsset = jest.fn(),
+  ) =>
+    render(
+      <Wrapper
+        state={{
+          settings: { networkDetails: MAINNET_NETWORK_DETAILS },
+          remoteConfig: {
+            isInitialized: true,
+            use_balances_v2: false,
+            use_token_price_history: priceHistory,
+            maintenance_banner: { enabled: false, payload: undefined },
+            maintenance_screen: { enabled: false, payload: undefined },
+          },
+        }}
+        routes={["/"]}
+      >
+        <SwapAsset
+          selectionType="source"
+          hiddenAssets={[]}
+          onClickAsset={onClickAsset}
+          goBack={jest.fn()}
+        />
+      </Wrapper>,
+    );
+
+  it("Swap from in the sheet picks the held token as its row would, and closes the sheet", () => {
+    const onClickAsset = jest.fn();
+    renderSourcePicker(true, onClickAsset);
+
+    fireEvent.click(screen.getByTestId("SwapTokenRow-USDC-view-details"));
+    const button = screen.getByTestId("asset-detail-swap-to-button");
+    expect(button.getAttribute("data-side")).toBe("from");
+    expect(button).toHaveTextContent("USDC");
+    fireEvent.click(button);
+
+    expect(onClickAsset).toHaveBeenCalledWith(`USDC:${USDC_ISSUER}`, false);
+    expect(screen.queryByTestId("asset-detail-sheet")).toBeNull();
+  });
+
+  it("offers no details on the source picker when price history is off", () => {
+    renderSourcePicker(false);
+
+    expect(screen.getByTestId("SwapTokenRow-USDC")).toBeInTheDocument();
+    expect(screen.queryByTestId("SwapTokenRow-USDC-view-details")).toBeNull();
   });
 });

@@ -468,34 +468,44 @@ export const SwapAsset = ({
               hiddenAssets={hiddenAssets}
               onClickAsset={onClickAsset}
               stellarExpertUrl={stellarExpertUrl}
+              onViewDetails={
+                isDetailsOffered
+                  ? (r, source) =>
+                      setDetails({ asset: toDescriptor(r), record: r, source })
+                  : undefined
+              }
             />
           )}
         </div>
       </View.Content>
-      {isDestination && (
-        <AssetDetailSheet
-          asset={details?.asset ?? null}
-          accountBalances={sheetBalances}
-          source={TokenChartSource.SwapPicker}
-          onClose={() => setDetails(null)}
-          swapTo={
-            details
-              ? {
-                  code: details.record.code ?? "",
-                  onSelect: () => {
-                    const { record, source } = details;
-                    setDetails(null);
+      <AssetDetailSheet
+        asset={details?.asset ?? null}
+        accountBalances={sheetBalances}
+        source={TokenChartSource.SwapPicker}
+        onClose={() => setDetails(null)}
+        swapTo={
+          details
+            ? {
+                code: details.record.code ?? "",
+                side: isDestination ? "to" : "from",
+                // The same pick the row makes, after the sheet closes.
+                onSelect: () => {
+                  const { record, source } = details;
+                  setDetails(null);
+                  if (isDestination) {
                     handleDestinationPick(
                       record.canonical,
                       record.isContract,
                       buildSelection(record, source),
                     );
-                  },
-                }
-              : undefined
-          }
-        />
-      )}
+                  } else {
+                    onClickAsset(record.canonical, record.isContract);
+                  }
+                },
+              }
+            : undefined
+        }
+      />
     </>
   );
 };

@@ -346,7 +346,7 @@ describe("AssetDetail", () => {
         <AssetDetail
           {...props}
           source={TokenChartSource.SwapPicker}
-          swapTo={{ code: "USDC", onSelect }}
+          swapTo={{ code: "USDC", side: "to", onSelect }}
         />
       </Wrapper>,
     );
