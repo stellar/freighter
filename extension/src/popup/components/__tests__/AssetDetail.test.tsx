@@ -191,8 +191,10 @@ describe("AssetDetail", () => {
     const usdcCanonical =
       "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
     const handleClose = jest.fn();
+    const onBalancesChanged = jest.fn();
     const props = {
       handleClose,
+      onBalancesChanged,
       accountBalances: {
         balances: [
           {
@@ -249,6 +251,8 @@ describe("AssetDetail", () => {
     await waitFor(() => {
       expect(handleClose).toHaveBeenCalled();
     });
+    // The caller's list no longer holds the token; it reloads on this.
+    expect(onBalancesChanged).toHaveBeenCalledWith("hidden");
   });
 
   it("hides Send and Swap but keeps Hide, Remove and Stellar.expert when opened from the swap picker", async () => {

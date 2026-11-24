@@ -23,13 +23,22 @@ jest.mock("popup/components/account/AssetDetail/AssetDetailSheet", () => ({
   AssetDetailSheet: ({
     asset,
     swapTo,
+    onBalancesChanged,
   }: {
     asset: { canonical: string; name?: string } | null;
     swapTo?: { code: string; side: "to" | "from"; onSelect: () => void };
+    onBalancesChanged?: (change: "hidden" | "removed") => void;
   }) =>
     asset ? (
       <div data-testid="asset-detail-sheet" data-name={asset.name}>
         {asset.canonical}
+        <button
+          type="button"
+          data-testid="asset-detail-hide"
+          onClick={() => onBalancesChanged?.("hidden")}
+        >
+          hide
+        </button>
         {swapTo ? (
           <button
             type="button"
@@ -749,6 +758,70 @@ describe("SwapAsset destination: View details", () => {
 
     expect(screen.getByTestId("asset-detail-sheet")).toHaveTextContent(USDC);
     expect(screen.getByTestId("swap-from-search")).toHaveValue("US");
+  });
+
+  it("hiding from the sheet reloads the picker and tells the caller which token left", async () => {
+    const onAssetHiddenOrRemoved = jest.fn();
+    const fromFetchData = jest.fn().mockResolvedValue(undefined);
+    const heldUsdc = {
+      ...usdcRecord,
+      isHeld: true,
+      requiresTrustline: false,
+      tokenAmount: "12.5",
+    };
+    mockLookup([], [heldUsdc]);
+    jest.spyOn(UseSwapFromData, "useGetSwapFromData").mockReturnValue({
+      state: {
+        ...resolvedFromState,
+        data: {
+          ...resolvedFromState.data,
+          balances: {
+            balances: [
+              {
+                token: { code: "USDC", issuer: { key: USDC_ISSUER } },
+                total: "12.5",
+              },
+            ],
+            icons: {},
+          },
+        },
+      },
+      fetchData: fromFetchData,
+      filterBalances: jest.fn(),
+    } as any);
+    render(
+      <Wrapper
+        state={{
+          settings: { networkDetails: MAINNET_NETWORK_DETAILS },
+          remoteConfig: {
+            isInitialized: true,
+            use_balances_v2: false,
+            use_token_price_history: true,
+            maintenance_banner: { enabled: false, payload: undefined },
+            maintenance_screen: { enabled: false, payload: undefined },
+          },
+        }}
+        routes={["/"]}
+      >
+        <SwapAsset
+          selectionType="destination"
+          hiddenAssets={[]}
+          onClickAsset={jest.fn()}
+          goBack={jest.fn()}
+          onAssetHiddenOrRemoved={onAssetHiddenOrRemoved}
+        />
+      </Wrapper>,
+    );
+    fireEvent.click(
+      await screen.findByTestId("SwapTokenRow-USDC-view-details"),
+    );
+    const mountFetches = fromFetchData.mock.calls.length;
+
+    fireEvent.click(screen.getByTestId("asset-detail-hide"));
+
+    expect(onAssetHiddenOrRemoved).toHaveBeenCalledWith(USDC);
+    // A hide only changes the hidden list, which the cached read applies.
+    expect(fromFetchData.mock.calls.slice(mountFetches)).toEqual([[true]]);
   });
 
   it("opens the detail sheet from a Your tokens row", async () => {

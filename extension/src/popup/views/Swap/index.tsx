@@ -33,7 +33,7 @@ import { resetSimulation } from "popup/ducks/token-payment";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { isAssetVisible } from "popup/helpers/settings";
-import { swapIdentityKey } from "popup/helpers/swapQuote";
+import { swapIdentityKey, swapSidesMatching } from "popup/helpers/swapQuote";
 import { readHiddenAssets } from "popup/helpers/useHiddenAssets";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { isNativeAssetId } from "@shared/helpers/assetIdentity";
@@ -256,6 +256,7 @@ export const Swap = () => {
             selectionType="destination"
             hiddenAssets={[transactionData.asset]}
             goBack={() => setActiveStep(STEPS.AMOUNT)}
+            onAssetHiddenOrRemoved={clearHiddenSelection}
             onClickAsset={(canonical, _isContract, details) => {
               dispatch(saveDestinationAsset(canonical));
               // isToken describes the source (the review reads it against
@@ -318,6 +319,7 @@ export const Swap = () => {
             selectionType="source"
             hiddenAssets={[transactionData.destinationAsset]}
             goBack={() => setActiveStep(STEPS.AMOUNT)}
+            onAssetHiddenOrRemoved={clearHiddenSelection}
             onClickAsset={(canonical: string, isContract: boolean) => {
               dispatch(saveAsset(canonical));
               dispatch(saveIsToken(isContract));
@@ -342,6 +344,20 @@ export const Swap = () => {
           />
         );
       }
+    }
+  };
+
+  // A token hidden or removed from a picker's details sheet can no longer be
+  // swapped; drop it from whichever side holds it.
+  const clearHiddenSelection = (canonical: string) => {
+    const sides = swapSidesMatching(canonical, transactionData);
+    if (sides.source) {
+      dispatch(saveAsset(""));
+      dispatch(saveIsToken(false));
+    }
+    if (sides.destination) {
+      dispatch(saveDestinationAsset(""));
+      dispatch(saveDestinationTokenDetails(null));
     }
   };
 

@@ -59,6 +59,11 @@ interface SwapAssetProps {
     details?: SwapPickerSelection,
   ) => void;
   goBack: () => void;
+  /**
+   * A token was hidden or removed from the details sheet, so it is no longer
+   * pickable; the caller drops it from whichever swap side holds it.
+   */
+  onAssetHiddenOrRemoved?: (canonical: string) => void;
 }
 
 const EMPTY_BALANCES: AccountBalances = {
@@ -84,6 +89,7 @@ export const SwapAsset = ({
   hiddenAssets,
   onClickAsset,
   goBack,
+  onAssetHiddenOrRemoved,
 }: SwapAssetProps) => {
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -483,6 +489,16 @@ export const SwapAsset = ({
         accountBalances={sheetBalances}
         source={TokenChartSource.SwapPicker}
         onClose={() => setDetails(null)}
+        onBalancesChanged={(change) => {
+          if (!details) {
+            return;
+          }
+          onAssetHiddenOrRemoved?.(details.record.canonical);
+          // The list was loaded once on mount. A hide only changes the
+          // hidden list, which the cached read applies; a removed trustline
+          // needs the balances again.
+          void fetchData(change === "hidden");
+        }}
         swapTo={
           details
             ? {

@@ -118,6 +118,20 @@ const isContractToken = (canonical: string) =>
 export const swapIdentityKey = (canonical: string) =>
   isContractToken(canonical) ? splitCanonical(canonical).issuer : canonical;
 
+/** Which swap sides currently hold `canonical`, by swap identity. */
+export const swapSidesMatching = (
+  canonical: string,
+  sides: { asset: string; destinationAsset: string },
+) => {
+  const key = swapIdentityKey(canonical);
+  return {
+    source: !!sides.asset && swapIdentityKey(sides.asset) === key,
+    destination:
+      !!sides.destinationAsset &&
+      swapIdentityKey(sides.destinationAsset) === key,
+  };
+};
+
 export const toBackendAsset = (canonical: string) => {
   if (isNativeAssetId(canonical)) {
     return "XLM";

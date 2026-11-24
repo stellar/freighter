@@ -26,6 +26,8 @@ interface AssetDetailSheetProps {
   onClose: () => void;
   /** Swap To footer for the open asset; the swap picker sets it. */
   swapTo?: SwapToAction;
+  /** The held view hid or removed the token; the list behind must reload. */
+  onBalancesChanged?: (change: "hidden" | "removed") => void;
 }
 
 export const AssetDetailSheet = ({
@@ -34,6 +36,7 @@ export const AssetDetailSheet = ({
   source,
   onClose,
   swapTo,
+  onBalancesChanged,
 }: AssetDetailSheetProps) => {
   const { state, fetchData } = useGetAccountHistoryData();
   const canonical = asset?.canonical;
@@ -82,6 +85,7 @@ export const AssetDetailSheet = ({
                 source={source}
                 handleClose={onClose}
                 swapTo={swapTo}
+                onBalancesChanged={onBalancesChanged}
               />
             ) : (
               <NonHeldAssetDetail

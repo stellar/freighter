@@ -153,6 +153,11 @@ interface AssetDetailProps {
   source?: TokenChartSource;
   /** Renders the Swap To footer; set by the swap picker only. */
   swapTo?: SwapToAction;
+  /**
+   * The token was hidden or its trustline removed, so the caller's list no
+   * longer holds it. Home reloads on close already; the swap picker does not.
+   */
+  onBalancesChanged?: (change: "hidden" | "removed") => void;
 }
 
 export const AssetDetail = ({
@@ -163,6 +168,7 @@ export const AssetDetail = ({
   hasHistoryError = false,
   source = TokenChartSource.Balances,
   swapTo,
+  onBalancesChanged,
 }: AssetDetailProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -207,6 +213,7 @@ export const AssetDetail = ({
       setOptionsOpen(false);
       // The asset is gone from the list behind this sheet, so there is nothing
       // left to return to; closing reloads the balances with it filtered out.
+      onBalancesChanged?.("hidden");
       handleClose();
       showToast(() => (
         <Notification
@@ -732,7 +739,10 @@ export const AssetDetail = ({
                 networkDetails={networkDetails}
                 publicKey={publicKey}
                 onCancel={() => setBody("detail")}
-                onSuccess={handleClose}
+                onSuccess={() => {
+                  onBalancesChanged?.("removed");
+                  handleClose();
+                }}
                 // The "you can close this tab" hint only makes sense in the
                 // standalone popup.
                 hideCloseTabHint
@@ -747,7 +757,10 @@ export const AssetDetail = ({
                 // Rejecting goes back to the detail body; confirming cannot,
                 // since that page is for the token that was just removed --
                 // and still offers Remove. Matches ChangeTrustInternal above.
-                onSuccess={handleClose}
+                onSuccess={() => {
+                  onBalancesChanged?.("removed");
+                  handleClose();
+                }}
                 source="asset_detail"
               />
             )}

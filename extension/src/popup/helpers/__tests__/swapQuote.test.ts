@@ -7,7 +7,11 @@ import { captureException } from "@sentry/browser";
 import * as GetSwapQuotes from "@shared/api/helpers/getSwapQuotes";
 import * as HorizonGetBestPath from "popup/helpers/horizonGetBestPath";
 
-import { getHeldTokenDecimals, getSwapQuote } from "../swapQuote";
+import {
+  getHeldTokenDecimals,
+  getSwapQuote,
+  swapSidesMatching,
+} from "../swapQuote";
 
 jest.mock("@sentry/browser", () => ({ captureException: jest.fn() }));
 
@@ -453,5 +457,25 @@ describe("getHeldTokenDecimals", () => {
     ["no token", ""],
   ])("is undefined for %s", (_name, canonical) => {
     expect(getHeldTokenDecimals(canonical, [heldToken])).toBeUndefined();
+  });
+});
+
+describe("swapSidesMatching", () => {
+  const USDC = "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+  const KALE = "KALE:CB23WRDQWGSP6YPMY4UV5C4OW5CBTXKYN3XEATG7KJEZCXMJBYEHOUOV";
+
+  it("names the side a canonical is selected on, by swap identity", () => {
+    expect(
+      swapSidesMatching(USDC, { asset: USDC, destinationAsset: "" }),
+    ).toEqual({ source: true, destination: false });
+    expect(
+      swapSidesMatching(KALE, {
+        asset: USDC,
+        destinationAsset: `K2:${KALE.split(":")[1]}`,
+      }),
+    ).toEqual({ source: false, destination: true });
+    expect(
+      swapSidesMatching(USDC, { asset: "", destinationAsset: "" }),
+    ).toEqual({ source: false, destination: false });
   });
 });
