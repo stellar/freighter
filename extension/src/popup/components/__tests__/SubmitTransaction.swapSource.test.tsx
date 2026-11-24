@@ -10,6 +10,8 @@ import { getSdk } from "@shared/helpers/stellar";
 import * as ApiInternal from "@shared/api/internal";
 import { initialState as txInitialState } from "popup/ducks/transactionSubmission";
 import { emitMetric } from "helpers/metrics";
+import { RequestState } from "constants/request";
+import * as UseSubmitTxData from "popup/components/InternalTransaction/SubmitTransaction/hooks/useSubmitTxData";
 
 jest.mock("helpers/metrics", () => ({
   emitMetric: jest.fn(),
@@ -83,7 +85,7 @@ jest.spyOn(global, "fetch").mockResolvedValue({
 const USDC_CANONICAL =
   "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
 
-const renderSwapSubmit = (swapSource: string | null) =>
+const renderSwapSubmit = (swapSource: string | null, destinationAmount = "") =>
   render(
     <Wrapper
       // The swap route makes useIsSwap() true for the submit hook.
@@ -105,6 +107,7 @@ const renderSwapSubmit = (swapSource: string | null) =>
             ...txInitialState.transactionData,
             asset: "native",
             destinationAsset: USDC_CANONICAL,
+            destinationAmount,
             swapSource,
           },
         },
@@ -160,5 +163,43 @@ describe("swap.completed source property", () => {
     );
     expect(swapCompletedCall).toBeDefined();
     expect(swapCompletedCall![1]).not.toHaveProperty("source");
+  });
+});
+
+describe("swap receive amount on the submit screen", () => {
+  let submitSpy: jest.SpyInstance | undefined;
+  const mockSubmitState = (state: RequestState) => {
+    submitSpy = jest.spyOn(UseSubmitTxData, "useSubmitTxData").mockReturnValue({
+      state: { state, data: null, error: null },
+      fetchData: jest.fn(),
+    } as any);
+  };
+
+  afterEach(() => {
+    submitSpy?.mockRestore();
+  });
+
+  it("drops the quote's trailing zeros while swapping", async () => {
+    mockSubmitState(RequestState.LOADING);
+    const { findByText, getByText, queryByText } = renderSwapSubmit(
+      null,
+      "1234.5670000",
+    );
+
+    expect(await findByText("to")).toBeInTheDocument();
+    expect(getByText("1,234.567 USDC")).toBeInTheDocument();
+    expect(queryByText("1234.5670000 USDC")).toBeNull();
+  });
+
+  it("drops the quote's trailing zeros once swapped", async () => {
+    mockSubmitState(RequestState.SUCCESS);
+    const { findByText, getByText, queryByText } = renderSwapSubmit(
+      null,
+      "1.3746270",
+    );
+
+    expect(await findByText("Swapped!")).toBeInTheDocument();
+    expect(getByText("1.374627 USDC")).toBeInTheDocument();
+    expect(queryByText("1.3746270 USDC")).toBeNull();
   });
 });

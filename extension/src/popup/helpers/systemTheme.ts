@@ -1,9 +1,17 @@
 /**
- * System-theme following (freighter-private#18). The whole UI is themed by the
+ * Theme application (freighter-private#18, #38). The whole UI is themed by the
  * body's `.sds-theme-*` class — SDS's tokens and the Varial palette overrides
- * are both keyed to it — so following the device theme is just keeping that
- * class in sync with `prefers-color-scheme`.
+ * are both keyed to it — so theming is keeping that class in sync with the
+ * user's preference, resolving "system" through `prefers-color-scheme`.
  */
+
+import browser from "webextension-polyfill";
+import {
+  DEFAULT_THEME_PREFERENCE,
+  ThemePreference,
+  coerceThemePreference,
+} from "@shared/constants/theme";
+import { THEME_PREFERENCE_ID } from "constants/localStorageTypes";
 
 /** Same query the OS exposes to stylesheets; shared with tests. */
 export const DARK_SCHEME_QUERY = "(prefers-color-scheme: dark)";
@@ -26,26 +34,89 @@ export const getSystemColorScheme = (): ColorScheme =>
 
 /**
  * The scheme the UI is actually rendering, read from the body class rather
- * than the media query: #38's manual override will set the class without the
- * device preference changing, and metrics report what the user sees.
+ * than the media query, so it reflects a pinned light/dark preference too.
  */
 export const getAppliedColorScheme = (): ColorScheme =>
   document.body.classList.contains(THEME_CLASS.dark) ? "dark" : "light";
 
-const applyColorScheme = (scheme: ColorScheme) => {
+let currentPreference: ThemePreference = DEFAULT_THEME_PREFERENCE;
+const listeners = new Set<() => void>();
+
+export const getThemePreferenceInEffect = (): ThemePreference =>
+  currentPreference;
+
+/** Shaped for React's useSyncExternalStore; returns an unsubscribe. */
+export const subscribeToThemePreference = (listener: () => void) => {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+};
+
+const updatePreference = (preference: ThemePreference) => {
+  const changed = preference !== currentPreference;
+  currentPreference = preference;
+  applyColorScheme();
+  if (changed) {
+    listeners.forEach((listener) => listener());
+  }
+};
+
+const resolveColorScheme = (preference: ThemePreference): ColorScheme =>
+  preference === "system" ? getSystemColorScheme() : preference;
+
+const applyColorScheme = () => {
+  const scheme = resolveColorScheme(currentPreference);
   document.body.classList.remove(THEME_CLASS.dark, THEME_CLASS.light);
   document.body.classList.add(THEME_CLASS[scheme]);
 };
 
+// Picks this page has applied but not yet saved. Their own storage events can
+// land after a newer pick, so those events are ignored.
+const unsavedPicks: ThemePreference[] = [];
+
 /**
- * Applies the device scheme now and keeps following it for the lifetime of
- * the page, including live system-theme changes while the popup is open.
+ * Applies a preference to this page only. Persisting it to chrome.storage,
+ * which updates the other open pages, is popup/helpers/themePreference's job.
  */
-export const followSystemColorScheme = () => {
-  applyColorScheme(getSystemColorScheme());
-  // The handler re-derives through getSystemColorScheme rather than reading
-  // the event, so the initial and live paths can't drift apart.
+export const setThemePreference = (preference: ThemePreference) => {
+  updatePreference(preference);
+};
+
+export const trackUnsavedPick = async <T>(
+  preference: ThemePreference,
+  save: Promise<T>,
+): Promise<T> => {
+  unsavedPicks.push(preference);
+  try {
+    return await save;
+  } finally {
+    unsavedPicks.splice(unsavedPicks.indexOf(preference), 1);
+  }
+};
+
+/**
+ * Applies the default now and keeps the theme current for the lifetime of the
+ * page: live system-theme changes (only visible while the preference is
+ * "system") and changes saved from another open extension page. The saved
+ * choice itself is loaded by popup/helpers/themePreference.
+ */
+export const initColorScheme = () => {
+  applyColorScheme();
+
+  // Re-resolves rather than reading the event, so the initial and live paths
+  // can't drift apart; a pinned preference resolves the same either way.
   window.matchMedia?.(DARK_SCHEME_QUERY)?.addEventListener?.("change", () => {
-    applyColorScheme(getSystemColorScheme());
+    applyColorScheme();
+  });
+
+  browser.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== "local" || !(THEME_PREFERENCE_ID in changes)) {
+      return;
+    }
+    const stored = coerceThemePreference(changes[THEME_PREFERENCE_ID].newValue);
+    if (!unsavedPicks.includes(stored)) {
+      updatePreference(stored);
+    }
   });
 };

@@ -74,6 +74,8 @@ export const METRIC_NAMES = {
   ethenaLaunchReceiveTapped: "ethena_launch.receive_tapped",
   ethenaLaunchLearnMoreTapped: "ethena_launch.learn_more_tapped",
   ethenaLaunchBannerDismissed: "ethena_launch.banner_dismissed",
+  // carries preferred_theme, previous_preferred_theme (system | light | dark)
+  themeChanged: "theme.changed",
 
   // -- Token price chart ----------------------------------------------------
   // Fired when the price-history fetch resolves (`has_data` known) — not a

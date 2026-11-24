@@ -17,6 +17,7 @@ import {
   AutoLockTimeoutMinutes,
   DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
 } from "@shared/constants/autoLock";
+import { ThemePreference } from "@shared/constants/theme";
 import {
   AssetListResponse,
   AssetsListItem,
@@ -1474,12 +1475,15 @@ export const getTokenDetails = async ({
   networkDetails,
   shouldFetchBalance,
   signal,
+  throwOnFailure = false,
 }: {
   contractId: string;
   publicKey: string;
   networkDetails: NetworkDetails;
   shouldFetchBalance?: boolean;
   signal?: AbortSignal;
+  /** Rethrow a failed request, so it can be told apart from "not a token". */
+  throwOnFailure?: boolean;
 }): Promise<{
   name: string;
   decimals: number;
@@ -1537,6 +1541,11 @@ export const getTokenDetails = async ({
       }${shouldFetchBalance ? "&should_fetch_balance=true" : ""}`,
       { signal },
     );
+    // Not a token contract: an answer, not a failure. Checked before the
+    // body is parsed, since a 400 can be plain text.
+    if (response.status === 400) {
+      return null;
+    }
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data);
@@ -1553,6 +1562,9 @@ export const getTokenDetails = async ({
         error,
       )} - ${contractId} - ${networkDetails.network}`,
     );
+    if (throwOnFailure) {
+      throw error;
+    }
     return null;
   }
 };
@@ -2613,6 +2625,22 @@ export const dismissEthenaLaunchBanner = async (): Promise<{
   }
 
   return { isDismissed: !!isDismissed };
+};
+
+export const saveThemePreference = async (
+  themePreference: ThemePreference,
+): Promise<ThemePreference> => {
+  const { themePreference: saved, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.SAVE_THEME_PREFERENCE,
+    themePreference,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return saved;
 };
 
 export const removeTokenId = async ({

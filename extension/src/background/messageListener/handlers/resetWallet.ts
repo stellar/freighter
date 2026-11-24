@@ -21,6 +21,7 @@ import {
   NETWORKS_LIST_ID,
   OVERRIDDEN_BLOCKAID_RESPONSE_ID,
   STORAGE_VERSION,
+  THEME_PREFERENCE_ID,
 } from "constants/localStorageTypes";
 import { broadcastSessionState } from "../helpers/broadcast-session-state";
 
@@ -43,6 +44,7 @@ export const RESET_WALLET_KEEP_LIST: readonly string[] = [
   // The default (12 hours) is longer than almost every choice, so erasing the
   // user's setting would silently weaken their security.
   AUTO_LOCK_TIMEOUT_MINUTES_ID,
+  THEME_PREFERENCE_ID,
   IS_EXPERIMENTAL_MODE_ID,
   IS_HASH_SIGNING_ENABLED_ID,
   IS_NON_SSL_ENABLED_ID,

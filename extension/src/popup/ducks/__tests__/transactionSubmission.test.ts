@@ -15,6 +15,7 @@ import {
   submitFreighterTransaction,
   initialState,
   DestinationTokenDetails,
+  saveSwapBestPath,
 } from "../transactionSubmission";
 
 const makeStore = () =>
@@ -132,6 +133,40 @@ describe("transactionSubmission isSwapQuoteExpired", () => {
   });
 });
 
+describe("transactionSubmission swapQuoteKey", () => {
+  const key = {
+    account: "GCXRLIZUQNZ3YYJDGX6Z445P7FG5WXT7UILBO5CFIYYM7Z7YTIOELC6O",
+    network: NETWORKS.PUBLIC,
+    networkUrl: "https://horizon.stellar.org",
+    mode: "send" as const,
+    sourceAsset: "native",
+    destAsset: "AQUA:GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
+    amount: "10",
+  };
+  const storedKey = (store: ReturnType<typeof makeStore>) =>
+    store.getState().transactionSubmission.transactionData.swapQuoteKey;
+
+  it("stores the request a quote answered", () => {
+    const store = makeStore();
+    store.dispatch(saveSwapBestPath({ path: [], destinationAmount: "1", key }));
+    expect(storedKey(store)).toEqual(key);
+  });
+
+  it("drops the key when the quote expires at submit, so retry re-quotes", () => {
+    const store = makeStore();
+    store.dispatch(saveSwapBestPath({ path: [], destinationAmount: "1", key }));
+    store.dispatch(rejectedWith(["op_under_dest_min"]));
+    expect(storedKey(store)).toBeNull();
+  });
+
+  it("keeps the key on a submit failure that isn't an expiry", () => {
+    const store = makeStore();
+    store.dispatch(saveSwapBestPath({ path: [], destinationAmount: "1", key }));
+    store.dispatch(rejectedWith(["op_underfunded"]));
+    expect(storedKey(store)).toEqual(key);
+  });
+});
+
 describe("transactionSubmission removeTokenId", () => {
   const CONTRACT = "CTOKEN";
 
@@ -182,5 +217,50 @@ describe("transactionSubmission removeTokenId", () => {
     expect((res as any).payload).toEqual({
       errorMessage: "Public key does not match active public key",
     });
+  });
+});
+
+describe("saveSwapBestPath and the pair's last quoted resource fee", () => {
+  it("keeps the last route's resource fee when a quote comes back with no route", () => {
+    const key = {
+      mode: "send",
+      amount: "1",
+      sourceAsset: "native",
+      destAsset: "TKN:CB23WRDQWGSP6YPMY4UV5C4OW5CBTXKYN3XEATG7KJEZCXMJBYEHOUOV",
+      network: "PUBLIC",
+      publicKey: "G123",
+    } as never;
+    const withRoute = transactionSubmissionReducer(
+      undefined,
+      saveSwapBestPath({
+        path: [],
+        destinationAmount: "2",
+        quotes: {
+          routes: [
+            {
+              source: "lifi",
+              fromAmount: "1",
+              toAmount: "2",
+              paths: [],
+              fees: [],
+              resourceFee: "0.05",
+            },
+          ],
+          unavailable: [],
+        } as never,
+        key,
+      }),
+    );
+    const noRoute = transactionSubmissionReducer(
+      withRoute,
+      saveSwapBestPath({
+        path: [],
+        destinationAmount: "0",
+        quotes: { routes: [], unavailable: [] },
+        key: { ...(key as object), amount: "999999" } as never,
+      }),
+    );
+
+    expect(noRoute.transactionData.swapLastQuotedFee?.resourceFee).toBe("0.05");
   });
 });
