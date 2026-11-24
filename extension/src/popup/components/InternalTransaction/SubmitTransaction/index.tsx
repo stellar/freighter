@@ -26,6 +26,7 @@ import {
   publicKeySelector,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { formatAmount, trimTrailingZeros } from "popup/helpers/formatters";
 import {
   resetSubmission,
   transactionSubmissionSelector,
@@ -306,7 +307,8 @@ export const SendingTransaction = ({
                           {`${t("to")} `}
                         </span>
                         <span className="SendingTransaction__Summary__Description__Label">
-                          {destinationAmount} {dstAsset.code}
+                          {formatAmount(trimTrailingZeros(destinationAmount))}{" "}
+                          {dstAsset.code}
                         </span>
                       </>
                     ) : (
@@ -335,7 +337,8 @@ export const SendingTransaction = ({
                           {`${t("was swapped to")} `}
                         </span>
                         <span className="SendingTransaction__Summary__Description__Label">
-                          {destinationAmount} {dstAsset.code}
+                          {formatAmount(trimTrailingZeros(destinationAmount))}{" "}
+                          {dstAsset.code}
                         </span>
                       </>
                     ) : (

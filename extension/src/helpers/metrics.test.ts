@@ -401,6 +401,33 @@ describe("consent hydration (startup)", () => {
     );
   });
 
+  it("sends preferred_theme once consent hydrates to allowed", async () => {
+    let mod: typeof import("helpers/metrics");
+    let store: { subscribe: jest.Mock };
+    let settingsMod: { settingsDataSharingSelector: jest.Mock };
+    let sdk: typeof amplitude;
+    jest.isolateModules(() => {
+      mod = require("helpers/metrics");
+      store = require("popup/App").store;
+      settingsMod = require("popup/ducks/settings");
+      sdk = require("@amplitude/analytics-browser");
+    });
+    const set = jest.fn();
+    (sdk!.Identify as unknown as jest.Mock).mockImplementation(() => ({ set }));
+
+    settingsMod!.settingsDataSharingSelector.mockReturnValue(false);
+    store!.subscribe.mockClear();
+    await mod!.initAmplitude();
+    expect(set).not.toHaveBeenCalledWith("preferred_theme", expect.anything());
+
+    settingsMod!.settingsDataSharingSelector.mockReturnValue(true);
+    const subCb =
+      store!.subscribe.mock.calls[store!.subscribe.mock.calls.length - 1][0];
+    subCb();
+
+    expect(set).toHaveBeenCalledWith("preferred_theme", "system");
+  });
+
   it("does not send or cache Identify while data-sharing is disallowed, then sends once allowed", async () => {
     let mod: typeof import("helpers/metrics");
     let settingsMod: { settingsDataSharingSelector: jest.Mock };
@@ -592,5 +619,81 @@ describe("color_scheme common property (#18)", () => {
   it("defaults to light when no theme class is applied yet", () => {
     document.body.className = "";
     expect(buildCommonContext({} as never).color_scheme).toBe("light");
+  });
+});
+
+describe("syncPreferredThemeTrait", () => {
+  const load = () => {
+    let mod: typeof import("helpers/metrics");
+    let settingsMod: { settingsDataSharingSelector: jest.Mock };
+    let sdk: typeof amplitude;
+    jest.isolateModules(() => {
+      mod = require("helpers/metrics");
+      settingsMod = require("popup/ducks/settings");
+      sdk = require("@amplitude/analytics-browser");
+    });
+    return { mod: mod!, settingsMod: settingsMod!, sdk: sdk! };
+  };
+
+  it("sets preferred_theme once per change", async () => {
+    const { mod, settingsMod, sdk } = load();
+    settingsMod.settingsDataSharingSelector.mockReturnValue(true);
+    await mod.initAmplitude();
+    (sdk.identify as jest.Mock).mockClear();
+    const set = jest.fn();
+    (sdk.Identify as unknown as jest.Mock).mockImplementation(() => ({ set }));
+
+    mod.syncPreferredThemeTrait("dark");
+    mod.syncPreferredThemeTrait("dark");
+    expect(sdk.identify).toHaveBeenCalledTimes(1);
+    expect(set).toHaveBeenCalledWith("preferred_theme", "dark");
+
+    mod.syncPreferredThemeTrait("system");
+    expect(sdk.identify).toHaveBeenCalledTimes(2);
+  });
+
+  it("re-sends a value this page already sent when forced, since another page may have changed the shared profile", async () => {
+    const { mod, settingsMod, sdk } = load();
+    settingsMod.settingsDataSharingSelector.mockReturnValue(true);
+    await mod.initAmplitude();
+    (sdk.identify as jest.Mock).mockClear();
+    const set = jest.fn();
+    (sdk.Identify as unknown as jest.Mock).mockImplementation(() => ({ set }));
+
+    // initAmplitude already sent "system". Suppose another page then sent
+    // "dark", which this page can't see: an unforced repeat is skipped...
+    mod.syncPreferredThemeTrait("system");
+    expect(sdk.identify).not.toHaveBeenCalled();
+
+    // ...while a forced one restores the profile.
+    mod.syncPreferredThemeTrait("system", { force: true });
+    expect(sdk.identify).toHaveBeenCalledTimes(1);
+    expect(set).toHaveBeenCalledWith("preferred_theme", "system");
+  });
+
+  it("still respects consent when forced", async () => {
+    const { mod, settingsMod, sdk } = load();
+    settingsMod.settingsDataSharingSelector.mockReturnValue(true);
+    await mod.initAmplitude();
+    (sdk.identify as jest.Mock).mockClear();
+
+    settingsMod.settingsDataSharingSelector.mockReturnValue(false);
+    mod.syncPreferredThemeTrait("dark", { force: true });
+    expect(sdk.identify).not.toHaveBeenCalled();
+  });
+
+  it("sends nothing while data sharing is off, then sends once allowed", async () => {
+    const { mod, settingsMod, sdk } = load();
+    settingsMod.settingsDataSharingSelector.mockReturnValue(true);
+    await mod.initAmplitude();
+    (sdk.identify as jest.Mock).mockClear();
+
+    settingsMod.settingsDataSharingSelector.mockReturnValue(false);
+    mod.syncPreferredThemeTrait("light");
+    expect(sdk.identify).not.toHaveBeenCalled();
+
+    settingsMod.settingsDataSharingSelector.mockReturnValue(true);
+    mod.syncPreferredThemeTrait("light");
+    expect(sdk.identify).toHaveBeenCalledTimes(1);
   });
 });

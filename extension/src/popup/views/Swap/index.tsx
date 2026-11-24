@@ -33,6 +33,7 @@ import { resetSimulation } from "popup/ducks/token-payment";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { isAssetVisible } from "popup/helpers/settings";
+import { swapIdentityKey } from "popup/helpers/swapQuote";
 import { readHiddenAssets } from "popup/helpers/useHiddenAssets";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { isNativeAssetId } from "@shared/helpers/assetIdentity";
@@ -255,14 +256,19 @@ export const Swap = () => {
             selectionType="destination"
             hiddenAssets={[transactionData.asset]}
             goBack={() => setActiveStep(STEPS.AMOUNT)}
-            onClickAsset={(canonical, isContract, details) => {
+            onClickAsset={(canonical, _isContract, details) => {
               dispatch(saveDestinationAsset(canonical));
-              dispatch(saveIsToken(isContract));
+              // isToken describes the source (the review reads it against
+              // srcAsset), so a destination pick leaves it alone.
               dispatch(saveDestinationTokenDetails(details ?? null));
               // Can't swap a token for itself: if it matches the current
               // source, reset the source to "(+) Select".
-              if (canonical === transactionData.asset) {
+              if (
+                swapIdentityKey(canonical) ===
+                swapIdentityKey(transactionData.asset)
+              ) {
                 dispatch(saveAsset(""));
+                dispatch(saveIsToken(false));
                 dispatch(saveAmount("0"));
                 dispatch(saveAmountUsd("0.00"));
               }
@@ -319,7 +325,10 @@ export const Swap = () => {
               dispatch(saveAmountUsd("0.00"));
               // Can't swap a token for itself: if it matches the current
               // destination, reset the destination to "(+) Select".
-              if (canonical === transactionData.destinationAsset) {
+              if (
+                swapIdentityKey(canonical) ===
+                swapIdentityKey(transactionData.destinationAsset)
+              ) {
                 dispatch(saveDestinationAsset(""));
                 dispatch(saveDestinationTokenDetails(null));
               }

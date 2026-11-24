@@ -805,4 +805,26 @@ describe("internalApi", () => {
       });
     });
   });
+
+  describe("getTokenDetails", () => {
+    afterEach(() => jest.restoreAllMocks());
+
+    it("treats a plain-text 400 as not a token, even when asked to throw", async () => {
+      jest.spyOn(global, "fetch").mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: () => Promise.reject(new SyntaxError("Unexpected token S")),
+      } as unknown as Response);
+
+      await expect(
+        internalApi.getTokenDetails({
+          contractId:
+            "CBI7UCH5KGSVQRO5H4SUCZUTZABCITZLRHQQZTWL2TK4RZ72TAR6IHRV",
+          publicKey: "G123",
+          networkDetails: MAINNET_NETWORK_DETAILS,
+          throwOnFailure: true,
+        }),
+      ).resolves.toBeNull();
+    });
+  });
 });

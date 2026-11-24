@@ -4,6 +4,7 @@ import * as Popover from "@radix-ui/react-popover";
 import { Icon, Tooltip } from "@stellar/design-system";
 
 import { openTab } from "popup/helpers/navigate";
+import { isContractId } from "popup/helpers/soroban";
 
 import "./styles.scss";
 
@@ -15,8 +16,8 @@ interface SwapTokenMenuProps {
 
 /**
  * The "…" overflow menu shown on the right of a non-held token row in the Swap
- * destination picker: copy the issuer address, or view the asset on
- * stellar.expert.
+ * destination picker: copy the issuer (or contract) address, or view the token
+ * on stellar.expert.
  */
 export const SwapTokenMenu = ({
   code,
@@ -44,7 +45,11 @@ export const SwapTokenMenu = ({
   };
 
   const viewOnExpert = () => {
-    openTab(`${stellarExpertUrl}/asset/${code}-${issuerKey}`);
+    openTab(
+      isContractId(issuerKey)
+        ? `${stellarExpertUrl}/contract/${issuerKey}`
+        : `${stellarExpertUrl}/asset/${code}-${issuerKey}`,
+    );
   };
 
   return (
