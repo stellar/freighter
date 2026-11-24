@@ -68,7 +68,7 @@ describe("Create account message listener", () => {
       mockDataStorage,
       mockKeyManager,
       testAlarm as any,
-      { id: "fake-extension-id" },
+      {},
     )) as Awaited<ReturnType<typeof createAccount>>;
 
     const { session } = mockSessionStore.getState();
@@ -84,6 +84,37 @@ describe("Create account message listener", () => {
     expect(applicationState).toBe(APPLICATION_STATE.PASSWORD_CREATED);
     expect(tempStoreId[keyId]).toBeDefined();
   });
+  it("refuses to overwrite the wallet for a web page", async () => {
+    const request = {
+      type: SERVICE_TYPES.CREATE_ACCOUNT,
+      password: "test",
+      isOverwritingAccount: false,
+    } as CreateAccountMessage;
+    await popupMessageListener(
+      request,
+      mockSessionStore,
+      mockDataStorage,
+      mockKeyManager,
+      testAlarm as any,
+      {},
+    );
+    const before = await mockStorageApi.get(null);
+    const publicKeyBefore = mockSessionStore.getState().session.publicKey;
+
+    const response = await popupMessageListener(
+      { ...request, isOverwritingAccount: true },
+      mockSessionStore,
+      mockDataStorage,
+      mockKeyManager,
+      testAlarm as any,
+      // A web page relayed by the content script, as dev builds allow.
+      { tab: { id: 1 }, url: "https://example.com" } as any,
+    );
+
+    expect(response).toEqual({ error: "Unauthorized" });
+    expect(await mockStorageApi.get(null)).toEqual(before);
+    expect(mockSessionStore.getState().session.publicKey).toBe(publicKeyBefore);
+  });
   it("registers the new phrase as Seed Phrase 1 and holds its mnemonic", async () => {
     await popupMessageListener(
       {
@@ -95,7 +126,7 @@ describe("Create account message listener", () => {
       mockDataStorage,
       mockKeyManager,
       testAlarm as any,
-      { id: "fake-extension-id" },
+      {},
     );
 
     expect(await getSecretSources({ localStore: mockDataStorage })).toEqual({
@@ -124,7 +155,7 @@ describe("Create account message listener", () => {
       mockDataStorage,
       mockKeyManager,
       testAlarm as any,
-      { id: "fake-extension-id" },
+      {},
     );
     // A pin the old wallet held that the new phrase does not derive.
     await setPinnedSourceId({
@@ -142,7 +173,7 @@ describe("Create account message listener", () => {
       mockDataStorage,
       mockKeyManager,
       testAlarm as any,
-      { id: "fake-extension-id" },
+      {},
     );
 
     const sources = await getSecretSources({ localStore: mockDataStorage });
@@ -164,7 +195,7 @@ describe("Create account message listener", () => {
       mockDataStorage,
       mockKeyManager,
       testAlarm as any,
-      { id: "fake-extension-id" },
+      {},
     )) as Awaited<ReturnType<typeof createAccount>>;
     const keyId = await mockDataStorage.getItem(KEY_ID);
 
@@ -178,7 +209,7 @@ describe("Create account message listener", () => {
       mockDataStorage,
       mockKeyManager,
       testAlarm as any,
-      { id: "fake-extension-id" },
+      {},
     )) as Awaited<ReturnType<typeof createAccount>>;
     const secondKeyId = await mockDataStorage.getItem(KEY_ID);
     const keyIdList = await mockDataStorage.getItem(KEY_ID_LIST);
@@ -201,7 +232,7 @@ describe("Create account message listener", () => {
       mockDataStorage,
       mockKeyManager,
       testAlarm as any,
-      { id: "fake-extension-id" },
+      {},
     )) as Awaited<ReturnType<typeof createAccount>>;
     const keyId = await mockDataStorage.getItem(KEY_ID);
 
@@ -215,7 +246,7 @@ describe("Create account message listener", () => {
       mockDataStorage,
       mockKeyManager,
       testAlarm as any,
-      { id: "fake-extension-id" },
+      {},
     )) as Awaited<ReturnType<typeof createAccount>>;
     const secondKeyId = await mockDataStorage.getItem(KEY_ID);
     const keyIdList = await mockDataStorage.getItem(KEY_ID_LIST);

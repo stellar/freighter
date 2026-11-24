@@ -12,6 +12,8 @@ import {
 import { AUTH_KEYPAIR_VECTORS } from "@shared/api/helpers/authKeypairVectors";
 import { SecretSourceType } from "@shared/api/types";
 import { getMnemonics } from "background/helpers/session";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { APPLICATION_ID } from "constants/localStorageTypes";
 import {
   getPinnedSourceId,
   getSecretSources,
@@ -40,7 +42,10 @@ jest.mock("stellar-hd-wallet", () => ({
 
 const testAlarm = new MockBrowserAlarm(() => {});
 
-const recover = (isOverwritingAccount = false) =>
+// A web page relayed by the content script, as dev builds allow.
+const WEB_PAGE_SENDER = { tab: { id: 1 }, url: "https://example.com" };
+
+const recover = (isOverwritingAccount = false, sender: object = {}) =>
   popupMessageListener(
     {
       type: SERVICE_TYPES.RECOVER_ACCOUNT,
@@ -52,7 +57,7 @@ const recover = (isOverwritingAccount = false) =>
     mockDataStorage,
     mockKeyManager,
     testAlarm as any,
-    { id: "fake-extension-id" },
+    sender as any,
   );
 
 describe("Recover account message listener", () => {
@@ -79,6 +84,25 @@ describe("Recover account message listener", () => {
   afterEach(() => {
     jest.restoreAllMocks();
   });
+
+  it.each([
+    APPLICATION_STATE.PASSWORD_CREATED,
+    APPLICATION_STATE.MNEMONIC_PHRASE_FAILED,
+  ])(
+    "marks the wallet onboarded over an abandoned create (%s)",
+    async (state) => {
+      await mockDataStorage.setItem(APPLICATION_ID, state);
+
+      const res = (await recover()) as { applicationState: string };
+
+      expect(res.applicationState).toBe(
+        APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+      );
+      expect(await mockDataStorage.getItem(APPLICATION_ID)).toBe(
+        APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+      );
+    },
+  );
 
   // Regression: the preload loop used to store derivation indices 1..n with
   // `imported: true`, so recovering a phrase with several funded accounts
@@ -136,6 +160,17 @@ describe("Recover account message listener", () => {
       VECTOR.userId,
     );
   });
+
+  it("refuses a web page and leaves the wallet untouched", async () => {
+    await recover();
+    const before = await mockStorageApi.get(null);
+
+    const res = await recover(true, WEB_PAGE_SENDER);
+
+    expect(res).toEqual({ error: "Unauthorized" });
+    expect(await mockStorageApi.get(null)).toEqual(before);
+  });
+
   it("gives up on a stalled funded lookup and still recovers index 0", async () => {
     // Every lookup stalls until its signal aborts; abort them at once instead
     // of waiting out the real timeout.

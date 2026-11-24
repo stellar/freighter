@@ -116,13 +116,6 @@ describe("views navigate handler → screen.viewed", () => {
       flow: "onboarding",
       step: "success",
     });
-
-    (emitScreenViewed as jest.Mock).mockClear();
-    fireNavigate(ROUTES.recoverAccountSuccess);
-    expect(emitScreenViewed).toHaveBeenCalledWith("recover_account_success", {
-      flow: "onboarding",
-      step: "success",
-    });
   });
 
   it("preserves the domain/subdomain props on the grant-access screen", () => {

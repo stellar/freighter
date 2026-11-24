@@ -70,7 +70,7 @@ const send = (request: object) =>
     mockDataStorage,
     mockKeyManager,
     testAlarm as any,
-    { id: "fake-extension-id" },
+    {},
   );
 
 const createWallet = () =>

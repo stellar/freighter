@@ -112,7 +112,7 @@ const send = (request: object) =>
     mockDataStorage,
     mockKeyManager,
     testAlarm as any,
-    { id: "fake-extension-id" },
+    {},
   ) as Promise<any>;
 
 // One of our own pages: no tab and no foreign extension id. (`browser` is

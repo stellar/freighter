@@ -1,12 +1,6 @@
-import {
-  test as base,
-  chromium,
-  BrowserContext,
-  Page,
-  Worker,
-} from "@playwright/test";
-import path from "path";
+import { test as base, BrowserContext, Page, Worker } from "@playwright/test";
 import { STELLAR_EXPERT_ASSET_LIST_JSON } from "./helpers/stubs";
+import { launchExtensionContext } from "./helpers/launch";
 
 export const test = base.extend<{
   context: BrowserContext;
@@ -19,30 +13,7 @@ export const test = base.extend<{
   viewportSize: null,
   language: "en",
   context: async ({ viewportSize }, use) => {
-    const pathToExtension = path.join(__dirname, "../build");
-    const context = await chromium.launchPersistentContext("", {
-      headless: false,
-      args: [
-        `--headless=new`,
-        `--disable-extensions-except=${pathToExtension}`,
-        `--load-extension=${pathToExtension}`,
-      ],
-      // Playwright emulates light by default; the UI follows the device
-      // scheme since #18 and every screenshot baseline was captured dark.
-      // theme.test.ts overrides per page with emulateMedia.
-      colorScheme: "dark",
-      ...(viewportSize ? { viewport: viewportSize } : {}),
-    });
-
-    // Mark every page (including popups opened by the extension) as a
-    // Playwright test environment. Some helpers — e.g. the Blockaid mainnet
-    // gate in `popup/helpers/blockaid.ts` — rely on this flag to opt back
-    // into behavior that's otherwise mainnet-only, so it must apply to
-    // popup windows too, not just the main `page` fixture.
-    await context.addInitScript(() => {
-      (window as unknown as { IS_PLAYWRIGHT?: string }).IS_PLAYWRIGHT = "true";
-    });
-
+    const context = await launchExtensionContext("", viewportSize);
     await use(context);
     await context.close();
   },

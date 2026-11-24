@@ -96,7 +96,7 @@ const send = (request: object) =>
     mockDataStorage,
     mockKeyManager,
     testAlarm as any,
-    { id: "fake-extension-id" },
+    {},
   );
 
 const unlock = (password = PRE_V2_PASSWORD) =>

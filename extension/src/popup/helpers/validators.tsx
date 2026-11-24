@@ -13,3 +13,6 @@ export const termsOfUse = YupBool().oneOf(
   [true],
   "Agreeing to the Terms of Use and the Privacy Policy is required",
 );
+
+// No message: the unchecked box and the disabled button are the feedback.
+export const importAcknowledgement = YupBool().oneOf([true]);

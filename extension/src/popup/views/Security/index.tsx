@@ -1,8 +1,11 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import { Icon } from "@stellar/design-system";
 
 import { ROUTES } from "popup/constants/routes";
+import { secretSourcesSelector } from "popup/ducks/accountServices";
+import { hasRecoveryPhrase } from "popup/helpers/hasRecoveryPhrase";
 
 // import { newTabHref } from "helpers/urls";
 // import { openTab } from "popup/helpers/navigate";
@@ -23,6 +26,7 @@ import "./styles.scss";
 
 export const Security = () => {
   const { t } = useTranslation();
+  const secretSources = useSelector(secretSourcesSelector);
 
   return (
     <React.Fragment>
@@ -40,12 +44,14 @@ export const Security = () => {
             >
               {t("Asset lists")}
             </ListNavLink>
-            <ListNavLink
-              href={ROUTES.displayBackupPhrase}
-              icon={<IconPhrase />}
-            >
-              {t("Show recovery phrase")}
-            </ListNavLink>
+            {hasRecoveryPhrase(secretSources) && (
+              <ListNavLink
+                href={ROUTES.displayBackupPhrase}
+                icon={<IconPhrase />}
+              >
+                {t("Show recovery phrase")}
+              </ListNavLink>
+            )}
             <ListNavLink
               href={ROUTES.advancedSettings}
               icon={<Icon.LifeBuoy01 />}
