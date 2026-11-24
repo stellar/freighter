@@ -245,6 +245,7 @@ export const SearchAsset = () => {
       r.securityLevel === SecurityLevel.SUSPICIOUS ||
       r.securityLevel === SecurityLevel.MALICIOUS,
     isMalicious: r.securityLevel === SecurityLevel.MALICIOUS,
+    isUnableToScan: r.securityLevel === SecurityLevel.UNABLE_TO_SCAN,
   }));
   const isPopularLoading = lookupState.state === LookupRequestState.LOADING;
 

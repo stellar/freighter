@@ -455,6 +455,51 @@ describe("SearchAsset", () => {
       expect(container.querySelector(".SearchResults__loader")).toBeNull();
     });
 
+    it("opens an unscanned Popular token's details with Proceed with caution", async () => {
+      jest
+        .spyOn(ApiInternal, "getTokenPrices")
+        .mockImplementation(() => new Promise(() => {}));
+      jest
+        .spyOn(UseSwapTokenLookup, "useSwapTokenLookup")
+        .mockReturnValue(
+          lookupWith([
+            { ...aqua, securityLevel: SecurityLevel.UNABLE_TO_SCAN },
+          ]) as any,
+        );
+      render(
+        <Wrapper
+          routes={[ROUTES.searchAsset]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+              publicKey: "G1",
+              hasPrivateKey: true,
+              allAccounts: mockAccounts,
+            },
+            settings: {
+              networkDetails: MAINNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+              assetsLists: { [NETWORKS.PUBLIC]: [] },
+            },
+            remoteConfig: {
+              isInitialized: true,
+              use_token_price_history: true,
+            },
+          }}
+        >
+          <SearchAsset />
+        </Wrapper>,
+      );
+
+      fireEvent.click(await screen.findByTestId("ManageAssetRow-AQUA-body"));
+
+      await screen.findByTestId("NonHeldAssetDetail");
+      expect(
+        await screen.findByTestId("AssetDetail__warning"),
+      ).toHaveTextContent("Proceed with caution");
+    });
+
     it("shows the loader while Popular is cold-loading", async () => {
       jest.spyOn(UseSwapTokenLookup, "useSwapTokenLookup").mockReturnValue({
         fetchData: jest.fn().mockResolvedValue(undefined),
