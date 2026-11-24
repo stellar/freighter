@@ -57,6 +57,8 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import * as AccountDataHooks from "../../views/Account/hooks/useGetAccountData";
 import { RequestState } from "helpers/hooks/fetchHookInterface";
 import { ActiveTabProvider } from "../Account/contexts/activeTabContext";
+import { onAccountValue } from "helpers/accountFunding";
+import { useFundedAccountsRefresh } from "popup/helpers/useFundedAccountsRefresh";
 
 const mockHistoryOperations = {
   operations: [
@@ -276,10 +278,20 @@ jest.spyOn(ApiInternal, "loadBackendSettings").mockImplementation(() =>
   }),
 );
 
+jest.mock("helpers/accountFunding", () => ({
+  onAccountValue: jest.fn(),
+  onListAccountValue: jest.fn(),
+}));
+
+// The app-open refresh fetches every account in the background. These tests
+// count balance requests, so keep it out of them.
+jest.mock("popup/helpers/useFundedAccountsRefresh", () => ({
+  useFundedAccountsRefresh: jest.fn(),
+}));
+
 jest.mock("helpers/metrics", () => ({
   storeAccountMetricsData: jest.fn(),
   registerHandler: jest.fn(),
-  storeBalanceMetricData: jest.fn(),
   emitMetric: jest.fn(),
   initAmplitude: jest.fn(),
   metricsMiddleware: jest.fn(),
@@ -1188,6 +1200,78 @@ describe("Account view", () => {
       expect(assetNodes[1]).toHaveTextContent("LP");
       expect(assetNodes[1]).toHaveTextContent("0");
     });
+  });
+
+  it("passes the home-total balances and prices to the funding detection", async () => {
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        isOpenSidebarByDefault: false,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+      }),
+    );
+    jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockBalances));
+    jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockImplementation(() => Promise.resolve(mockPrices));
+    (onAccountValue as jest.Mock).mockClear();
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(onAccountValue).toHaveBeenCalledWith(
+        expect.objectContaining({
+          publicKey: expect.any(String),
+          networkDetails: MAINNET_NETWORK_DETAILS,
+          input: expect.objectContaining({
+            isFunded: true,
+            tokenPrices: mockPrices,
+            hasBalanceError: false,
+            balances: expect.any(Array),
+          }),
+        }),
+      );
+    });
+    expect(useFundedAccountsRefresh).toHaveBeenCalled();
   });
 
   it("shows prices and deltas", async () => {

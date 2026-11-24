@@ -40,9 +40,14 @@ import {
   resolveSurface,
   buildCommonContext,
   deriveIdentifyTraits,
-  storeBalanceMetricData,
   initAmplitude,
   emitScreenViewed,
+  emitMetric,
+  getFundingRecord,
+  getFundingRecordKey,
+  getFundedAccountCount,
+  saveFundingRecord,
+  storeAccountMetricsData,
 } from "helpers/metrics";
 import { isSidebarMode } from "popup/helpers/isSidebarMode";
 import browser from "webextension-polyfill";
@@ -51,9 +56,11 @@ import {
   allAccountsSelector,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { METRICS_DATA } from "constants/localStorageTypes";
+import {
+  ACCOUNT_FUNDING_RECORDS_ID,
+  METRICS_DATA,
+} from "constants/localStorageTypes";
 import { AccountType } from "@shared/api/types";
-import { truncatedPublicKey } from "helpers/stellar";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 describe("getAccountIdHash", () => {
@@ -130,10 +137,6 @@ describe("buildCommonContext (four-bucket property model)", () => {
         accountType: AccountType.FREIGHTER,
         hwExists: false,
         importedExists: true,
-        hwFunded: false,
-        importedFunded: true,
-        freighterFunded: false,
-        unfundedFreighterAccounts: [],
       }),
     );
   });
@@ -236,6 +239,7 @@ describe("deriveIdentifyTraits", () => {
       wallet_count: 3,
       has_hardware_wallet: true,
       has_imported_account: true,
+      funded_account_count: 0,
     });
   });
 
@@ -244,6 +248,7 @@ describe("deriveIdentifyTraits", () => {
       wallet_count: 0,
       has_hardware_wallet: false,
       has_imported_account: false,
+      funded_account_count: 0,
     });
   });
 
@@ -282,45 +287,181 @@ describe("deriveIdentifyTraits", () => {
   });
 });
 
-describe("storeBalanceMetricData (privacy)", () => {
-  const PUBLIC_KEY = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
+describe("funding records", () => {
+  const KEY_A = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
+  const KEY_B = "GBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB";
+  const KEY_C = "GCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC";
 
   beforeEach(() => {
     jest.clearAllMocks();
     localStorage.clear();
-    (settingsNetworkDetailsSelector as unknown as jest.Mock).mockReturnValue({
-      network: "TESTNET",
+  });
+
+  it("keys a record by network and account_id_hash, without the G address", () => {
+    saveFundingRecord("PUBLIC", KEY_A, { status: "unfunded", funded: false });
+    const raw = localStorage.getItem(ACCOUNT_FUNDING_RECORDS_ID)!;
+    expect(raw).not.toContain(KEY_A);
+    expect(raw).not.toContain(KEY_A.slice(0, 10));
+    expect(JSON.parse(raw)).toEqual({
+      [`PUBLIC:${getAccountIdHash(KEY_A)}`]: {
+        status: "unfunded",
+        funded: false,
+      },
     });
-    (publicKeySelector as unknown as jest.Mock).mockReturnValue(PUBLIC_KEY);
+    expect(getFundingRecordKey("PUBLIC", KEY_A)).toBe(
+      `PUBLIC:${getAccountIdHash(KEY_A)}`,
+    );
+    expect(getFundingRecord("PUBLIC", KEY_A)).toEqual({
+      status: "unfunded",
+      funded: false,
+    });
+    expect(getFundingRecord("TESTNET", KEY_A)).toBeUndefined();
+  });
+
+  it("drops fields that the code no longer uses on the next metricsData write (VT-17)", () => {
+    // Fields of the removed account.first_funded detector. No code names
+    // them. storeAccountMetricsData writes a new object, so they go away.
     localStorage.setItem(
       METRICS_DATA,
       JSON.stringify({
         accountType: AccountType.FREIGHTER,
         hwExists: false,
         importedExists: false,
-        hwFunded: false,
+        hwFunded: true,
         importedFunded: false,
-        freighterFunded: false,
-        unfundedFreighterAccounts: [truncatedPublicKey(PUBLIC_KEY)],
+        freighterFunded: true,
+        unfundedFreighterAccounts: ["GAAA…AWHF"],
       }),
+    );
+    storeAccountMetricsData(KEY_A, [
+      { publicKey: KEY_A, name: "A", imported: false },
+    ] as never);
+    expect(JSON.parse(localStorage.getItem(METRICS_DATA)!)).toEqual({
+      accountType: AccountType.FREIGHTER,
+      hwExists: false,
+      importedExists: false,
+    });
+  });
+
+  it("keeps the funding records when metricsData is written", () => {
+    saveFundingRecord("PUBLIC", KEY_A, { funded: true });
+    storeAccountMetricsData(KEY_A, [
+      { publicKey: KEY_A, name: "A", imported: false },
+    ] as never);
+    expect(getFundingRecord("PUBLIC", KEY_A)).toEqual({ funded: true });
+  });
+
+  it("counts own accounts with funded: true on PUBLIC only (VT-24, VT-28)", () => {
+    const accounts = [
+      { publicKey: KEY_A },
+      { publicKey: KEY_B },
+      { publicKey: KEY_C },
+    ] as never;
+    const records = {
+      [getFundingRecordKey("PUBLIC", KEY_A)]: { funded: true },
+      [getFundingRecordKey("PUBLIC", KEY_B)]: {
+        status: "funded" as const,
+        funded: false,
+      },
+      // A testnet record does not count.
+      [getFundingRecordKey("TESTNET", KEY_C)]: { funded: true },
+    };
+    expect(getFundedAccountCount(accounts, records)).toBe(1);
+    // A removed account does not count.
+    expect(
+      getFundedAccountCount([{ publicKey: KEY_B }] as never, records),
+    ).toBe(0);
+  });
+
+  it("adds funded_account_count to the Identify traits", () => {
+    const accounts = [{ publicKey: KEY_A }, { publicKey: KEY_B }] as never;
+    expect(
+      deriveIdentifyTraits(accounts, {
+        [getFundingRecordKey("PUBLIC", KEY_A)]: { funded: true },
+        [getFundingRecordKey("PUBLIC", KEY_B)]: { funded: true },
+      }).funded_account_count,
+    ).toBe(2);
+  });
+});
+
+describe("syncIdentifyTraits funded_account_count (VT-25, VT-26)", () => {
+  const KEY_A = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
+
+  it("sends a changed count one time, and an unchanged count never", async () => {
+    let mod: typeof import("helpers/metrics");
+    let settingsMod: { settingsDataSharingSelector: jest.Mock };
+    let amp: typeof amplitude;
+    jest.isolateModules(() => {
+      mod = require("helpers/metrics");
+      settingsMod = require("popup/ducks/settings");
+      amp = require("@amplitude/analytics-browser");
+    });
+    localStorage.clear();
+    const accounts = [{ publicKey: KEY_A }] as never;
+    settingsMod!.settingsDataSharingSelector.mockReturnValue(true);
+    await mod!.initAmplitude();
+    const identify = amp!.identify as jest.Mock;
+    const identifySet = jest.fn();
+    (amp!.Identify as unknown as jest.Mock).mockImplementation(() => ({
+      set: identifySet,
+    }));
+
+    identify.mockClear();
+    mod!.syncIdentifyTraits(accounts);
+    expect(identify).toHaveBeenCalledTimes(1);
+    expect(identifySet).toHaveBeenCalledWith("funded_account_count", 0);
+
+    // Unchanged: no new Identify.
+    mod!.syncIdentifyTraits(accounts);
+    expect(identify).toHaveBeenCalledTimes(1);
+
+    // Changed: one Identify with the new count.
+    mod!.saveFundingRecord("PUBLIC", KEY_A, { funded: true });
+    identifySet.mockClear();
+    mod!.syncIdentifyTraits(accounts);
+    expect(identify).toHaveBeenCalledTimes(2);
+    expect(identifySet).toHaveBeenCalledWith("funded_account_count", 1);
+
+    // Analytics disabled: no Identify. Enabled again: the next sync sends
+    // the current count.
+    mod!.saveFundingRecord("PUBLIC", KEY_A, { funded: false });
+    settingsMod!.settingsDataSharingSelector.mockReturnValue(false);
+    mod!.syncIdentifyTraits(accounts);
+    expect(identify).toHaveBeenCalledTimes(2);
+    settingsMod!.settingsDataSharingSelector.mockReturnValue(true);
+    identifySet.mockClear();
+    mod!.syncIdentifyTraits(accounts);
+    expect(identify).toHaveBeenCalledTimes(3);
+    expect(identifySet).toHaveBeenCalledWith("funded_account_count", 0);
+  });
+});
+
+describe("emitMetric return value", () => {
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    await initAmplitude();
+  });
+
+  it("returns true when it sends the event", () => {
+    const { settingsDataSharingSelector } = jest.requireMock(
+      "popup/ducks/settings",
+    );
+    settingsDataSharingSelector.mockReturnValue(true);
+    expect(emitMetric(METRIC_NAMES.accountFunded)).toBe(true);
+    expect(amplitude.track).toHaveBeenCalledWith(
+      "account.funded",
+      expect.any(Object),
     );
   });
 
-  it("emits freighterAccountFunded with account_id_hash and never a raw/truncated publicKey", () => {
-    // Ensure emitMetric's `!hasInitialized` guard doesn't short-circuit before
-    // the amplitude.track call this test inspects.
-    initAmplitude();
-    storeBalanceMetricData(PUBLIC_KEY, true);
-
-    expect(amplitude.track).toHaveBeenCalledWith(
-      METRIC_NAMES.accountFirstFunded,
-      expect.objectContaining({
-        account_id_hash: getAccountIdHash(PUBLIC_KEY),
-      }),
+  it("returns false when data sharing is off", () => {
+    const { settingsDataSharingSelector } = jest.requireMock(
+      "popup/ducks/settings",
     );
-
-    const [, body] = (amplitude.track as jest.Mock).mock.calls[0];
-    expect(body).not.toHaveProperty("publicKey");
+    settingsDataSharingSelector.mockReturnValue(false);
+    expect(emitMetric(METRIC_NAMES.accountFunded)).toBe(false);
+    expect(amplitude.track).not.toHaveBeenCalled();
+    settingsDataSharingSelector.mockReturnValue(true);
   });
 });
 

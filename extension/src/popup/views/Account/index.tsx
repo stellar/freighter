@@ -19,6 +19,7 @@ import {
 import { closeWindow, openTab } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { useSwapTopTokensPrewarm } from "popup/helpers/useSwapTopTokensPrewarm";
+import { useFundedAccountsRefresh } from "popup/helpers/useFundedAccountsRefresh";
 
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountCollectibles } from "popup/components/account/AccountCollectibles";
@@ -29,6 +30,7 @@ import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 
 import { isMainnet } from "helpers/stellar";
+import { onAccountValue } from "helpers/accountFunding";
 import { newTabHref } from "helpers/urls";
 import { getTotalUsd, getTotalUsdLabel } from "popup/helpers/balance";
 import { reRouteOnboarding } from "popup/helpers/route";
@@ -85,6 +87,9 @@ export const Account = () => {
   // Warm the swap top-tokens cache in the background so the first Swap entry
   // paints Popular instantly; no-op on testnet / when already cached.
   useSwapTopTokensPrewarm();
+  // Refresh the funded state of every own account in the background, for the
+  // funded_account_count user property. No-op off mainnet or when fresh.
+  useFundedAccountsRefresh();
 
   const previousAccountBalancesRef = useRef<AccountBalances | null>(null);
   const sorobanErrorShownRef = useRef(false);
@@ -135,6 +140,40 @@ export const Account = () => {
       ? accountData.data?.tokenPrices
       : undefined;
   const sortedBalances = useStableSortedBalances(balances, tokenPrices);
+
+  // Funding detection for the active account. It reads the same balances
+  // and prices as the hero total, so it adds no request. Only a resolved
+  // fetch reaches here; a failed fetch sets no data.
+  const resolvedPublicKey =
+    accountData.state === RequestState.SUCCESS &&
+    accountData.data.type === AppDataType.RESOLVED
+      ? accountData.data.publicKey
+      : null;
+  const resolvedNetworkDetails =
+    accountData.state === RequestState.SUCCESS &&
+    accountData.data.type === AppDataType.RESOLVED
+      ? accountData.data.networkDetails
+      : null;
+  useEffect(() => {
+    if (!accountBalances || !resolvedPublicKey || !resolvedNetworkDetails) {
+      return;
+    }
+    onAccountValue({
+      publicKey: resolvedPublicKey,
+      networkDetails: resolvedNetworkDetails,
+      input: {
+        isFunded: accountBalances.isFunded,
+        balances: accountBalances.balances,
+        tokenPrices,
+        hasBalanceError: !!(
+          accountBalances.error?.horizon || accountBalances.error?.soroban
+        ),
+      },
+    });
+    // Runs only when new balances or prices arrive. The key and network
+    // come with the same data.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountBalances, tokenPrices]);
 
   useEffect(() => {
     const getData = async () => {
