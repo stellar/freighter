@@ -84,6 +84,7 @@ const toDescriptor = (r: SwapTokenRecord): NonHeldAssetDescriptor => ({
   domain: r.domain,
   isSuspicious: r.securityLevel === SecurityLevel.SUSPICIOUS,
   isMalicious: r.securityLevel === SecurityLevel.MALICIOUS,
+  isUnableToScan: r.securityLevel === SecurityLevel.UNABLE_TO_SCAN,
   spotPrice: r.spotPrice,
 });
 

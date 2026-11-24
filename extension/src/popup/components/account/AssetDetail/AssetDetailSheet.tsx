@@ -86,6 +86,7 @@ export const AssetDetailSheet = ({
                 handleClose={onClose}
                 swapTo={swapTo}
                 onBalancesChanged={onBalancesChanged}
+                isUnableToScan={asset.isUnableToScan}
               />
             ) : (
               <NonHeldAssetDetail

@@ -283,6 +283,19 @@ describe("NonHeldAssetDetail", () => {
     expect(screen.queryByTestId("AssetDetail__warning")).toBeNull();
   });
 
+  it("shows Proceed with caution for a token Blockaid could not scan, below a flag", async () => {
+    const unscanned = renderDetail({ ...shx, isUnableToScan: true });
+    expect(await screen.findByTestId("AssetDetail__warning")).toHaveTextContent(
+      "Proceed with caution",
+    );
+    unscanned.unmount();
+
+    renderDetail({ ...shx, isUnableToScan: true, isSuspicious: true });
+    expect(await screen.findByTestId("AssetDetail__warning")).toHaveTextContent(
+      "This token was flagged as suspicious",
+    );
+  });
+
   it("hides the chart, About and stats when the flag is off", async () => {
     renderDetail(shx, { isChartEnabled: false });
 

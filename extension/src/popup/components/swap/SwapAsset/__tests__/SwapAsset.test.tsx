@@ -25,7 +25,12 @@ jest.mock("popup/components/account/AssetDetail/AssetDetailSheet", () => ({
     swapTo,
     onBalancesChanged,
   }: {
-    asset: { canonical: string; name?: string; spotPrice?: number } | null;
+    asset: {
+      canonical: string;
+      name?: string;
+      spotPrice?: number;
+      isUnableToScan?: boolean;
+    } | null;
     swapTo?: { code: string; side: "to" | "from"; onSelect: () => void };
     onBalancesChanged?: (change: "hidden" | "removed") => void;
   }) =>
@@ -34,6 +39,7 @@ jest.mock("popup/components/account/AssetDetail/AssetDetailSheet", () => ({
         data-testid="asset-detail-sheet"
         data-name={asset.name}
         data-spot-price={asset.spotPrice}
+        data-unable-to-scan={String(!!asset.isUnableToScan)}
       >
         {asset.canonical}
         <button
@@ -1037,6 +1043,20 @@ describe("SwapAsset destination: View details", () => {
     expect(screen.getByTestId("asset-detail-sheet")).toHaveAttribute(
       "data-spot-price",
       "0.99",
+    );
+  });
+
+  it("carries the record's unable-to-scan verdict to the sheet", async () => {
+    mockLookup([{ ...usdcRecord, securityLevel: "UNABLE_TO_SCAN" }]);
+    renderPicker(true);
+
+    fireEvent.click(
+      await screen.findByTestId("SwapTokenRow-USDC-view-details"),
+    );
+
+    expect(screen.getByTestId("asset-detail-sheet")).toHaveAttribute(
+      "data-unable-to-scan",
+      "true",
     );
   });
 

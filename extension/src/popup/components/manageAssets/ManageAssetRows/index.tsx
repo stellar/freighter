@@ -36,6 +36,7 @@ export type ManageAssetCurrency = {
   icon?: string;
   isSuspicious?: boolean;
   isMalicious?: boolean;
+  isUnableToScan?: boolean;
   decimals?: number;
   balance?: string;
   name?: string;
@@ -141,6 +142,7 @@ export const ManageAssetRows = ({
               isTrustlineActive,
               name,
               price,
+              isUnableToScan,
             }) => {
               const canonicalAsset = getCanonicalFromAsset(code, issuer);
               // A held asset the user hid offers Unhide instead of the menu.
@@ -173,6 +175,7 @@ export const ManageAssetRows = ({
                             isSuspicious,
                             isMalicious,
                             spotPrice: price,
+                            isUnableToScan,
                           })
                       : undefined
                   }
@@ -297,6 +300,7 @@ const AssetRows = ({
     isRemovable,
     isSac,
     price,
+    isUnableToScan,
   }: {
     code: string;
     domain: string | null;
@@ -311,6 +315,7 @@ const AssetRows = ({
     isRemovable: boolean;
     isSac: boolean;
     price?: number;
+    isUnableToScan?: boolean;
   }) => React.ReactNode;
 }) => {
   const { t } = useTranslation();
@@ -342,6 +347,7 @@ const AssetRows = ({
             isSuspicious,
             isMalicious,
             price,
+            isUnableToScan,
           }) => {
             if (!accountBalances.balances) {
               return null;
@@ -387,6 +393,7 @@ const AssetRows = ({
                     contract === nativeContract.contract,
                   name,
                   price,
+                  isUnableToScan,
                 })}
               </div>
             );
@@ -415,6 +422,7 @@ const AssetRows = ({
             isSuspicious,
             isMalicious,
             price,
+            isUnableToScan,
           }) => {
             if (!accountBalances.balances) {
               return null;
@@ -461,6 +469,7 @@ const AssetRows = ({
                     contract === nativeContract.contract,
                   name,
                   price,
+                  isUnableToScan,
                 })}
               </div>
             );
@@ -490,6 +499,7 @@ const AssetRows = ({
           contract = "",
           isSuspicious,
           price,
+          isUnableToScan,
         }) => {
           if (!accountBalances.balances) {
             return null;
@@ -534,6 +544,7 @@ const AssetRows = ({
                   contract === nativeContract.contract,
                 name,
                 price,
+                isUnableToScan,
               })}
             </div>
           );

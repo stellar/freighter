@@ -21,6 +21,7 @@ jest.mock("popup/components/account/AssetDetail/AssetDetailSheet", () => ({
       name?: string;
       contractId?: string;
       spotPrice?: number;
+      isUnableToScan?: boolean;
     } | null;
     onBalancesChanged?: (change: "hidden" | "removed") => void;
   }) =>
@@ -30,6 +31,7 @@ jest.mock("popup/components/account/AssetDetail/AssetDetailSheet", () => ({
         data-name={asset.name}
         data-contract-id={asset.contractId}
         data-spot-price={asset.spotPrice}
+        data-unable-to-scan={String(!!asset.isUnableToScan)}
       >
         {asset.canonical}
         <button
@@ -192,6 +194,25 @@ describe("ManageAssetRows descriptor price", () => {
     expect(screen.getByTestId("asset-detail-sheet")).toHaveAttribute(
       "data-spot-price",
       "0.99",
+    );
+  });
+});
+
+describe("ManageAssetRows descriptor scan verdict", () => {
+  it("carries the row's unable-to-scan verdict to the sheet", () => {
+    renderRows(true, true, [
+      {
+        code: "USDC",
+        issuer: ISSUER,
+        domain: "centre.io",
+        isUnableToScan: true,
+      },
+    ]);
+
+    fireEvent.click(screen.getByTestId("ManageAssetRow-USDC-body"));
+    expect(screen.getByTestId("asset-detail-sheet")).toHaveAttribute(
+      "data-unable-to-scan",
+      "true",
     );
   });
 });

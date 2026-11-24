@@ -158,6 +158,8 @@ interface AssetDetailProps {
    * longer holds it. Home reloads on close already; the swap picker does not.
    */
   onBalancesChanged?: (change: "hidden" | "removed") => void;
+  /** The picker or search record the sheet opened from could not be scanned. */
+  isUnableToScan?: boolean;
 }
 
 export const AssetDetail = ({
@@ -169,6 +171,7 @@ export const AssetDetail = ({
   source = TokenChartSource.Balances,
   swapTo,
   onBalancesChanged,
+  isUnableToScan,
 }: AssetDetailProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -541,6 +544,7 @@ export const AssetDetail = ({
               isChartShown={isChartShown}
               isMalicious={isMalicious}
               isSuspicious={isSuspicious}
+              isUnableToScan={isUnableToScan}
             >
               <div className="AssetDetail__balance-info">
                 <div

@@ -49,9 +49,10 @@ export interface AssetDetailBodyProps {
   assetDomain?: string;
   /** flag && mainnet && !LP — owner decides; the body only renders. */
   isChartShown: boolean;
-  /** Blockaid verdict for the token; malicious wins when both are set. */
+  /** Blockaid verdict for the token; malicious > suspicious > unable to scan. */
   isMalicious?: boolean;
   isSuspicious?: boolean;
+  isUnableToScan?: boolean;
   /** Rendered between the chart and the About card (the held Balance/Value rows). */
   children?: React.ReactNode;
 }
@@ -69,6 +70,7 @@ export const AssetDetailBody = ({
   isChartShown,
   isMalicious = false,
   isSuspicious = false,
+  isUnableToScan = false,
   children,
 }: AssetDetailBodyProps) => {
   const { t } = useTranslation();
@@ -119,7 +121,12 @@ export const AssetDetailBody = ({
           variant: "warning" as const,
           title: t("This token was flagged as suspicious"),
         }
-      : null;
+      : isUnableToScan
+        ? {
+            variant: "warning" as const,
+            title: t("Proceed with caution"),
+          }
+        : null;
 
   return (
     <>

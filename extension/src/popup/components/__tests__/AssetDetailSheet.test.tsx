@@ -28,9 +28,11 @@ jest.mock("popup/components/account/AssetDetail", () => ({
     hasHistoryError,
     historyData,
     swapTo,
+    isUnableToScan,
   }: any) => (
     <div
       data-testid="asset-detail"
+      data-unable-to-scan={String(!!isUnableToScan)}
       data-asset={selectedAsset}
       data-source={source}
       data-error={String(hasHistoryError)}
@@ -131,6 +133,14 @@ describe("AssetDetailSheet", () => {
       balances: accountBalances,
       useCache: true,
     });
+  });
+
+  it("hands the record's unable-to-scan verdict to the held view", () => {
+    renderSheet({ ...descriptor("native"), isUnableToScan: true } as any);
+
+    expect(
+      screen.getByTestId("asset-detail").getAttribute("data-unable-to-scan"),
+    ).toBe("true");
   });
 
   it("renders the non-held detail for an unknown canonical", () => {

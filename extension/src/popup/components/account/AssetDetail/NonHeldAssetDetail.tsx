@@ -38,6 +38,7 @@ export interface NonHeldAssetDescriptor {
   domain?: string | null;
   isSuspicious?: boolean;
   isMalicious?: boolean;
+  isUnableToScan?: boolean;
   /** USD price from the search record; used when the backend has none. */
   spotPrice?: number;
 }
@@ -185,6 +186,7 @@ export const NonHeldAssetDetail = ({
             isChartShown={isChartShown}
             isMalicious={asset.isMalicious}
             isSuspicious={asset.isSuspicious}
+            isUnableToScan={asset.isUnableToScan}
           />
         </div>
       </View.Content>
