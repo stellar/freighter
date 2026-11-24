@@ -239,6 +239,34 @@
     }
   }
 
+  // The picker footer stacks Cancel over the text action for a flagged token.
+  &__swap-to {
+    flex-direction: column;
+    gap: pxToRem(4px);
+  }
+
+  // The review screen's Blockaid pane text action, same type and colors.
+  &__swap-to-anyway {
+    width: 100%;
+    border: none;
+    background: none;
+    font-family: var(--sds-ff-base);
+    font-weight: 600;
+    font-size: pxToRem(14px);
+    line-height: pxToRem(20px);
+    padding: pxToRem(8px) 0;
+    cursor: pointer;
+    text-align: center;
+
+    &--default {
+      color: var(--sds-clr-gray-09);
+    }
+
+    &--error {
+      color: var(--sds-clr-red-11);
+    }
+  }
+
   &__empty {
     color: var(--sds-clr-gray-11);
     text-align: center;

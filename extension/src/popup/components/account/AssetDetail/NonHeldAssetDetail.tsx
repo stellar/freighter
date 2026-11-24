@@ -182,7 +182,14 @@ export const NonHeldAssetDetail = ({
           />
         </div>
       </View.Content>
-      {swapTo ? <SwapToFooter {...swapTo} /> : null}
+      {swapTo ? (
+        <SwapToFooter
+          {...swapTo}
+          onCancel={handleClose}
+          isMalicious={asset.isMalicious}
+          isSuspicious={asset.isSuspicious}
+        />
+      ) : null}
     </View>
   );
 };

@@ -128,6 +128,28 @@ describe("NonHeldAssetDetail", () => {
     expect(screen.queryByTestId("asset-detail-swap-to-button")).toBeNull();
   });
 
+  it("offers Cancel and Swap to anyway for a flagged token; Cancel closes the view", async () => {
+    const onSelect = jest.fn();
+    const handleClose = jest.fn();
+    render(
+      <Wrapper routes={[ROUTES.account]} state={makeState(true)}>
+        <NonHeldAssetDetail
+          asset={{ ...shx, isMalicious: true }}
+          source={TokenChartSource.SwapPicker}
+          handleClose={handleClose}
+          swapTo={{ code: "SHX", side: "to", onSelect }}
+        />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("AssetDetail__price"));
+
+    expect(screen.queryByTestId("asset-detail-swap-to-button")).toBeNull();
+    fireEvent.click(screen.getByTestId("asset-detail-swap-to-cancel"));
+    expect(handleClose).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByTestId("asset-detail-swap-to-anyway"));
+    expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
   it("renders the body with no Balance or Value rows and no Hide/Remove", async () => {
     renderDetail(shx);
 

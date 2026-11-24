@@ -638,7 +638,14 @@ export const AssetDetail = ({
             )}
           </div>
         )}
-        {swapTo ? <SwapToFooter {...swapTo} /> : null}
+        {swapTo ? (
+          <SwapToFooter
+            {...swapTo}
+            onCancel={handleClose}
+            isMalicious={isMalicious}
+            isSuspicious={isSuspicious}
+          />
+        ) : null}
         {isNative && (
           <SlideupModal
             isModalOpen={isModalOpen}
