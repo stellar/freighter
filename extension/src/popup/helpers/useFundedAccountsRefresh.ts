@@ -8,7 +8,10 @@ import {
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { DEFAULT_CACHE_STALE_MS } from "helpers/request";
 import { isMainnet } from "helpers/stellar";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import {
+  settingsDataSharingSelector,
+  settingsNetworkDetailsSelector,
+} from "popup/ducks/settings";
 import { useGetWalletsData } from "popup/components/account/AccountSheet/hooks/useGetWalletsData";
 
 // Start after the first paint and the critical-path fetches of the Account
@@ -94,6 +97,7 @@ const releaseRefreshLease = () => {
  */
 export const useFundedAccountsRefresh = () => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const isDataSharingAllowed = useSelector(settingsDataSharingSelector);
   const { fetchData } = useGetWalletsData();
   // fetchData reads the Redux caches of its render. The timer calls the
   // latest one, so data that the Account view caches during the delay is
@@ -102,7 +106,10 @@ export const useFundedAccountsRefresh = () => {
   fetchDataRef.current = fetchData;
 
   useEffect(() => {
-    if (!isMainnet(networkDetails)) {
+    // Without data sharing, nothing sends funded_account_count, so the
+    // refresh would make requests for no use. When the user allows data
+    // sharing, the effect runs again and the refresh starts.
+    if (!isMainnet(networkDetails) || !isDataSharingAllowed) {
       return undefined;
     }
 
@@ -130,5 +137,5 @@ export const useFundedAccountsRefresh = () => {
     }, FUNDED_ACCOUNTS_REFRESH_DELAY_MS);
 
     return () => clearTimeout(timer);
-  }, [networkDetails]);
+  }, [networkDetails, isDataSharingAllowed]);
 };

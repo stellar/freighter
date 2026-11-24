@@ -11,6 +11,7 @@ import {
 } from "constants/localStorageTypes";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { DEFAULT_CACHE_STALE_MS } from "helpers/request";
+import { settingsDataSharingSelector } from "popup/ducks/settings";
 import { useGetWalletsData } from "popup/components/account/AccountSheet/hooks/useGetWalletsData";
 import {
   FUNDED_ACCOUNTS_REFRESH_DELAY_MS,
@@ -31,6 +32,16 @@ jest.mock(
 
 const fetchData = jest.fn();
 
+let mockNetworkDetails: unknown = MAINNET_NETWORK_DETAILS;
+let mockIsDataSharingAllowed = true;
+// Each selector gets its own value.
+const mockSelectors = () =>
+  (useSelector as unknown as jest.Mock).mockImplementation((selector) =>
+    selector === settingsDataSharingSelector
+      ? mockIsDataSharingAllowed
+      : mockNetworkDetails,
+  );
+
 const flush = async () => {
   await jest.advanceTimersByTimeAsync(FUNDED_ACCOUNTS_REFRESH_DELAY_MS);
 };
@@ -45,9 +56,9 @@ describe("useFundedAccountsRefresh", () => {
       fetchData,
       state: {},
     });
-    (useSelector as unknown as jest.Mock).mockReturnValue(
-      MAINNET_NETWORK_DETAILS,
-    );
+    mockNetworkDetails = MAINNET_NETWORK_DETAILS;
+    mockIsDataSharingAllowed = true;
+    mockSelectors();
   });
 
   afterEach(() => {
@@ -130,12 +141,30 @@ describe("useFundedAccountsRefresh", () => {
   });
 
   it("does not run on testnet (VT-33)", async () => {
-    (useSelector as unknown as jest.Mock).mockReturnValue(
-      TESTNET_NETWORK_DETAILS,
-    );
+    mockNetworkDetails = TESTNET_NETWORK_DETAILS;
     renderHook(() => useFundedAccountsRefresh());
     await flush();
     expect(fetchData).not.toHaveBeenCalled();
+  });
+
+  it("does not run when data sharing is off", async () => {
+    mockIsDataSharingAllowed = false;
+    renderHook(() => useFundedAccountsRefresh());
+    await flush();
+    expect(fetchData).not.toHaveBeenCalled();
+    expect(localStorage.getItem(FUNDED_ACCOUNTS_REFRESHED_AT_ID)).toBeNull();
+  });
+
+  it("starts the refresh when the user allows data sharing", async () => {
+    mockIsDataSharingAllowed = false;
+    const { rerender } = renderHook(() => useFundedAccountsRefresh());
+    await flush();
+    expect(fetchData).not.toHaveBeenCalled();
+
+    mockIsDataSharingAllowed = true;
+    rerender();
+    await flush();
+    expect(fetchData).toHaveBeenCalledTimes(1);
   });
 
   it("does not store a time when the fetch fails, so the next open retries (FR-31)", async () => {
