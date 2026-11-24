@@ -14,8 +14,10 @@ const ISSUER = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
 jest.mock("popup/components/account/AssetDetail/AssetDetailSheet", () => ({
   AssetDetailSheet: ({
     asset,
+    onBalancesChanged,
   }: {
     asset: { canonical: string; name?: string; contractId?: string } | null;
+    onBalancesChanged?: (change: "hidden" | "removed") => void;
   }) =>
     asset ? (
       <div
@@ -24,6 +26,13 @@ jest.mock("popup/components/account/AssetDetail/AssetDetailSheet", () => ({
         data-contract-id={asset.contractId}
       >
         {asset.canonical}
+        <button
+          type="button"
+          data-testid="asset-detail-hide"
+          onClick={() => onBalancesChanged?.("hidden")}
+        >
+          hide
+        </button>
       </div>
     ) : null,
 }));
@@ -44,6 +53,7 @@ const renderRows = (
   verifiedAssetRows: any[] = [
     { code: "USDC", issuer: ISSUER, domain: "centre.io" },
   ],
+  onBalancesChanged?: () => void,
 ) =>
   render(
     <Wrapper
@@ -69,6 +79,7 @@ const renderRows = (
         balances={
           { balances: [], subentryCount: 0, localOnlyTokenIds: [] } as any
         }
+        onBalancesChanged={onBalancesChanged}
       />
     </Wrapper>,
   );
@@ -98,6 +109,18 @@ describe("ManageAssetRows row tap", () => {
     fireEvent.click(body);
     expect(screen.queryByTestId("asset-detail-sheet")).toBeNull();
     expect(screen.getByTestId("ManageAssetRowButton")).toBeInTheDocument();
+  });
+});
+
+describe("ManageAssetRows after a hide or remove from the sheet", () => {
+  it("tells its screen, which refreshes the rows", () => {
+    const onBalancesChanged = jest.fn();
+    renderRows(true, true, undefined, onBalancesChanged);
+
+    fireEvent.click(screen.getByTestId("ManageAssetRow-USDC-body"));
+    fireEvent.click(screen.getByTestId("asset-detail-hide"));
+
+    expect(onBalancesChanged).toHaveBeenCalledTimes(1);
   });
 });
 

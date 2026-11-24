@@ -400,6 +400,9 @@ export const AddAsset = () => {
                     <ManageAssetRows
                       header={null}
                       balances={data.balances}
+                      onBalancesChanged={() => {
+                        fetchData();
+                      }}
                       verifiedAssetRows={verifiedAssetRows}
                       unverifiedAssetRows={unverifiedAssetRows}
                       isVerifiedToken={isVerifiedToken}

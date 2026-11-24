@@ -64,6 +64,8 @@ interface ManageAssetRowsProps {
   onUnhideAsset?: (asset: { code: string; canonicalAsset: string }) => void;
   /** Canonical of the asset whose unhide is in flight, if any */
   unhidingAsset?: string;
+  /** A token was hidden or removed from the detail sheet; refresh the rows. */
+  onBalancesChanged?: () => void;
 }
 
 export const ManageAssetRows = ({
@@ -76,6 +78,7 @@ export const ManageAssetRows = ({
   isAssetHidden,
   onUnhideAsset,
   unhidingAsset,
+  onBalancesChanged,
 }: ManageAssetRowsProps) => {
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -212,6 +215,7 @@ export const ManageAssetRows = ({
           accountBalances={balances}
           source={TokenChartSource.AddToken}
           onClose={() => setDetailsAsset(null)}
+          onBalancesChanged={onBalancesChanged}
         />
         {createPortal(
           <SlideupModal

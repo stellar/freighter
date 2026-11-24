@@ -28,6 +28,21 @@ export interface ResolvedSwapFrom {
 
 export type SwapFrom = NeedsReRoute | ResolvedSwapFrom;
 
+// Filter from the first character (token codes can be 1-2 letters), matching
+// the destination ("Swap to") search. matchesSwapFromSearch also resolves a
+// pasted SAC to the held token it wraps -- derived from the asset, no extra
+// API call.
+const filterSwapFromBalances = (
+  balances: AccountBalances["balances"],
+  searchTerm: string,
+  networkDetails: NetworkDetails,
+) =>
+  searchTerm
+    ? balances.filter((balance) =>
+        matchesSwapFromSearch({ balance, searchTerm, networkDetails }),
+      )
+    : balances;
+
 export function useGetSwapFromData(getBalancesOptions: {
   showHidden: boolean;
   includeIcons: boolean;
@@ -40,7 +55,11 @@ export function useGetSwapFromData(getBalancesOptions: {
   const { fetchData: fetchBalances } = useGetBalances(getBalancesOptions);
   const { fetchData: fetchTokenPrices } = useGetTokenPrices();
 
-  const fetchData = async (useCache = false): Promise<SwapFrom | Error> => {
+  /** `searchTerm` keeps a typed search applied across a reload. */
+  const fetchData = async (
+    useCache = false,
+    searchTerm = "",
+  ): Promise<SwapFrom | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const appData = await fetchAppData(useCache);
@@ -77,7 +96,11 @@ export function useGetSwapFromData(getBalancesOptions: {
       const payload = {
         type: AppDataType.RESOLVED,
         balances,
-        filteredBalances: balances.balances,
+        filteredBalances: filterSwapFromBalances(
+          balances.balances,
+          searchTerm,
+          networkDetails,
+        ),
         publicKey,
         networkDetails,
         // The price fetch reports failure with null; the field is declared
@@ -95,32 +118,13 @@ export function useGetSwapFromData(getBalancesOptions: {
 
   const filterBalances = (searchTerm: string) => {
     const resolvedSwapData = state.data as ResolvedSwapFrom;
-    const term = searchTerm.toLowerCase();
-
-    if (!term) {
-      const payload = {
-        ...resolvedSwapData,
-        filteredBalances: resolvedSwapData?.balances.balances || [],
-      } as SwapFrom;
-      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-      return;
-    }
-
-    const balances = resolvedSwapData?.balances.balances || [];
-    // Filter from the first character (token codes can be 1-2 letters), matching
-    // the destination ("Swap to") search. The empty-term case is handled above.
-    // matchesSwapFromSearch also resolves a pasted SAC to the held token it
-    // wraps — derived from the asset, no extra API call.
-    const filtered = balances.filter((balance) =>
-      matchesSwapFromSearch({
-        balance,
-        searchTerm,
-        networkDetails: resolvedSwapData.networkDetails,
-      }),
-    );
     const payload = {
       ...resolvedSwapData,
-      filteredBalances: filtered,
+      filteredBalances: filterSwapFromBalances(
+        resolvedSwapData?.balances.balances || [],
+        searchTerm,
+        resolvedSwapData?.networkDetails,
+      ),
     } as SwapFrom;
     dispatch({ type: "FETCH_DATA_SUCCESS", payload });
   };

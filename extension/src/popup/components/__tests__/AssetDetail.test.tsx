@@ -305,8 +305,7 @@ describe("AssetDetail", () => {
     expect(screen.queryByTestId("asset-detail-swap-button")).toBeNull();
     expect(screen.queryByTestId("asset-detail-swap-to-button")).toBeNull();
     await userEvent.click(screen.getByAltText("asset options"));
-    // Hide and Remove follow the held balance, not the entry point
-    // (design 2026-11-23).
+    // Hide and Remove follow the held balance, not the entry point.
     expect(screen.getByTestId("AssetDetail__hide")).toBeInTheDocument();
     expect(
       screen.getByTestId("asset-detail-remove-button"),

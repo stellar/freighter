@@ -283,6 +283,10 @@ export const SearchAsset = () => {
                         tokenState.data.isVerificationInfoShowing
                       }
                       isAssetHidden={isAssetHidden}
+                      onBalancesChanged={() => {
+                        refreshHiddenAssets();
+                        fetchData(true).catch(() => undefined);
+                      }}
                       onUnhideAsset={handleUnhide}
                       unhidingAsset={unhidingAsset}
                     />

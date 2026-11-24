@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
+
+import { isError } from "helpers/request";
 import { Navigate } from "react-router-dom";
 import { Icon, Input, Loader, Notification } from "@stellar/design-system";
 import { captureException } from "@sentry/browser";
@@ -496,8 +498,31 @@ export const SwapAsset = ({
           onAssetHiddenOrRemoved?.(details.record.canonical);
           // The list was loaded once on mount. A hide only changes the
           // hidden list, which the cached read applies; a removed trustline
-          // needs the balances again.
-          void fetchData(change === "hidden");
+          // needs the balances again. A typed search must survive the
+          // reload: the source list filters locally, the destination
+          // re-runs its lookup, whose idle effect skips while searching.
+          const { searchTerm } = formik.values;
+          fetchData(change === "hidden", isDestination ? "" : searchTerm)
+            .then((next) => {
+              if (
+                !isDestination ||
+                !searchTerm ||
+                isError(next) ||
+                next.type !== AppDataType.RESOLVED
+              ) {
+                return undefined;
+              }
+              return lookupFetchData({
+                searchTerm,
+                balances: next.balances.balances,
+                publicKey: next.publicKey,
+                networkDetails,
+                icons: next.balances.icons,
+                tokenPrices: next.tokenPrices || {},
+              });
+            })
+            // The hooks record a failed load in their own error state.
+            .catch(() => undefined);
         }}
         swapTo={
           details

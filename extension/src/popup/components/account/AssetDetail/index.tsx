@@ -405,11 +405,9 @@ export const AssetDetail = ({
 
   const titleNode = (
     <>
-      {/* The native asset shows its NAME here, not its code — the
-        balance list (BalanceRow) and the token picker (TokenList)
-        both already do, and this header was the one place still
-        reading "XLM". `title()` cannot own this: it is a plain
-        helper with no access to `t`, and the name is translatable. */}
+      {/* The native asset shows its translatable NAME here, as the
+        balance list and the token picker do; `title()` cannot, since it
+        has no access to `t`. */}
       {isLpShare && "liquidityPoolId" in selectedBalance
         ? `LP: ${truncateString(selectedBalance.liquidityPoolId as string, 12)}`
         : isCustomToken && isSorobanBalance(selectedBalance)

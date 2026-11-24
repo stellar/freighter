@@ -821,7 +821,55 @@ describe("SwapAsset destination: View details", () => {
 
     expect(onAssetHiddenOrRemoved).toHaveBeenCalledWith(USDC);
     // A hide only changes the hidden list, which the cached read applies.
-    expect(fromFetchData.mock.calls.slice(mountFetches)).toEqual([[true]]);
+    expect(fromFetchData.mock.calls.slice(mountFetches)).toEqual([[true, ""]]);
+  });
+
+  it("with a search typed, a hide re-runs the search on the reloaded balances", async () => {
+    const reloaded = {
+      ...resolvedFromState.data,
+      balances: { balances: [], icons: {} },
+      tokenPrices: {},
+    };
+    const fromFetchData = jest.fn().mockResolvedValue(reloaded);
+    const lookupFetchData = jest.fn().mockResolvedValue(undefined);
+    jest.spyOn(UseSwapFromData, "useGetSwapFromData").mockReturnValue({
+      state: resolvedFromState,
+      fetchData: fromFetchData,
+      filterBalances: jest.fn(),
+    } as any);
+    jest.spyOn(UseSwapTokenLookup, "useSwapTokenLookup").mockReturnValue({
+      fetchData: lookupFetchData,
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          sections: {
+            yourTokens: [],
+            popular: [],
+            verified: [usdcRecord],
+            unverified: [],
+          },
+          isSearch: true,
+          isFallback: false,
+        },
+        error: null,
+      },
+    } as any);
+    renderPicker(true);
+    fireEvent.change(screen.getByTestId("swap-from-search"), {
+      target: { value: "US" },
+    });
+    fireEvent.click(
+      await screen.findByTestId("SwapTokenRow-USDC-view-details"),
+    );
+    lookupFetchData.mockClear();
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("asset-detail-hide"));
+    });
+
+    expect(lookupFetchData).toHaveBeenCalledWith(
+      expect.objectContaining({ searchTerm: "US", balances: [] }),
+    );
   });
 
   it("opens the detail sheet from a Your tokens row", async () => {
@@ -1000,6 +1048,34 @@ describe("SwapAsset source: View details", () => {
 
     expect(onClickAsset).toHaveBeenCalledWith(`USDC:${USDC_ISSUER}`, false);
     expect(screen.queryByTestId("asset-detail-sheet")).toBeNull();
+  });
+
+  it("with a search typed, a hide reloads the source list with that search applied", async () => {
+    const fromFetchData = jest.fn().mockResolvedValue(undefined);
+    jest.spyOn(UseSwapFromData, "useGetSwapFromData").mockReturnValue({
+      state: {
+        ...resolvedFromState,
+        data: {
+          ...resolvedFromState.data,
+          balances: { balances: [heldUsdc], icons: {} },
+          filteredBalances: [heldUsdc],
+        },
+      },
+      fetchData: fromFetchData,
+      filterBalances: jest.fn(),
+    } as any);
+    renderSourcePicker(true);
+    fireEvent.change(screen.getByTestId("swap-from-search"), {
+      target: { value: "US" },
+    });
+    fireEvent.click(screen.getByTestId("SwapTokenRow-USDC-view-details"));
+    fromFetchData.mockClear();
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("asset-detail-hide"));
+    });
+
+    expect(fromFetchData).toHaveBeenCalledWith(true, "US");
   });
 
   it("offers no details on the source picker when price history is off", () => {
