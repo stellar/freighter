@@ -524,7 +524,10 @@ describe("AssetDetail", () => {
     const usdcCanonical =
       "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
 
-    const renderUsdcDetail = (props: { handleClose: jest.Mock }) =>
+    const renderUsdcDetail = (props: {
+      handleClose: jest.Mock;
+      isHidden?: boolean;
+    }) =>
       render(
         <Wrapper
           routes={[ROUTES.account]}
@@ -593,6 +596,18 @@ describe("AssetDetail", () => {
       await waitFor(() => expect(toastSpy).toHaveBeenCalled());
       expect(lastToastProps(toastSpy).variant).toBe("error");
       expect(handleClose).not.toHaveBeenCalled();
+    });
+
+    it("offers no Hide for a token the account already hid", async () => {
+      renderUsdcDetail({ handleClose: jest.fn(), isHidden: true });
+      await waitFor(() => screen.getByTestId("AssetDetail"));
+
+      fireEvent.click(screen.getByAltText("asset options"));
+      // The menu is open, so the missing Hide is the guard, not a closed menu
+      expect(
+        document.querySelector(".AssetDetail__options-actions"),
+      ).toBeInTheDocument();
+      expect(screen.queryByTestId("AssetDetail__hide")).not.toBeInTheDocument();
     });
   });
 

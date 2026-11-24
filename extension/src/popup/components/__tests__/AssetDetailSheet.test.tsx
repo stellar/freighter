@@ -29,9 +29,11 @@ jest.mock("popup/components/account/AssetDetail", () => ({
     historyData,
     swapTo,
     isUnableToScan,
+    isHidden,
   }: any) => (
     <div
       data-testid="asset-detail"
+      data-hidden={String(!!isHidden)}
       data-unable-to-scan={String(!!isUnableToScan)}
       data-asset={selectedAsset}
       data-source={source}
@@ -141,6 +143,24 @@ describe("AssetDetailSheet", () => {
     expect(
       screen.getByTestId("asset-detail").getAttribute("data-unable-to-scan"),
     ).toBe("true");
+  });
+
+  it("tells the held view whether the account hid the token", () => {
+    render(
+      <Wrapper routes={[ROUTES.account]} state={{}}>
+        <AssetDetailSheet
+          asset={descriptor("native")}
+          accountBalances={accountBalances}
+          source={TokenChartSource.AddToken}
+          onClose={jest.fn()}
+          isAssetHidden={(canonical) => canonical === "native"}
+        />
+      </Wrapper>,
+    );
+
+    expect(screen.getByTestId("asset-detail").getAttribute("data-hidden")).toBe(
+      "true",
+    );
   });
 
   it("renders the non-held detail for an unknown canonical", () => {

@@ -221,6 +221,7 @@ export const ManageAssetRows = ({
           source={TokenChartSource.AddToken}
           onClose={() => setDetailsAsset(null)}
           onBalancesChanged={onBalancesChanged}
+          isAssetHidden={isAssetHidden}
         />
         {createPortal(
           <SlideupModal

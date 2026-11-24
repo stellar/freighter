@@ -160,6 +160,8 @@ interface AssetDetailProps {
   onBalancesChanged?: (change: "hidden" | "removed") => void;
   /** The picker or search record the sheet opened from could not be scanned. */
   isUnableToScan?: boolean;
+  /** The account hid this token; Hide is then not offered (no Unhide here). */
+  isHidden?: boolean;
 }
 
 export const AssetDetail = ({
@@ -172,6 +174,7 @@ export const AssetDetail = ({
   swapTo,
   onBalancesChanged,
   isUnableToScan,
+  isHidden = false,
 }: AssetDetailProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -431,7 +434,7 @@ export const AssetDetail = ({
   // hiding it would make Send and Swap report insufficient XLM; the Hidden
   // tokens sheet doesn't list LP shares, so a hidden one could never be
   // unhidden. Same as mobile, where neither opens token details' Hide.
-  const canOfferHide = isIssuedToken;
+  const canOfferHide = isIssuedToken && !isHidden;
 
   return (
     <React.Fragment>

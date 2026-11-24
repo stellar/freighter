@@ -15,6 +15,7 @@ jest.mock("popup/components/account/AssetDetail/AssetDetailSheet", () => ({
   AssetDetailSheet: ({
     asset,
     onBalancesChanged,
+    isAssetHidden,
   }: {
     asset: {
       canonical: string;
@@ -24,6 +25,7 @@ jest.mock("popup/components/account/AssetDetail/AssetDetailSheet", () => ({
       isUnableToScan?: boolean;
     } | null;
     onBalancesChanged?: (change: "hidden" | "removed") => void;
+    isAssetHidden?: (canonical: string) => boolean;
   }) =>
     asset ? (
       <div
@@ -32,6 +34,7 @@ jest.mock("popup/components/account/AssetDetail/AssetDetailSheet", () => ({
         data-contract-id={asset.contractId}
         data-spot-price={asset.spotPrice}
         data-unable-to-scan={String(!!asset.isUnableToScan)}
+        data-hidden={String(!!isAssetHidden?.(asset.canonical))}
       >
         {asset.canonical}
         <button
@@ -212,6 +215,43 @@ describe("ManageAssetRows descriptor scan verdict", () => {
     fireEvent.click(screen.getByTestId("ManageAssetRow-USDC-body"));
     expect(screen.getByTestId("asset-detail-sheet")).toHaveAttribute(
       "data-unable-to-scan",
+      "true",
+    );
+  });
+});
+
+describe("ManageAssetRows hidden state in the sheet", () => {
+  it("hands the screen's hidden check to the sheet", () => {
+    render(
+      <Wrapper
+        state={{
+          settings: { networkDetails: MAINNET_NETWORK_DETAILS },
+          remoteConfig: {
+            isInitialized: true,
+            use_balances_v2: false,
+            use_token_price_history: true,
+            maintenance_banner: { enabled: false, payload: undefined },
+            maintenance_screen: { enabled: false, payload: undefined },
+          },
+        }}
+        routes={["/"]}
+      >
+        <ManageAssetRows
+          verifiedAssetRows={[
+            { code: "USDC", issuer: ISSUER, domain: "centre.io" },
+          ]}
+          unverifiedAssetRows={[]}
+          balances={
+            { balances: [], subentryCount: 0, localOnlyTokenIds: [] } as any
+          }
+          isAssetHidden={(canonical) => canonical === `USDC:${ISSUER}`}
+        />
+      </Wrapper>,
+    );
+
+    fireEvent.click(screen.getByTestId("ManageAssetRow-USDC-body"));
+    expect(screen.getByTestId("asset-detail-sheet")).toHaveAttribute(
+      "data-hidden",
       "true",
     );
   });

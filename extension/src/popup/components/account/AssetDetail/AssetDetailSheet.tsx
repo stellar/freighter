@@ -28,6 +28,7 @@ interface AssetDetailSheetProps {
   swapTo?: SwapToAction;
   /** The held view hid or removed the token; the list behind must reload. */
   onBalancesChanged?: (change: "hidden" | "removed") => void;
+  isAssetHidden?: (canonical: string) => boolean;
 }
 
 export const AssetDetailSheet = ({
@@ -37,6 +38,7 @@ export const AssetDetailSheet = ({
   onClose,
   swapTo,
   onBalancesChanged,
+  isAssetHidden,
 }: AssetDetailSheetProps) => {
   const { state, fetchData } = useGetAccountHistoryData();
   const canonical = asset?.canonical;
@@ -87,6 +89,7 @@ export const AssetDetailSheet = ({
                 swapTo={swapTo}
                 onBalancesChanged={onBalancesChanged}
                 isUnableToScan={asset.isUnableToScan}
+                isHidden={!!isAssetHidden?.(asset.canonical)}
               />
             ) : (
               <NonHeldAssetDetail
