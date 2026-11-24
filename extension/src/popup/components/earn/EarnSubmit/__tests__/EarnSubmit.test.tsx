@@ -24,6 +24,8 @@ import { Wrapper } from "popup/__testHelpers__";
 
 const TEST_PUBLIC_KEY =
   "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
+const USDC_ISSUER = "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
+const USDC = `USDC:${USDC_ISSUER}`;
 const POOL_ID = BLEND_FIXED_POOL_IDS[NETWORKS.PUBLIC]!;
 
 // Two distinguishable envelopes, so the assertions can tell "what the flow was
@@ -32,12 +34,14 @@ const HW_SIGNED_XDR = "AAAA-signed-by-device";
 const SOFTWARE_SIGNED_XDR = "AAAA-signed-in-page";
 
 const mockSignSoroban = jest.fn();
+const mockGetTokenPrices = jest.fn();
 const mockFetchBalances = jest.fn().mockResolvedValue({ balances: {} });
 
 jest.mock("@shared/api/internal", () => ({
   ...jest.requireActual("@shared/api/internal"),
   signFreighterSorobanTransaction: (...args: unknown[]) =>
     mockSignSoroban(...args),
+  getTokenPrices: (...args: unknown[]) => mockGetTokenPrices(...args),
 }));
 
 jest.mock("helpers/hooks/useGetBalances", () => ({
@@ -58,6 +62,14 @@ const { emitMetric } =
 
 const emittedMetricNames = () =>
   (emitMetric as jest.Mock).mock.calls.map(([name]) => name);
+
+const emittedProps = (eventName: string): Record<string, unknown> => {
+  const call = (emitMetric as jest.Mock).mock.calls.find(
+    ([name]) => name === eventName,
+  );
+  expect(call).toBeDefined();
+  return call![1];
+};
 
 /**
  * A submission that has left but not landed, which is the only window in which
@@ -97,11 +109,13 @@ const makeState = ({
   hardwareWalletType = WalletType.NONE,
   hwStatus = ShowOverlayStatus.IDLE,
   lastSubmitFailed = false,
+  reviewedAmount = null,
 }: {
   xdr: string;
   hardwareWalletType?: WalletType;
   hwStatus?: ShowOverlayStatus;
   lastSubmitFailed?: boolean;
+  reviewedAmount?: string | null;
 }) => ({
   auth: {
     allAccounts: [{ publicKey: TEST_PUBLIC_KEY, hardwareWalletType }],
@@ -117,7 +131,7 @@ const makeState = ({
     transactionData: {
       ...transactionSubmissionInitialState.transactionData,
       amount: "0.5",
-      asset: "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      asset: USDC,
     },
     transactionSimulation: { response: null, preparedTransaction: xdr },
     hardwareWalletData: {
@@ -126,7 +140,12 @@ const makeState = ({
       shouldSubmit: true,
     },
   },
-  earn: { ...earnInitialState, pool: { id: POOL_ID }, lastSubmitFailed },
+  earn: {
+    ...earnInitialState,
+    pool: { id: POOL_ID },
+    lastSubmitFailed,
+    reviewedAmount,
+  },
 });
 
 const renderSubmit = ({
@@ -141,6 +160,7 @@ const renderSubmit = ({
   hardwareWalletType?: WalletType;
   hwStatus?: ShowOverlayStatus;
   lastSubmitFailed?: boolean;
+  reviewedAmount?: string | null;
 }) =>
   render(
     <Wrapper routes={["/"]} state={makeState({ xdr, ...stateOverrides })}>
@@ -158,6 +178,7 @@ describe("EarnSubmit", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockGetTokenPrices.mockResolvedValue({});
     mockSignSoroban.mockResolvedValue({
       signedTransaction: SOFTWARE_SIGNED_XDR,
     });
@@ -302,6 +323,23 @@ describe("EarnSubmit", () => {
     );
   });
 
+  // The deposit's volume is the amount Review showed and Confirm signed, not
+  // the field, which keeps the amount as typed.
+  it("reports the amount Review showed as the deposit's volume", async () => {
+    renderSubmit({ xdr: "AAAA-unsigned", reviewedAmount: "0.4" });
+
+    await waitFor(() =>
+      expect(emittedMetricNames()).toContain(METRIC_NAMES.earnDepositCompleted),
+    );
+    expect(emittedProps(METRIC_NAMES.earnDepositCompleted)).toEqual(
+      expect.objectContaining({
+        asset_code: "USDC",
+        asset_issuer: USDC_ISSUER,
+        amount: 0.4,
+      }),
+    );
+  });
+
   it("does not resubmit an envelope the network already rejected", async () => {
     // Second layer under the Earn view's step teardown: if anything remounts
     // this screen while a failure still stands, it must not replay the request.
@@ -325,6 +363,7 @@ describe("useSubmitEarnTxData", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockGetTokenPrices.mockResolvedValue({});
     mockSignSoroban.mockResolvedValue({
       signedTransaction: SOFTWARE_SIGNED_XDR,
     });
@@ -343,6 +382,8 @@ describe("useSubmitEarnTxData", () => {
           networkDetails: TESTNET_NETWORK_DETAILS,
           publicKey: TEST_PUBLIC_KEY,
           xdr,
+          asset: USDC,
+          amount: "0.5",
           assetCode: "USDC",
           poolId: POOL_ID,
           apy: 0.05,
@@ -404,5 +445,109 @@ describe("useSubmitEarnTxData", () => {
 
     expect(mockFetchBalances).toHaveBeenCalled();
     expect(result.current.state.state).toBe(RequestState.SUCCESS);
+  });
+
+  // The deposit's USD volume, measured as Send measures a payment's: priced
+  // by a fetch started once signing succeeds, right before the submit.
+  describe("deposit volume", () => {
+    const submitDeposit = async () => {
+      const { result } = renderSubmitHook("AAAA-unsigned");
+      await act(async () => {
+        await result.current.fetchData();
+      });
+    };
+
+    beforeEach(() => {
+      mockGetTokenPrices.mockResolvedValue({
+        [USDC]: { currentPrice: "0.9998" },
+      });
+    });
+
+    it("reports a completed deposit's amount and USD value", async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ status: "PENDING", hash: "abc123" }),
+      });
+
+      await submitDeposit();
+
+      expect(mockGetTokenPrices.mock.calls[0][0]).toEqual([USDC]);
+      expect(emittedProps(METRIC_NAMES.earnDepositCompleted)).toEqual({
+        asset_code: "USDC",
+        asset_issuer: USDC_ISSUER,
+        asset_type: "classic",
+        pool_id: POOL_ID,
+        apy: 0.05,
+        via_swap: false,
+        amount: 0.5,
+        amount_usd_status: "ok",
+        amount_usd: 0.5,
+        amount_usd_rate: 0.9998,
+        amount_usd_source: "token_prices_v2",
+        amount_usd_price_freshness: "confirmation_fetch",
+      });
+    });
+
+    it("reports a rejected deposit's volume and the kind of failure", async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        json: () =>
+          Promise.resolve({
+            status: 400,
+            title: "Transaction Failed",
+            extras: {
+              result_codes: {
+                transaction: "tx_failed",
+                operations: ["op_underfunded"],
+              },
+            },
+          }),
+      });
+
+      await submitDeposit();
+
+      expect(emittedProps(METRIC_NAMES.earnDepositFailed)).toEqual({
+        asset_code: "USDC",
+        asset_issuer: USDC_ISSUER,
+        asset_type: "classic",
+        pool_id: POOL_ID,
+        reason_code: "op_underfunded",
+        failure_category: "balance",
+        amount: 0.5,
+        amount_usd_status: "ok",
+        amount_usd: 0.5,
+        amount_usd_rate: 0.9998,
+        amount_usd_source: "token_prices_v2",
+        amount_usd_price_freshness: "confirmation_fetch",
+      });
+    });
+
+    // reason_code falls back to the error's text, but the category reads only
+    // result codes, as payment.failed's does.
+    it("counts a submit that never got an answer as a transport failure", async () => {
+      mockFetch.mockRejectedValue(new Error("Failed to fetch"));
+
+      await submitDeposit();
+
+      expect(emittedProps(METRIC_NAMES.earnDepositFailed)).toEqual(
+        expect.objectContaining({
+          reason_code: "Failed to fetch",
+          failure_category: "transport",
+          amount_usd_status: "ok",
+        }),
+      );
+    });
+
+    it("reports a failed signature without volume, and fetches no price", async () => {
+      mockSignSoroban.mockRejectedValue(new Error("key locked"));
+
+      await submitDeposit();
+
+      const props = emittedProps(METRIC_NAMES.earnDepositFailed);
+      expect(props).not.toHaveProperty("amount");
+      expect(props).not.toHaveProperty("amount_usd_status");
+      expect(props).not.toHaveProperty("failure_category");
+      expect(mockGetTokenPrices).not.toHaveBeenCalled();
+    });
   });
 });

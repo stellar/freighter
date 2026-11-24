@@ -1,4 +1,5 @@
 import { emitMetric } from "helpers/metrics";
+import { AssetIdentity, FailureCategory } from "helpers/usdVolume";
 import { NotEnoughVariant } from "popup/constants/earn";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -10,12 +11,29 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
  * than spelled out at eight call sites across the flow. Every emitter here takes
  * camelCase arguments and is the only place their snake_case wire names appear.
  *
- * None of these carry an amount or a fiat value: the sibling outcome events
- * (`payment.completed`, `swap.completed`) carry asset codes only, and deposit
- * size is measurable on-chain from the pool.
+ * The funnel steps carry no amount or fiat value. A deposit that reached the
+ * network carries its USD volume on its outcome event, under the names
+ * `payment.completed` and `payment.failed` use, so one `SUM(amount_usd)`
+ * covers deposits too.
  *
  * `network`, `surface` and the account fields are stamped by buildCommonContext.
  */
+
+/** A deposit's USD volume, for an outcome that reached the network. */
+export interface EarnDepositVolume {
+  identity: AssetIdentity;
+  /** Deposited token amount, whole units. */
+  amount: number;
+  /** The `amount_usd` family, from `buildSourceLegUsdProps`. */
+  usdProps: Record<string, unknown>;
+}
+
+const depositVolumeProps = (volume: EarnDepositVolume) => ({
+  ...(volume.identity.issuer ? { asset_issuer: volume.identity.issuer } : {}),
+  asset_type: volume.identity.type,
+  amount: volume.amount,
+  ...volume.usdProps,
+});
 
 /** Which remedy the user chose on the "Not enough X" sheet. */
 export type EarnFundingAction = "buy" | "swap" | "transfer";
@@ -168,18 +186,21 @@ export const trackEarnDepositCompleted = ({
   poolId,
   apy,
   viaSwap,
+  volume,
 }: {
   assetCode: string;
   poolId: string;
   apy: number | null;
   /** The deposited balance was created by the swap branch in this same flow. */
   viaSwap: boolean;
+  volume?: EarnDepositVolume;
 }) => {
   emitMetric(METRIC_NAMES.earnDepositCompleted, {
     asset_code: assetCode,
     pool_id: poolId,
     apy,
     via_swap: viaSwap,
+    ...(volume ? depositVolumeProps(volume) : {}),
   });
 };
 
@@ -189,20 +210,28 @@ export const trackEarnDepositCompleted = ({
  * failure is still reported after the user closes it — and the Earn view owns
  * everything that fails earlier, a device-rejected signature at review being the
  * one that matters. Neither can see the other's failures, so they cannot double
- * count.
+ * count. Only a failure the network returned carries volume.
  */
 export const trackEarnDepositFailed = ({
   assetCode,
   poolId,
   reasonCode,
+  volume,
 }: {
   assetCode: string;
   poolId: string;
   reasonCode: string;
+  volume?: EarnDepositVolume & { failureCategory: FailureCategory };
 }) => {
   emitMetric(METRIC_NAMES.earnDepositFailed, {
     asset_code: assetCode,
     pool_id: poolId,
     reason_code: reasonCode,
+    ...(volume
+      ? {
+          ...depositVolumeProps(volume),
+          failure_category: volume.failureCategory,
+        }
+      : {}),
   });
 };

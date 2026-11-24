@@ -5,6 +5,7 @@ import { BalanceMap } from "@shared/api/types/backend-api";
 import { ErrorMessage } from "@shared/api/types";
 import {
   AssetKind,
+  buildSourceLegUsdProps,
   classifyAssetIdentity,
   computeExecutionSlippagePct,
   computeUsdSlippagePct,
@@ -12,8 +13,10 @@ import {
   FailureCategory,
   getFailureCategory,
   LegUsdStatus,
+  pickReasonCode,
   roundHalfUp2dp,
 } from "./usdVolume";
+import { PriceFreshness, PriceSource } from "./confirmationPriceSnapshot";
 
 describe("roundHalfUp2dp", () => {
   it("rounds half up at the 2dp boundary", () => {
@@ -354,5 +357,50 @@ describe("getFailureCategory", () => {
     expect(getFailureCategory(statusOnlyError(400), "unknown")).toBe(
       FailureCategory.UNKNOWN,
     );
+  });
+});
+
+describe("buildSourceLegUsdProps", () => {
+  const snapshot = {
+    pricesById: null,
+    source: PriceSource.TOKEN_PRICES_V2,
+    freshness: PriceFreshness.CACHED_DISPLAY,
+  };
+
+  it("names the source leg's USD value as every volume event does", () => {
+    expect(buildSourceLegUsdProps("10", "2", snapshot).usdProps).toEqual({
+      amount_usd_status: "ok",
+      amount_usd: 20,
+      amount_usd_rate: 2,
+      amount_usd_source: "token_prices_v2",
+      amount_usd_price_freshness: "cached_display",
+    });
+  });
+
+  it("reports an unpriced leg's status alone, never a value of 0", () => {
+    expect(buildSourceLegUsdProps("10", undefined, snapshot).usdProps).toEqual({
+      amount_usd_status: "no_price",
+    });
+  });
+});
+
+describe("pickReasonCode", () => {
+  it("skips the operations that didn't fail", () => {
+    expect(
+      pickReasonCode({
+        transaction: "tx_failed",
+        operations: ["op_success", "op_under_dest_min"],
+      }),
+    ).toBe("op_under_dest_min");
+  });
+
+  it("falls back to the transaction code", () => {
+    expect(pickReasonCode({ transaction: "tx_bad_seq", operations: [] })).toBe(
+      "tx_bad_seq",
+    );
+  });
+
+  it("is unknown without result codes", () => {
+    expect(pickReasonCode({ transaction: "", operations: [] })).toBe("unknown");
   });
 });

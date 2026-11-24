@@ -76,6 +76,8 @@ export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
     networkDetails,
     xdr,
     isHardwareWallet: !!hardwareWalletType,
+    asset,
+    amount,
     assetCode: srcAsset.code,
     poolId: pool?.id || "",
     apy: selectedAssetApy,

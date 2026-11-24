@@ -1,4 +1,10 @@
 import { emitMetric } from "helpers/metrics";
+import { PriceFreshness, PriceSource } from "helpers/confirmationPriceSnapshot";
+import {
+  AssetKind,
+  buildSourceLegUsdProps,
+  FailureCategory,
+} from "helpers/usdVolume";
 import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
 import { NETWORKS } from "@shared/constants/stellar";
 import { NotEnoughVariant } from "popup/constants/earn";
@@ -170,7 +176,7 @@ describe("Earn funnel metrics", () => {
     );
   });
 
-  it("carries no amount or fiat value on the deposit events", () => {
+  it("carries no amount or fiat value for a deposit without volume", () => {
     trackEarnDepositCompleted({
       assetCode: "USDC",
       poolId: POOL_ID,
@@ -202,5 +208,96 @@ describe("Earn funnel metrics", () => {
         reason_code: "op_underfunded",
       },
     );
+  });
+});
+
+// A deposit that reached the network carries its USD volume under
+// payment.completed's names, so one SUM(amount_usd) covers deposits too.
+describe("Earn deposit volume", () => {
+  const USDC_ISSUER =
+    "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
+  const volume = {
+    identity: { code: "USDC", issuer: USDC_ISSUER, type: AssetKind.CLASSIC },
+    amount: 10,
+    usdProps: buildSourceLegUsdProps("10", "2", {
+      pricesById: null,
+      source: PriceSource.TOKEN_PRICES_V2,
+      freshness: PriceFreshness.CONFIRMATION_FETCH,
+    }).usdProps,
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("carries a completed deposit's token, amount and USD value", () => {
+    trackEarnDepositCompleted({
+      assetCode: "USDC",
+      poolId: POOL_ID,
+      apy: 0.1694,
+      viaSwap: false,
+      volume,
+    });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnDepositCompleted,
+      {
+        asset_code: "USDC",
+        asset_issuer: USDC_ISSUER,
+        asset_type: "classic",
+        pool_id: POOL_ID,
+        apy: 0.1694,
+        via_swap: false,
+        amount: 10,
+        amount_usd_status: "ok",
+        amount_usd: 20,
+        amount_usd_rate: 2,
+        amount_usd_source: "token_prices_v2",
+        amount_usd_price_freshness: "confirmation_fetch",
+      },
+    );
+  });
+
+  it("adds the failure category to a failed deposit's volume", () => {
+    trackEarnDepositFailed({
+      assetCode: "USDC",
+      poolId: POOL_ID,
+      reasonCode: "op_underfunded",
+      volume: { ...volume, failureCategory: FailureCategory.BALANCE },
+    });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnDepositFailed,
+      {
+        asset_code: "USDC",
+        asset_issuer: USDC_ISSUER,
+        asset_type: "classic",
+        pool_id: POOL_ID,
+        reason_code: "op_underfunded",
+        failure_category: "balance",
+        amount: 10,
+        amount_usd_status: "ok",
+        amount_usd: 20,
+        amount_usd_rate: 2,
+        amount_usd_source: "token_prices_v2",
+        amount_usd_price_freshness: "confirmation_fetch",
+      },
+    );
+  });
+
+  it("leaves the issuer off an XLM deposit", () => {
+    trackEarnDepositCompleted({
+      assetCode: "XLM",
+      poolId: POOL_ID,
+      apy: 0.1694,
+      viaSwap: false,
+      volume: { ...volume, identity: { code: "XLM", type: AssetKind.NATIVE } },
+    });
+
+    const [, body] = mockEmitMetric.mock.calls[0];
+    expect(body).toEqual(
+      expect.objectContaining({ asset_code: "XLM", asset_type: "native" }),
+    );
+    expect(body).not.toHaveProperty("asset_issuer");
   });
 });

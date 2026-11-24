@@ -5,6 +5,7 @@ import { ErrorMessage } from "@shared/api/types";
 import { BalanceMap } from "@shared/api/types/backend-api";
 import { AssetType } from "@shared/api/types/account-balance";
 import { isContractId } from "@shared/api/helpers/soroban";
+import { ConfirmationPriceSnapshot } from "helpers/confirmationPriceSnapshot";
 import {
   findAddressBalance,
   isClassicBalance,
@@ -78,6 +79,36 @@ export const deriveLegUsd = (
   } catch {
     return { status: LegUsdStatus.ERROR };
   }
+};
+
+/**
+ * The `amount_usd`-family properties are named identically on every terminal
+ * event that carries USD volume (payments, swaps and Earn deposits) so
+ * `SUM(amount_usd)` works across event names. Everything else about a leg
+ * (its identity, its token amount) is named differently per event
+ * (`asset_*`/`amount` for a payment or a deposit, `from_asset_*`/
+ * `from_amount` for a swap) and is added by each call site instead.
+ */
+export const buildSourceLegUsdProps = (
+  tokenAmount: string,
+  priceStr: string | undefined,
+  snapshot: ConfirmationPriceSnapshot,
+): { leg: LegUsdResult; usdProps: Record<string, unknown> } => {
+  const leg = deriveLegUsd(tokenAmount, priceStr);
+  return {
+    leg,
+    usdProps: {
+      amount_usd_status: leg.status,
+      ...(leg.status === LegUsdStatus.OK
+        ? {
+            amount_usd: leg.value,
+            amount_usd_rate: leg.rate,
+            amount_usd_source: snapshot.source,
+            amount_usd_price_freshness: snapshot.freshness,
+          }
+        : {}),
+    },
+  };
 };
 
 // ---------------------------------------------------------------------------
@@ -306,3 +337,18 @@ export const getFailureCategory = (
     FailureCategory.PROTOCOL_OTHER
   );
 };
+
+/**
+ * The result code that explains a failure: the first operation code that
+ * isn't a no-op success/skip marker (a swap prepending a changeTrust reports
+ * `["op_success", "op_under_dest_min"]`), else the transaction code.
+ */
+export const pickReasonCode = (resultCodes: {
+  transaction?: string;
+  operations?: string[];
+}): string =>
+  resultCodes.operations?.find(
+    (code) => code !== "op_success" && code !== "op_not_attempted",
+  ) ||
+  resultCodes.transaction ||
+  "unknown";
