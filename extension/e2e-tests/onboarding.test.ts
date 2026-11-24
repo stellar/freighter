@@ -447,10 +447,7 @@ const fillNewPassword = async (page: Page) => {
   await expect(page.getByText(/overwriting an existing account/)).toHaveCount(
     0,
   );
-  await page.locator("#new-password-input").fill(PASSWORD);
-  await page.locator("#confirm-password-input").fill(PASSWORD);
-  await page.locator("#termsOfUse-input").check({ force: true });
-  await page.getByText("Confirm").click();
+  await fillPasswordAndConfirm({ page, password: PASSWORD });
 };
 
 test("Reset wallet and create a new wallet", async ({
