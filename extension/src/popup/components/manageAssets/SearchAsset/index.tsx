@@ -283,10 +283,11 @@ export const SearchAsset = () => {
                         tokenState.data.isVerificationInfoShowing
                       }
                       isAssetHidden={isAssetHidden}
-                      onBalancesChanged={() => {
-                        refreshHiddenAssets();
-                        fetchData(true).catch(() => undefined);
-                      }}
+                      // Only the hidden map: a screen reload shows the
+                      // loader, which remounts the form and drops the search.
+                      // A removal reaches the rows through the balance cache
+                      // effect above.
+                      onBalancesChanged={refreshHiddenAssets}
                       onUnhideAsset={handleUnhide}
                       unhidingAsset={unhidingAsset}
                     />
