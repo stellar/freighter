@@ -13,6 +13,7 @@ import { TransactionConfirm } from "popup/components/InternalTransaction/SubmitT
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { getQuoteExpiredOperationCodes } from "popup/helpers/quoteExpiry";
 import { SwapAsset } from "popup/components/swap/SwapAsset";
+import { hiddenAssetSwapActions } from "popup/views/Swap/hiddenAsset";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
 import { AppDispatch, AppState } from "popup/App";
 import {
@@ -33,7 +34,7 @@ import { resetSimulation } from "popup/ducks/token-payment";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { isAssetVisible } from "popup/helpers/settings";
-import { swapIdentityKey, swapSidesMatching } from "popup/helpers/swapQuote";
+import { swapIdentityKey } from "popup/helpers/swapQuote";
 import { readHiddenAssets } from "popup/helpers/useHiddenAssets";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { isNativeAssetId } from "@shared/helpers/assetIdentity";
@@ -350,15 +351,7 @@ export const Swap = () => {
   // A token hidden or removed from a picker's details sheet can no longer be
   // swapped; drop it from whichever side holds it.
   const clearHiddenSelection = (canonical: string) => {
-    const sides = swapSidesMatching(canonical, transactionData);
-    if (sides.source) {
-      dispatch(saveAsset(""));
-      dispatch(saveIsToken(false));
-    }
-    if (sides.destination) {
-      dispatch(saveDestinationAsset(""));
-      dispatch(saveDestinationTokenDetails(null));
-    }
+    hiddenAssetSwapActions(canonical, transactionData).forEach(dispatch);
   };
 
   if (!areDefaultsApplied) {
