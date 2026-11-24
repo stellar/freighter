@@ -691,22 +691,31 @@ export const useSwapTokenLookup = () => {
     // Held rows come from the caller's balances, never from a cache another
     // caller or account filled. Only the idle entry is shared across callers;
     // a search entry's yourTokens is term-filtered, so it is served as cached.
-    const serveCached = (result: SwapTokenLookupResult) =>
-      serve(
-        isIdle
-          ? {
-              ...result,
-              sections: {
-                ...result.sections,
-                yourTokens: balancesToHeldRecords({
-                  balances,
-                  icons,
-                  tokenPrices,
-                }),
-              },
-            }
-          : result,
+    // Popular excludes held tokens, so it is re-filtered against them too.
+    const serveCached = (result: SwapTokenLookupResult) => {
+      if (!isIdle) {
+        serve(result);
+        return;
+      }
+      const yourTokens = balancesToHeldRecords({
+        balances,
+        icons,
+        tokenPrices,
+      });
+      const heldKeys = new Set(
+        yourTokens.map((r) => swapIdentityKey(r.canonical)),
       );
+      serve({
+        ...result,
+        sections: {
+          ...result.sections,
+          yourTokens,
+          popular: result.sections.popular.filter(
+            (r) => !heldKeys.has(swapIdentityKey(r.canonical)),
+          ),
+        },
+      });
+    };
 
     if (cachedResult) {
       serveCached(cachedResult);
