@@ -1,6 +1,7 @@
 import { CacheAssetIconMessage } from "@shared/api/types/message-request";
 import {
   boundAssetIconMap,
+  MAX_ASSET_CANONICAL_LENGTH,
   toStorableIconUrl,
 } from "background/helpers/assetIconCache";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
@@ -14,6 +15,9 @@ const writeAssetIcon = async ({
   localStore: DataStorageAccess;
 }) => {
   const { assetCanonical, iconUrl } = request;
+  if (assetCanonical.length > MAX_ASSET_CANONICAL_LENGTH) {
+    return;
+  }
 
   // null clears the entry (see retryAssetIcon); anything else must be an
   // https url, or it is dropped without a write.

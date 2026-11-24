@@ -1,7 +1,9 @@
 // The map shares Chrome's 10 MB storage.local quota with the key store, so
-// both the entry count and the entry size are bounded. The values come from
-// issuer-controlled stellar.toml files.
+// the entry count, the key size and the value size are all bounded. Values
+// come from issuer tomls and token lists; a Soroban key carries the token's
+// own symbol, which its contract sets.
 export const MAX_CACHED_ASSET_ICONS = 500;
+export const MAX_ASSET_CANONICAL_LENGTH = 256;
 const MAX_ICON_URL_LENGTH = 2048;
 
 /**
@@ -27,7 +29,7 @@ export const toStorableIconUrl = (iconUrl: unknown): string | null => {
 };
 
 /**
- * The map with every entry validated and the oldest entries dropped past the
+ * The map with every key and value validated and the oldest entries dropped past the
  * cap. Object key order is insertion order, so the first keys are the oldest.
  */
 export const boundAssetIconMap = (
@@ -36,7 +38,7 @@ export const boundAssetIconMap = (
   const icons: Record<string, string> = {};
   for (const [canonical, entry] of Object.entries(stored)) {
     const url = toStorableIconUrl(entry);
-    if (url !== null) {
+    if (url !== null && canonical.length <= MAX_ASSET_CANONICAL_LENGTH) {
       icons[canonical] = url;
     }
   }

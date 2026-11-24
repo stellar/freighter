@@ -247,37 +247,38 @@ function useGetSignTxData(
             const key = diff.asset.issuer;
             const code = diff.asset.code;
             let canonical = getCanonicalFromAsset(code, key);
-            // Token lists first, so a cached entry can't override a listed
-            // asset's icon; then the cache; then the issuer toml. Nothing this
+            // Cache, then token lists, then the issuer toml. Nothing this
             // dApp-driven, pre-approval flow resolves is persisted.
-            if (!hasFetchedAssetLists) {
-              assetsListsData = await getCombinedAssetListData({
-                networkDetails,
-                assetsLists,
-                cachedAssetLists: cachedTokenLists,
-              });
-              hasFetchedAssetLists = true;
-            }
-            const tokenListIcon = findTokenListIcon({
-              issuerId: key,
-              contractId: isContractId(key) ? key : undefined,
-              code,
-              assetsListsData,
-            });
             const cachedIcon = cachedIcons[canonical];
             let icon = "";
-            if (tokenListIcon.icon && tokenListIcon.canonicalAsset) {
-              icon = tokenListIcon.icon;
-              canonical = tokenListIcon.canonicalAsset;
-            } else if (cachedIcon) {
+            if (cachedIcon) {
               icon = cachedIcon;
             } else {
-              icon = await getIconUrlFromIssuer({
-                key,
+              if (!hasFetchedAssetLists) {
+                assetsListsData = await getCombinedAssetListData({
+                  networkDetails,
+                  assetsLists,
+                  cachedAssetLists: cachedTokenLists,
+                });
+                hasFetchedAssetLists = true;
+              }
+              const tokenListIcon = findTokenListIcon({
+                issuerId: key,
+                contractId: isContractId(key) ? key : undefined,
                 code,
-                networkDetails,
-                cache: false,
+                assetsListsData,
               });
+              if (tokenListIcon.icon && tokenListIcon.canonicalAsset) {
+                icon = tokenListIcon.icon;
+                canonical = tokenListIcon.canonicalAsset;
+              } else {
+                icon = await getIconUrlFromIssuer({
+                  key,
+                  code,
+                  networkDetails,
+                  cache: false,
+                });
+              }
             }
             if (icon) {
               icons[canonical] = icon;
@@ -300,34 +301,36 @@ function useGetSignTxData(
           if ("code" in trustChange.line) {
             const { code, issuer } = trustChange.line;
             let canonical = getCanonicalFromAsset(code, issuer);
-            if (!hasFetchedAssetLists) {
-              assetsListsData = await getCombinedAssetListData({
-                networkDetails,
-                assetsLists,
-                cachedAssetLists: cachedTokenLists,
-              });
-              hasFetchedAssetLists = true;
-            }
-            const tokenListIcon = findTokenListIcon({
-              issuerId: issuer,
-              contractId: isContractId(issuer) ? issuer : undefined,
-              code,
-              assetsListsData,
-            });
             const cachedIcon = cachedIcons[canonical];
             let icon = "";
-            if (tokenListIcon.icon && tokenListIcon.canonicalAsset) {
-              icon = tokenListIcon.icon;
-              canonical = tokenListIcon.canonicalAsset;
-            } else if (cachedIcon) {
+            if (cachedIcon) {
               icon = cachedIcon;
             } else {
-              icon = await getIconUrlFromIssuer({
-                key: issuer ?? "",
+              if (!hasFetchedAssetLists) {
+                assetsListsData = await getCombinedAssetListData({
+                  networkDetails,
+                  assetsLists,
+                  cachedAssetLists: cachedTokenLists,
+                });
+                hasFetchedAssetLists = true;
+              }
+              const tokenListIcon = findTokenListIcon({
+                issuerId: issuer,
+                contractId: isContractId(issuer) ? issuer : undefined,
                 code,
-                networkDetails,
-                cache: false,
+                assetsListsData,
               });
+              if (tokenListIcon.icon && tokenListIcon.canonicalAsset) {
+                icon = tokenListIcon.icon;
+                canonical = tokenListIcon.canonicalAsset;
+              } else {
+                icon = await getIconUrlFromIssuer({
+                  key: issuer ?? "",
+                  code,
+                  networkDetails,
+                  cache: false,
+                });
+              }
             }
             if (icon) {
               icons[canonical] = icon;

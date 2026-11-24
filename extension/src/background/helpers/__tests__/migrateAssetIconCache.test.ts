@@ -24,7 +24,7 @@ const makeLocalStore = (items: Record<string, unknown>) => {
 };
 
 describe("migrateAssetIconCache", () => {
-  it("drops nulls and invalid entries left by older builds and bumps the version", async () => {
+  it("drops nulls, invalid entries and over-length keys and bumps the version", async () => {
     const localStore = makeLocalStore({
       [STORAGE_VERSION]: "5.33.5",
       [CACHED_ASSET_ICONS_ID]: {
@@ -32,6 +32,8 @@ describe("migrateAssetIconCache", () => {
         "A:GA": "javascript:alert(1)",
         "B:GB": `https://icons.example/${"b".repeat(3000)}.png`,
         "C:GC": 42,
+        [`${"S".repeat(300)}:CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75`]:
+          "https://icons.example/s.png",
         [USDC]: USDC_ICON,
       },
     });

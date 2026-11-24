@@ -7,7 +7,7 @@ jest.mock("@shared/api/helpers/extensionMessaging");
 const ISSUER = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
 const USDC = `USDC:${ISSUER}`;
 const LIST_ICON = "https://list.example/usdc.png";
-const CACHED_ICON = "https://attacker.example/usdc.png";
+const CACHED_ICON = "https://issuer.example/usdc.png";
 
 const balances = {
   [USDC]: {
@@ -33,7 +33,8 @@ describe("getAssetIcons", () => {
     jest.clearAllMocks();
   });
 
-  it("lets a token-list icon win over a cached one for the same canonical", async () => {
+  it("keeps a cached icon over the token-list one and sends no write", async () => {
+    // e.g. the list icon is dead and retryAssetIcon cached the toml's icon
     const icons = await getAssetIcons({
       balances,
       networkDetails: MAINNET_NETWORK_DETAILS,
@@ -41,8 +42,19 @@ describe("getAssetIcons", () => {
       cachedIcons: { [USDC]: CACHED_ICON },
     });
 
+    expect(icons[USDC]).toBe(CACHED_ICON);
+    expect(sendMessageToBackground).not.toHaveBeenCalled();
+  });
+
+  it("caches a token-list icon on a cache miss", async () => {
+    const icons = await getAssetIcons({
+      balances,
+      networkDetails: MAINNET_NETWORK_DETAILS,
+      assetsListsData,
+      cachedIcons: {},
+    });
+
     expect(icons[USDC]).toBe(LIST_ICON);
-    // and replaces the cached entry
     expect(sendMessageToBackground).toHaveBeenCalledWith(
       expect.objectContaining({
         type: "CACHE_ASSET_ICON",
@@ -71,7 +83,7 @@ describe("getAssetIcons", () => {
     consoleError.mockRestore();
   });
 
-  it("lets a token-list icon win over a cached one for an unheld extra", async () => {
+  it("keeps a cached icon over the token-list one for an unheld extra", async () => {
     const icons = await getAssetIcons({
       balances: {} as any,
       networkDetails: MAINNET_NETWORK_DETAILS,
@@ -80,7 +92,27 @@ describe("getAssetIcons", () => {
       additionalAssetIds: [USDC],
     });
 
+    expect(icons[USDC]).toBe(CACHED_ICON);
+    expect(sendMessageToBackground).not.toHaveBeenCalled();
+  });
+
+  it("caches a token-list icon for an unheld extra on a cache miss", async () => {
+    const icons = await getAssetIcons({
+      balances: {} as any,
+      networkDetails: MAINNET_NETWORK_DETAILS,
+      assetsListsData,
+      cachedIcons: {},
+      additionalAssetIds: [USDC],
+    });
+
     expect(icons[USDC]).toBe(LIST_ICON);
+    expect(sendMessageToBackground).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "CACHE_ASSET_ICON",
+        assetCanonical: USDC,
+        iconUrl: LIST_ICON,
+      }),
+    );
   });
 
   it("serves the cached icon when the lists are not consulted", async () => {

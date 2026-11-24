@@ -404,7 +404,10 @@ describe("useGetSignTxData", () => {
     );
   });
 
-  it("uses the token-list icon for a listed changeTrust asset, ahead of the cache and the issuer toml", async () => {
+  const RUBTC_CANONICAL =
+    "RUBTC:GAL3BSXUPXXCP6UYPUDKJP655KE5CFLL6HQ64YAXVQ4XM7NREBKQRUSS";
+
+  it("uses a cached changeTrust icon without consulting the token lists or the issuer toml", async () => {
     jest.spyOn(BlockaidHelpers, "useScanTx").mockReturnValue({
       scanTx: () =>
         Promise.resolve({
@@ -416,7 +419,7 @@ describe("useGetSignTxData", () => {
     const getIconUrlFromIssuer = jest
       .spyOn(GetIconUrlFromIssuerHelpers, "getIconUrlFromIssuer")
       .mockResolvedValue("https://issuer.example/icon.png");
-    jest
+    const findTokenListIcon = jest
       .spyOn(GetIconFromTokenListHelpers, "findTokenListIcon")
       .mockReturnValue({
         icon: "https://list.example/icon.png",
@@ -426,11 +429,11 @@ describe("useGetSignTxData", () => {
       .spyOn(ExtensionMessaging, "sendMessageToBackground")
       .mockResolvedValue({} as any);
 
-    const poisonedStore = makeDummyStore({
+    const cachedStore = makeDummyStore({
       ...preloadedState,
       cache: {
         ...preloadedState.cache,
-        icons: { [TEST_CANONICAL]: "https://attacker.example/icon.png" },
+        icons: { [RUBTC_CANONICAL]: "https://cached.example/icon.png" },
       },
     });
     const { result } = renderHook(
@@ -440,22 +443,86 @@ describe("useGetSignTxData", () => {
           { showHidden: false, includeIcons: false },
           "G123",
         ),
-      { wrapper: Wrapper(poisonedStore) },
+      { wrapper: Wrapper(cachedStore) },
     );
 
-    await act(async () => {
-      await result.current.fetchData();
-    });
+    try {
+      await act(async () => {
+        await result.current.fetchData();
+      });
 
-    // @ts-ignore
-    expect(result.current.state.data?.icons).toEqual({
-      [TEST_CANONICAL]: "https://list.example/icon.png",
-    });
-    expect(getIconUrlFromIssuer).not.toHaveBeenCalled();
-    expect(sendMessageToBackground).not.toHaveBeenCalledWith(
-      expect.objectContaining({ type: "CACHE_ASSET_ICON" }),
+      // @ts-ignore
+      expect(result.current.state.data?.icons).toEqual({
+        [RUBTC_CANONICAL]: "https://cached.example/icon.png",
+      });
+      expect(findTokenListIcon).not.toHaveBeenCalled();
+      expect(getIconUrlFromIssuer).not.toHaveBeenCalled();
+      expect(sendMessageToBackground).not.toHaveBeenCalledWith(
+        expect.objectContaining({ type: "CACHE_ASSET_ICON" }),
+      );
+    } finally {
+      sendMessageToBackground.mockRestore();
+      findTokenListIcon.mockRestore();
+      getIconUrlFromIssuer.mockRestore();
+    }
+  });
+
+  it("uses the token-list icon for an uncached listed changeTrust asset, ahead of the issuer toml", async () => {
+    jest.spyOn(BlockaidHelpers, "useScanTx").mockReturnValue({
+      scanTx: () =>
+        Promise.resolve({
+          simulation: null,
+          validation: null,
+          request_id: "1",
+        }),
+    } as any);
+    const getIconUrlFromIssuer = jest
+      .spyOn(GetIconUrlFromIssuerHelpers, "getIconUrlFromIssuer")
+      .mockResolvedValue("https://issuer.example/icon.png");
+    const findTokenListIcon = jest
+      .spyOn(GetIconFromTokenListHelpers, "findTokenListIcon")
+      .mockReturnValue({
+        icon: "https://list.example/icon.png",
+        canonicalAsset: RUBTC_CANONICAL,
+      });
+    const sendMessageToBackground = jest
+      .spyOn(ExtensionMessaging, "sendMessageToBackground")
+      .mockResolvedValue({} as any);
+
+    const { result } = renderHook(
+      () =>
+        useGetSignTxData(
+          { xdr: changeTrustTx, url: "https://example.com" },
+          { showHidden: false, includeIcons: false },
+          "G123",
+        ),
+      { wrapper: Wrapper(store) },
     );
-    sendMessageToBackground.mockRestore();
+
+    try {
+      await act(async () => {
+        await result.current.fetchData();
+      });
+
+      // @ts-ignore
+      expect(result.current.state.data?.icons).toEqual({
+        [RUBTC_CANONICAL]: "https://list.example/icon.png",
+      });
+      expect(findTokenListIcon).toHaveBeenCalledWith(
+        expect.objectContaining({
+          issuerId: RUBTC_CANONICAL.split(":")[1],
+          code: "RUBTC",
+        }),
+      );
+      expect(getIconUrlFromIssuer).not.toHaveBeenCalled();
+      expect(sendMessageToBackground).not.toHaveBeenCalledWith(
+        expect.objectContaining({ type: "CACHE_ASSET_ICON" }),
+      );
+    } finally {
+      sendMessageToBackground.mockRestore();
+      findTokenListIcon.mockRestore();
+      getIconUrlFromIssuer.mockRestore();
+    }
   });
 
   it("handles balance fetch failure gracefully and returns success with undefined balances", async () => {

@@ -5,6 +5,8 @@ import { cacheAssetIcon } from "../cacheAssetIcon";
 
 const USDC = "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
 const USDC_ICON = "https://centre.io/usdc.png";
+const LONG_KEY_CONTRACT =
+  "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75";
 
 const makeLocalStore = (assetIconCache: unknown) =>
   ({
@@ -38,6 +40,30 @@ describe("cacheAssetIcon", () => {
     expect(localStore.setItem).toHaveBeenCalledWith(CACHED_ASSET_ICONS_ID, {
       [USDC]: USDC_ICON,
     });
+  });
+
+  it("drops a write whose canonical is longer than the key cap", async () => {
+    const localStore = makeLocalStore({});
+    await cacheAssetIcon({
+      request: {
+        type: SERVICE_TYPES.CACHE_ASSET_ICON,
+        activePublicKey: null,
+        assetCanonical: `${"S".repeat(300)}:${LONG_KEY_CONTRACT}`,
+        iconUrl: USDC_ICON,
+      } as any,
+      localStore,
+    });
+
+    expect(localStore.setItem).not.toHaveBeenCalled();
+  });
+
+  it("drops existing entries whose canonical is longer than the key cap on write", async () => {
+    const localStore = await cache(USDC_ICON, {
+      [`${"S".repeat(300)}:${LONG_KEY_CONTRACT}`]:
+        "https://icons.example/s.png",
+    });
+
+    expect(lastWrite(localStore)).toEqual({ [USDC]: USDC_ICON });
   });
 
   it("removes the entry when sent null, which retryAssetIcon uses to clear it", async () => {

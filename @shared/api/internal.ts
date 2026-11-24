@@ -1599,10 +1599,9 @@ export const getAssetIconCache = async ({
 */
 
 /**
- * Persists a token-list icon so cache-only `getAssetIcons` calls (no lists
- * passed) can serve it. The background skips the write when it already
- * holds this value. Not awaited: the lookup must not wait on one message
- * per listed asset.
+ * Persists a token-list icon found on a cache miss, so cache-only
+ * `getAssetIcons` calls (no lists passed) can serve it. Not awaited: the
+ * lookup must not wait on one message per listed asset.
  */
 const persistTokenListIcon = async ({
   canonical,
@@ -1655,28 +1654,6 @@ export const getAssetIcons = async ({
         } = token;
 
         const canonical = getCanonicalFromAsset(code, key);
-
-        // Within a lookup, token lists are checked ahead of the cache so a
-        // cached entry (written from an issuer toml) can't override a listed
-        // asset's icon. Callers that pre-filter cached assets (useGetIcons)
-        // don't get this.
-        if (!skipLookup) {
-          const tokenListIcon = findTokenListIcon({
-            issuerId: key,
-            contractId,
-            code,
-            assetsListsData,
-          });
-          if (tokenListIcon.icon && tokenListIcon.canonicalAsset) {
-            assetIcons[tokenListIcon.canonicalAsset] = tokenListIcon.icon;
-            void persistTokenListIcon({
-              canonical: tokenListIcon.canonicalAsset,
-              icon: tokenListIcon.icon,
-            });
-            continue;
-          }
-        }
-
         const cachedIcon = cachedIcons[canonical];
         if (cachedIcon) {
           assetIcons[canonical] = cachedIcon;
@@ -1694,7 +1671,22 @@ export const getAssetIcons = async ({
           continue;
         }
 
-        // not in the lists or the cache: try the issuer toml. Aggregate the
+        const tokenListIcon = findTokenListIcon({
+          issuerId: key,
+          contractId,
+          code,
+          assetsListsData,
+        });
+        if (tokenListIcon.icon && tokenListIcon.canonicalAsset) {
+          assetIcons[tokenListIcon.canonicalAsset] = tokenListIcon.icon;
+          void persistTokenListIcon({
+            canonical: tokenListIcon.canonicalAsset,
+            icon: tokenListIcon.icon,
+          });
+          continue;
+        }
+
+        // not in the cache or the lists: try the issuer toml. Aggregate the
         // missing icons and fetch all the domains at once below.
         domainsToFetch.push({ key, code });
         // null until the toml fetch below fills it in
@@ -1712,29 +1704,24 @@ export const getAssetIcons = async ({
       continue;
     }
 
-    if (!skipLookup) {
-      const tokenListIcon = findTokenListIcon({
-        issuerId: isContractId(key) ? undefined : key,
-        contractId: isContractId(key) ? key : undefined,
-        code,
-        assetsListsData,
-      });
-      if (tokenListIcon.icon) {
-        assetIcons[canonical] = tokenListIcon.icon;
-        void persistTokenListIcon({
-          canonical,
-          icon: tokenListIcon.icon,
-        });
-        continue;
-      }
-    }
-
     const cachedIcon = cachedIcons[canonical];
     if (cachedIcon) {
       assetIcons[canonical] = cachedIcon;
       continue;
     }
     if (cachedIcon === null || skipLookup) {
+      continue;
+    }
+
+    const tokenListIcon = findTokenListIcon({
+      issuerId: isContractId(key) ? undefined : key,
+      contractId: isContractId(key) ? key : undefined,
+      code,
+      assetsListsData,
+    });
+    if (tokenListIcon.icon) {
+      assetIcons[canonical] = tokenListIcon.icon;
+      void persistTokenListIcon({ canonical, icon: tokenListIcon.icon });
       continue;
     }
 
