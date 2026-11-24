@@ -152,9 +152,12 @@ export const SwapAsset = ({
       ? fromState.data.balances
       : EMPTY_BALANCES;
 
+  // A reload's FETCH_DATA_START drops the held balances a destination pick
+  // reads, so the destination list waits for it too.
   const isLoading = isDestination
     ? lookupState.state === RequestState.IDLE ||
-      lookupState.state === RequestState.LOADING
+      lookupState.state === RequestState.LOADING ||
+      fromState.state === RequestState.LOADING
     : fromState.state === RequestState.IDLE ||
       fromState.state === RequestState.LOADING;
 

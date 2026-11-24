@@ -586,8 +586,9 @@ describe("SwapAsset destination: a pick before the account data resolves", () =>
     const getDecimals = jest
       .spyOn(Soroban, "getDecimalsForAsset")
       .mockResolvedValue(18);
+    // IDLE, not LOADING: a loading account shows the loader instead of rows.
     jest.spyOn(UseSwapFromData, "useGetSwapFromData").mockReturnValue({
-      state: { state: RequestState.LOADING, data: null, error: null },
+      state: { state: RequestState.IDLE, data: null, error: null },
       fetchData: jest.fn().mockResolvedValue(undefined),
       filterBalances: jest.fn(),
     } as any);
@@ -930,6 +931,19 @@ describe("SwapAsset destination: View details", () => {
     expect(lookupFetchData).not.toHaveBeenCalledWith(
       expect.objectContaining({ searchTerm: "US" }),
     );
+  });
+
+  it("shows the loader, not pickable rows, while the account data reloads", () => {
+    jest.spyOn(UseSwapFromData, "useGetSwapFromData").mockReturnValue({
+      state: { state: RequestState.LOADING, data: null, error: null },
+      fetchData: jest.fn().mockResolvedValue(undefined),
+      filterBalances: jest.fn(),
+    } as any);
+    const { container } = renderPicker(true);
+
+    expect(container.querySelector(".SwapFrom__loader")).not.toBeNull();
+    expect(screen.queryByTestId("swap-picker-sections")).toBeNull();
+    expect(screen.queryByTestId("SwapTokenRow-USDC-view-details")).toBeNull();
   });
 
   it("opens the detail sheet from a Your tokens row", async () => {
