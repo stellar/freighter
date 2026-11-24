@@ -22,9 +22,13 @@ describe("initExperimentClient", () => {
 
     expect(Experiment.initialize).toHaveBeenCalledWith(
       "test-deployment-key",
-      // A retry would re-send the identity captured at fetch time after the
-      // user may have turned data sharing off.
-      expect.objectContaining({ retryFetchOnFailure: false }),
+      // Retries are what refresh the stored flags for the next open when the
+      // popup's own fetch times out on a slow link.
+      expect.objectContaining({ fetchTimeoutMillis: 1500 }),
+    );
+    expect(Experiment.initialize).toHaveBeenCalledWith(
+      "test-deployment-key",
+      expect.not.objectContaining({ retryFetchOnFailure: false }),
     );
     expect(Experiment.initializeWithAmplitudeAnalytics).not.toHaveBeenCalled();
     expect(getExperimentClient()).toEqual({ client: "plain" });
