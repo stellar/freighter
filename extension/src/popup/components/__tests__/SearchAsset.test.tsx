@@ -427,6 +427,34 @@ describe("SearchAsset", () => {
       expect(lookup.fetchData.mock.calls.length).toBe(callsBefore);
     });
 
+    it("drops a pending search's loader once the field is cleared back to Popular", async () => {
+      const searchSpy = jest
+        .spyOn(ApiInternal, "getStellarExpertAssets")
+        .mockImplementation(() => new Promise(() => {}));
+      jest
+        .spyOn(UseSwapTokenLookup, "useSwapTokenLookup")
+        .mockReturnValue(lookupWith([aqua]) as any);
+      const { container } = renderSearchAsset();
+      await screen.findByTestId("search-asset-popular");
+
+      fireEvent.change(screen.getByTestId("search-asset-input"), {
+        target: { value: "USDC" },
+      });
+      await waitFor(() => expect(searchSpy).toHaveBeenCalled(), {
+        timeout: 2000,
+      });
+      expect(container.querySelector(".SearchResults__loader")).not.toBeNull();
+
+      fireEvent.change(screen.getByTestId("search-asset-input"), {
+        target: { value: "" },
+      });
+
+      expect(
+        await screen.findByTestId("search-asset-popular"),
+      ).toBeInTheDocument();
+      expect(container.querySelector(".SearchResults__loader")).toBeNull();
+    });
+
     it("shows the loader while Popular is cold-loading", async () => {
       jest.spyOn(UseSwapTokenLookup, "useSwapTokenLookup").mockReturnValue({
         fetchData: jest.fn().mockResolvedValue(undefined),

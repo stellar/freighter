@@ -297,7 +297,7 @@ export const SearchAsset = () => {
                 </div>
                 <SearchResults
                   isSearching={
-                    tokenState.state === "LOADING" ||
+                    (dirty && tokenState.state === "LOADING") ||
                     (!dirty && isPopularLoading)
                   }
                   resultsRef={ResultsRef}
