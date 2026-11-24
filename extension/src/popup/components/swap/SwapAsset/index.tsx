@@ -137,6 +137,9 @@ export const SwapAsset = ({
   // or the picker closing wins over a late result.
   const pickIdRef = useRef(0);
   const pendingPickRef = useRef<string | null>(null);
+  // formik.values in an async callback is the value from the render that
+  // created the callback, not the one in the input now.
+  const searchTermRef = useRef("");
   useEffect(
     () => () => {
       pickIdRef.current += 1;
@@ -210,6 +213,7 @@ export const SwapAsset = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     formik.setFieldValue("searchTerm", val);
+    searchTermRef.current = val;
     // A new search abandons a pending pick and its error: both are about a
     // row from the previous results.
     pickIdRef.current += 1;
@@ -508,6 +512,7 @@ export const SwapAsset = ({
               if (
                 !isDestination ||
                 !searchTerm ||
+                searchTerm !== searchTermRef.current ||
                 isError(next) ||
                 next.type !== AppDataType.RESOLVED
               ) {

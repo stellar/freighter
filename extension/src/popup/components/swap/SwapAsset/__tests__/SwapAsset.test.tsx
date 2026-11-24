@@ -876,6 +876,62 @@ describe("SwapAsset destination: View details", () => {
     );
   });
 
+  it("a search changed while the hide's reload is pending runs no lookup for the old term", async () => {
+    const reloaded = {
+      ...resolvedFromState.data,
+      balances: { balances: [], icons: {} },
+      tokenPrices: {},
+    };
+    let resolveReload: (v: unknown) => void = () => undefined;
+    const fromFetchData = jest.fn().mockResolvedValue(undefined);
+    const lookupFetchData = jest.fn().mockResolvedValue(undefined);
+    jest.spyOn(UseSwapFromData, "useGetSwapFromData").mockReturnValue({
+      state: resolvedFromState,
+      fetchData: fromFetchData,
+      filterBalances: jest.fn(),
+    } as any);
+    jest.spyOn(UseSwapTokenLookup, "useSwapTokenLookup").mockReturnValue({
+      fetchData: lookupFetchData,
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          sections: {
+            yourTokens: [],
+            popular: [],
+            verified: [usdcRecord],
+            unverified: [],
+          },
+          isSearch: true,
+          isFallback: false,
+        },
+        error: null,
+      },
+    } as any);
+    renderPicker(true);
+    fireEvent.change(screen.getByTestId("swap-from-search"), {
+      target: { value: "US" },
+    });
+    fireEvent.click(
+      await screen.findByTestId("SwapTokenRow-USDC-view-details"),
+    );
+    fromFetchData.mockImplementation(
+      () => new Promise((resolve) => (resolveReload = resolve)),
+    );
+
+    fireEvent.click(screen.getByTestId("asset-detail-hide"));
+    fireEvent.change(screen.getByTestId("swap-from-search"), {
+      target: { value: "EU" },
+    });
+    lookupFetchData.mockClear();
+    await act(async () => {
+      resolveReload(reloaded);
+    });
+
+    expect(lookupFetchData).not.toHaveBeenCalledWith(
+      expect.objectContaining({ searchTerm: "US" }),
+    );
+  });
+
   it("opens the detail sheet from a Your tokens row", async () => {
     const heldUsdc = {
       ...usdcRecord,
