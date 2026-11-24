@@ -44,7 +44,7 @@ export interface AssetDetailBodyProps {
     currentPrice?: string | null;
     percentagePriceChange24h?: string | null;
   } | null;
-  /** `$--` placeholder when there is no price and the asset is a contract token. */
+  /** Show the `$--` placeholder when there is no spot price. */
   isPricePlaceholder: boolean;
   assetDomain?: string;
   /** flag && mainnet && !LP — owner decides; the body only renders. */

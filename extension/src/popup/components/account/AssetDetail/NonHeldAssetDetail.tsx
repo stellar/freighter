@@ -38,6 +38,8 @@ export interface NonHeldAssetDescriptor {
   domain?: string | null;
   isSuspicious?: boolean;
   isMalicious?: boolean;
+  /** USD price from the search record; used when the backend has none. */
+  spotPrice?: number;
 }
 
 export const NonHeldAssetDetail = ({
@@ -86,6 +88,10 @@ export const NonHeldAssetDetail = ({
   }, [canonical, networkPassphrase]);
 
   const isChartShown = isChartEnabled && isMainnet(networkDetails);
+  const headerPrice =
+    price?.currentPrice || asset.spotPrice === undefined
+      ? price
+      : { currentPrice: String(asset.spotPrice) };
 
   let copyAddress = "";
   if (asset.contractId) {
@@ -173,8 +179,8 @@ export const NonHeldAssetDetail = ({
             title={title}
             iconUrl={asset.iconUrl}
             isSorobanAsset={!!asset.contractId}
-            spotPrice={price}
-            isPricePlaceholder={!price && !!asset.contractId}
+            spotPrice={headerPrice}
+            isPricePlaceholder={!headerPrice?.currentPrice}
             assetDomain={assetDomain}
             isChartShown={isChartShown}
             isMalicious={asset.isMalicious}

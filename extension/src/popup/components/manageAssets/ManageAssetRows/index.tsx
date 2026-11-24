@@ -140,6 +140,7 @@ export const ManageAssetRows = ({
               isSac,
               isTrustlineActive,
               name,
+              price,
             }) => {
               const canonicalAsset = getCanonicalFromAsset(code, issuer);
               // A held asset the user hid offers Unhide instead of the menu.
@@ -171,6 +172,7 @@ export const ManageAssetRows = ({
                             domain,
                             isSuspicious,
                             isMalicious,
+                            spotPrice: price,
                           })
                       : undefined
                   }
@@ -294,6 +296,7 @@ const AssetRows = ({
     isMalicious,
     isRemovable,
     isSac,
+    price,
   }: {
     code: string;
     domain: string | null;
@@ -307,6 +310,7 @@ const AssetRows = ({
     isMalicious?: boolean;
     isRemovable: boolean;
     isSac: boolean;
+    price?: number;
   }) => React.ReactNode;
 }) => {
   const { t } = useTranslation();
@@ -337,6 +341,7 @@ const AssetRows = ({
             contract = "",
             isSuspicious,
             isMalicious,
+            price,
           }) => {
             if (!accountBalances.balances) {
               return null;
@@ -381,6 +386,7 @@ const AssetRows = ({
                     isTrustlineActive !== undefined ||
                     contract === nativeContract.contract,
                   name,
+                  price,
                 })}
               </div>
             );
@@ -408,6 +414,7 @@ const AssetRows = ({
             contract = "",
             isSuspicious,
             isMalicious,
+            price,
           }) => {
             if (!accountBalances.balances) {
               return null;
@@ -453,6 +460,7 @@ const AssetRows = ({
                     isTrustlineActive !== undefined ||
                     contract === nativeContract.contract,
                   name,
+                  price,
                 })}
               </div>
             );
@@ -481,6 +489,7 @@ const AssetRows = ({
           name = "",
           contract = "",
           isSuspicious,
+          price,
         }) => {
           if (!accountBalances.balances) {
             return null;
@@ -524,6 +533,7 @@ const AssetRows = ({
                   isTrustlineActive !== undefined ||
                   contract === nativeContract.contract,
                 name,
+                price,
               })}
             </div>
           );

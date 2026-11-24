@@ -1,5 +1,11 @@
 import React from "react";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import {
+  act,
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+} from "@testing-library/react";
 
 import {
   NonHeldAssetDescriptor,
@@ -187,6 +193,27 @@ describe("NonHeldAssetDetail", () => {
       MAINNET_NETWORK_DETAILS,
       expect.any(AbortSignal),
     );
+  });
+
+  it("falls back to the search record's price when the backend has none", async () => {
+    renderDetail({ ...shx, spotPrice: 0.5 });
+
+    await waitFor(() => expect(getTokenPricesSpy).toHaveBeenCalledTimes(1));
+    // Let the empty backend response land before asserting.
+    await act(async () => {});
+    expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent("$0.5");
+    expect(screen.getByTestId("AssetDetail__price")).not.toHaveClass(
+      "AssetDetail__price--placeholder",
+    );
+  });
+
+  it("shows the placeholder for a classic token with no price at all", async () => {
+    renderDetail(shx);
+
+    await waitFor(() => expect(getTokenPricesSpy).toHaveBeenCalledTimes(1));
+    // Let the empty backend response land before asserting.
+    await act(async () => {});
+    expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent("$--");
   });
 
   it("titles the header with the truncated contract id for a token with no code or name", async () => {

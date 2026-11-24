@@ -25,12 +25,16 @@ jest.mock("popup/components/account/AssetDetail/AssetDetailSheet", () => ({
     swapTo,
     onBalancesChanged,
   }: {
-    asset: { canonical: string; name?: string } | null;
+    asset: { canonical: string; name?: string; spotPrice?: number } | null;
     swapTo?: { code: string; side: "to" | "from"; onSelect: () => void };
     onBalancesChanged?: (change: "hidden" | "removed") => void;
   }) =>
     asset ? (
-      <div data-testid="asset-detail-sheet" data-name={asset.name}>
+      <div
+        data-testid="asset-detail-sheet"
+        data-name={asset.name}
+        data-spot-price={asset.spotPrice}
+      >
         {asset.canonical}
         <button
           type="button"
@@ -949,6 +953,20 @@ describe("SwapAsset destination: View details", () => {
 
     expect(screen.getByTestId("asset-detail-sheet")).not.toHaveAttribute(
       "data-name",
+    );
+  });
+
+  it("carries the record's search price to the sheet", async () => {
+    mockLookup([{ ...usdcRecord, spotPrice: 0.99 }]);
+    renderPicker(true);
+
+    fireEvent.click(
+      await screen.findByTestId("SwapTokenRow-USDC-view-details"),
+    );
+
+    expect(screen.getByTestId("asset-detail-sheet")).toHaveAttribute(
+      "data-spot-price",
+      "0.99",
     );
   });
 

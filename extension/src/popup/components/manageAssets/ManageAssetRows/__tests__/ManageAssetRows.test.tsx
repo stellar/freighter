@@ -16,7 +16,12 @@ jest.mock("popup/components/account/AssetDetail/AssetDetailSheet", () => ({
     asset,
     onBalancesChanged,
   }: {
-    asset: { canonical: string; name?: string; contractId?: string } | null;
+    asset: {
+      canonical: string;
+      name?: string;
+      contractId?: string;
+      spotPrice?: number;
+    } | null;
     onBalancesChanged?: (change: "hidden" | "removed") => void;
   }) =>
     asset ? (
@@ -24,6 +29,7 @@ jest.mock("popup/components/account/AssetDetail/AssetDetailSheet", () => ({
         data-testid="asset-detail-sheet"
         data-name={asset.name}
         data-contract-id={asset.contractId}
+        data-spot-price={asset.spotPrice}
       >
         {asset.canonical}
         <button
@@ -173,5 +179,19 @@ describe("ManageAssetRows descriptor for contract-id rows", () => {
     const sheet = screen.getByTestId("asset-detail-sheet");
     expect(sheet).toHaveAttribute("data-name", "Kale");
     expect(sheet).toHaveAttribute("data-contract-id", KALE_ID);
+  });
+});
+
+describe("ManageAssetRows descriptor price", () => {
+  it("carries the search row's price to the sheet", () => {
+    renderRows(true, true, [
+      { code: "USDC", issuer: ISSUER, domain: "centre.io", price: 0.99 },
+    ]);
+
+    fireEvent.click(screen.getByTestId("ManageAssetRow-USDC-body"));
+    expect(screen.getByTestId("asset-detail-sheet")).toHaveAttribute(
+      "data-spot-price",
+      "0.99",
+    );
   });
 });
