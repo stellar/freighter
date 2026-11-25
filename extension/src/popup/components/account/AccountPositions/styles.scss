@@ -149,7 +149,9 @@
     padding: pxToRem(2px) pxToRem(4px);
     color: var(--sds-clr-green-11);
 
-    &--unknown {
+    // Unknown, or a loss: grey, so a negative figure never reads as a gain.
+    &--unknown,
+    &--loss {
       color: var(--sds-clr-gray-11);
     }
   }
@@ -246,7 +248,9 @@
     @include text(sm, medium);
     color: var(--sds-clr-green-11);
 
-    &--unknown {
+    // Unknown, or a loss: grey, so a negative figure never reads as a gain.
+    &--unknown,
+    &--loss {
       color: var(--sds-clr-gray-11);
     }
   }
@@ -304,6 +308,11 @@
   &__positive {
     @include text(sm, medium);
     color: var(--sds-clr-green-11);
+
+    &--unknown,
+    &--loss {
+      color: var(--sds-clr-gray-11);
+    }
   }
 
   &__positive-small {

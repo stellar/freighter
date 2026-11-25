@@ -18,7 +18,7 @@ import { PositionTokenRow } from "popup/components/earn/helpers/positionRows";
 
 import { NO_FIAT_VALUE } from "popup/helpers/formatters";
 
-import { formatPositionGain } from "./positionFigures";
+import { formatPositionGain, getGainModifier } from "./positionFigures";
 
 interface PoolPositionScreenProps {
   position: PoolPosition;
@@ -69,9 +69,10 @@ export const PoolPositionScreen = ({
               {formatAccountUsd(summary.totalUsd)}
             </div>
             <div
-              className={`PositionScreen__gain${
-                gain ? "" : " PositionScreen__gain--unknown"
-              }`}
+              className={`PositionScreen__gain${getGainModifier(
+                "PositionScreen__gain",
+                summary.interestUsd,
+              )}`}
               data-testid="pool-position-gain"
             >
               {gain ?? NO_FIAT_VALUE}

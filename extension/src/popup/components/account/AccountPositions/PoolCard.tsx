@@ -11,7 +11,7 @@ import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
 import { getPoolPositionSummary } from "popup/components/earn/helpers/poolPositionSummary";
 import { NO_FIAT_VALUE } from "popup/helpers/formatters";
 
-import { formatGainBadge } from "./positionFigures";
+import { formatGainBadge, getGainModifier } from "./positionFigures";
 
 interface PoolCardProps {
   position: PoolPosition;
@@ -56,7 +56,10 @@ export const PoolCard = ({ position, onClick }: PoolCardProps) => {
           </span>
           {/* Unknown is "--", never zero or a silently missing badge. */}
           <span
-            className={`PositionPoolCard__gain${gain ? "" : " PositionPoolCard__gain--unknown"}`}
+            className={`PositionPoolCard__gain${getGainModifier(
+              "PositionPoolCard__gain",
+              summary.gainPercent,
+            )}`}
             data-testid={`pool-card-gain-${position.id}`}
           >
             {gain ?? NO_FIAT_VALUE}

@@ -1,6 +1,7 @@
 import {
   formatGainBadge,
   formatPositionGain,
+  getGainModifier,
 } from "popup/components/account/AccountPositions/positionFigures";
 
 describe("formatPositionGain", () => {
@@ -37,5 +38,20 @@ describe("formatGainBadge", () => {
 
   it("is unknown when the share is", () => {
     expect(formatGainBadge(null)).toBeNull();
+  });
+});
+
+describe("getGainModifier", () => {
+  it("leaves a gain, or none, green", () => {
+    expect(getGainModifier("X", 0.12)).toBe("");
+    expect(getGainModifier("X", 0)).toBe("");
+  });
+
+  it("greys a loss, however small", () => {
+    expect(getGainModifier("X", -0.0001)).toBe(" X--loss");
+  });
+
+  it("greys an unknown figure", () => {
+    expect(getGainModifier("X", null)).toBe(" X--unknown");
   });
 });

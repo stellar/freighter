@@ -32,7 +32,7 @@ import { EarnLeafIcon } from "./PositionIcons";
 import { PositionTabs } from "./PositionTabs";
 import { NO_FIAT_VALUE } from "popup/helpers/formatters";
 
-import { formatPositionGain } from "./positionFigures";
+import { formatPositionGain, getGainModifier } from "./positionFigures";
 
 interface TokenPositionScreenProps {
   position: PoolPosition;
@@ -152,9 +152,10 @@ export const TokenPositionScreen = ({
               {formatAccountUsd(summary.currentBalanceUsd)}
             </div>
             <div
-              className={`PositionScreen__gain${
-                gain ? "" : " PositionScreen__gain--unknown"
-              }`}
+              className={`PositionScreen__gain${getGainModifier(
+                "PositionScreen__gain",
+                interestUsd,
+              )}`}
               data-testid="token-position-gain"
             >
               {gain ?? NO_FIAT_VALUE}
@@ -214,12 +215,13 @@ export const TokenPositionScreen = ({
                     </span>
                     <span className="PositionScreen__token__figures">
                       <span
-                        className="PositionScreen__positive"
+                        className={`PositionScreen__positive${getGainModifier(
+                          "PositionScreen__positive",
+                          interestUsd,
+                        )}`}
                         data-testid={`earn-position-earnings-usd-${row.code}`}
                       >
-                        {interestUsd === null
-                          ? formatAccountUsd(null)
-                          : `+${formatAccountUsd(interestUsd)}`}
+                        {formatPositionGain(interestUsd, null) ?? NO_FIAT_VALUE}
                       </span>
                       <span className="PositionScreen__secondary-small">
                         {`${formatEarnAmount(earning?.tokens ?? "0")} ${

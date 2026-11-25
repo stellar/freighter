@@ -253,6 +253,30 @@ describe("AccountPositions", () => {
     );
   });
 
+  // A position that lost value reads as a loss, in grey, on every figure.
+  it("greys a token's loss and signs its earnings negative", async () => {
+    renderTab({
+      positions: withSupply([
+        supply({ interestEarned: "-97881", interestEarnedUsd: -1.5 }),
+      ]),
+      pools: [pool],
+    });
+
+    fireEvent.click(screen.getByTestId(`pool-card-${POOL_ID}`));
+    expect(await screen.findByTestId("pool-position-gain")).toHaveClass(
+      "PositionScreen__gain--loss",
+    );
+    fireEvent.click(await screen.findByTestId("position-row-USDC"));
+
+    const gain = await screen.findByTestId("token-position-gain");
+    expect(gain).toHaveTextContent(/^-\$1\.50/);
+    expect(gain).toHaveClass("PositionScreen__gain--loss");
+    const earnings = screen.getByTestId("earn-position-earnings-usd-USDC");
+    expect(earnings).toHaveTextContent("-$1.50");
+    expect(earnings).not.toHaveTextContent("+");
+    expect(earnings).toHaveClass("PositionScreen__positive--loss");
+  });
+
   it("switches to Overview, with the pool's links", async () => {
     renderTab({ positions: twoAssetPositions, pools: [pool] });
 

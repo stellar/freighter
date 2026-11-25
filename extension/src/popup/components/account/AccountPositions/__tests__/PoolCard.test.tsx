@@ -77,6 +77,25 @@ describe("PoolCard", () => {
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
+  // A loss is grey, never the gain's green.
+  it("greys a negative gain", () => {
+    renderCard({
+      position: position({ blend: { supply: [supply(-0.02)], borrow: [] } }),
+    });
+
+    const badge = screen.getByTestId("pool-card-gain-CAJJ");
+    expect(badge).toHaveTextContent(/^-/);
+    expect(badge).toHaveClass("PositionPoolCard__gain--loss");
+  });
+
+  it("keeps a positive gain green", () => {
+    renderCard();
+
+    expect(screen.getByTestId("pool-card-gain-CAJJ")).not.toHaveClass(
+      "PositionPoolCard__gain--loss",
+    );
+  });
+
   it("renders an unavailable gain as the placeholder, not zero", () => {
     renderCard({
       position: position({ blend: { supply: [supply(null)], borrow: [] } }),

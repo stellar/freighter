@@ -30,6 +30,22 @@ export const formatPositionGain = (
     : `${sign}${amount} (${formatRatePercent(Math.abs(gainPercent))}%)`;
 };
 
+/**
+ * The modifier class a gain figure takes: grey when unknown ("--"), grey when
+ * it is a loss, so a negative figure never reads as a green gain, and none
+ * (green) otherwise. `value` is the figure's sign source: the interest, or
+ * the gain share for the card's badge.
+ */
+export const getGainModifier = (
+  block: string,
+  value: number | null,
+): string => {
+  if (value === null) {
+    return ` ${block}--unknown`;
+  }
+  return value < 0 ? ` ${block}--loss` : "";
+};
+
 /** The pool card's gain badge: "+2.54%". Null when the share is unknown. */
 export const formatGainBadge = (gainPercent: number | null): string | null =>
   gainPercent === null
