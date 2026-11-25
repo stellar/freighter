@@ -30,10 +30,14 @@ jest.mock("popup/components/account/AssetDetail", () => ({
     swapTo,
     isUnableToScan,
     isHidden,
+    isMalicious,
+    isSuspicious,
   }: any) => (
     <div
       data-testid="asset-detail"
       data-hidden={String(!!isHidden)}
+      data-malicious={String(!!isMalicious)}
+      data-suspicious={String(!!isSuspicious)}
       data-unable-to-scan={String(!!isUnableToScan)}
       data-asset={selectedAsset}
       data-source={source}
@@ -161,6 +165,18 @@ describe("AssetDetailSheet", () => {
     expect(screen.getByTestId("asset-detail").getAttribute("data-hidden")).toBe(
       "true",
     );
+  });
+
+  it("hands the record's malicious and suspicious verdicts to the held view", () => {
+    renderSheet({
+      ...descriptor("native"),
+      isMalicious: true,
+      isSuspicious: true,
+    } as any);
+
+    const detail = screen.getByTestId("asset-detail");
+    expect(detail.getAttribute("data-malicious")).toBe("true");
+    expect(detail.getAttribute("data-suspicious")).toBe("true");
   });
 
   it("renders the non-held detail for an unknown canonical", () => {

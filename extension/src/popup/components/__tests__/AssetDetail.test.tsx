@@ -469,56 +469,96 @@ describe("AssetDetail", () => {
     expect(screen.queryByTestId("AssetDetail__warning")).toBeNull();
   });
 
-  it("shows Proceed with caution for a held asset whose picker or search record could not be scanned", async () => {
-    jest
-      .spyOn(ApiInternal, "getAccountBalances")
-      .mockImplementation(() => Promise.resolve(mockBalances));
-    const props = {
-      handleClose: jest.fn(),
-      accountBalances: {
-        balances: [
-          {
-            available: new BigNumber(100),
-            token: {
-              code: "USDC",
-              issuer: {
-                key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+  it.each([
+    {
+      name: "a clean balance scan suppresses the record's unable-to-scan",
+      blockaidData: { result_type: "Benign" },
+      record: { isUnableToScan: true },
+      warning: null,
+      isFlaggedFooter: false,
+    },
+    {
+      name: "unscanned by both shows Proceed with caution",
+      blockaidData: undefined,
+      record: { isUnableToScan: true },
+      warning: "Proceed with caution",
+      isFlaggedFooter: false,
+    },
+    {
+      name: "a malicious record flags an unscanned balance",
+      blockaidData: undefined,
+      record: { isMalicious: true },
+      warning: "This token was flagged as malicious",
+      isFlaggedFooter: true,
+    },
+    {
+      name: "a suspicious record flags a clean balance",
+      blockaidData: { result_type: "Benign" },
+      record: { isSuspicious: true },
+      warning: "This token was flagged as suspicious",
+      isFlaggedFooter: true,
+    },
+  ])(
+    "held asset opened from a record: $name",
+    async ({ blockaidData, record, warning, isFlaggedFooter }) => {
+      jest
+        .spyOn(ApiInternal, "getAccountBalances")
+        .mockImplementation(() => Promise.resolve(mockBalances));
+      const props = {
+        handleClose: jest.fn(),
+        accountBalances: {
+          balances: [
+            {
+              available: new BigNumber(100),
+              token: {
+                code: "USDC",
+                issuer: {
+                  key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+                },
               },
+              total: new BigNumber(100),
+              ...(blockaidData ? { blockaidData } : {}),
             },
-            total: new BigNumber(100),
-            blockaidData: { result_type: "Benign" },
-          },
-        ],
-      } as any,
-      selectedAsset:
-        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
-      historyData: mockHistoryData,
-      isUnableToScan: true,
-    };
+          ],
+        } as any,
+        selectedAsset:
+          "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+        historyData: mockHistoryData,
+        swapTo: { code: "USDC", side: "to" as const, onSelect: jest.fn() },
+        ...record,
+      };
 
-    render(
-      <Wrapper
-        routes={[ROUTES.account]}
-        state={{
-          auth: {
-            error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
-            publicKey: "G1",
-            allAccounts: mockAccounts,
-          },
-          settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
-          },
-        }}
-      >
-        <AssetDetail {...props} />
-      </Wrapper>,
-    );
-    await screen.findByTestId("AssetDetail");
-    expect(screen.getByTestId("AssetDetail__warning")).toHaveTextContent(
-      "Proceed with caution",
-    );
-  });
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey: "G1",
+              allAccounts: mockAccounts,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+            },
+          }}
+        >
+          <AssetDetail {...props} />
+        </Wrapper>,
+      );
+      await screen.findByTestId("AssetDetail");
+      if (warning) {
+        expect(screen.getByTestId("AssetDetail__warning")).toHaveTextContent(
+          warning,
+        );
+      } else {
+        expect(screen.queryByTestId("AssetDetail__warning")).toBeNull();
+      }
+      expect(!!screen.queryByTestId("asset-detail-swap-to-anyway")).toBe(
+        isFlaggedFooter,
+      );
+    },
+  );
 
   describe("hide outcome", () => {
     const usdcCanonical =

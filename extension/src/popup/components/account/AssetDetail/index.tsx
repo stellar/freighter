@@ -11,7 +11,11 @@ import {
   Link,
   Notification,
 } from "@stellar/design-system";
-import { isAssetMalicious, isAssetSuspicious } from "popup/helpers/blockaid";
+import {
+  isAssetMalicious,
+  isAssetSuspicious,
+  isAssetUnableToScan,
+} from "popup/helpers/blockaid";
 
 import { SwapToAction, SwapToFooter } from "./SwapToFooter";
 
@@ -158,8 +162,13 @@ interface AssetDetailProps {
    * longer holds it. Home reloads on close already; the swap picker does not.
    */
   onBalancesChanged?: (change: "hidden" | "removed") => void;
-  /** The picker or search record the sheet opened from could not be scanned. */
+  /**
+   * Verdict of the picker or search record the sheet opened from, combined
+   * with the balance's own scan.
+   */
   isUnableToScan?: boolean;
+  isMalicious?: boolean;
+  isSuspicious?: boolean;
   /** The account hid this token; Hide is then not offered (no Unhide here). */
   isHidden?: boolean;
 }
@@ -173,7 +182,9 @@ export const AssetDetail = ({
   source = TokenChartSource.Balances,
   swapTo,
   onBalancesChanged,
-  isUnableToScan,
+  isUnableToScan: isRecordUnableToScan = false,
+  isMalicious: isRecordMalicious = false,
+  isSuspicious: isRecordSuspicious = false,
   isHidden = false,
 }: AssetDetailProps) => {
   const { t } = useTranslation();
@@ -252,8 +263,12 @@ export const AssetDetail = ({
     selectedBalance && "blockaidData" in selectedBalance
       ? selectedBalance.blockaidData
       : null;
-  const isMalicious = isAssetMalicious(blockaidData);
-  const isSuspicious = isAssetSuspicious(blockaidData);
+  const isMalicious = isAssetMalicious(blockaidData) || isRecordMalicious;
+  const isSuspicious = isAssetSuspicious(blockaidData) || isRecordSuspicious;
+  // A result from either scan answers the question; the banner is only for
+  // a token neither could scan.
+  const isUnableToScan =
+    isRecordUnableToScan && isAssetUnableToScan(blockaidData);
 
   const icons = assetIcons || {};
   const assetIconUrl = isNativeBalance(selectedBalance)

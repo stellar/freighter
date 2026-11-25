@@ -89,6 +89,8 @@ export const AssetDetailSheet = ({
                 swapTo={swapTo}
                 onBalancesChanged={onBalancesChanged}
                 isUnableToScan={asset.isUnableToScan}
+                isMalicious={asset.isMalicious}
+                isSuspicious={asset.isSuspicious}
                 isHidden={!!isAssetHidden?.(asset.canonical)}
               />
             ) : (
