@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
 
 import { BalanceRow } from "popup/components/BalanceRow";
@@ -62,5 +62,22 @@ describe("BalanceRow", () => {
   it("draws the divider when the list asks for one", () => {
     renderRow({ "data-testid": "row", hasDivider: true });
     expect(screen.getByTestId("row")).toHaveClass("BalanceRow--divider");
+  });
+  it("makes a clickable row reachable and operable from the keyboard", () => {
+    const onClick = jest.fn();
+    renderRow({ onClick, "data-testid": "row" } as any);
+
+    const row = screen.getByTestId("row");
+    expect(row).toHaveAttribute("tabindex", "0");
+    fireEvent.keyDown(row, { key: "Enter" });
+    fireEvent.keyDown(row, { key: "Enter", repeat: true });
+    fireEvent.keyDown(row, { key: " " });
+    expect(onClick).toHaveBeenCalledTimes(2);
+  });
+
+  it("leaves a row without a click handler out of the tab order", () => {
+    renderRow({ "data-testid": "row" } as any);
+
+    expect(screen.getByTestId("row")).not.toHaveAttribute("tabindex");
   });
 });

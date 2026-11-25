@@ -99,6 +99,20 @@ export const BalanceRow = ({
       data-testid={dataTestId}
       onClick={onClick}
       role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.repeat || e.target !== e.currentTarget) {
+                return;
+              }
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
     >
       <div className="BalanceRow__left">
         <AssetIcon

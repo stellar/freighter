@@ -66,6 +66,9 @@ export const AssetListRow = ({
         onKeyDown={
           onClick
             ? (e) => {
+                if (e.repeat || e.target !== e.currentTarget) {
+                  return;
+                }
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   onClick();

@@ -17,6 +17,7 @@ describe("AssetListRow", () => {
     expect(body.getAttribute("tabindex")).toBe("0");
 
     fireEvent.keyDown(body, { key: "Enter" });
+    fireEvent.keyDown(body, { key: "Enter", repeat: true });
     fireEvent.keyDown(body, { key: " " });
     fireEvent.keyDown(body, { key: "a" });
     expect(onClick).toHaveBeenCalledTimes(2);
