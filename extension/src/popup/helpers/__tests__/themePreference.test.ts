@@ -131,8 +131,13 @@ describe("themePreference", () => {
     });
 
     it("does nothing when the choice is already in effect", async () => {
-      await selectThemePreference("system");
+      await expect(selectThemePreference("system")).resolves.toBe(false);
       expect(mockedInternal.saveThemePreference).not.toHaveBeenCalled();
+    });
+
+    it("resolves true once a new choice is saved", async () => {
+      mockedInternal.saveThemePreference.mockResolvedValue("dark");
+      await expect(selectThemePreference("dark")).resolves.toBe(true);
     });
 
     it("labels overlapping picks correctly when saves finish out of order", async () => {

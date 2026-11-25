@@ -30,9 +30,12 @@ import {
   subscribeToThemePreference,
 } from "popup/helpers/systemTheme";
 import { selectThemePreference } from "popup/helpers/themePreference";
+import { showToast, SuccessToast } from "popup/basics/shadcn/Toast";
 import { PRIVACY_POLICY_URL } from "popup/constants/externalLinks";
 
 import "./styles.scss";
+
+const THEME_TOAST_DURATION_MS = 2000;
 
 export const Preferences = () => {
   const { t } = useTranslation();
@@ -53,7 +56,14 @@ export const Preferences = () => {
 
   const handleThemeChange = async (preference: ThemePreference) => {
     try {
-      await selectThemePreference(preference);
+      if (await selectThemePreference(preference)) {
+        showToast(
+          () => <SuccessToast title={t("Theme preference updated")} />,
+          {
+            duration: THEME_TOAST_DURATION_MS,
+          },
+        );
+      }
     } catch (e) {
       console.error("Failed to save theme preference:", e);
     }

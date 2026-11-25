@@ -8,7 +8,7 @@ import { THEME_PREFERENCE_ID } from "constants/localStorageTypes";
 import { syncPreferredThemeTrait } from "helpers/metrics";
 import { emitThemeChanged } from "popup/metrics/theme";
 import {
-  getAppliedColorScheme,
+  getColorSchemeInEffect,
   getThemePreferenceInEffect,
   setThemePreference,
   subscribeToThemePreference,
@@ -45,21 +45,22 @@ export const syncThemePreferenceFromStorage = async (): Promise<void> => {
 };
 
 /**
- * Handles a pick in the theme picker: applies it immediately, persists it to
- * chrome.storage, then reports it. Throws if the save fails, in which case
- * nothing is reported.
+ * Handles a pick in the theme picker: fades to it immediately, persists it to
+ * chrome.storage, then reports it. Resolves true once saved, false when the
+ * pick was already in effect. Throws if the save fails, in which case nothing
+ * is reported.
  */
 export const selectThemePreference = async (
   preference: ThemePreference,
-): Promise<void> => {
+): Promise<boolean> => {
   const previous = getThemePreferenceInEffect();
   if (preference === previous) {
-    return;
+    return false;
   }
-  setThemePreference(preference);
+  setThemePreference(preference, { fade: true });
   // Captured now: a quicker second pick can change the page before this
   // save resolves.
-  const colorScheme = getAppliedColorScheme();
+  const colorScheme = getColorSchemeInEffect();
 
   await trackUnsavedPick(preference, saveThemePreference(preference));
 
@@ -69,4 +70,5 @@ export const selectThemePreference = async (
   if (preference === getThemePreferenceInEffect()) {
     syncPreferredThemeTrait(preference, { force: true });
   }
+  return true;
 };

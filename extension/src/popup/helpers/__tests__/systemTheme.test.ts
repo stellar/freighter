@@ -2,6 +2,7 @@ import browser from "webextension-polyfill";
 import {
   DARK_SCHEME_QUERY,
   getAppliedColorScheme,
+  getColorSchemeInEffect,
   getSystemColorScheme,
   getThemePreferenceInEffect,
   initColorScheme,
@@ -213,6 +214,67 @@ describe("systemTheme", () => {
       await save;
       writeFromOtherPage("dark");
       expect(getThemePreferenceInEffect()).toBe("dark");
+    });
+  });
+
+  describe("cross-fade", () => {
+    const isDark = () => document.body.classList.contains("sds-theme-dark");
+    let runUpdate: () => void;
+
+    beforeEach(() => {
+      runUpdate = () => {};
+      document.startViewTransition = jest.fn((update) => {
+        runUpdate = update as () => void;
+        return {} as ViewTransition;
+      });
+    });
+
+    afterEach(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (document as any).startViewTransition;
+    });
+
+    it("changes the theme inside a view transition when asked to fade", () => {
+      mockMatchMedia({ prefersDark: false });
+      initColorScheme();
+
+      setThemePreference("dark", { fade: true });
+      expect(document.startViewTransition).toHaveBeenCalledTimes(1);
+      expect(isDark()).toBe(false);
+      expect(getColorSchemeInEffect()).toBe("dark");
+
+      runUpdate();
+      expect(isDark()).toBe(true);
+    });
+
+    it("applies at once when the scheme won't change", () => {
+      mockMatchMedia({ prefersDark: false });
+      initColorScheme();
+
+      setThemePreference("light", { fade: true });
+      expect(document.startViewTransition).not.toHaveBeenCalled();
+      expect(getThemePreferenceInEffect()).toBe("light");
+    });
+
+    it("applies at once unless asked to fade", () => {
+      mockMatchMedia({ prefersDark: false });
+      initColorScheme();
+
+      setThemePreference("dark");
+      expect(document.startViewTransition).not.toHaveBeenCalled();
+      expect(isDark()).toBe(true);
+    });
+
+    it("applies at once when the user prefers reduced motion", () => {
+      // Every query matches: dark scheme and reduced motion.
+      const { emitChange } = mockMatchMedia({ prefersDark: true });
+      initColorScheme();
+      setThemePreference("light");
+      emitChange({ prefersDark: true });
+
+      setThemePreference("dark", { fade: true });
+      expect(document.startViewTransition).not.toHaveBeenCalled();
+      expect(isDark()).toBe(true);
     });
   });
 

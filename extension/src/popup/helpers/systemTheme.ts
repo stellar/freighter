@@ -15,6 +15,7 @@ import { THEME_PREFERENCE_ID } from "constants/localStorageTypes";
 
 /** Same query the OS exposes to stylesheets; shared with tests. */
 export const DARK_SCHEME_QUERY = "(prefers-color-scheme: dark)";
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
 export type ColorScheme = "dark" | "light";
 
@@ -53,10 +54,24 @@ export const subscribeToThemePreference = (listener: () => void) => {
   };
 };
 
-const updatePreference = (preference: ThemePreference) => {
+const updatePreference = (
+  preference: ThemePreference,
+  { fade = false }: { fade?: boolean } = {},
+) => {
   const changed = preference !== currentPreference;
   currentPreference = preference;
-  applyColorScheme();
+  if (
+    fade &&
+    getColorSchemeInEffect() !== getAppliedColorScheme() &&
+    typeof document.startViewTransition === "function" &&
+    !window.matchMedia?.(REDUCED_MOTION_QUERY)?.matches
+  ) {
+    // Cross-fades from a snapshot of the old theme. The class must change
+    // inside the callback, after that snapshot is taken.
+    document.startViewTransition(applyColorScheme);
+  } else {
+    applyColorScheme();
+  }
   if (changed) {
     listeners.forEach((listener) => listener());
   }
@@ -65,8 +80,12 @@ const updatePreference = (preference: ThemePreference) => {
 const resolveColorScheme = (preference: ThemePreference): ColorScheme =>
   preference === "system" ? getSystemColorScheme() : preference;
 
+/** The scheme the current preference resolves to, even mid-fade. */
+export const getColorSchemeInEffect = (): ColorScheme =>
+  resolveColorScheme(currentPreference);
+
 const applyColorScheme = () => {
-  const scheme = resolveColorScheme(currentPreference);
+  const scheme = getColorSchemeInEffect();
   document.body.classList.remove(THEME_CLASS.dark, THEME_CLASS.light);
   document.body.classList.add(THEME_CLASS[scheme]);
 };
@@ -76,11 +95,15 @@ const applyColorScheme = () => {
 const unsavedPicks: ThemePreference[] = [];
 
 /**
- * Applies a preference to this page only. Persisting it to chrome.storage,
- * which updates the other open pages, is popup/helpers/themePreference's job.
+ * Applies a preference to this page only, optionally cross-fading to it.
+ * Persisting it to chrome.storage, which updates the other open pages, is
+ * popup/helpers/themePreference's job.
  */
-export const setThemePreference = (preference: ThemePreference) => {
-  updatePreference(preference);
+export const setThemePreference = (
+  preference: ThemePreference,
+  options?: { fade?: boolean },
+) => {
+  updatePreference(preference, options);
 };
 
 export const trackUnsavedPick = async <T>(
