@@ -171,12 +171,15 @@ const resolveAccountType = (account: Account): AccountType => {
 // User identity (mirrors mobile's src/services/analytics/user.ts)
 // ---------------------------------------------------------------------------
 
-/** Mirrors mobile's `generateRandomUserId` — a numeric decimal string. */
+/**
+ * Mirrors mobile's `generateRandomUserId` — a numeric decimal string.
+ * `crypto.getRandomValues`, not `Math.random()`: this id is sent as the
+ * analytics `user_id` until the seed-derived id replaces it.
+ */
 const generateRandomUserId = (): string =>
-  // Math.random() can yield values < 1e-6 (exponential notation, e.g. "4e-7")
-  // or exactly 0 ("0"), where `split(".")[1]` is undefined. Fall back to "0"
-  // so we never persist or hand Sentry/Amplitude an undefined user id.
-  Math.random().toString().split(".")[1] ?? "0";
+  Array.from(crypto.getRandomValues(new Uint32Array(2)), (n) =>
+    n.toString(),
+  ).join("");
 
 /** Session-level cache, mirrors mobile's module-level `sessionUserId` fallback. */
 let sessionUserId: string | null = null;
@@ -264,19 +267,18 @@ export const reconcileAnalyticsUserId = async (): Promise<void> => {
 
     localStorage.setItem(METRICS_USER_ID, authUserId);
     sessionUserId = authUserId;
-    // amplitude.setUserId is local-only (setOptOut governs upload), so this
-    // runs regardless of the data-sharing consent setting.
+
+    // Consent-gate both identity writes. When data-sharing is off,
+    // ErrorTracking owns the opted-out Sentry identity (setUser(null) +
+    // close()), and amplitude keeps whatever id it had; the consent
+    // subscription in initAmplitude re-identifies it from storage if sharing
+    // is turned on later this session.
+    const isDataSharingAllowed = settingsDataSharingSelector(store.getState());
+    if (!isDataSharingAllowed) return;
     if (hasInitialized && AMPLITUDE_KEY) {
       amplitude.setUserId(authUserId);
     }
-
-    // Consent-gate the Sentry write: when data-sharing is off, ErrorTracking
-    // owns the opted-out identity (setUser(null) + close()) — don't
-    // re-identify the user behind its back.
-    const isDataSharingAllowed = settingsDataSharingSelector(store.getState());
-    if (isDataSharingAllowed) {
-      Sentry.setUser({ id: authUserId });
-    }
+    Sentry.setUser({ id: authUserId });
   } catch {
     return; // never throw into callers
   }
@@ -327,8 +329,8 @@ export const initAmplitude = async () => {
 
     hasInitialized = true;
 
-    // Initialize Experiment client now that analytics is ready.
-    // initializeWithAmplitudeAnalytics requires the analytics SDK to be started first.
+    // The Experiment client carries no identity of its own; it is created
+    // here only so getExperimentClient() is set before the first flag fetch.
     initExperimentClient();
 
     // Resolve the surface once (async) so getSurface() is synchronous afterward.
@@ -366,6 +368,9 @@ export const initAmplitude = async () => {
         lastDataSharingAllowed = allowed;
         amplitude.setOptOut(!allowed);
         if (allowed) {
+          // reconcileAnalyticsUserId skips amplitude while sharing is off, so
+          // the persisted id may be newer than the one set at init.
+          amplitude.setUserId(getUserId());
           emitAppOpenedOnce();
           // Account-load sends run before settings hydrate, so consent is
           // still false there; this is where the trait first gets through.

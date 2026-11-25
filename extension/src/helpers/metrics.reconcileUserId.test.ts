@@ -58,13 +58,21 @@ jest.mock("popup/ducks/accountServices", () => ({
 
 const mockGetAnalyticsUserId = getAnalyticsUserId as jest.Mock;
 
+// The consent subscription initAmplitude registers on the store, captured
+// before clearAllMocks wipes the subscribe mock's calls.
+let consentSubscribers: Array<() => void> = [];
+
 describe("reconcileAnalyticsUserId (auth id migration)", () => {
-  beforeAll(() => {
+  beforeAll(async () => {
     // Flip the module-level `hasInitialized` flag once so the
     // `hasInitialized && AMPLITUDE_KEY` guard in reconcileAnalyticsUserId
     // can be exercised. AMPLITUDE_KEY is stubbed truthy in the jest env
     // (see config/jest/setupTests.tsx).
-    initAmplitude();
+    await initAmplitude();
+    const { store } = jest.requireMock("popup/App") as {
+      store: { subscribe: jest.Mock };
+    };
+    consentSubscribers = store.subscribe.mock.calls.map((c) => c[0]);
   });
 
   beforeEach(() => {
@@ -120,7 +128,7 @@ describe("reconcileAnalyticsUserId (auth id migration)", () => {
     expect(amplitude.setUserId).not.toHaveBeenCalled();
   });
 
-  it("does NOT call Sentry.setUser when data-sharing is off, but still persists + re-identifies amplitude", async () => {
+  it("persists the id but identifies neither Sentry nor amplitude when data-sharing is off", async () => {
     const { settingsDataSharingSelector } = jest.requireMock(
       "popup/ducks/settings",
     ) as {
@@ -136,8 +144,32 @@ describe("reconcileAnalyticsUserId (auth id migration)", () => {
     await reconcileAnalyticsUserId();
 
     expect(localStorage.getItem(METRICS_USER_ID)).toBe("b".repeat(64));
-    expect(amplitude.setUserId).toHaveBeenCalledWith("b".repeat(64));
+    expect(amplitude.setUserId).not.toHaveBeenCalled();
     expect(Sentry.setUser).not.toHaveBeenCalled();
+  });
+
+  it("re-identifies amplitude with the persisted id when data-sharing turns on", async () => {
+    const { settingsDataSharingSelector } = jest.requireMock(
+      "popup/ducks/settings",
+    ) as {
+      settingsDataSharingSelector: jest.Mock;
+    };
+    // Sharing is off when the wallet unlocks and reconciles...
+    settingsDataSharingSelector.mockReturnValue(false);
+    expect(consentSubscribers).not.toHaveLength(0);
+    consentSubscribers.forEach((cb) => cb());
+    mockGetAnalyticsUserId.mockResolvedValue({
+      analyticsUserId: "g".repeat(64),
+    });
+
+    await reconcileAnalyticsUserId();
+    expect(amplitude.setUserId).not.toHaveBeenCalled();
+
+    // ...then the user turns it on in Preferences.
+    settingsDataSharingSelector.mockReturnValue(true);
+    consentSubscribers.forEach((cb) => cb());
+
+    expect(amplitude.setUserId).toHaveBeenCalledWith("g".repeat(64));
   });
 
   it("calls Sentry.setUser when data-sharing is on", async () => {

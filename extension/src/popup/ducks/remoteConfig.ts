@@ -5,9 +5,11 @@ import {
   Store,
 } from "@reduxjs/toolkit";
 import type { Variant } from "@amplitude/experiment-js-client";
+import * as amplitude from "@amplitude/analytics-browser";
 
 import { getExperimentClient } from "helpers/experimentClient";
 import { BUNDLE_ID_USER_PROPERTY_KEY, getBundleId } from "helpers/analytics";
+import { getUserId } from "helpers/metrics";
 import {
   parseBannerPayload,
   parseScreenPayload,
@@ -102,22 +104,34 @@ const initialState: RemoteConfigState = {
  * Fetches all Amplitude Experiment flags and categorises them into boolean,
  * string, and complex buckets — mirroring the mobile implementation.
  *
- * Called once per popup open from `useRemoteConfig`. When the Experiment
- * client is unavailable (e.g. no deployment key in dev), returns the initial
- * state so all flags default to disabled.
+ * Called once per popup open from `useRemoteConfig`, which reads the
+ * data-sharing setting from the background. When the Experiment client is
+ * unavailable (e.g. no deployment key in dev), returns the initial state so
+ * all flags default to disabled.
  */
 export const fetchFeatureFlags = createAsyncThunk(
   "remoteConfig/fetchFeatureFlags",
-  async (): Promise<RemoteConfigState> => {
+  async ({
+    isDataSharingAllowed,
+  }: {
+    isDataSharingAllowed: boolean;
+  }): Promise<RemoteConfigState> => {
     const client = getExperimentClient();
 
     if (!client) {
       return { ...initialState, isInitialized: true };
     }
 
-    // Pass user_properties explicitly so flags are fetched correctly even when
-    // the user has opted out of analytics (mirrors mobile implementation).
+    // The Experiment client has no identity of its own (see
+    // initExperimentClient), so the analytics identity only reaches the flag
+    // fetch when data sharing is on. With no id at all Amplitude serves the
+    // segment default: fully rolled-out flags still evaluate, partial
+    // rollouts resolve to off. The SDK still attaches its browser context
+    // (user agent, language, first-seen time) either way.
     await client.fetch({
+      ...(isDataSharingAllowed
+        ? { user_id: getUserId(), device_id: amplitude.getDeviceId() }
+        : {}),
       user_properties: {
         [BUNDLE_ID_USER_PROPERTY_KEY]: getBundleId(),
       },
