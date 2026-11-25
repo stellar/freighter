@@ -28,7 +28,7 @@ import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { useDispatch, useStore } from "react-redux";
 import { AppDispatch, AppState } from "popup/App";
 import {
-  earnPositionsSelector,
+  positionsEnabledSelector,
   waitForRemoteConfig,
 } from "popup/ducks/remoteConfig";
 import { makeAccountActive } from "popup/ducks/accountServices";
@@ -180,12 +180,12 @@ function useGetAccountData(options: {
       // alongside the pools dispatch below.
       //
       // The catalog and the earn options below back only the Positions tab, so
-      // both also wait on `earn_positions`: with it off, Home makes none of
+      // both also wait on `positions_enabled`: with it off, Home makes none of
       // the tab's requests. Resolved once the flags settle, without holding up
       // the requests started above.
       const isPositionsEnabledRequest = isEarnSupportedNetwork(networkDetails)
         ? waitForRemoteConfig(store).then(() =>
-            earnPositionsSelector(store.getState()),
+            positionsEnabledSelector(store.getState()),
           )
         : Promise.resolve(false);
       const poolsRequest = isPositionsEnabledRequest.then((isEnabled) =>

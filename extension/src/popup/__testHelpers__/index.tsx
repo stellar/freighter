@@ -56,13 +56,13 @@ let testStore: ReturnType<typeof makeDummyStore> | null = null;
 export const getTestStore = () => testStore;
 
 /** Loaded flags with every kill switch off: the Wrapper's default. Spread it
- *  to turn one on, e.g. `{ ...TEST_REMOTE_CONFIG, earn_positions: true }`. */
+ *  to turn one on, e.g. `{ ...TEST_REMOTE_CONFIG, positions_enabled: true }`. */
 export const TEST_REMOTE_CONFIG = {
   isInitialized: true,
   use_balances_v2: false,
   use_token_price_history: false,
   earn_deposit: false,
-  earn_positions: false,
+  positions_enabled: false,
   maintenance_banner: { enabled: false, payload: undefined },
   maintenance_screen: { enabled: false, payload: undefined },
 };

@@ -317,7 +317,7 @@ const renderWithBalancesV2 = (useBalancesV2: boolean) =>
           isInitialized: true,
           use_balances_v2: useBalancesV2,
           earn_deposit: false,
-          earn_positions: false,
+          positions_enabled: false,
           maintenance_banner: { enabled: false, payload: undefined },
           maintenance_screen: { enabled: false, payload: undefined },
         },

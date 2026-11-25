@@ -41,7 +41,7 @@
  * BLEND_FIXED_POOL_IDS entry, so the Positions tab and its screens are
  * reachable straight after login — see earnDeposit.test.ts's network-gating
  * test for the same reasoning, and @shared/constants/blend for the map
- * itself. The tab needs the `earn_positions` flag and its deposit entry points
+ * itself. The tab needs the `positions_enabled` flag and its deposit entry points
  * the `earn_deposit` flag; stubAmplitudeFlags pins them on before login.
  *
  * testid index:
@@ -99,7 +99,7 @@ test("Positions tab shows the empty state and enters Earn", async ({
   test.slow();
 
   await stubAmplitudeFlags(context, {
-    earn_positions: true,
+    positions_enabled: true,
     earn_deposit: true,
   });
   await loginToTestAccount({
@@ -133,7 +133,7 @@ test("a pool card opens its position screen", async ({
   test.slow();
   // Deposit off: the tab's deposit entries must stay hidden.
   await stubAmplitudeFlags(context, {
-    earn_positions: true,
+    positions_enabled: true,
     earn_deposit: false,
   });
 
@@ -171,7 +171,7 @@ test("the Deposit pill enters Earn with its source", async ({
   test.slow();
 
   await stubAmplitudeFlags(context, {
-    earn_positions: true,
+    positions_enabled: true,
     earn_deposit: true,
   });
   await loginToTestAccount({
@@ -200,7 +200,7 @@ test("a supplied token shows its position, activity and pool links", async ({
   test.slow();
   // Deposit off: the tab's deposit entries must stay hidden.
   await stubAmplitudeFlags(context, {
-    earn_positions: true,
+    positions_enabled: true,
     earn_deposit: false,
   });
 
@@ -308,7 +308,7 @@ test("Deposit from a token's position lands on the amount screen prefilled", asy
   test.slow();
 
   await stubAmplitudeFlags(context, {
-    earn_positions: true,
+    positions_enabled: true,
     earn_deposit: true,
   });
   await loginToTestAccount({
@@ -334,7 +334,7 @@ test("Deposit from a token's position lands on the amount screen prefilled", asy
 // ---------------------------------------------------------------------------
 // 6. The tab waits on its flag
 // ---------------------------------------------------------------------------
-test("the Positions tab stays hidden while earn_positions is off", async ({
+test("the Positions tab stays hidden while positions_enabled is off", async ({
   page,
   extensionId,
   context,
@@ -343,7 +343,7 @@ test("the Positions tab stays hidden while earn_positions is off", async ({
 
   // Deposit on, Positions off: Home keeps its Earn tile but not the tab.
   await stubAmplitudeFlags(context, {
-    earn_positions: false,
+    positions_enabled: false,
     earn_deposit: true,
   });
   let positionsRequests = 0;

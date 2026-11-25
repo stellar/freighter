@@ -11,7 +11,7 @@ import { initialState, isCacheValid, reducer } from "helpers/request";
 import { AppDispatch, AppState } from "popup/App";
 import { positionsSelector, savePositions } from "popup/ducks/cache";
 import {
-  earnPositionsSelector,
+  positionsEnabledSelector,
   waitForRemoteConfig,
 } from "popup/ducks/remoteConfig";
 
@@ -30,7 +30,7 @@ export interface FetchPositionsParams {
 }
 
 /** What an account with nothing supplied looks like, and the short-circuit
- *  result on networks where Earn is unavailable or while `earn_positions` is
+ *  result on networks where Earn is unavailable or while `positions_enabled` is
  *  off. */
 export const EMPTY_POSITIONS = (address: string): AccountPositions => ({
   address,
@@ -75,14 +75,14 @@ function useGetPositions({ useCache = true }: { useCache?: boolean } = {}) {
       // 400s on any network outside PUBLIC/TESTNET. Resolve locally rather
       // than spending a request to be told so.
       //
-      // Likewise while `earn_positions` is off: the tab is hidden, and the
+      // Likewise while `positions_enabled` is off: the tab is hidden, and the
       // production backend may not serve positions yet. Read from the store at
       // call time, once the flags settle, so the 30-second refresh follows a
       // flag that changes mid-session.
       if (
         !isEarnSupportedNetwork(networkDetails) ||
         !(await waitForRemoteConfig(store).then(() =>
-          earnPositionsSelector(store.getState()),
+          positionsEnabledSelector(store.getState()),
         ))
       ) {
         const empty = EMPTY_POSITIONS(publicKey);

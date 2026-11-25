@@ -27,7 +27,7 @@ import {
   saveSelectedAssetApy,
   saveSelectedAssetId,
 } from "popup/ducks/earn";
-import { earnPositionsSelector } from "popup/ducks/remoteConfig";
+import { positionsEnabledSelector } from "popup/ducks/remoteConfig";
 import { closeWindow, navigateTo, openTab } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { useSwapTopTokensPrewarm } from "popup/helpers/useSwapTopTokensPrewarm";
@@ -89,7 +89,7 @@ export const Account = () => {
   const reduxPublicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { activeTab, setActiveTab } = useContext(AccountTabsContext);
-  const isPositionsEnabled = useSelector(earnPositionsSelector);
+  const isPositionsEnabled = useSelector(positionsEnabledSelector);
   const canShowPositions =
     isPositionsEnabled && isEarnSupportedNetwork(networkDetails);
 

@@ -1877,7 +1877,7 @@ describe("Account view", () => {
   // AccountPositions too, or the Positions tab falls through to its empty
   // state instead.
   // Off until the production backend serves positions.
-  it("hides the Positions tab while earn_positions is off", async () => {
+  it("hides the Positions tab while positions_enabled is off", async () => {
     jest.spyOn(AccountDataHooks, "useGetAccountData").mockReturnValue({
       state: {
         state: RequestState.ERROR,
@@ -1953,7 +1953,7 @@ describe("Account view", () => {
             networkDetails: MAINNET_NETWORK_DETAILS,
             networksList: DEFAULT_NETWORKS,
           },
-          remoteConfig: { ...TEST_REMOTE_CONFIG, earn_positions: true },
+          remoteConfig: { ...TEST_REMOTE_CONFIG, positions_enabled: true },
         }}
       >
         {/* Router supplies this in the app; without it the Positions tab

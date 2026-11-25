@@ -15,7 +15,7 @@ import { TabsList } from "popup/views/Account/contexts/activeTabContext";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 import { isEarnSupportedNetwork } from "@shared/constants/blend";
-import { earnPositionsSelector } from "popup/ducks/remoteConfig";
+import { positionsEnabledSelector } from "popup/ducks/remoteConfig";
 
 import { useActiveTab } from "./hooks/useActiveTab";
 
@@ -24,13 +24,13 @@ import "./styles.scss";
 /**
  * Tab navigation for the account view. Hides the collectibles tab on custom
  * networks, where collectibles are unsupported, and the positions tab while
- * the `earn_positions` flag is off or on any network where Earn is unsupported
+ * the `positions_enabled` flag is off or on any network where Earn is unsupported
  * (every network but PUBLIC and TESTNET).
  */
 export const TabButtons = () => {
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const isPositionsEnabled = useSelector(earnPositionsSelector);
+  const isPositionsEnabled = useSelector(positionsEnabledSelector);
   const { activeTab, setActiveTab } = useActiveTab();
 
   const tabLabels: Record<string, string> = {

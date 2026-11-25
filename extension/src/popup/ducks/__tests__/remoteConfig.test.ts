@@ -7,7 +7,7 @@ import {
   isRemoteConfigInitializedSelector,
   balancesV2Selector,
   earnDepositSelector,
-  earnPositionsSelector,
+  positionsEnabledSelector,
   tokenPriceHistoryEnabledSelector,
   reducer,
 } from "../remoteConfig";
@@ -477,21 +477,21 @@ describe("remoteConfig selectors", () => {
 
   // Gates the Positions tab and its requests until the backend serves
   // positions in production: the same shape as `earn_deposit`.
-  describe("earnPositionsSelector", () => {
+  describe("positionsEnabledSelector", () => {
     it("is false before the flags settle in a dev build", () => {
       const store = makeStore();
-      expect(getState(store).earn_positions).toBe(true);
-      expect(earnPositionsSelector(store.getState())).toBe(false);
+      expect(getState(store).positions_enabled).toBe(true);
+      expect(positionsEnabledSelector(store.getState())).toBe(false);
     });
 
     it("is false when the variant is off", async () => {
       (getExperimentClient as jest.Mock).mockReturnValue(
-        makeClient({ earn_positions: { value: "off" } }),
+        makeClient({ positions_enabled: { value: "off" } }),
       );
 
       const store = makeStore();
       await store.dispatch(fetchFeatureFlags());
-      expect(earnPositionsSelector(store.getState())).toBe(false);
+      expect(positionsEnabledSelector(store.getState())).toBe(false);
     });
 
     it("stays off in a production build until the variant turns it on", async () => {
@@ -512,16 +512,16 @@ describe("remoteConfig selectors", () => {
         makeClient(),
       );
       await offStore.dispatch(duck.fetchFeatureFlags());
-      expect(duck.earnPositionsSelector(offStore.getState())).toBe(false);
+      expect(duck.positionsEnabledSelector(offStore.getState())).toBe(false);
 
       const onStore = configureStore({
         reducer: { remoteConfig: duck.reducer },
       });
       (experiment.getExperimentClient as jest.Mock).mockReturnValue(
-        makeClient({ earn_positions: { value: "on" } }),
+        makeClient({ positions_enabled: { value: "on" } }),
       );
       await onStore.dispatch(duck.fetchFeatureFlags());
-      expect(duck.earnPositionsSelector(onStore.getState())).toBe(true);
+      expect(duck.positionsEnabledSelector(onStore.getState())).toBe(true);
     });
   });
 

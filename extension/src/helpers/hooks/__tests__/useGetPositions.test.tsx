@@ -28,7 +28,7 @@ const positions = {
   backstop: [],
 };
 
-const POSITIONS_ON = { ...TEST_REMOTE_CONFIG, earn_positions: true };
+const POSITIONS_ON = { ...TEST_REMOTE_CONFIG, positions_enabled: true };
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <Wrapper
@@ -75,7 +75,7 @@ beforeEach(() => mockedGet.mockReset());
 
 describe("useGetPositions", () => {
   // The tab is hidden, and the production backend may not serve positions yet.
-  it("resolves empty without a request while earn_positions is off", async () => {
+  it("resolves empty without a request while positions_enabled is off", async () => {
     const { result } = renderHook(() => useGetPositions({ useCache: false }), {
       wrapper: wrapperWithPositionsOff,
     });

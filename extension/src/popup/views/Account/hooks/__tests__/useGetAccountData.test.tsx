@@ -114,7 +114,7 @@ jest.spyOn(ApiInternal, "loadBackendSettings").mockResolvedValue({
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <Provider
     store={makeDummyStore({
-      remoteConfig: { ...TEST_REMOTE_CONFIG, earn_positions: true },
+      remoteConfig: { ...TEST_REMOTE_CONFIG, positions_enabled: true },
     })}
   >
     {children}
@@ -176,7 +176,7 @@ describe("useGetAccountData", () => {
   });
 
   // With the tab hidden, Home makes none of its requests.
-  it("skips the pool catalog and earn options while earn_positions is off", async () => {
+  it("skips the pool catalog and earn options while positions_enabled is off", async () => {
     const { result } = renderHook(
       () => useGetAccountData({ showHidden: false, includeIcons: false }),
       { wrapper: wrapperWithPositionsOff },
