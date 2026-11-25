@@ -81,6 +81,7 @@ import {
   blendActivityHistory,
   positionsFixture,
   stubAccountHistoryWith,
+  stubHorizonTransactionsFor,
   stubBlendEarn,
   stubAmplitudeFlags,
 } from "./helpers/stubs";
@@ -208,28 +209,27 @@ test("a supplied token shows its position, activity and pool links", async ({
     extensionId,
     context,
     stubOverrides: async () => {
-      await stubAccountHistoryWith(
-        page,
-        context,
-        blendActivityHistory({
-          events: [
-            {
-              id: "2",
-              type: "withdraw",
-              assetCode: "USDC",
-              amount: "120",
-              createdAt: "2026-10-02T09:12:00Z",
-            },
-            {
-              id: "1",
-              type: "deposit",
-              assetCode: "USDC",
-              amount: "620",
-              createdAt: "2026-08-28T14:33:00Z",
-            },
-          ],
-        }),
-      );
+      const history = blendActivityHistory({
+        events: [
+          {
+            id: "2",
+            type: "withdraw",
+            assetCode: "USDC",
+            amount: "120",
+            createdAt: "2026-10-02T09:12:00Z",
+          },
+          {
+            id: "1",
+            type: "deposit",
+            assetCode: "USDC",
+            amount: "620",
+            createdAt: "2026-08-28T14:33:00Z",
+          },
+        ],
+      });
+      await stubAccountHistoryWith(page, context, history);
+      // A row's details sheet reads its transaction from Horizon by hash.
+      await stubHorizonTransactionsFor(page, history);
       // Last, as it reloads the popup once every route is in place.
       await stubBlendEarn(page, context, { positions: positionsFixture() });
     },
@@ -258,6 +258,33 @@ test("a supplied token shows its position, activity and pool links", async ({
   await expect(rows.nth(0)).toContainText("-120.00 USDC");
   await expect(rows.nth(1)).toContainText("Deposit");
   await expect(rows.nth(1)).toContainText("+620.00 USDC");
+
+  // A withdrawal opens its details, unsigned: the title says which way.
+  await rows.nth(0).click();
+  const withdrawal = page.getByTestId("earn-withdraw-details");
+  await expect(withdrawal).toContainText("Withdrew USDC");
+  await expect(page.getByTestId("earn-withdraw-details-amount")).toHaveText(
+    "120.00 USDC",
+  );
+  await expect(page.getByTestId("earn-withdraw-details-fee")).toHaveText(
+    "0.00001 XLM",
+  );
+  // Its full breakdown comes from the envelope Horizon returned.
+  await page.getByTestId("earn-withdraw-details-btn").click();
+  await expect(page.getByTestId("earn-withdraw-details-pane")).toBeVisible();
+  await page.getByTestId("earn-withdraw-details-close").click();
+  await page.getByTestId("earn-withdraw-details-close").click();
+  await expect(withdrawal).toBeHidden();
+
+  await rows.nth(1).click();
+  await expect(page.getByTestId("earn-deposit-details")).toContainText(
+    "Deposited USDC",
+  );
+  await expect(page.getByTestId("earn-deposit-details-amount")).toHaveText(
+    "620.00 USDC",
+  );
+  await page.getByTestId("earn-deposit-details-close").click();
+  await expect(page.getByTestId("earn-deposit-details")).toBeHidden();
 
   await page.getByTestId("position-tab-overview").click();
   await expect(page.getByTestId("token-position-overview")).toBeVisible();

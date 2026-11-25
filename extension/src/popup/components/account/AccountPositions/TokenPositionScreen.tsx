@@ -252,6 +252,8 @@ export const TokenPositionScreen = ({
                 issuer={row.issuer}
                 decimals={row.decimals}
                 assetIcons={assetIcons}
+                poolName={position.name}
+                networkDetails={networkDetails}
               />
             </>
           ) : (

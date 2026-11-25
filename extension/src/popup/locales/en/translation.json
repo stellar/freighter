@@ -974,6 +974,8 @@
   "What’s new": "What’s new",
   "Why do I need XLM?": "Why do I need XLM?",
   "Withdraw": "Withdraw",
+  "Withdrew": "Withdrew",
+  "Withdrew {{code}}": "Withdrew {{code}}",
   "Wrong simulation result": "Wrong simulation result",
   "XDR": "XDR",
   "XLM": "XLM",

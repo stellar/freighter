@@ -4314,7 +4314,9 @@ export const blendActivityHistory = ({
       type: "invoke_host_function",
       type_i: 24,
       created_at: event.createdAt,
-      transaction_hash: transaction.hash().toString("hex"),
+      // Through Buffer: hash() can be a plain Uint8Array here, whose
+      // toString ignores "hex" and joins the bytes with commas.
+      transaction_hash: Buffer.from(transaction.hash()).toString("hex"),
       transaction_successful: true,
       function: "HostFunctionTypeHostFunctionTypeInvokeContract",
       asset_balance_changes: [
@@ -4336,6 +4338,40 @@ export const blendActivityHistory = ({
         operation_count: 1,
       },
     };
+  });
+};
+
+/**
+ * Answers Horizon's by-hash transaction reads for the given History records
+ * (as `blendActivityHistory` builds them), so an Activity row's details sheet
+ * gets the date, fee and envelope of the very transaction it lists. The sheet
+ * reads from the popup page, so a page route sees it. Other hashes fall through.
+ */
+export const stubHorizonTransactionsFor = async (
+  page: Page,
+  records: ReturnType<typeof blendActivityHistory>,
+) => {
+  const byHash = new Map(
+    records.map((record) => [record.transaction_hash, record]),
+  );
+  await page.route("**/transactions/*", async (route) => {
+    const hash = new URL(route.request().url()).pathname.split("/").pop();
+    const record = hash ? byHash.get(hash) : undefined;
+    if (!record) {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      json: {
+        id: hash,
+        hash,
+        successful: true,
+        created_at: record.created_at,
+        fee_charged: record.transaction_attr.fee_charged,
+        envelope_xdr: record.transaction_attr.envelope_xdr,
+        operation_count: 1,
+      },
+    });
   });
 };
 

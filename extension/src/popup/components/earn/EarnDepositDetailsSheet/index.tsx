@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { Transaction, TransactionBuilder } from "stellar-sdk";
 
 import { NetworkDetails } from "@shared/constants/stellar";
-import { BlendCatalogPool } from "@shared/api/types/blend";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 import { stroopToXlm } from "helpers/stellar";
@@ -24,40 +23,64 @@ import { AssetIcons } from "@shared/api/types";
 
 import "./styles.scss";
 
+/** Which way the money moved. */
+export type EarnDetailsType = "deposit" | "withdraw";
+
 interface EarnDepositDetailsSheetProps {
-  /** The deposited amount, unformatted. */
+  /** Deposit (the default) or withdrawal. */
+  type?: EarnDetailsType;
+  /** The amount moved, unformatted and unsigned. */
   amount: string;
   assetCode: string;
   assetIssuer?: string;
   assetIcons: AssetIcons;
-  pool: BlendCatalogPool | null;
+  /** The pool's backend name; formatPoolName falls back when it has none. */
+  poolName?: string | null;
   transactionHash: string;
-  /** The submitted envelope, decoded for "Transaction details". */
-  xdr: string;
+  /**
+   * The envelope, decoded for "Transaction details". The deposit flow passes
+   * the one it just submitted; without it the sheet takes Horizon's, from the
+   * same request that brings the date and fee.
+   */
+  xdr?: string;
+  /** When the event happened, if known: shown until Horizon's date lands. */
+  occurredAt?: string;
   networkDetails: NetworkDetails;
   onClose: () => void;
 }
 
 /**
- * The deposit's own record, opened from "View transaction" on the success
- * screen, as on mobile: where it went, how much, its status and fee, the full
- * transaction, and a link out to stellar.expert.
+ * A deposit's or withdrawal's own record (Figma Varial 4478:115461 and
+ * 4478:116412): where the money went or came from, how much, its status and
+ * fee, the full transaction, and a link out to stellar.expert. Opened from
+ * "View transaction" on the deposit success screen, as on mobile, and from a
+ * position's Activity rows.
+ *
+ * The amount carries no sign: the title already says which way it moved, so
+ * one sheet reads the same from either entry point. The Activity rows keep
+ * theirs.
  *
  * The date and the fee actually charged come from Horizon by hash: the submit
- * response carries neither. Both read "--" until that lands, or if it fails.
- * The status is always Success, since only a settled deposit opens this.
+ * response carries neither. The fee reads "--" until that lands, or if it
+ * fails, and so does the date unless the caller knows it. The status is always
+ * Success, since only a settled transaction opens this.
  */
 export const EarnDepositDetailsSheet = ({
+  type = "deposit",
   amount,
   assetCode,
   assetIssuer,
   assetIcons,
-  pool,
+  poolName,
   transactionHash,
   xdr,
+  occurredAt,
   networkDetails,
   onClose,
 }: EarnDepositDetailsSheetProps) => {
+  const isWithdraw = type === "withdraw";
+  // Deposits keep the ids they always had.
+  const testIdPrefix = `earn-${type}`;
   const { t, i18n } = useTranslation();
   // What i18next actually fell back to, so the date reads in the same
   // language as the strings around it.
@@ -65,6 +88,7 @@ export const EarnDepositDetailsSheet = ({
   const [onChain, setOnChain] = useState<{
     createdAt: string;
     feeCharged: string;
+    envelopeXdr: string;
   } | null>(null);
   const [isOnDetailsPane, setIsOnDetailsPane] = useState(false);
 
@@ -85,6 +109,7 @@ export const EarnDepositDetailsSheet = ({
           setOnChain({
             createdAt: record.created_at,
             feeCharged: String(record.fee_charged),
+            envelopeXdr: record.envelope_xdr,
           });
         }
       })
@@ -96,17 +121,22 @@ export const EarnDepositDetailsSheet = ({
     };
   }, [transactionHash, networkDetails]);
 
+  const envelope = xdr ?? onChain?.envelopeXdr;
   const transaction = useMemo(() => {
+    if (!envelope) {
+      return null;
+    }
     try {
       const parsed = TransactionBuilder.fromXDR(
-        xdr,
+        envelope,
         networkDetails.networkPassphrase,
       );
       return "operations" in parsed ? (parsed as Transaction) : null;
     } catch (e) {
       return null;
     }
-  }, [xdr, networkDetails.networkPassphrase]);
+  }, [envelope, networkDetails.networkPassphrase]);
+  const date = onChain?.createdAt ?? occurredAt;
 
   // Pinned under the details, like history's transaction sheet.
   const explorerButton = !isCustomNetwork(networkDetails) ? (
@@ -120,26 +150,26 @@ export const EarnDepositDetailsSheet = ({
       onClick={() =>
         openTab(`${getStellarExpertUrl(networkDetails)}/tx/${transactionHash}`)
       }
-      data-testid="earn-deposit-details-explorer"
+      data-testid={`${testIdPrefix}-details-explorer`}
     >
       {t("View on stellar.expert")}
     </Button>
   ) : undefined;
 
-  if (isOnDetailsPane && transaction) {
+  if (isOnDetailsPane && transaction && envelope) {
     return (
       <EarnTransactionDetails
         transaction={transaction}
-        xdr={xdr}
+        xdr={envelope}
         onClose={() => setIsOnDetailsPane(false)}
-        testIdPrefix="earn-deposit"
+        testIdPrefix={testIdPrefix}
       />
     );
   }
 
   return (
     <SheetLayout
-      data-testid="earn-deposit-details"
+      data-testid={`${testIdPrefix}-details`}
       header={
         <SheetHeader
           layout={SheetHeaderLayout.Inline}
@@ -152,15 +182,15 @@ export const EarnDepositDetailsSheet = ({
               />
             </div>
           }
-          title={t("Deposited {{code}}", { code: assetCode })}
-          subtitle={
-            onChain
-              ? formatDepositDate(onChain.createdAt, language)
-              : NO_FIAT_VALUE
+          title={
+            isWithdraw
+              ? t("Withdrew {{code}}", { code: assetCode })
+              : t("Deposited {{code}}", { code: assetCode })
           }
-          subtitleTestId="earn-deposit-details-date"
+          subtitle={date ? formatDepositDate(date, language) : NO_FIAT_VALUE}
+          subtitleTestId={`${testIdPrefix}-details-date`}
           onClose={onClose}
-          closeTestId="earn-deposit-details-close"
+          closeTestId={`${testIdPrefix}-details-close`}
         />
       }
       footer={explorerButton}
@@ -168,11 +198,11 @@ export const EarnDepositDetailsSheet = ({
       <div className="EarnDepositDetailsSheet__body">
         <div className="EarnDepositDetailsSheet__group">
           <StatRow
-            label={t("To")}
-            testId="earn-deposit-details-pool"
+            label={isWithdraw ? t("From") : t("To")}
+            testId={`${testIdPrefix}-details-pool`}
             value={
               <>
-                {formatPoolName(pool?.name, t)}
+                {formatPoolName(poolName, t)}
                 {/* The protocol's own name is not translated. */}
                 <span className="EarnDepositDetailsSheet__protocol">
                   {" · Blend"}
@@ -181,21 +211,21 @@ export const EarnDepositDetailsSheet = ({
             }
           />
           <StatRow
-            label={t("Deposited")}
-            testId="earn-deposit-details-amount"
-            value={`-${formatEarnAmount(amount)} ${assetCode}`}
+            label={isWithdraw ? t("Withdrew") : t("Deposited")}
+            testId={`${testIdPrefix}-details-amount`}
+            value={`${formatEarnAmount(amount)} ${assetCode}`}
           />
         </div>
 
         <div className="EarnDepositDetailsSheet__group">
           <StatRow
             label={t("Status")}
-            testId="earn-deposit-details-status"
+            testId={`${testIdPrefix}-details-status`}
             value={t("Success")}
           />
           <StatRow
             label={t("Fee")}
-            testId="earn-deposit-details-fee"
+            testId={`${testIdPrefix}-details-fee`}
             value={
               onChain
                 ? `${stroopToXlm(onChain.feeCharged).toFixed()} XLM`
@@ -206,7 +236,7 @@ export const EarnDepositDetailsSheet = ({
 
         {transaction && (
           <TransactionDetailsButton
-            testId="earn-deposit-details-btn"
+            testId={`${testIdPrefix}-details-btn`}
             onClick={() => setIsOnDetailsPane(true)}
           />
         )}

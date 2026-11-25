@@ -976,6 +976,8 @@
   "What’s new": "O que há de novo",
   "Why do I need XLM?": "Por que eu preciso de XLM?",
   "Withdraw": "Sacar",
+  "Withdrew": "Sacado",
+  "Withdrew {{code}}": "{{code}} sacado",
   "Wrong simulation result": "Resultado de simulação incorreto",
   "XDR": "XDR",
   "XLM": "XLM",
