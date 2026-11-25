@@ -105,8 +105,8 @@ export const SwapPickerSections = ({
   const verified = result.verified.filter(isShown);
   const unverified = result.unverified.filter(isShown);
 
-  // The info button at the end of a row (Swap to, 4827:102907) opens the
-  // token's details. The row body still selects.
+  // The info button at the end of a row opens the token's details. The row
+  // body still selects.
   const renderInfoButton = (
     r: SwapTokenRecord,
     code: string,

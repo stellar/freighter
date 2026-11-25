@@ -18,11 +18,10 @@ interface SwapToFooterProps extends SwapToAction {
 }
 
 /**
- * The detail view's footer when opened from a swap picker (Varial
- * 4827:103078 and 4837:104248): one filled "Swap to {code}" or "Swap from
- * {code}" pill that fills that side of the swap and returns to the amount
- * screen. `secondary` is the filled monochrome call to action in Varial;
- * `primary` is brand blue.
+ * The detail view's footer when opened from a swap picker: one filled
+ * "Swap to {code}" or "Swap from {code}" pill that fills that side of the
+ * swap and returns to the amount screen. `secondary` is the filled
+ * monochrome call to action in Varial; `primary` is brand blue.
  *
  * A flagged destination gets Cancel plus a "Swap to {code} anyway" text
  * action instead, as mobile and the review screen's Blockaid pane do. A
