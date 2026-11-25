@@ -90,9 +90,11 @@ export const NonHeldAssetDetail = ({
 
   const isChartShown = isChartEnabled && isMainnet(networkDetails);
   const headerPrice =
-    price?.currentPrice || asset.spotPrice === undefined
+    price?.currentPrice ||
+    typeof asset.spotPrice !== "number" ||
+    !(asset.spotPrice > 0)
       ? price
-      : { currentPrice: String(asset.spotPrice) };
+      : { ...price, currentPrice: String(asset.spotPrice) };
 
   let copyAddress = "";
   if (asset.contractId) {

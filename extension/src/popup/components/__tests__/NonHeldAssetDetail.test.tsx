@@ -207,6 +207,37 @@ describe("NonHeldAssetDetail", () => {
     );
   });
 
+  it.each([null, 0])(
+    "shows the placeholder, not the record's price, when it is %p",
+    async (spotPrice) => {
+      renderDetail({ ...shx, spotPrice: spotPrice as unknown as number });
+
+      await waitFor(() => expect(getTokenPricesSpy).toHaveBeenCalledTimes(1));
+      // Let the empty backend response land before asserting.
+      await act(async () => {});
+      expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent("$--");
+    },
+  );
+
+  it("keeps the backend's 24h change when the price falls back to the record's", async () => {
+    getTokenPricesSpy.mockImplementation(() =>
+      Promise.resolve({
+        [shx.canonical]: {
+          currentPrice: null,
+          percentagePriceChange24h: "2.5",
+        },
+      } as any),
+    );
+    renderDetail({ ...shx, spotPrice: 0.5 }, { isChartEnabled: false });
+
+    await waitFor(() =>
+      expect(screen.getByTestId("AssetDetail__delta")).toHaveTextContent(
+        "2.50%",
+      ),
+    );
+    expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent("$0.5");
+  });
+
   it("shows the placeholder for a classic token with no price at all", async () => {
     renderDetail(shx);
 
