@@ -18,6 +18,7 @@ import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { useGetTokenPrices } from "helpers/hooks/useGetTokenPrices";
+import { onListAccountValue } from "helpers/accountFunding";
 
 export interface ResolvedData {
   type: AppDataType.RESOLVED;
@@ -28,6 +29,12 @@ export interface ResolvedData {
   };
   applicationState: APPLICATION_STATE;
   isFetchingTokenPrices: boolean;
+  /**
+   * At least one account had an error: a failed balance, price or hidden
+   * asset fetch. The view shows the error per account. The app-open refresh
+   * reads this flag, so it retries at the next app open.
+   */
+  hasAccountErrors?: boolean;
 }
 
 type GetWalletsData = NeedsReRoute | ResolvedData;
@@ -37,7 +44,7 @@ const BATCH_SIZE = 6;
 
 /**
  * Hidden assets for an account. Returns an empty map on error, so the total
- * still loads.
+ * still loads. `isLoaded` is `false` on error.
  */
 const loadHiddenAssets = async ({
   activePublicKey,
@@ -47,7 +54,10 @@ const loadHiddenAssets = async ({
   activePublicKey: string;
   publicKey: string;
   network: string;
-}): Promise<Record<string, AssetVisibility>> => {
+}): Promise<{
+  hiddenAssets: Record<string, AssetVisibility>;
+  isLoaded: boolean;
+}> => {
   try {
     const { hiddenAssets, error } = await getHiddenAssets({
       activePublicKey,
@@ -57,10 +67,10 @@ const loadHiddenAssets = async ({
     if (error) {
       throw new Error(error);
     }
-    return hiddenAssets || {};
+    return { hiddenAssets: hiddenAssets || {}, isLoaded: true };
   } catch (error) {
     captureException(`Error loading hidden assets in wallets data - ${error}`);
-    return {};
+    return { hiddenAssets: {}, isLoaded: false };
   }
 };
 
@@ -83,6 +93,7 @@ function useGetWalletsData() {
     useCache,
     payload,
   }: {
+    // The batch to fetch. `payload.allAccounts` holds every own account.
     accounts: Account[];
     networkDetails: NetworkDetails;
     isMainnetNetwork: boolean;
@@ -93,11 +104,12 @@ function useGetWalletsData() {
       accounts.map(async (account) => {
         try {
           // Hidden assets are per account
-          const hiddenAssets = await loadHiddenAssets({
-            activePublicKey: payload.publicKey,
-            publicKey: account.publicKey,
-            network: networkDetails.network,
-          });
+          const { hiddenAssets, isLoaded: isHiddenAssetsLoaded } =
+            await loadHiddenAssets({
+              activePublicKey: payload.publicKey,
+              publicKey: account.publicKey,
+              network: networkDetails.network,
+            });
           const balances = await fetchBalances(
             account.publicKey,
             isMainnetNetwork,
@@ -109,6 +121,7 @@ function useGetWalletsData() {
             captureException(
               `Error loading account balances in wallets data - ${balances.message}`,
             );
+            payload.hasAccountErrors = true;
             return {
               [account.publicKey]: getTotalUsdLabel({
                 hasError: true,
@@ -135,6 +148,28 @@ function useGetWalletsData() {
             prices.tokenPrices || {},
             visibleBalances,
           );
+          const hasBalanceError = !!(
+            balances.error?.horizon || balances.error?.soroban
+          );
+          if (!isHiddenAssetsLoaded || hasBalanceError || !prices.tokenPrices) {
+            payload.hasAccountErrors = true;
+          }
+          // Feeds funded_account_count. It changes only `funded`, never the
+          // event state, so it cannot emit account.funded. Without the hidden
+          // assets, the total can include a hidden token, so skip the update.
+          if (isHiddenAssetsLoaded) {
+            onListAccountValue({
+              publicKey: account.publicKey,
+              networkDetails,
+              allAccounts: payload.allAccounts,
+              input: {
+                isFunded: balances.isFunded,
+                balances: visibleBalances,
+                tokenPrices: prices.tokenPrices,
+                hasBalanceError,
+              },
+            });
+          }
           return {
             [account.publicKey]: getTotalUsdLabel({
               hasError: false,
@@ -148,6 +183,7 @@ function useGetWalletsData() {
           captureException(
             `error loading account balances and token prices in wallets data - ${error}`,
           );
+          payload.hasAccountErrors = true;
           return {
             [account.publicKey]: getTotalUsdLabel({
               hasError: true,
