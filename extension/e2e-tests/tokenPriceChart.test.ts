@@ -1,11 +1,16 @@
 import { test, expect } from "./test-fixtures";
 import { loginToTestAccount, switchToMainnet } from "./helpers/login";
 import {
+  ASSET_SEARCH_ROUTE,
+  TRENDING_ASSETS_ROUTE,
+  assetSearchResponse,
   stubAccountBalances,
   stubAccountBalancesV2,
   stubTokenPriceHistory,
+  stubTokenPrices,
   stubTokenStats,
 } from "./helpers/stubs";
+import { goToAddAsset } from "./helpers/assets";
 
 // XLM-only fixture served on both the v1 and v2 balances endpoints so the
 // account view loads on Mainnet (the chart is mainnet-only).
@@ -230,4 +235,106 @@ test("Token detail shows the empty state and keeps the timeframe selector", asyn
   // The selector never hides — a thin asset can have data on other ranges.
   await expect(page.getByRole("tablist")).toBeVisible();
   await expect(page.getByRole("tab", { name: "1Y" })).toBeVisible();
+});
+
+const AQUA_ASSET =
+  "AQUA-GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA";
+
+// AQUA is not in XLM_BALANCES, so the sheet opens in its non-held form.
+const stubNonHeldAqua = async (
+  context: import("@playwright/test").BrowserContext,
+) => {
+  // The asset-search and token endpoints are service-worker fetches: context
+  // routes only.
+  await context.unroute(ASSET_SEARCH_ROUTE);
+  await context.route(ASSET_SEARCH_ROUTE, (route) =>
+    route.fulfill(
+      assetSearchResponse([
+        {
+          asset: AQUA_ASSET,
+          volume7d: 1_000_000_000_000,
+          domain: "aquarius.world",
+        },
+      ]),
+    ),
+  );
+  await context.route(TRENDING_ASSETS_ROUTE, (route) =>
+    route.fulfill(
+      assetSearchResponse([
+        {
+          asset: AQUA_ASSET,
+          volume7d: 1_000_000_000_000,
+          domain: "aquarius.world",
+        },
+      ]),
+    ),
+  );
+  await stubTokenPriceHistory(context);
+  await stubTokenStats(context);
+  await stubTokenPrices(context);
+};
+
+test("View details on a swap picker row shows the chart for a non-held token", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  await loginToTestAccount({
+    page,
+    extensionId,
+    context,
+    stubOverrides: async () => {
+      await stubAccountBalances(page);
+      await stubAccountBalancesV2(page, XLM_BALANCES);
+      await stubNonHeldAqua(context);
+    },
+  });
+  await switchToMainnet(page);
+
+  await page.getByTestId("nav-link-swap").click();
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
+  await page
+    .getByTestId("swap-receive-card")
+    .getByTestId("send-amount-edit-dest-asset")
+    .click({ force: true });
+  await expect(page.getByText("Swap to")).toBeVisible();
+
+  await page.getByTestId("SwapTokenRow-AQUA-view-details").click();
+
+  await expect(page.getByTestId("TokenPriceChart__polyline")).toBeVisible({
+    timeout: 30000,
+  });
+  await expect(page.getByTestId("AssetDetail__delta")).toBeVisible();
+  expect(await page.getByTestId("asset-detail-available-copy").count()).toBe(0);
+});
+
+test("Tapping an add-asset search result shows the chart", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  await loginToTestAccount({
+    page,
+    extensionId,
+    context,
+    stubOverrides: async () => {
+      await stubAccountBalances(page);
+      await stubAccountBalancesV2(page, XLM_BALANCES);
+      await stubNonHeldAqua(context);
+    },
+  });
+  await switchToMainnet(page);
+
+  await goToAddAsset(page);
+  await page.getByTestId("search-asset-input").fill("AQUA");
+
+  await page.getByTestId("ManageAssetRow-AQUA-body").click();
+
+  await expect(page.getByTestId("TokenPriceChart__polyline")).toBeVisible({
+    timeout: 30000,
+  });
+  await expect(page.getByTestId("AssetDetail__delta")).toBeVisible();
+  expect(await page.getByTestId("asset-detail-available-copy").count()).toBe(0);
 });

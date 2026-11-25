@@ -1,4 +1,6 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+
+import { isError } from "helpers/request";
 import { Navigate } from "react-router-dom";
 import { Icon, Input, Loader, Notification } from "@stellar/design-system";
 import { captureException } from "@sentry/browser";
@@ -11,6 +13,7 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { closeWindow, openTab } from "popup/helpers/navigate";
 import { View } from "popup/basics/layout/View";
 import { FormRows } from "popup/basics/Forms";
+import type { AccountBalances } from "helpers/hooks/useGetBalances";
 import { RequestState } from "constants/request";
 import { isMainnet, isTestnet } from "helpers/stellar";
 import { AppDataType } from "helpers/hooks/useGetAppData";
@@ -19,6 +22,11 @@ import { reRouteOnboarding } from "popup/helpers/route";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
+import { tokenPriceHistoryEnabledSelector } from "popup/ducks/remoteConfig";
+import { SecurityLevel } from "popup/constants/blockaid";
+import { AssetDetailSheet } from "popup/components/account/AssetDetail/AssetDetailSheet";
+import type { NonHeldAssetDescriptor } from "popup/components/account/AssetDetail/NonHeldAssetDetail";
+import { TokenChartSource } from "popup/components/account/TokenPriceChart/constants";
 import type { DestinationTokenDetails } from "popup/ducks/transactionSubmission";
 import { getDecimalsForAsset } from "popup/helpers/soroban";
 import { swapIdentityKey } from "popup/helpers/swapQuote";
@@ -28,8 +36,12 @@ import {
   useSwapTokenLookup,
   balancesToHeldRecords,
 } from "./hooks/useSwapTokenLookup";
-import { SwapPickerSections } from "./SwapPickerSections";
-import type { SwapPickerSectionsResult } from "./SwapPickerSections";
+import type { SwapTokenRecord } from "./hooks/useSwapTokenLookup";
+import { SwapPickerSections, buildSelection } from "./SwapPickerSections";
+import type {
+  PickerSource,
+  SwapPickerSectionsResult,
+} from "./SwapPickerSections";
 
 import "./styles.scss";
 
@@ -49,13 +61,39 @@ interface SwapAssetProps {
     details?: SwapPickerSelection,
   ) => void;
   goBack: () => void;
+  /**
+   * A token was hidden or removed from the details sheet, so it is no longer
+   * pickable; the caller drops it from whichever swap side holds it.
+   */
+  onAssetHiddenOrRemoved?: (canonical: string) => void;
 }
+
+const EMPTY_BALANCES: AccountBalances = {
+  balances: [],
+  isFunded: false,
+  subentryCount: 0,
+};
+
+const toDescriptor = (r: SwapTokenRecord): NonHeldAssetDescriptor => ({
+  canonical: r.canonical,
+  code: r.code ?? "",
+  issuer: r.issuer,
+  contractId: r.isContract ? r.issuer : undefined,
+  name: r.isContract ? r.name : undefined,
+  iconUrl: r.image ?? r.icon,
+  domain: r.domain,
+  isSuspicious: r.securityLevel === SecurityLevel.SUSPICIOUS,
+  isMalicious: r.securityLevel === SecurityLevel.MALICIOUS,
+  isUnableToScan: r.securityLevel === SecurityLevel.UNABLE_TO_SCAN,
+  spotPrice: r.spotPrice,
+});
 
 export const SwapAsset = ({
   selectionType,
   hiddenAssets,
   onClickAsset,
   goBack,
+  onAssetHiddenOrRemoved,
 }: SwapAssetProps) => {
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -66,6 +104,15 @@ export const SwapAsset = ({
   const isDiscoverySupported =
     isMainnet(networkDetails) || isTestnet(networkDetails);
   const isDestination = selectionType === "destination";
+  // The open details sheet, with the record and section it came from so its
+  // Swap To picks exactly as the row would.
+  const [details, setDetails] = useState<{
+    asset: NonHeldAssetDescriptor;
+    record: SwapTokenRecord;
+    source: PickerSource;
+  } | null>(null);
+  const isDetailsOffered =
+    useSelector(tokenPriceHistoryEnabledSelector) && isMainnet(networkDetails);
   const title = isDestination ? t("Swap to") : t("Swap from");
 
   const {
@@ -91,6 +138,9 @@ export const SwapAsset = ({
   // or the picker closing wins over a late result.
   const pickIdRef = useRef(0);
   const pendingPickRef = useRef<string | null>(null);
+  // formik.values in an async callback is the value from the render that
+  // created the callback, not the one in the input now.
+  const searchTermRef = useRef("");
   useEffect(
     () => () => {
       pickIdRef.current += 1;
@@ -98,9 +148,17 @@ export const SwapAsset = ({
     [],
   );
 
+  const sheetBalances =
+    fromState.data?.type === AppDataType.RESOLVED
+      ? fromState.data.balances
+      : EMPTY_BALANCES;
+
+  // A reload's FETCH_DATA_START drops the held balances a destination pick
+  // reads, so the destination list waits for it too.
   const isLoading = isDestination
     ? lookupState.state === RequestState.IDLE ||
-      lookupState.state === RequestState.LOADING
+      lookupState.state === RequestState.LOADING ||
+      fromState.state === RequestState.LOADING
     : fromState.state === RequestState.IDLE ||
       fromState.state === RequestState.LOADING;
 
@@ -159,6 +217,7 @@ export const SwapAsset = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     formik.setFieldValue("searchTerm", val);
+    searchTermRef.current = val;
     // A new search abandons a pending pick and its error: both are about a
     // row from the previous results.
     pickIdRef.current += 1;
@@ -407,6 +466,16 @@ export const SwapAsset = ({
                 onClickAsset={handleDestinationPick}
                 stellarExpertUrl={stellarExpertUrl}
                 isDiscoverySupported={isDiscoverySupported}
+                onViewDetails={
+                  isDetailsOffered
+                    ? (r, source) =>
+                        setDetails({
+                          asset: toDescriptor(r),
+                          record: r,
+                          source,
+                        })
+                    : undefined
+                }
               />
             </>
           ) : (
@@ -416,10 +485,80 @@ export const SwapAsset = ({
               hiddenAssets={hiddenAssets}
               onClickAsset={onClickAsset}
               stellarExpertUrl={stellarExpertUrl}
+              onViewDetails={
+                isDetailsOffered
+                  ? (r, source) =>
+                      setDetails({ asset: toDescriptor(r), record: r, source })
+                  : undefined
+              }
             />
           )}
         </div>
       </View.Content>
+      <AssetDetailSheet
+        asset={details?.asset ?? null}
+        accountBalances={sheetBalances}
+        source={TokenChartSource.SwapPicker}
+        onClose={() => setDetails(null)}
+        onBalancesChanged={(change) => {
+          if (!details) {
+            return;
+          }
+          onAssetHiddenOrRemoved?.(details.record.canonical);
+          // The list was loaded once on mount. A hide only changes the
+          // hidden list, which the cached read applies; a removed trustline
+          // needs the balances again. A typed search must survive the
+          // reload: the source list filters locally, the destination
+          // re-runs its lookup, whose idle effect skips while searching.
+          // The re-run uses the term typed now: a search typed during the
+          // reload was submitted against the emptied balances.
+          const { searchTerm } = formik.values;
+          fetchData(change === "hidden", isDestination ? "" : searchTerm)
+            .then((next) => {
+              const latestTerm = searchTermRef.current;
+              if (
+                !isDestination ||
+                !latestTerm ||
+                isError(next) ||
+                next.type !== AppDataType.RESOLVED
+              ) {
+                return undefined;
+              }
+              return lookupFetchData({
+                searchTerm: latestTerm,
+                balances: next.balances.balances,
+                publicKey: next.publicKey,
+                networkDetails,
+                icons: next.balances.icons,
+                tokenPrices: next.tokenPrices || {},
+              });
+            })
+            // The hooks record a failed load in their own error state.
+            .catch(() => undefined);
+        }}
+        swapTo={
+          details
+            ? {
+                code: details.record.code ?? "",
+                side: isDestination ? "to" : "from",
+                // The same pick the row makes, after the sheet closes.
+                onSelect: () => {
+                  const { record, source } = details;
+                  setDetails(null);
+                  if (isDestination) {
+                    handleDestinationPick(
+                      record.canonical,
+                      record.isContract,
+                      buildSelection(record, source),
+                    );
+                  } else {
+                    onClickAsset(record.canonical, record.isContract);
+                  }
+                },
+              }
+            : undefined
+        }
+      />
     </>
   );
 };

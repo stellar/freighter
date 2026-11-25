@@ -32,6 +32,7 @@ import {
   CHART_VIEWBOX_HEIGHT,
   RANGE_SWITCH_DEBOUNCE_MS,
   PriceDirection,
+  TokenChartSource,
 } from "popup/components/account/TokenPriceChart/constants";
 
 // §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
@@ -128,6 +129,7 @@ const renderChart = () => {
         networkDetails={MAINNET_NETWORK_DETAILS}
         fallback24hPercent="1.09"
         onDeltaChange={handleDelta}
+        source={TokenChartSource.Balances}
       />
     </Provider>,
   );
@@ -306,6 +308,7 @@ describe("TokenPriceChart", () => {
             networkDetails={MAINNET_NETWORK_DETAILS}
             fallback24hPercent="1.09"
             onDeltaChange={handleDelta}
+            source={TokenChartSource.Balances}
           />
         </Provider>
       );
@@ -561,6 +564,7 @@ describe("TokenPriceChart", () => {
           networkDetails={MAINNET_NETWORK_DETAILS}
           fallback24hPercent="1.09"
           onDeltaChange={handleDelta}
+          source={TokenChartSource.Balances}
         />
       </Provider>
     );
@@ -1210,6 +1214,7 @@ describe("TokenPriceChart", () => {
               networkDetails={MAINNET_NETWORK_DETAILS}
               fallback24hPercent="1.09"
               onDeltaChange={handleDelta}
+              source={TokenChartSource.Balances}
             />
           </Provider>
         </React.Profiler>,

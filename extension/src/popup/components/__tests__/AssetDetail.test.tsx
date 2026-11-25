@@ -32,7 +32,10 @@ import {
   mockChartRect,
 } from "popup/__testHelpers__/pointerEvents";
 import { resetCacheWriteClaims } from "helpers/cacheWrites";
-import { RANGE_SWITCH_DEBOUNCE_MS } from "popup/components/account/TokenPriceChart/constants";
+import {
+  RANGE_SWITCH_DEBOUNCE_MS,
+  TokenChartSource,
+} from "popup/components/account/TokenPriceChart/constants";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { AccountHistoryData } from "popup/views/Account/hooks/useGetAccountHistoryData";
 
@@ -188,8 +191,10 @@ describe("AssetDetail", () => {
     const usdcCanonical =
       "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
     const handleClose = jest.fn();
+    const onBalancesChanged = jest.fn();
     const props = {
       handleClose,
+      onBalancesChanged,
       accountBalances: {
         balances: [
           {
@@ -246,13 +251,323 @@ describe("AssetDetail", () => {
     await waitFor(() => {
       expect(handleClose).toHaveBeenCalled();
     });
+    // The caller's list no longer holds the token; it reloads on this.
+    expect(onBalancesChanged).toHaveBeenCalledWith("hidden");
   });
+
+  it("hides Send and Swap but keeps Hide, Remove and Stellar.expert when opened from the swap picker", async () => {
+    jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockBalances));
+    // A held classic asset with a balance: under the Balances source this
+    // fixture shows all four affordances.
+    const props = {
+      handleClose: jest.fn(),
+      accountBalances: {
+        balances: [
+          {
+            available: new BigNumber(100),
+            token: {
+              code: "USDC",
+              issuer: {
+                key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+              },
+            },
+            total: new BigNumber(100),
+          },
+        ],
+      } as any,
+      selectedAsset:
+        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      historyData: mockHistoryData,
+    };
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+          },
+        }}
+      >
+        <AssetDetail {...props} source={TokenChartSource.SwapPicker} />
+      </Wrapper>,
+    );
+    await screen.findByTestId("AssetDetail");
+    expect(screen.queryByTestId("asset-detail-send-button")).toBeNull();
+    expect(screen.queryByTestId("asset-detail-swap-button")).toBeNull();
+    expect(screen.queryByTestId("asset-detail-swap-to-button")).toBeNull();
+    await userEvent.click(screen.getByAltText("asset options"));
+    // Hide and Remove follow the held balance, not the entry point.
+    expect(screen.getByTestId("AssetDetail__hide")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("asset-detail-remove-button"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Copy address")).toBeInTheDocument();
+    expect(screen.getByText("Stellar.expert")).toBeInTheDocument();
+  });
+
+  it("renders a Swap to footer for a held asset when the caller offers it", async () => {
+    const onSelect = jest.fn();
+    const props = {
+      accountBalances: {
+        balances: [
+          {
+            available: new BigNumber(100),
+            token: {
+              code: "USDC",
+              issuer: {
+                key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+              },
+            },
+            total: new BigNumber(100),
+          },
+        ],
+      } as any,
+      selectedAsset:
+        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      historyData: mockHistoryData,
+      handleClose: () => null,
+    };
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+          },
+        }}
+      >
+        <AssetDetail
+          {...props}
+          source={TokenChartSource.SwapPicker}
+          swapTo={{ code: "USDC", side: "to", onSelect }}
+        />
+      </Wrapper>,
+    );
+    await screen.findByTestId("AssetDetail");
+    const button = screen.getByTestId("asset-detail-swap-to-button");
+    expect(button).toHaveTextContent(/Swap to/);
+    await userEvent.click(button);
+    expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ["Malicious", "This token was flagged as malicious"],
+    ["Warning", "This token was flagged as suspicious"],
+  ])(
+    "shows the flagged-token warning for a held asset Blockaid marked %s",
+    async (resultType, copy) => {
+      jest
+        .spyOn(ApiInternal, "getAccountBalances")
+        .mockImplementation(() => Promise.resolve(mockBalances));
+      const props = {
+        handleClose: jest.fn(),
+        accountBalances: {
+          balances: [
+            {
+              available: new BigNumber(100),
+              token: {
+                code: "USDC",
+                issuer: {
+                  key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+                },
+              },
+              total: new BigNumber(100),
+              blockaidData: { result_type: resultType },
+            },
+          ],
+        } as any,
+        selectedAsset:
+          "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+        historyData: mockHistoryData,
+      };
+
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey: "G1",
+              allAccounts: mockAccounts,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+            },
+          }}
+        >
+          <AssetDetail {...props} />
+        </Wrapper>,
+      );
+      await screen.findByTestId("AssetDetail");
+      expect(screen.getByTestId("AssetDetail__warning")).toHaveTextContent(
+        copy,
+      );
+    },
+  );
+
+  it("shows no flagged-token warning for a held asset Blockaid marked Benign", async () => {
+    jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockBalances));
+    const props = {
+      handleClose: jest.fn(),
+      accountBalances: {
+        balances: [
+          {
+            available: new BigNumber(100),
+            token: {
+              code: "USDC",
+              issuer: {
+                key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+              },
+            },
+            total: new BigNumber(100),
+            blockaidData: { result_type: "Benign" },
+          },
+        ],
+      } as any,
+      selectedAsset:
+        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      historyData: mockHistoryData,
+    };
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+          },
+        }}
+      >
+        <AssetDetail {...props} />
+      </Wrapper>,
+    );
+    await screen.findByTestId("AssetDetail");
+    expect(screen.queryByTestId("AssetDetail__warning")).toBeNull();
+  });
+
+  it.each([
+    {
+      name: "a clean balance scan suppresses the record's unable-to-scan",
+      blockaidData: { result_type: "Benign" },
+      record: { isUnableToScan: true },
+      warning: null,
+      isFlaggedFooter: false,
+    },
+    {
+      name: "unscanned by both shows Proceed with caution",
+      blockaidData: undefined,
+      record: { isUnableToScan: true },
+      warning: "Proceed with caution",
+      isFlaggedFooter: false,
+    },
+    {
+      name: "a malicious record flags an unscanned balance",
+      blockaidData: undefined,
+      record: { isMalicious: true },
+      warning: "This token was flagged as malicious",
+      isFlaggedFooter: true,
+    },
+    {
+      name: "a suspicious record flags a clean balance",
+      blockaidData: { result_type: "Benign" },
+      record: { isSuspicious: true },
+      warning: "This token was flagged as suspicious",
+      isFlaggedFooter: true,
+    },
+  ])(
+    "held asset opened from a record: $name",
+    async ({ blockaidData, record, warning, isFlaggedFooter }) => {
+      jest
+        .spyOn(ApiInternal, "getAccountBalances")
+        .mockImplementation(() => Promise.resolve(mockBalances));
+      const props = {
+        handleClose: jest.fn(),
+        accountBalances: {
+          balances: [
+            {
+              available: new BigNumber(100),
+              token: {
+                code: "USDC",
+                issuer: {
+                  key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+                },
+              },
+              total: new BigNumber(100),
+              ...(blockaidData ? { blockaidData } : {}),
+            },
+          ],
+        } as any,
+        selectedAsset:
+          "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+        historyData: mockHistoryData,
+        swapTo: { code: "USDC", side: "to" as const, onSelect: jest.fn() },
+        ...record,
+      };
+
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey: "G1",
+              allAccounts: mockAccounts,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+            },
+          }}
+        >
+          <AssetDetail {...props} />
+        </Wrapper>,
+      );
+      await screen.findByTestId("AssetDetail");
+      if (warning) {
+        expect(screen.getByTestId("AssetDetail__warning")).toHaveTextContent(
+          warning,
+        );
+      } else {
+        expect(screen.queryByTestId("AssetDetail__warning")).toBeNull();
+      }
+      expect(!!screen.queryByTestId("asset-detail-swap-to-anyway")).toBe(
+        isFlaggedFooter,
+      );
+    },
+  );
 
   describe("hide outcome", () => {
     const usdcCanonical =
       "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
 
-    const renderUsdcDetail = (props: { handleClose: jest.Mock }) =>
+    const renderUsdcDetail = (props: {
+      handleClose: jest.Mock;
+      isHidden?: boolean;
+    }) =>
       render(
         <Wrapper
           routes={[ROUTES.account]}
@@ -321,6 +636,18 @@ describe("AssetDetail", () => {
       await waitFor(() => expect(toastSpy).toHaveBeenCalled());
       expect(lastToastProps(toastSpy).variant).toBe("error");
       expect(handleClose).not.toHaveBeenCalled();
+    });
+
+    it("offers no Hide for a token the account already hid", async () => {
+      renderUsdcDetail({ handleClose: jest.fn(), isHidden: true });
+      await waitFor(() => screen.getByTestId("AssetDetail"));
+
+      fireEvent.click(screen.getByAltText("asset options"));
+      // The menu is open, so the missing Hide is the guard, not a closed menu
+      expect(
+        document.querySelector(".AssetDetail__options-actions"),
+      ).toBeInTheDocument();
+      expect(screen.queryByTestId("AssetDetail__hide")).not.toBeInTheDocument();
     });
   });
 

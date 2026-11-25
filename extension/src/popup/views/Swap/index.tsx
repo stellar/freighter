@@ -13,6 +13,7 @@ import { TransactionConfirm } from "popup/components/InternalTransaction/SubmitT
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { getQuoteExpiredOperationCodes } from "popup/helpers/quoteExpiry";
 import { SwapAsset } from "popup/components/swap/SwapAsset";
+import { hiddenAssetSwapActions } from "popup/views/Swap/hiddenAsset";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
 import { AppDispatch, AppState } from "popup/App";
 import {
@@ -256,6 +257,7 @@ export const Swap = () => {
             selectionType="destination"
             hiddenAssets={[transactionData.asset]}
             goBack={() => setActiveStep(STEPS.AMOUNT)}
+            onAssetHiddenOrRemoved={clearHiddenSelection}
             onClickAsset={(canonical, _isContract, details) => {
               dispatch(saveDestinationAsset(canonical));
               // isToken describes the source (the review reads it against
@@ -318,6 +320,7 @@ export const Swap = () => {
             selectionType="source"
             hiddenAssets={[transactionData.destinationAsset]}
             goBack={() => setActiveStep(STEPS.AMOUNT)}
+            onAssetHiddenOrRemoved={clearHiddenSelection}
             onClickAsset={(canonical: string, isContract: boolean) => {
               dispatch(saveAsset(canonical));
               dispatch(saveIsToken(isContract));
@@ -343,6 +346,12 @@ export const Swap = () => {
         );
       }
     }
+  };
+
+  // A token hidden or removed from a picker's details sheet can no longer be
+  // swapped; drop it from whichever side holds it.
+  const clearHiddenSelection = (canonical: string) => {
+    hiddenAssetSwapActions(canonical, transactionData).forEach(dispatch);
   };
 
   if (!areDefaultsApplied) {

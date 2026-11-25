@@ -8,6 +8,7 @@ import { makeDummyStore } from "popup/__testHelpers__";
 import { makeHistory } from "@shared/api/__tests__/fixtures/tokenPriceHistory";
 import { emitMetric } from "helpers/metrics";
 import { useGetTokenPriceHistory } from "../hooks/useGetTokenPriceHistory";
+import { TokenChartSource } from "popup/components/account/TokenPriceChart/constants";
 
 // §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
 
@@ -26,7 +27,9 @@ const renderTestHook = () => {
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <Provider store={store}>{children}</Provider>
   );
-  return renderHook(() => useGetTokenPriceHistory(), { wrapper });
+  return renderHook(() => useGetTokenPriceHistory(TokenChartSource.Balances), {
+    wrapper,
+  });
 };
 
 describe("useGetTokenPriceHistory — unmount invalidates in-flight fetches", () => {

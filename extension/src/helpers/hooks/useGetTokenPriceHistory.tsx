@@ -26,6 +26,7 @@ import {
   tokenPriceHistorySelector,
 } from "popup/ducks/cache";
 import { AppDispatch, AppState } from "popup/App";
+import { TokenChartSource } from "popup/components/account/TokenPriceChart/constants";
 
 // §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
 
@@ -63,7 +64,10 @@ const readCachedHistory = (
   return history;
 };
 
-export function useGetTokenPriceHistory() {
+export function useGetTokenPriceHistory(source: TokenChartSource) {
+  // A ref so `fetchData`'s identity does not change with the source.
+  const sourceRef = useRef(source);
+  sourceRef.current = source;
   const reduxDispatch = useDispatch<AppDispatch>();
   const store = useStore<AppState>();
 
@@ -223,6 +227,7 @@ export function useGetTokenPriceHistory() {
           has_data: hasChartData(payload.history.points),
           ...(payload.history.lowVolume === true ? { low_volume: true } : {}),
           range,
+          source: sourceRef.current,
         });
       }
 

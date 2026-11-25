@@ -113,3 +113,10 @@ export const MIN_PRICE_DECIMALS = 2;
 export const MAX_SUB_DOLLAR_DECIMALS = 4;
 /** Hard ceiling below a cent, so a dust price can't render 30 digits. */
 export const MAX_PRICE_DECIMALS = 8;
+
+// The §7.5 `source` strings shared with mobile (mobile also has `swap_amount`; the extension has no such surface).
+export enum TokenChartSource {
+  Balances = "balances",
+  SwapPicker = "swap_picker",
+  AddToken = "add_token",
+}

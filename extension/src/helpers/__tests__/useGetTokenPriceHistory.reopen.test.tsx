@@ -11,6 +11,7 @@ import {
 } from "@shared/api/__tests__/fixtures/tokenPriceHistory";
 import { resetCacheWriteClaims } from "helpers/cacheWrites";
 import { useGetTokenPriceHistory } from "../hooks/useGetTokenPriceHistory";
+import { TokenChartSource } from "popup/components/account/TokenPriceChart/constants";
 
 // §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
 
@@ -61,7 +62,10 @@ describe("useGetTokenPriceHistory — a closed view's request cannot overwrite t
       networkDetails: MAINNET_NETWORK_DETAILS,
     };
 
-    const first = renderHook(() => useGetTokenPriceHistory(), { wrapper });
+    const first = renderHook(
+      () => useGetTokenPriceHistory(TokenChartSource.Balances),
+      { wrapper },
+    );
     let pendingA: Promise<unknown> = Promise.resolve();
     act(() => {
       pendingA = first.result.current.fetchData(query);
@@ -70,7 +74,10 @@ describe("useGetTokenPriceHistory — a closed view's request cannot overwrite t
     // The user closes the detail view with A still outstanding, then reopens
     // the same token — a new hook instance, the same cache key.
     first.unmount();
-    const second = renderHook(() => useGetTokenPriceHistory(), { wrapper });
+    const second = renderHook(
+      () => useGetTokenPriceHistory(TokenChartSource.Balances),
+      { wrapper },
+    );
     let pendingB: Promise<unknown> = Promise.resolve();
     act(() => {
       pendingB = second.result.current.fetchData(query);

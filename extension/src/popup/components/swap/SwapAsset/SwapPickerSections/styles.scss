@@ -11,6 +11,7 @@
   // Hidden tokens lists keep AssetListRow's own sizes.
   .AssetListRow {
     padding: pxToRem(8px) 0;
+    gap: pxToRem(12px);
 
     .AccountAssets__asset--logo {
       margin-right: pxToRem(12px);
@@ -28,6 +29,32 @@
       line-height: pxToRem(18px);
       font-weight: var(--sds-fw-medium);
       color: var(--sds-clr-gray-11);
+    }
+  }
+
+  // A held row with its info button 12px past it, as the discover rows.
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(12px);
+
+    .BalanceRow {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+
+  &__info {
+    display: inline-flex;
+    background: transparent;
+    border: none;
+    padding: pxToRem(4px);
+    cursor: pointer;
+    color: var(--sds-clr-gray-09);
+
+    svg {
+      width: pxToRem(16px);
+      height: pxToRem(16px);
     }
   }
 

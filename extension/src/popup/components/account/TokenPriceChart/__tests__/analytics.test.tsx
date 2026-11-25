@@ -19,8 +19,12 @@ import {
   mockChartRect,
 } from "popup/__testHelpers__/pointerEvents";
 import { TokenPriceChart } from "popup/components/account/TokenPriceChart";
-import { RANGE_SWITCH_DEBOUNCE_MS } from "popup/components/account/TokenPriceChart/constants";
+import {
+  RANGE_SWITCH_DEBOUNCE_MS,
+  TokenChartSource,
+} from "popup/components/account/TokenPriceChart/constants";
 import { useGetTokenPriceHistory } from "helpers/hooks/useGetTokenPriceHistory";
+import { resetCacheWriteClaims } from "helpers/cacheWrites";
 import { emitMetric } from "helpers/metrics";
 
 // §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
@@ -54,7 +58,12 @@ const historyFor = (token: string, lowVolume: boolean | null) =>
 const CANONICAL_FIXTURE = [
   {
     event: "token_chart.loaded",
-    props: { token_type: "classic", has_data: true, range: "1D" },
+    props: {
+      token_type: "classic",
+      has_data: true,
+      range: "1D",
+      source: "balances",
+    },
   },
   {
     event: "token_chart.loaded",
@@ -63,6 +72,7 @@ const CANONICAL_FIXTURE = [
       has_data: true,
       low_volume: true,
       range: "1D",
+      source: "balances",
     },
   },
   // Fires for a range the user was SHOWN, cache hits included — this one is
@@ -87,7 +97,12 @@ const CANONICAL_FIXTURE = [
   // is on screen.
   {
     event: "token_chart.loaded",
-    props: { token_type: "classic", has_data: true, range: "1W" },
+    props: {
+      token_type: "classic",
+      has_data: true,
+      range: "1W",
+      source: "balances",
+    },
   },
   {
     event: "token_chart.viewed",
@@ -108,6 +123,9 @@ describe("token_chart analytics payloads (frozen cross-platform fixture)", () =>
   afterEach(() => {
     mockedSend.mockReset();
     mockedEmitMetric.mockReset();
+    // Module state: a never-resolving fetch in one test would otherwise be
+    // joined by the next test fetching the same key.
+    resetCacheWriteClaims();
     // The `getBoundingClientRect` spy below is installed on a shared
     // prototype; left in place it would hand every later test in this file a
     // 320-wide SVG.
@@ -125,9 +143,12 @@ describe("token_chart analytics payloads (frozen cross-platform fixture)", () =>
       status: 200,
       body: { data: historyFor(CLASSIC_TOKEN, false) },
     });
-    const { result } = renderHook(() => useGetTokenPriceHistory(), {
-      wrapper,
-    });
+    const { result } = renderHook(
+      () => useGetTokenPriceHistory(TokenChartSource.Balances),
+      {
+        wrapper,
+      },
+    );
     await act(async () => {
       await result.current.fetchData({
         token: CLASSIC_TOKEN,
@@ -175,6 +196,7 @@ describe("token_chart analytics payloads (frozen cross-platform fixture)", () =>
           token={CLASSIC_TOKEN}
           networkDetails={MAINNET_NETWORK_DETAILS}
           onDeltaChange={() => {}}
+          source={TokenChartSource.Balances}
         />
       </Provider>,
     );
@@ -264,6 +286,7 @@ describe("token_chart analytics payloads (frozen cross-platform fixture)", () =>
           token={CLASSIC_TOKEN}
           networkDetails={MAINNET_NETWORK_DETAILS}
           onDeltaChange={() => {}}
+          source={TokenChartSource.Balances}
         />
       </Provider>,
     );
@@ -297,9 +320,12 @@ describe("token_chart analytics payloads (frozen cross-platform fixture)", () =>
         },
       },
     });
-    const { result } = renderHook(() => useGetTokenPriceHistory(), {
-      wrapper,
-    });
+    const { result } = renderHook(
+      () => useGetTokenPriceHistory(TokenChartSource.Balances),
+      {
+        wrapper,
+      },
+    );
     await act(async () => {
       await result.current.fetchData({
         token: "native",
@@ -311,7 +337,12 @@ describe("token_chart analytics payloads (frozen cross-platform fixture)", () =>
     expect(mockedEmitMetric.mock.calls).toEqual([
       [
         "token_chart.loaded",
-        { token_type: "native", has_data: false, range: "1D" },
+        {
+          token_type: "native",
+          has_data: false,
+          range: "1D",
+          source: "balances",
+        },
       ],
     ]);
   });
@@ -333,9 +364,12 @@ describe("token_chart analytics payloads (frozen cross-platform fixture)", () =>
         },
       },
     });
-    const { result } = renderHook(() => useGetTokenPriceHistory(), {
-      wrapper,
-    });
+    const { result } = renderHook(
+      () => useGetTokenPriceHistory(TokenChartSource.Balances),
+      {
+        wrapper,
+      },
+    );
     await act(async () => {
       await result.current.fetchData({
         token: "native",
@@ -347,7 +381,12 @@ describe("token_chart analytics payloads (frozen cross-platform fixture)", () =>
     expect(mockedEmitMetric.mock.calls).toEqual([
       [
         "token_chart.loaded",
-        { token_type: "native", has_data: false, range: "1D" },
+        {
+          token_type: "native",
+          has_data: false,
+          range: "1D",
+          source: "balances",
+        },
       ],
     ]);
   });
@@ -371,7 +410,10 @@ describe("token_chart analytics payloads (frozen cross-platform fixture)", () =>
       });
     });
 
-    const { result } = renderHook(() => useGetTokenPriceHistory(), { wrapper });
+    const { result } = renderHook(
+      () => useGetTokenPriceHistory(TokenChartSource.Balances),
+      { wrapper },
+    );
 
     let weekPromise: Promise<unknown> = Promise.resolve();
     let monthPromise: Promise<unknown> = Promise.resolve();
@@ -407,7 +449,12 @@ describe("token_chart analytics payloads (frozen cross-platform fixture)", () =>
     expect(mockedEmitMetric.mock.calls).toEqual([
       [
         "token_chart.loaded",
-        { token_type: "native", has_data: true, range: "1M" },
+        {
+          token_type: "native",
+          has_data: true,
+          range: "1M",
+          source: "balances",
+        },
       ],
     ]);
   });
@@ -419,9 +466,12 @@ describe("token_chart analytics payloads (frozen cross-platform fixture)", () =>
     );
 
     mockedSend.mockResolvedValueOnce({ status: 503, body: null });
-    const { result } = renderHook(() => useGetTokenPriceHistory(), {
-      wrapper,
-    });
+    const { result } = renderHook(
+      () => useGetTokenPriceHistory(TokenChartSource.Balances),
+      {
+        wrapper,
+      },
+    );
     await act(async () => {
       await result.current.fetchData({
         token: "native",
@@ -431,5 +481,33 @@ describe("token_chart analytics payloads (frozen cross-platform fixture)", () =>
     });
 
     expect(mockedEmitMetric).not.toHaveBeenCalled();
+  });
+
+  it("tags loaded with the surface the chart was opened from", async () => {
+    const store = makeDummyStore({});
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <Provider store={store}>{children}</Provider>
+    );
+    mockedSend.mockResolvedValueOnce({
+      status: 200,
+      body: { data: historyFor(CLASSIC_TOKEN, false) },
+    });
+    const { result } = renderHook(
+      () => useGetTokenPriceHistory(TokenChartSource.SwapPicker),
+      { wrapper },
+    );
+    await act(async () => {
+      await result.current.fetchData({
+        token: CLASSIC_TOKEN,
+        range: "1D",
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      });
+    });
+    expect(mockedEmitMetric).toHaveBeenCalledWith("token_chart.loaded", {
+      token_type: "classic",
+      has_data: true,
+      range: "1D",
+      source: "swap_picker",
+    });
   });
 });

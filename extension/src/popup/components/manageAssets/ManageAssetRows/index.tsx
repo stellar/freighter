@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 
-import { getCanonicalFromAsset } from "helpers/stellar";
+import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
 import { isContractId, isAssetSac } from "popup/helpers/soroban";
 import { findAssetBalance, getIsRemovable } from "popup/helpers/balance";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -16,6 +16,10 @@ import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { AssetListRow } from "popup/components/AssetListRow";
+import { tokenPriceHistoryEnabledSelector } from "popup/ducks/remoteConfig";
+import { AssetDetailSheet } from "popup/components/account/AssetDetail/AssetDetailSheet";
+import type { NonHeldAssetDescriptor } from "popup/components/account/AssetDetail/NonHeldAssetDetail";
+import { TokenChartSource } from "popup/components/account/TokenPriceChart/constants";
 import { ChangeTrustInternal } from "./ChangeTrustInternal";
 import { ManageAssetRowButton } from "../ManageAssetRowButton";
 import { ToggleTokenInternal } from "./ToggleTokenInternal";
@@ -32,6 +36,7 @@ export type ManageAssetCurrency = {
   icon?: string;
   isSuspicious?: boolean;
   isMalicious?: boolean;
+  isUnableToScan?: boolean;
   decimals?: number;
   balance?: string;
   name?: string;
@@ -60,6 +65,8 @@ interface ManageAssetRowsProps {
   onUnhideAsset?: (asset: { code: string; canonicalAsset: string }) => void;
   /** Canonical of the asset whose unhide is in flight, if any */
   unhidingAsset?: string;
+  /** A token was hidden or removed from the detail sheet; refresh the rows. */
+  onBalancesChanged?: () => void;
 }
 
 export const ManageAssetRows = ({
@@ -72,10 +79,15 @@ export const ManageAssetRows = ({
   isAssetHidden,
   onUnhideAsset,
   unhidingAsset,
+  onBalancesChanged,
 }: ManageAssetRowsProps) => {
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
+  const isDetailsOffered =
+    useSelector(tokenPriceHistoryEnabledSelector) && isMainnet(networkDetails);
+  const [detailsAsset, setDetailsAsset] =
+    useState<NonHeldAssetDescriptor | null>(null);
 
   const [selectedAsset, setSelectedAsset] = useState<
     | {
@@ -129,6 +141,8 @@ export const ManageAssetRows = ({
               isSac,
               isTrustlineActive,
               name,
+              price,
+              isUnableToScan,
             }) => {
               const canonicalAsset = getCanonicalFromAsset(code, issuer);
               // A held asset the user hid offers Unhide instead of the menu.
@@ -146,6 +160,26 @@ export const ManageAssetRows = ({
                   // Native (non-SAC) contract tokens display their name; classic
                   // assets and SAC-wrapped tokens display their code.
                   displayCode={name && contract && !isSac ? name : code}
+                  onClick={
+                    isDetailsOffered && (issuer || contract)
+                      ? () =>
+                          setDetailsAsset({
+                            canonical: getCanonicalFromAsset(code, issuer),
+                            code,
+                            issuer,
+                            contractId:
+                              contract && !isSac ? contract : undefined,
+                            name: contract && !isSac ? name : undefined,
+                            iconUrl: image,
+                            domain,
+                            isSuspicious,
+                            isMalicious,
+                            spotPrice: price,
+                            isUnableToScan,
+                          })
+                      : undefined
+                  }
+                  bodyTestId={`ManageAssetRow-${code}-body`}
                   codeTestId="ManageAssetCode"
                   domainTestId="ManageAssetDomain"
                   rightElement={
@@ -181,6 +215,14 @@ export const ManageAssetRows = ({
           />
         </div>
         {children}
+        <AssetDetailSheet
+          asset={detailsAsset}
+          accountBalances={balances}
+          source={TokenChartSource.AddToken}
+          onClose={() => setDetailsAsset(null)}
+          onBalancesChanged={onBalancesChanged}
+          isAssetHidden={isAssetHidden}
+        />
         {createPortal(
           <SlideupModal
             setIsModalOpen={() => setSelectedAsset(undefined)}
@@ -258,6 +300,8 @@ const AssetRows = ({
     isMalicious,
     isRemovable,
     isSac,
+    price,
+    isUnableToScan,
   }: {
     code: string;
     domain: string | null;
@@ -271,6 +315,8 @@ const AssetRows = ({
     isMalicious?: boolean;
     isRemovable: boolean;
     isSac: boolean;
+    price?: number;
+    isUnableToScan?: boolean;
   }) => React.ReactNode;
 }) => {
   const { t } = useTranslation();
@@ -301,6 +347,8 @@ const AssetRows = ({
             contract = "",
             isSuspicious,
             isMalicious,
+            price,
+            isUnableToScan,
           }) => {
             if (!accountBalances.balances) {
               return null;
@@ -345,6 +393,8 @@ const AssetRows = ({
                     isTrustlineActive !== undefined ||
                     contract === nativeContract.contract,
                   name,
+                  price,
+                  isUnableToScan,
                 })}
               </div>
             );
@@ -372,6 +422,8 @@ const AssetRows = ({
             contract = "",
             isSuspicious,
             isMalicious,
+            price,
+            isUnableToScan,
           }) => {
             if (!accountBalances.balances) {
               return null;
@@ -417,6 +469,8 @@ const AssetRows = ({
                     isTrustlineActive !== undefined ||
                     contract === nativeContract.contract,
                   name,
+                  price,
+                  isUnableToScan,
                 })}
               </div>
             );
@@ -445,6 +499,8 @@ const AssetRows = ({
           name = "",
           contract = "",
           isSuspicious,
+          price,
+          isUnableToScan,
         }) => {
           if (!accountBalances.balances) {
             return null;
@@ -488,6 +544,8 @@ const AssetRows = ({
                   isTrustlineActive !== undefined ||
                   contract === nativeContract.contract,
                 name,
+                price,
+                isUnableToScan,
               })}
             </div>
           );

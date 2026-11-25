@@ -62,6 +62,20 @@ export const AssetListRow = ({
         data-testid={bodyTestId}
         onClick={onClick}
         role={onClick ? "button" : undefined}
+        tabIndex={onClick ? 0 : undefined}
+        onKeyDown={
+          onClick
+            ? (e) => {
+                if (e.repeat || e.target !== e.currentTarget) {
+                  return;
+                }
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onClick();
+                }
+              }
+            : undefined
+        }
       >
         <AssetIcon
           assetIcons={

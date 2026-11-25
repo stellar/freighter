@@ -26,10 +26,16 @@ jest.mock("popup/components/AssetListRow", () => ({
   AssetListRow: ({
     code,
     domain,
+    rightElement,
   }: {
     code: string;
     domain?: string | null;
-  }) => <div data-testid={`row-${code}`} data-domain={domain ?? ""} />,
+    rightElement?: React.ReactNode;
+  }) => (
+    <div data-testid={`row-${code}`} data-domain={domain ?? ""}>
+      {rightElement}
+    </div>
+  ),
 }));
 
 const rec = (code: string, isHeld = false) => ({
@@ -301,5 +307,59 @@ describe("SwapPickerSections", () => {
 
     expect(screen.queryByTestId("swap-picker-empty")).toBeNull();
     expect(screen.queryByTestId(/^swap-section-/)).toBeNull();
+  });
+
+  it("View details on a Popular row calls onViewDetails with that record", () => {
+    const onViewDetails = jest.fn();
+    const aqua = rec("AQUA");
+    render(
+      <SwapPickerSections
+        {...baseProps}
+        searchTerm=""
+        onViewDetails={onViewDetails}
+        result={{ ...emptyResult, popular: [aqua] }}
+      />,
+    );
+
+    // The info button replaces the row's menu.
+    expect(screen.queryByTestId("SwapTokenRow-AQUA-menu")).toBeNull();
+    fireEvent.click(screen.getByTestId("SwapTokenRow-AQUA-view-details"));
+
+    expect(onViewDetails).toHaveBeenCalledWith(aqua, "popular");
+  });
+
+  it("View details on a Your tokens row calls onViewDetails with that record", () => {
+    const onViewDetails = jest.fn();
+    const usdc = rec("USDC", true);
+    render(
+      <SwapPickerSections
+        {...baseProps}
+        searchTerm=""
+        onViewDetails={onViewDetails}
+        result={{ ...emptyResult, yourTokens: [usdc] }}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("SwapTokenRow-USDC-view-details"));
+
+    expect(onViewDetails).toHaveBeenCalledWith(usdc, "balances");
+  });
+
+  it("without onViewDetails, held rows have no info button and discover rows keep the menu", () => {
+    render(
+      <SwapPickerSections
+        {...baseProps}
+        searchTerm=""
+        result={{
+          ...emptyResult,
+          yourTokens: [rec("USDC", true)],
+          popular: [rec("AQUA")],
+        }}
+      />,
+    );
+
+    expect(screen.queryByTestId("SwapTokenRow-USDC-view-details")).toBeNull();
+    expect(screen.queryByTestId("SwapTokenRow-AQUA-view-details")).toBeNull();
+    expect(screen.getByTestId("SwapTokenRow-AQUA-menu")).toBeInTheDocument();
   });
 });
