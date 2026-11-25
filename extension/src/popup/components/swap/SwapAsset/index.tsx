@@ -318,9 +318,17 @@ export const SwapAsset = ({
   // Build the flat sections result for SwapPickerSections
   const lookupData = lookupState.data;
   const heldBalancesForNewAccount = resolvedFromData?.balances.balances || [];
+  // LI.FI only routes contract tokens on mainnet, so off it contract rows in
+  // Popular, Verified and Unverified are dropped, held or not. Your tokens is
+  // built from balances and is not filtered here.
+  const routable = (rows: SwapTokenRecord[]) =>
+    isMainnet(networkDetails) ? rows : rows.filter((r) => !r.isContract);
   const pickerResult: SwapPickerSectionsResult = lookupData
     ? {
         ...lookupData.sections,
+        popular: routable(lookupData.sections.popular),
+        verified: routable(lookupData.sections.verified),
+        unverified: routable(lookupData.sections.unverified),
         isFallback: lookupData.isFallback,
         isNewAccount: heldBalancesForNewAccount.length === 0,
       }

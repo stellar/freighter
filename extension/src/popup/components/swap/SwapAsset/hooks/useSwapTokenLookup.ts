@@ -217,11 +217,13 @@ const currencyToRecord = (
  * Idle (no searchTerm):  yourTokens + popular (volume7d ∩ verified, held filtered out)
  * Search (searchTerm):   yourTokens + verified + unverified (mutually exclusive, deduped)
  * Fallback:              yourTokens only (held-in-memory filter), popular/verified/unverified empty
+ *
+ * Contract tokens are returned off mainnet because each consumer filters what
+ * it cannot use: the swap picker host drops them, Add token lists them.
  */
 export const buildSwapSections = ({
   searchTerm,
   balances,
-  networkDetails,
   popular = [],
   verifiedAssets = [],
   unverifiedAssets = [],
@@ -246,9 +248,6 @@ export const buildSwapSections = ({
   const heldKeys = new Set(
     heldRecords.map((r) => swapIdentityKey(r.canonical)),
   );
-  // Only mainnet has a source (LI.FI) that routes contract tokens.
-  const isDiscoverable = (r: SwapTokenRecord) =>
-    !r.isContract || isMainnet(networkDetails);
 
   if (!isSearch) {
     // IDLE mode
@@ -269,7 +268,6 @@ export const buildSwapSections = ({
         }),
       )
       .map((a) => currencyToRecord(a, false))
-      .filter(isDiscoverable)
       .filter((r) => {
         const key = swapIdentityKey(r.canonical);
         return !heldKeys.has(key) && verifiedKeys.has(key);
@@ -317,7 +315,6 @@ export const buildSwapSections = ({
         const { canonical } = currencyToRecord(a, false);
         return currencyToRecord(a, heldKeys.has(swapIdentityKey(canonical)));
       })
-      .filter(isDiscoverable)
       .filter((r) => {
         const key = swapIdentityKey(r.canonical);
         if (heldSearchKeys.has(key) || seen.has(key)) {
@@ -691,8 +688,37 @@ export const useSwapTokenLookup = () => {
         payload: omitHiddenFromSections(result, hiddenAssets),
       });
 
+    // Held rows come from the caller's balances, never from a cache another
+    // caller or account filled. Only the idle entry is shared across callers;
+    // a search entry's yourTokens is term-filtered, so it is served as cached.
+    // Popular excludes held tokens, so it is re-filtered against them too.
+    const serveCached = (result: SwapTokenLookupResult) => {
+      if (!isIdle) {
+        serve(result);
+        return;
+      }
+      const yourTokens = balancesToHeldRecords({
+        balances,
+        icons,
+        tokenPrices,
+      });
+      const heldKeys = new Set(
+        yourTokens.map((r) => swapIdentityKey(r.canonical)),
+      );
+      serve({
+        ...result,
+        sections: {
+          ...result.sections,
+          yourTokens,
+          popular: result.sections.popular.filter(
+            (r) => !heldKeys.has(swapIdentityKey(r.canonical)),
+          ),
+        },
+      });
+    };
+
     if (cachedResult) {
-      serve(cachedResult);
+      serveCached(cachedResult);
     }
 
     // Token discovery (Popular + search) only exists on Mainnet / Testnet.
@@ -974,7 +1000,7 @@ export const useSwapTokenLookup = () => {
       // transient failure instead of dropping Popular to held-only; fall back
       // to held-only only when there's nothing cached.
       if (cachedResult) {
-        serve(cachedResult);
+        serveCached(cachedResult);
         return;
       }
       // Graceful fallback: stellar.expert or Blockaid unreachable → held-only
