@@ -25,6 +25,11 @@ import {
 } from "@shared/constants/stellar";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { onListAccountValue } from "helpers/accountFunding";
+
+jest.mock("helpers/accountFunding", () => ({
+  onListAccountValue: jest.fn(),
+}));
 
 jest.mock("@shared/api/internal", () => ({
   ...jest.requireActual("@shared/api/internal"),
@@ -110,6 +115,8 @@ describe("useGetWalletsData", () => {
       await result.current.fetchData();
     });
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
+    // No results off Mainnet, so funded_account_count does not change.
+    expect(onListAccountValue).not.toHaveBeenCalled();
     // Nothing is fetched off Mainnet, but every account still gets a label so
     // the row never has to interpret a missing entry.
     expect(result.current.state.data).toEqual({
@@ -232,6 +239,32 @@ describe("useGetWalletsData", () => {
       (result.current.state.data as { accountValue: Record<string, string> })
         .accountValue,
     ).toEqual({ G1: "$50.00", G2: "$250.00" });
+    // The funding update reads the same balances as the total: without the
+    // hidden assets of each account.
+    expect(onListAccountValue).toHaveBeenCalledTimes(2);
+    const inputFor = (publicKey: string) =>
+      (onListAccountValue as jest.Mock).mock.calls.find(
+        ([params]) => params.publicKey === publicKey,
+      )[0];
+    const codes = (publicKey: string) =>
+      inputFor(publicKey).input.balances.map(
+        (balance: { token: { code: string } }) => balance.token.code,
+      );
+    expect(codes("G1")).not.toContain("USDC");
+    expect(codes("G2")).toContain("USDC");
+    expect(inputFor("G2")).toEqual(
+      expect.objectContaining({
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        allAccounts: [{ publicKey: "G1" }, { publicKey: "G2" }],
+        input: expect.objectContaining({
+          isFunded: true,
+          hasBalanceError: false,
+          tokenPrices: expect.objectContaining({
+            native: expect.any(Object),
+          }),
+        }),
+      }),
+    );
     // One read per account
     expect(getHiddenAssetsSpy).toHaveBeenCalledTimes(2);
     ["G1", "G2"].forEach((publicKey) =>
@@ -241,6 +274,150 @@ describe("useGetWalletsData", () => {
         network: MAINNET_NETWORK_DETAILS.network,
       }),
     );
+  });
+
+  it("skips the funding update when the hidden assets read fails", async () => {
+    // G1 reads its hidden assets. G2's read fails, so its total can include
+    // a hidden token.
+    const hiddenAssetsFor = async ({ publicKey }: { publicKey?: string }) =>
+      publicKey === "G1"
+        ? { hiddenAssets: {} as Record<string, AssetVisibility>, error: "" }
+        : {
+            hiddenAssets: {} as Record<string, AssetVisibility>,
+            error: "boom",
+          };
+    jest
+      .spyOn(ApiInternal, "getHiddenAssets")
+      .mockImplementationOnce(hiddenAssetsFor)
+      .mockImplementationOnce(hiddenAssetsFor);
+    const store = makeDummyStore({
+      remoteConfig: SETTLED_REMOTE_CONFIG,
+      auth: {
+        publicKey: "G1",
+        hasPrivateKey: true,
+        allAccounts: [{ publicKey: "G1" }, { publicKey: "G2" }],
+        applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+      },
+      cache: {
+        balanceData: {
+          [MAINNET_NETWORK_DETAILS.network]: {
+            G1: { ...cachedBalanceData, updatedAt: Date.now() },
+            G2: { ...cachedBalanceData, updatedAt: Date.now() },
+          },
+        },
+        icons: cachedIcons,
+        tokenLists: tokenListData,
+        homeDomains: {},
+        tokenPrices: {},
+      },
+      settings: {
+        assetsLists: [],
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      },
+    });
+    const { result } = renderHook(() => useGetWalletsData(), {
+      wrapper: ({ children }: { children: React.ReactNode }) => (
+        <Provider store={store}>{children}</Provider>
+      ),
+    });
+
+    let data: unknown;
+    await act(async () => {
+      data = await result.current.fetchData(true);
+    });
+
+    // The total still shows for both accounts.
+    expect(
+      (data as { accountValue: Record<string, string> }).accountValue,
+    ).toEqual({ G1: "$250.00", G2: "$250.00" });
+    // Only G1 updates its funding record.
+    expect(onListAccountValue).toHaveBeenCalledTimes(1);
+    expect((onListAccountValue as jest.Mock).mock.calls[0][0].publicKey).toBe(
+      "G1",
+    );
+    // The app-open refresh reads this flag and retries at the next open.
+    expect((data as { hasAccountErrors?: boolean }).hasAccountErrors).toBe(
+      true,
+    );
+  });
+
+  it("reports no account errors when every account loads", async () => {
+    const store = makeDummyStore({
+      remoteConfig: SETTLED_REMOTE_CONFIG,
+      auth: {
+        publicKey: "G1",
+        hasPrivateKey: true,
+        allAccounts: [{ publicKey: "G1" }],
+        applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+      },
+      cache: {
+        balanceData: {
+          [MAINNET_NETWORK_DETAILS.network]: {
+            G1: { ...cachedBalanceData, updatedAt: Date.now() },
+          },
+        },
+        icons: cachedIcons,
+        tokenLists: tokenListData,
+        homeDomains: {},
+        tokenPrices: {},
+      },
+      settings: {
+        assetsLists: [],
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      },
+    });
+    const { result } = renderHook(() => useGetWalletsData(), {
+      wrapper: ({ children }: { children: React.ReactNode }) => (
+        <Provider store={store}>{children}</Provider>
+      ),
+    });
+    let data: unknown;
+    await act(async () => {
+      data = await result.current.fetchData(true);
+    });
+    expect(
+      (data as { hasAccountErrors?: boolean }).hasAccountErrors,
+    ).toBeFalsy();
+  });
+
+  it("reports an account error when an account's balance fetch fails", async () => {
+    (ApiInternal.getAccountBalances as jest.Mock).mockRejectedValueOnce(
+      new Error("balance fetch failed"),
+    );
+    const store = makeDummyStore({
+      remoteConfig: SETTLED_REMOTE_CONFIG,
+      auth: {
+        publicKey: "G1",
+        hasPrivateKey: true,
+        allAccounts: [{ publicKey: "G1" }],
+        applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+      },
+      cache: {
+        balanceData: {},
+        icons: cachedIcons,
+        tokenLists: tokenListData,
+        homeDomains: {},
+        tokenPrices: {},
+      },
+      settings: {
+        assetsLists: [],
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      },
+    });
+    const { result } = renderHook(() => useGetWalletsData(), {
+      wrapper: ({ children }: { children: React.ReactNode }) => (
+        <Provider store={store}>{children}</Provider>
+      ),
+    });
+    let data: unknown;
+    await act(async () => {
+      data = await result.current.fetchData(true);
+    });
+    expect((data as { type?: unknown }).type).toBe(AppDataType.RESOLVED);
+    expect((data as { hasAccountErrors?: boolean }).hasAccountErrors).toBe(
+      true,
+    );
+    expect(onListAccountValue).not.toHaveBeenCalled();
   });
 
   it("should return wallets data and token prices on Mainnet in batches", async () => {

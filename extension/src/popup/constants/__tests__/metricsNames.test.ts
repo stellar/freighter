@@ -82,7 +82,7 @@ describe("METRIC_NAMES domain-event catalog", () => {
     expect(METRIC_NAMES.accountCreated).toBe("account.created");
     expect(METRIC_NAMES.accountImported).toBe("account.imported");
     expect(METRIC_NAMES.accountImportFailed).toBe("account.import_failed");
-    expect(METRIC_NAMES.accountFirstFunded).toBe("account.first_funded");
+    expect(METRIC_NAMES.accountFunded).toBe("account.funded");
     expect(METRIC_NAMES.accountRenamed).toBe("account.renamed");
   });
 

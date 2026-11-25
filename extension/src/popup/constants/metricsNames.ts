@@ -127,9 +127,9 @@ export const METRIC_NAMES = {
   accountCreated: "account.created",
   accountImported: "account.imported",
   accountImportFailed: "account.import_failed",
-  // Extension-only: no mobile equivalent (mobile has no first-funded milestone
-  // detector). Documented cross-platform asymmetry.
-  accountFirstFunded: "account.first_funded",
+  // An own account went from a USD value of zero to above zero, on mainnet.
+  // Mobile emits the same event.
+  accountFunded: "account.funded",
   accountRenamed: "account.renamed",
   accountPublicKeyCopied: "account.public_key_copied",
   accountStellarExpertOpened: "account.stellar_expert_opened",
