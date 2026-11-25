@@ -1,10 +1,14 @@
 import { BrowserContext, Page } from "@playwright/test";
 import {
   Account,
+  Address,
   Asset,
+  Contract,
   Networks,
   Operation,
   TransactionBuilder,
+  XdrLargeInt,
+  xdr,
 } from "stellar-sdk";
 import { USDC_TOKEN_ADDRESS, TEST_TOKEN_ADDRESS } from "./test-token";
 import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
@@ -4219,6 +4223,107 @@ export const positionsFixture = ({
       backstop: [],
     },
   ];
+};
+
+/** One Blend deposit or withdraw, for `blendActivityHistory`. */
+export interface BlendActivityEvent {
+  id: string;
+  type: "deposit" | "withdraw";
+  assetCode: "USDC" | "XLM";
+  /** Whole tokens, as Horizon prints a balance change ("500.0000000"). */
+  amount: string;
+  createdAt: string;
+}
+
+/**
+ * `/account-history/` records for Blend `submit` calls on the mainnet Fixed
+ * pool, for `stubAccountHistoryWith`. Each carries a real transaction envelope,
+ * which is what a position's Activity list decodes (the request type picks
+ * deposit or withdraw), and the token transfer Horizon reports beside it.
+ *
+ * Deposits are SupplyCollateral and withdrawals WithdrawCollateral, as Freighter
+ * makes them. The pool and the token SACs match `positionsFixture`, so the rows
+ * land under that fixture's position.
+ */
+export const blendActivityHistory = ({
+  address = TEST_ACCOUNT_PUBLIC_KEY,
+  networkPassphrase = Networks.TESTNET,
+  events,
+}: {
+  address?: string;
+  networkPassphrase?: string;
+  events: BlendActivityEvent[];
+}): object[] => {
+  const POOL_ID = BLEND_FIXED_POOL_IDS[NETWORKS.PUBLIC]!;
+  const user = new Address(address).toScVal();
+
+  return events.map((event) => {
+    const assetId = PUBLIC_SACS[event.assetCode];
+    const request = xdr.ScVal.scvMap([
+      new xdr.ScMapEntry({
+        key: xdr.ScVal.scvSymbol("address"),
+        val: new Address(assetId).toScVal(),
+      }),
+      new xdr.ScMapEntry({
+        key: xdr.ScVal.scvSymbol("amount"),
+        val: new XdrLargeInt(
+          "i128",
+          Math.round(Number(event.amount) * 1e7).toString(),
+        ).toI128(),
+      }),
+      new xdr.ScMapEntry({
+        key: xdr.ScVal.scvSymbol("request_type"),
+        // Blend's SupplyCollateral and WithdrawCollateral.
+        val: xdr.ScVal.scvU32(event.type === "deposit" ? 2 : 3),
+      }),
+    ]);
+    const transaction = new TransactionBuilder(new Account(address, "1"), {
+      fee: "100",
+      networkPassphrase,
+    })
+      .addOperation(
+        new Contract(POOL_ID).call(
+          "submit",
+          user,
+          user,
+          user,
+          xdr.ScVal.scvVec([request]),
+        ),
+      )
+      .setTimeout(0)
+      .build();
+    const isDeposit = event.type === "deposit";
+
+    return {
+      id: event.id,
+      paging_token: event.id,
+      source_account: address,
+      type: "invoke_host_function",
+      type_i: 24,
+      created_at: event.createdAt,
+      transaction_hash: transaction.hash().toString("hex"),
+      transaction_successful: true,
+      function: "HostFunctionTypeHostFunctionTypeInvokeContract",
+      asset_balance_changes: [
+        {
+          ...createAssetObject(
+            event.assetCode,
+            "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+          ),
+          type: "transfer",
+          from: isDeposit ? address : POOL_ID,
+          to: isDeposit ? POOL_ID : address,
+          amount: Number(event.amount).toFixed(7),
+        },
+      ],
+      transaction_attr: {
+        envelope_xdr: transaction.toEnvelope().toXDR("base64"),
+        memo: null,
+        fee_charged: "100",
+        operation_count: 1,
+      },
+    };
+  });
 };
 
 /**

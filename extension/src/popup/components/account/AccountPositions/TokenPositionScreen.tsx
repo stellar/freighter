@@ -22,7 +22,10 @@ import { PositionTokenRow } from "popup/components/earn/helpers/positionRows";
 import { getPositionSummary } from "popup/components/earn/helpers/positionSummary";
 import { PoolDetailsTab } from "popup/constants/earn";
 import { getBlendAppUrl } from "popup/constants/externalLinks";
-import { getStellarExpertUrl } from "popup/helpers/account";
+import {
+  getStellarExpertUrl,
+  isStellarExpertSupported,
+} from "popup/helpers/account";
 import { openTab } from "popup/helpers/navigate";
 
 import { EarnLeafIcon } from "./PositionIcons";
@@ -300,21 +303,23 @@ export const TokenPositionScreen = ({
                     {t("View pool on Blend")}
                     <Icon.LinkExternal01 />
                   </button>
-                  <button
-                    type="button"
-                    className="PositionScreen__link"
-                    onClick={() =>
-                      openTab(
-                        `${getStellarExpertUrl(networkDetails)}/contract/${
-                          position.id
-                        }`,
-                      )
-                    }
-                    data-testid="token-position-explorer-link"
-                  >
-                    {t("View contract on Stellar Expert")}
-                    <Icon.LinkExternal01 />
-                  </button>
+                  {isStellarExpertSupported(networkDetails) && (
+                    <button
+                      type="button"
+                      className="PositionScreen__link"
+                      onClick={() =>
+                        openTab(
+                          `${getStellarExpertUrl(networkDetails)}/contract/${
+                            position.id
+                          }`,
+                        )
+                      }
+                      data-testid="token-position-explorer-link"
+                    >
+                      {t("View contract on Stellar Expert")}
+                      <Icon.LinkExternal01 />
+                    </button>
+                  )}
                 </div>
               </Section>
             </div>

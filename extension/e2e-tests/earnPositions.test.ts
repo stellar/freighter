@@ -3,19 +3,19 @@
  *
  * Covers:
  *  1. Empty state: the projection card, and Start Earning -> Earn, carrying
- *     `?source=positions_empty` — the analytics attribution a previous task
- *     added for this entry point. It has no other coverage anywhere, and a
- *     dropped or wrong `source` fails silently (falls back to "home"), so the
- *     resulting URL is the cheapest guard against that regression.
- *  2. A pool card: opens the "My position" sheet, showing the pool's total.
- *  3. About pool: opens the pool-details sheet with the tab strip hidden.
- *  4. Deposit from a supplied-asset row: lands on the amount screen
- *     prefilled with the tapped token.
+ *     `?source=positions_empty`. A dropped or wrong `source` fails silently
+ *     (falls back to "home"), so the resulting URL is the cheapest guard.
+ *  2. A pool card opens the pool's position screen, and its back arrow
+ *     returns to the tab.
+ *  3. The Deposit pill under the cards enters Earn with `?source=positions_pill`.
+ *  4. A supplied token opens its position screen: deposits and earnings, the
+ *     Activity list decoded from History's Blend calls, and the Overview tab's
+ *     link to the pool's contract on Stellar Expert.
+ *  5. Deposit from a token's position lands on the amount screen prefilled
+ *     with that token.
  *
- * The redesign added a pool-first "My position" sheet between the Positions
- * tab and the pool-details sheet — every path below is one click deeper than
- * it used to be: tab -> pool card -> My position -> (About pool | a supplied
- * asset) -> pool-details sheet.
+ * Paths: tab -> pool card -> pool screen -> a supplied token -> token screen.
+ * Both screens are sheets over Home, so closing them needs no navigation.
  *
  * Stub URL shapes, all on the CONTEXT (see stubBlendEarn's own comment in
  * stubs.ts for the full rationale — these are backend-v2 endpoints the
@@ -23,23 +23,26 @@
  *  - positions:    "**\/accounts/positions**" — registered by stubBlendEarn
  *    with real figures below. A baseline, position-less version of this same
  *    route is registered for every suite by stubAllExternalApis (via
- *    stubAccountPositions), since Home now requests positions on every load;
+ *    stubAccountPositions), since Home requests positions on every load;
  *    stubBlendEarn registers the route again, later, so it wins the match
  *    wherever a test opts in through loginToTestAccount's stubOverrides.
  *  - earn options: "**\/protocols/blend/earn-options**" — prices the empty
- *    state's "you could earn up to" projection.
- *  - pool catalog: "**\/protocols/blend/pools**" — backs the pool-details
- *    sheet a supplied-asset row opens.
+ *    state's "Earn up to" projection.
+ *  - pool catalog: "**\/protocols/blend/pools**" — the token screen's Deposit
+ *    prefills the flow from it.
+ *  - history:      "/account-history/" — stubAccountHistoryWith, with
+ *    blendActivityHistory's Blend `submit` envelopes for the Activity list.
  *
  * Asset ids in positionsFixture are the REAL mainnet SACs, same discipline
  * stubBlendEarn documents: getCatalogAssetIdentity resolves a row's displayed
  * code by deriving its SAC, so a placeholder id would leave it blank.
  *
  * No switchToMainnet here: Testnet (where login lands) has its own
- * BLEND_FIXED_POOL_IDS entry, so the Positions tab and its sheets are
+ * BLEND_FIXED_POOL_IDS entry, so the Positions tab and its screens are
  * reachable straight after login — see earnDeposit.test.ts's network-gating
  * test for the same reasoning, and @shared/constants/blend for the map
- * itself.
+ * itself. The deposit entry points need the `earn_deposit` flag, which
+ * stubEarnDepositFlag pins on before login.
  *
  * testid index:
  *  - account-tab-positions            AccountTabs/index.tsx
@@ -47,13 +50,18 @@
  *  - account-positions-projection     AccountPositions/EmptyState.tsx
  *  - account-positions-start-earning  AccountPositions/EmptyState.tsx
  *  - pool-card-<POOL_ID>              AccountPositions/PoolCard.tsx
- *  - my-position-sheet                AccountPositions/MyPosition.tsx
- *  - my-position-total                AccountPositions/MyPosition.tsx
- *  - my-position-close                AccountPositions/MyPosition.tsx
- *  - my-position-about-pool           AccountPositions/MyPosition.tsx
- *  - position-row-<CODE>              AccountPositions/PositionRow.tsx
- *  - earn-pool-details-sheet          PoolDetailsSheet/index.tsx
- *  - earn-pool-details-tabs           PoolDetailsSheet/Tabs.tsx
+ *  - positions-deposit-btn            AccountPositions/index.tsx
+ *  - pool-position-screen             AccountPositions/PoolPositionScreen.tsx
+ *  - pool-position-total              AccountPositions/PoolPositionScreen.tsx
+ *  - position-row-<CODE>              AccountPositions/PoolPositionScreen.tsx
+ *  - token-position-screen            AccountPositions/TokenPositionScreen.tsx
+ *  - token-position-deposit           AccountPositions/TokenPositionScreen.tsx
+ *  - token-position-overview          AccountPositions/TokenPositionScreen.tsx
+ *  - token-position-explorer-link     AccountPositions/TokenPositionScreen.tsx
+ *  - earn-position-deposit-usd-<CODE> AccountPositions/TokenPositionScreen.tsx
+ *  - position-tab-<TAB>               AccountPositions/PositionTabs.tsx
+ *  - position-activity(-row)          earn/PositionActivity/index.tsx
+ *  - BackButton                       basics/buttons/BackButton (both screens)
  *  - earn-pool-card                   EarnAmount/PoolCard.tsx
  *  - send-amount-edit-dest-asset      amount/AmountCard/index.tsx (shared with
  *    Send/Swap — earn-token-code does not exist on the amount screen; this is
@@ -64,9 +72,20 @@
  * Execution: `yarn test:e2e earnPositions.test.ts` from repo root.
  */
 
+import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
+import { NETWORKS } from "@shared/constants/stellar";
+
 import { test, expect } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
-import { stubBlendEarn, positionsFixture } from "./helpers/stubs";
+import {
+  blendActivityHistory,
+  positionsFixture,
+  stubAccountHistoryWith,
+  stubBlendEarn,
+  stubEarnDepositFlag,
+} from "./helpers/stubs";
+
+const POOL_ID = BLEND_FIXED_POOL_IDS[NETWORKS.PUBLIC]!;
 
 // ---------------------------------------------------------------------------
 // 1. Empty state -> Start Earning -> Earn, carrying its analytics source
@@ -78,6 +97,7 @@ test("Positions tab shows the empty state and enters Earn", async ({
 }) => {
   test.slow();
 
+  await stubEarnDepositFlag(context);
   await loginToTestAccount({
     page,
     extensionId,
@@ -99,9 +119,9 @@ test("Positions tab shows the empty state and enters Earn", async ({
 });
 
 // ---------------------------------------------------------------------------
-// 2. A pool card opens My position
+// 2. A pool card opens the pool's screen; back returns to the tab
 // ---------------------------------------------------------------------------
-test("a pool card opens My position", async ({
+test("a pool card opens its position screen", async ({
   page,
   extensionId,
   context,
@@ -117,25 +137,29 @@ test("a pool card opens My position", async ({
   });
 
   await page.getByTestId("account-tab-positions").click();
-  await page
-    .getByTestId(/^pool-card-/)
-    .first()
-    .click();
+  await page.getByTestId(`pool-card-${POOL_ID}`).click();
 
-  await expect(page.getByTestId("my-position-sheet")).toBeVisible();
-  await expect(page.getByTestId("my-position-total")).toBeVisible();
+  const screen = page.getByTestId("pool-position-screen");
+  await expect(screen).toBeVisible();
+  await expect(page.getByTestId("pool-position-total")).toHaveText("$500.12");
+  await expect(page.getByTestId("position-row-USDC")).toBeVisible();
+
+  await page.getByTestId("BackButton").click();
+  await expect(screen).toBeHidden();
+  await expect(page.getByTestId(`pool-card-${POOL_ID}`)).toBeVisible();
 });
 
 // ---------------------------------------------------------------------------
-// 3. About pool opens the pool-details sheet with the tab strip hidden
+// 3. The Deposit pill under the cards enters Earn with its own source
 // ---------------------------------------------------------------------------
-test("About pool opens the sheet with no tabs", async ({
+test("the Deposit pill enters Earn with its source", async ({
   page,
   extensionId,
   context,
 }) => {
   test.slow();
 
+  await stubEarnDepositFlag(context);
   await loginToTestAccount({
     page,
     extensionId,
@@ -145,20 +169,16 @@ test("About pool opens the sheet with no tabs", async ({
   });
 
   await page.getByTestId("account-tab-positions").click();
-  await page
-    .getByTestId(/^pool-card-/)
-    .first()
-    .click();
-  await page.getByTestId("my-position-about-pool").click();
+  await page.getByTestId("positions-deposit-btn").click();
 
-  await expect(page.getByTestId("earn-pool-details-sheet")).toBeVisible();
-  await expect(page.getByTestId("earn-pool-details-tabs")).toBeHidden();
+  await expect(page.getByTestId("earn")).toBeVisible();
+  await expect(page).toHaveURL(/source=positions_pill/);
 });
 
 // ---------------------------------------------------------------------------
-// 4. Deposit from a supplied asset lands on the amount screen
+// 4. A supplied token's screen: figures, Activity, and the Overview links
 // ---------------------------------------------------------------------------
-test("Deposit from a supplied asset lands on the amount screen prefilled", async ({
+test("a supplied token shows its position, activity and pool links", async ({
   page,
   extensionId,
   context,
@@ -169,28 +189,90 @@ test("Deposit from a supplied asset lands on the amount screen prefilled", async
     page,
     extensionId,
     context,
-    stubOverrides: () =>
-      stubBlendEarn(page, context, { positions: positionsFixture() }),
+    stubOverrides: async () => {
+      await stubAccountHistoryWith(
+        page,
+        context,
+        blendActivityHistory({
+          events: [
+            {
+              id: "2",
+              type: "withdraw",
+              assetCode: "USDC",
+              amount: "120",
+              createdAt: "2026-10-02T09:12:00Z",
+            },
+            {
+              id: "1",
+              type: "deposit",
+              assetCode: "USDC",
+              amount: "620",
+              createdAt: "2026-08-28T14:33:00Z",
+            },
+          ],
+        }),
+      );
+      // Last, as it reloads the popup once every route is in place.
+      await stubBlendEarn(page, context, { positions: positionsFixture() });
+    },
   });
 
   await page.getByTestId("account-tab-positions").click();
-  await page
-    .getByTestId(/^pool-card-/)
-    .first()
-    .click();
+  await page.getByTestId(`pool-card-${POOL_ID}`).click();
   await page.getByTestId("position-row-USDC").click();
 
-  // Scoped to the sheet and to the button role: "Your deposits" is also on
-  // screen (the sheet opens on "Your position" by default), and the Home
-  // action row's floating "Deposit" add-button is on screen too — a plain
-  // getByText("Deposit") resolves to all three and violates strict mode.
-  await page
-    .getByTestId("earn-pool-details-sheet")
-    .getByRole("button", { name: "Deposit" })
-    .click();
+  await expect(page.getByTestId("token-position-screen")).toBeVisible();
+  // Principal: the balance less the interest it earned ($500.12 - $0.12).
+  await expect(page.getByTestId("earn-position-deposit-usd-USDC")).toHaveText(
+    "$500.00",
+  );
+
+  // Newest first, as History is.
+  const rows = page.getByTestId("position-activity-row");
+  await expect(rows).toHaveCount(2);
+  await expect(rows.nth(0)).toContainText("Withdraw");
+  await expect(rows.nth(0)).toContainText("-120.00 USDC");
+  await expect(rows.nth(1)).toContainText("Deposit");
+  await expect(rows.nth(1)).toContainText("+620.00 USDC");
+
+  await page.getByTestId("position-tab-overview").click();
+  await expect(page.getByTestId("token-position-overview")).toBeVisible();
+
+  const explorerPromise = page.context().waitForEvent("page");
+  await page.getByTestId("token-position-explorer-link").click();
+  const explorer = await explorerPromise;
+  await expect(explorer).toHaveURL(
+    new RegExp(`stellar\\.expert/explorer/testnet/contract/${POOL_ID}`),
+  );
+});
+
+// ---------------------------------------------------------------------------
+// 5. Deposit from a token's position lands on the amount screen
+// ---------------------------------------------------------------------------
+test("Deposit from a token's position lands on the amount screen prefilled", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+
+  await stubEarnDepositFlag(context);
+  await loginToTestAccount({
+    page,
+    extensionId,
+    context,
+    stubOverrides: () =>
+      stubBlendEarn(page, context, { positions: positionsFixture() }),
+  });
+
+  await page.getByTestId("account-tab-positions").click();
+  await page.getByTestId(`pool-card-${POOL_ID}`).click();
+  await page.getByTestId("position-row-USDC").click();
+  await page.getByTestId("token-position-deposit").click();
 
   await expect(page.getByTestId("earn-pool-card")).toBeVisible();
   await expect(page.getByTestId("send-amount-edit-dest-asset")).toContainText(
     "USDC",
   );
+  await expect(page).toHaveURL(/source=position_row/);
 });
