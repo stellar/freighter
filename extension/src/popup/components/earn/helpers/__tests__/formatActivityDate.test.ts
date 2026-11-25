@@ -15,7 +15,7 @@ describe("formatActivityDate", () => {
 
   it("adds the year outside the current one, where the day is ambiguous", () => {
     expect(formatActivityDate("2025-08-28T12:00:00Z", "en", NOW)).toBe(
-      "Aug 28, 2025",
+      "Aug 28 2025",
     );
   });
 

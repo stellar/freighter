@@ -1,6 +1,7 @@
 /**
  * The date on an Activity row, in the app's language: "Aug 28" within the
- * current year, "Aug 28, 2025" outside it, where the day alone is ambiguous.
+ * current year, "Aug 28 2025" outside it, where the day alone is ambiguous.
+ * No comma before the year, as History's details write it.
  */
 export const formatActivityDate = (
   occurredAt: string,
@@ -12,9 +13,11 @@ export const formatActivityDate = (
     return "";
   }
 
-  return date.toLocaleDateString(language, {
-    month: "short",
-    day: "numeric",
-    ...(date.getFullYear() === now.getFullYear() ? {} : { year: "numeric" }),
-  });
+  return date
+    .toLocaleDateString(language, {
+      month: "short",
+      day: "numeric",
+      ...(date.getFullYear() === now.getFullYear() ? {} : { year: "numeric" }),
+    })
+    .replace(/,/g, "");
 };
