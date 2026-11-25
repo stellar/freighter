@@ -510,20 +510,22 @@ export const SwapAsset = ({
           // needs the balances again. A typed search must survive the
           // reload: the source list filters locally, the destination
           // re-runs its lookup, whose idle effect skips while searching.
+          // The re-run uses the term typed now: a search typed during the
+          // reload was submitted against the emptied balances.
           const { searchTerm } = formik.values;
           fetchData(change === "hidden", isDestination ? "" : searchTerm)
             .then((next) => {
+              const latestTerm = searchTermRef.current;
               if (
                 !isDestination ||
-                !searchTerm ||
-                searchTerm !== searchTermRef.current ||
+                !latestTerm ||
                 isError(next) ||
                 next.type !== AppDataType.RESOLVED
               ) {
                 return undefined;
               }
               return lookupFetchData({
-                searchTerm,
+                searchTerm: latestTerm,
                 balances: next.balances.balances,
                 publicKey: next.publicKey,
                 networkDetails,

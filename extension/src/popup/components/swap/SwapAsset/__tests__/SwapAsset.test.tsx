@@ -883,10 +883,13 @@ describe("SwapAsset destination: View details", () => {
     );
   });
 
-  it("a search changed while the hide's reload is pending runs no lookup for the old term", async () => {
+  it("a search changed while the hide's reload is pending re-runs the new term on the reloaded balances", async () => {
+    const reloadedBalances = [
+      { token: { code: "USDC", issuer: { key: USDC_ISSUER } }, total: "1" },
+    ];
     const reloaded = {
       ...resolvedFromState.data,
-      balances: { balances: [], icons: {} },
+      balances: { balances: reloadedBalances, icons: {} },
       tokenPrices: {},
     };
     let resolveReload: (v: unknown) => void = () => undefined;
@@ -936,6 +939,12 @@ describe("SwapAsset destination: View details", () => {
 
     expect(lookupFetchData).not.toHaveBeenCalledWith(
       expect.objectContaining({ searchTerm: "US" }),
+    );
+    expect(lookupFetchData).toHaveBeenCalledWith(
+      expect.objectContaining({
+        searchTerm: "EU",
+        balances: reloadedBalances,
+      }),
     );
   });
 
