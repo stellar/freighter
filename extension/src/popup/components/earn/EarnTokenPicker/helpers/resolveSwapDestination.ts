@@ -1,6 +1,13 @@
+import { Networks } from "stellar-sdk";
+
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getTokenDetails } from "@shared/api/internal";
-import { getCanonicalFromAsset } from "@shared/helpers/stellar";
+import {
+  isNativeAssetId,
+  isNativeContract,
+} from "@shared/helpers/assetIdentity";
+import { isSacContract } from "@shared/helpers/soroban/token";
+import { getCanonicalFromAsset, splitCanonical } from "@shared/helpers/stellar";
 import { DestinationTokenDetails } from "popup/ducks/transactionSubmission";
 import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
 
@@ -16,8 +23,9 @@ import { EarnTokenOption } from "../hooks/useGetEarnTokensData";
  * canonical form (`USDC:GA5ZSEJY…`, or `native` for XLM), which is what
  * `isSacContract` already relies on to match a SAC to its classic asset.
  *
- * Returns null when the lookup fails, so callers can decline to start a swap
- * rather than send the user somewhere with a half-filled destination.
+ * Returns null when the lookup fails, or when the asset found is not the one
+ * the pool takes, so callers can decline to start a swap rather than send the
+ * user somewhere with a half-filled or different destination.
  */
 export const resolveSwapDestination = async ({
   option,
@@ -49,7 +57,21 @@ export const resolveSwapDestination = async ({
 
     canonical = tokenDetails.name;
     // "native" has no issuer half; everything else is CODE:ISSUER.
-    issuer = canonical.includes(":") ? canonical.split(":")[1] : undefined;
+    issuer = splitCanonical(canonical).issuer || undefined;
+  }
+
+  // The swap has to buy the token the pool takes. A SAC's address is derived
+  // from its asset, so the asset found is that token only when its contract is
+  // the one the pool lists; anything else is some other asset.
+  const isPoolAsset = isNativeAssetId(canonical)
+    ? isNativeContract(option.assetId, networkDetails.networkPassphrase)
+    : isSacContract(
+        canonical,
+        option.assetId,
+        networkDetails.networkPassphrase as Networks,
+      );
+  if (!isPoolAsset) {
+    return null;
   }
 
   return {
@@ -58,7 +80,7 @@ export const resolveSwapDestination = async ({
       tokenCode: option.code,
       // The account holds none of it, so if it is a classic asset there is no
       // trustline yet — Swap bundles the changeTrust when this is true.
-      requiresTrustline: canonical !== "native",
+      requiresTrustline: !isNativeAssetId(canonical),
       // `??`, matching the picker: `||` would rewrite a genuine 0-decimal
       // token to 7.
       decimals: option.decimals ?? CLASSIC_ASSET_DECIMALS,

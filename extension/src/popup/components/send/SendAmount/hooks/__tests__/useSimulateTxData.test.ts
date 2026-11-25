@@ -1,4 +1,13 @@
-import { getExpectedToFailReason } from "../useSimulateTxData";
+import {
+  Account,
+  Asset,
+  BASE_FEE,
+  Networks,
+  Operation,
+  TransactionBuilder,
+} from "stellar-sdk";
+
+import { getExpectedToFailReason, getOperation } from "../useSimulateTxData";
 
 const G_DEST = "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV";
 const t = (key: string) => key;
@@ -202,5 +211,96 @@ describe("getExpectedToFailReason", () => {
         }),
       ).toBeNull();
     });
+  });
+});
+
+const SOURCE_ACCOUNT =
+  "GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA";
+const XLM_CODED_ISSUER =
+  "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+
+// Round-trips the built operation through a transaction so the assertions read
+// it the way it appears in the envelope that would actually be signed.
+const parseOperation = (operation: ReturnType<typeof getOperation>) =>
+  new TransactionBuilder(new Account(SOURCE_ACCOUNT, "0"), {
+    fee: BASE_FEE,
+    networkPassphrase: Networks.PUBLIC,
+  })
+    .addOperation(operation)
+    .setTimeout(30)
+    .build().operations[0];
+
+const buildSendOperation = ({
+  sourceAsset,
+  isFunded,
+}: {
+  sourceAsset: Asset | { code: string; issuer: string };
+  isFunded: boolean;
+}) =>
+  getOperation(
+    sourceAsset,
+    Asset.native(),
+    "500",
+    "0",
+    G_DEST,
+    "1",
+    [],
+    false,
+    false,
+    isFunded,
+    SOURCE_ACCOUNT,
+  );
+
+describe("getOperation", () => {
+  // A classic asset that uses the native asset's display code but carries its
+  // own issuer. Every fixture below pairs it with a genuine native control, so
+  // the two cases cannot pass for the same reason.
+  const xlmCodedClassicAsset = new Asset("XLM", XLM_CODED_ISSUER);
+
+  it("builds a payment carrying the classic asset when it is sent to an unfunded destination", () => {
+    const operation = parseOperation(
+      buildSendOperation({
+        sourceAsset: xlmCodedClassicAsset,
+        isFunded: false,
+      }),
+    );
+
+    expect(operation.type).toBe("payment");
+    const payment = operation as Operation.Payment;
+    expect(payment.asset.isNative()).toBe(false);
+    expect(payment.asset.getCode()).toBe("XLM");
+    expect(payment.asset.getIssuer()).toBe(XLM_CODED_ISSUER);
+  });
+
+  it("still builds a create-account for the native asset to an unfunded destination", () => {
+    const operation = parseOperation(
+      buildSendOperation({ sourceAsset: Asset.native(), isFunded: false }),
+    );
+
+    expect(operation.type).toBe("createAccount");
+  });
+
+  it("builds a payment carrying the classic asset when the destination is funded", () => {
+    const operation = parseOperation(
+      buildSendOperation({ sourceAsset: xlmCodedClassicAsset, isFunded: true }),
+    );
+
+    expect(operation.type).toBe("payment");
+    expect((operation as Operation.Payment).asset.getIssuer()).toBe(
+      XLM_CODED_ISSUER,
+    );
+  });
+
+  it("builds different operations for the native asset and a classic asset sharing its code", () => {
+    const fromClassic = buildSendOperation({
+      sourceAsset: xlmCodedClassicAsset,
+      isFunded: false,
+    });
+    const fromNative = buildSendOperation({
+      sourceAsset: Asset.native(),
+      isFunded: false,
+    });
+
+    expect(parseOperation(fromClassic)).not.toEqual(parseOperation(fromNative));
   });
 });

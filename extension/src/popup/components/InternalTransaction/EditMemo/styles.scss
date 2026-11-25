@@ -1,9 +1,6 @@
 @use "../../../styles/utils.scss" as *;
 
 .EditMemo {
-  z-index: var(--z-index--banner);
-  position: relative;
-
   &__description {
     font-size: 14px;
     color: var(--sds-clr-gray-10);

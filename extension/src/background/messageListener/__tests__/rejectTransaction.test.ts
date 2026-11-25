@@ -28,9 +28,9 @@ describe("rejectTransaction handler", () => {
   });
 
   it("finds the correct transaction by uuid and rejects it", () => {
-    const mockTransaction1 = { sign: jest.fn(), toXDR: jest.fn() } as any;
-    const mockTransaction2 = { sign: jest.fn(), toXDR: jest.fn() } as any;
-    const mockTransaction3 = { sign: jest.fn(), toXDR: jest.fn() } as any;
+    const mockTransaction1 = { sign: jest.fn(), toXdr: jest.fn() } as any;
+    const mockTransaction2 = { sign: jest.fn(), toXdr: jest.fn() } as any;
+    const mockTransaction3 = { sign: jest.fn(), toXdr: jest.fn() } as any;
 
     transactionQueue.push(
       { transaction: mockTransaction1, uuid: "uuid-1", createdAt: Date.now() },
@@ -62,7 +62,7 @@ describe("rejectTransaction handler", () => {
   });
 
   it("removes transaction from queue when uuid is found but no response queue item", () => {
-    const mockTransaction = { sign: jest.fn(), toXDR: jest.fn() } as any;
+    const mockTransaction = { sign: jest.fn(), toXdr: jest.fn() } as any;
 
     transactionQueue.push({
       transaction: mockTransaction,
@@ -90,7 +90,7 @@ describe("rejectTransaction handler", () => {
   });
 
   it("does not remove items when uuid is not found in queue", () => {
-    const mockTransaction = { sign: jest.fn(), toXDR: jest.fn() } as any;
+    const mockTransaction = { sign: jest.fn(), toXdr: jest.fn() } as any;
 
     transactionQueue.push({
       transaction: mockTransaction,
@@ -121,7 +121,7 @@ describe("rejectTransaction handler", () => {
   });
 
   it("returns early and logs error when uuid is undefined", () => {
-    const mockTransaction = { sign: jest.fn(), toXDR: jest.fn() } as any;
+    const mockTransaction = { sign: jest.fn(), toXdr: jest.fn() } as any;
 
     transactionQueue.push({
       transaction: mockTransaction,
@@ -153,9 +153,9 @@ describe("rejectTransaction handler", () => {
   });
 
   it("removes only the matched item from a multi-item queue", () => {
-    const tx1 = { sign: jest.fn(), toXDR: jest.fn() } as any;
-    const tx2 = { sign: jest.fn(), toXDR: jest.fn() } as any;
-    const tx3 = { sign: jest.fn(), toXDR: jest.fn() } as any;
+    const tx1 = { sign: jest.fn(), toXdr: jest.fn() } as any;
+    const tx2 = { sign: jest.fn(), toXdr: jest.fn() } as any;
+    const tx3 = { sign: jest.fn(), toXdr: jest.fn() } as any;
 
     transactionQueue.push(
       { transaction: tx1, uuid: "aaa", createdAt: Date.now() },
@@ -188,7 +188,7 @@ describe("rejectTransaction handler", () => {
   });
 
   it("handles multiple response queue items correctly", () => {
-    const mockTransaction = { sign: jest.fn(), toXDR: jest.fn() } as any;
+    const mockTransaction = { sign: jest.fn(), toXdr: jest.fn() } as any;
     const mockResponseFn2 = jest.fn();
 
     transactionQueue.push({
@@ -221,8 +221,8 @@ describe("rejectTransaction handler", () => {
   });
 
   it("removes transaction even when response queue item is missing", () => {
-    const mockTransaction1 = { sign: jest.fn(), toXDR: jest.fn() } as any;
-    const mockTransaction2 = { sign: jest.fn(), toXDR: jest.fn() } as any;
+    const mockTransaction1 = { sign: jest.fn(), toXdr: jest.fn() } as any;
+    const mockTransaction2 = { sign: jest.fn(), toXdr: jest.fn() } as any;
 
     transactionQueue.push(
       { transaction: mockTransaction1, uuid: "uuid-1", createdAt: Date.now() },

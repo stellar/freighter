@@ -70,12 +70,16 @@ export const PasswordForm = ({
           <div className="PasswordForm__subheading">
             {t("This will be used to unlock your wallet")}
           </div>
+          {/* Prevents an accidental overwrite from a stale Welcome tab. After
+              "Reset wallet" erases the wallet, this can't show in that flow,
+              but a Welcome tab left open and used once a new wallet exists
+              would otherwise replace that wallet without notice. */}
           {isShowingOverwriteWarning && (
             <div className="PasswordForm__notification">
               <Notification
                 variant="error"
                 title={`${t("You are overwriting an existing account.")} ${t(
-                  "You will permanently lose access to the account currently stored in Freighter.",
+                  "You will permanently lose access to the account currently stored in Varial.",
                 )}`}
               />
             </div>
@@ -85,7 +89,7 @@ export const PasswordForm = ({
               <Notification
                 variant="error"
                 title={`${t("You previously did not complete onboarding.")} ${t(
-                  "You will permanently lose access to the account you started to create in Freighter.",
+                  "You will permanently lose access to the account you started to create in Varial.",
                 )}`}
               />
             </div>
@@ -155,7 +159,7 @@ export const PasswordForm = ({
                             {`${t("I have read and agree to")} `}
                             <Link
                               variant="secondary"
-                              href="https://stellar.org/terms-of-service"
+                              href="https://varialwallet.com/terms"
                             >
                               {t("Terms of Use")}
                             </Link>

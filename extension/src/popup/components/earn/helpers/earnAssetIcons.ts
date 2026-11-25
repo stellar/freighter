@@ -1,10 +1,13 @@
-import { Asset, StrKey } from "stellar-sdk";
+import { StrKey } from "stellar-sdk";
 
 import { getAssetIcons } from "@shared/api/internal";
-import { Balances } from "@shared/api/types/backend-api";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { getCanonicalFromAsset } from "@shared/helpers/stellar";
+import {
+  isNativeAssetId,
+  isNativeContract,
+} from "@shared/helpers/assetIdentity";
+import { getCanonicalFromAsset, splitCanonical } from "@shared/helpers/stellar";
 
 /**
  * The Blend catalog identifies every asset by contract address and reports a
@@ -13,10 +16,8 @@ import { getCanonicalFromAsset } from "@shared/helpers/stellar";
  * unexpected `name` cannot produce a bogus canonical.
  */
 export const getCatalogIssuer = (name?: string | null) => {
-  const parts = name ? name.split(":") : [];
-  return parts.length === 2 && StrKey.isValidEd25519PublicKey(parts[1])
-    ? parts[1]
-    : undefined;
+  const { code, issuer } = splitCanonical(name || "");
+  return code && StrKey.isValidEd25519PublicKey(issuer) ? issuer : undefined;
 };
 
 /**
@@ -40,7 +41,7 @@ export const getCatalogIconKey = ({
   if (issuer && code) {
     return getCanonicalFromAsset(code, issuer);
   }
-  if (assetId === Asset.native().contractId(networkDetails.networkPassphrase)) {
+  if (isNativeContract(assetId, networkDetails.networkPassphrase)) {
     return "native";
   }
   return "";
@@ -65,10 +66,11 @@ export const getCatalogAssetIdentity = ({
   networkDetails: NetworkDetails;
 }) => {
   const issuer = getCatalogIssuer(name);
-  const isNative =
-    assetId === Asset.native().contractId(networkDetails.networkPassphrase);
+  const isNative = isNativeContract(assetId, networkDetails.networkPassphrase);
   const code =
-    symbol || (issuer ? name!.split(":")[0] : "") || (isNative ? "XLM" : "");
+    symbol ||
+    (issuer ? splitCanonical(name!).code : "") ||
+    (isNative ? "XLM" : "");
 
   return {
     code,
@@ -88,10 +90,11 @@ export interface EarnIconAsset {
  * Icons for catalog assets the account does not hold.
  *
  * `balances.icons` only covers held assets, so pool reserves and zero-balance
- * earn options resolve nothing there. This runs them through the same path
- * balances use — the icon cache, then the verified token lists, then the
- * issuer's TOML — by handing getAssetIcons a balance-shaped record per asset.
- * Bounded work: a pool has a handful of reserves.
+ * earn options resolve nothing there. This runs them through getAssetIcons'
+ * `additionalAssetIds`, the path Swap uses for an unheld destination: the icon
+ * cache, then the verified token lists, then the issuer's TOML, each keyed by
+ * the canonical the picker reads. Bounded work: a pool has a handful of
+ * reserves.
  *
  * Returns a canonical-keyed map, including the `null`s getAssetIcons records for
  * assets it checked and could not resolve.
@@ -107,31 +110,20 @@ export const resolveEarnAssetIcons = async ({
   cachedIcons: Record<string, string | null>;
   assetsListsData: AssetListResponse[];
 }) => {
-  const lookupBalances = assets.reduce((acc, asset) => {
-    const key = getCatalogIconKey({ ...asset, networkDetails });
-    if (!key || key === "native") {
-      // Native's icon is bundled, and a keyless asset has nothing to look up.
-      return acc;
-    }
-    return {
-      ...acc,
-      [key]: {
-        token: { code: asset.code, issuer: { key: asset.issuer! } },
-        contractId: asset.assetId,
-      },
-    };
-  }, {});
+  // Native's icon is bundled, and a keyless asset has nothing to look up.
+  const additionalAssetIds = assets
+    .map((asset) => getCatalogIconKey({ ...asset, networkDetails }))
+    .filter((key) => key && !isNativeAssetId(key));
 
-  if (!Object.keys(lookupBalances).length) {
+  if (!additionalAssetIds.length) {
     return {} as Record<string, string | null>;
   }
 
-  // getAssetIcons only reads each entry's `token` and `contractId`; BalanceMap's
-  // required `native` key and its amount fields would be noise here.
   return getAssetIcons({
-    balances: lookupBalances as unknown as Balances,
+    balances: null,
     networkDetails,
     assetsListsData,
     cachedIcons,
+    additionalAssetIds,
   });
 };

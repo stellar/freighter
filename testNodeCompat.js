@@ -1,4 +1,4 @@
-import * as publicInterface from "@stellar/freighter-api";
+import * as publicInterface from "@stellar/varial-sdk";
 
 describe.each(Object.keys(publicInterface.default))("%s", (fn) => {
   test("exits gracefully in node", async () => {

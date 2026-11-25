@@ -5,7 +5,7 @@ import {
   TransactionBuilder,
   xdr,
 } from "stellar-sdk";
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import {
   signFreighterTransaction as internalSignFreighterTransaction,
@@ -25,14 +25,17 @@ import {
   SoroswapToken,
 } from "@shared/api/types";
 
+import { SwapQuotesResponse } from "@shared/api/types/backend-api";
+import type { SwapQuoteKey } from "popup/helpers/swapQuote";
 import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
+import { SwapSource } from "popup/constants/swap";
+import { DEFAULT_TX_TIMEOUT } from "popup/constants/transaction";
 
-import { encodeSep53Message, getCanonicalFromAsset } from "helpers/stellar";
+import { encodeSep53Message } from "helpers/stellar";
 import { INDEXER_URL } from "@shared/constants/mercury";
-import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
 import { isQuoteExpiredError } from "popup/helpers/quoteExpiry";
 import {
   soroswapGetBestPath,
@@ -278,8 +281,11 @@ export const signWithHardwareWallet = createAsyncThunk<
 
         // A Buffer does not survive the JSON serialization that
         // `runtime.sendMessage` applies on the way to the background script, so
-        // the signature travels as base64 and is decoded there.
-        return signature.toString("base64");
+        // the signature travels as base64 and is decoded there. Encode via
+        // xdr.encodeBytes: as of SDK v17 the signature may be a plain
+        // Uint8Array, whose `toString("base64")` silently yields
+        // comma-joined decimals.
+        return xdr.encodeBytes(signature, "base64");
       } catch (e) {
         const message = e instanceof Error ? e.message : JSON.stringify(e);
         return thunkApi.rejectWithValue({ errorMessage: message });
@@ -304,7 +310,7 @@ export const signWithHardwareWallet = createAsyncThunk<
     }
 
     try {
-      const tx = TransactionBuilder.fromXDR(transactionXDR, networkPassphrase);
+      const tx = TransactionBuilder.fromXdr(transactionXDR, networkPassphrase);
 
       const signature = await hardwareSign[walletType]({
         bipPath,
@@ -320,7 +326,7 @@ export const signWithHardwareWallet = createAsyncThunk<
 
       tx.signatures.push(decoratedSignature);
 
-      return tx.toXDR();
+      return tx.toXdr();
     } catch (e) {
       const message = e instanceof Error ? e.message : JSON.stringify(e);
       return thunkApi.rejectWithValue({ errorMessage: message });
@@ -358,9 +364,14 @@ export const removeTokenId = createAsyncThunk<
     try {
       await internalRemoveTokenId({ activePublicKey, contractId, network });
     } catch (e) {
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
       console.error(e);
-      rejectWithValue({ errorMessage: e as string });
+      // Must be returned: a bare call still resolves the thunk, so callers see
+      // removeTokenId/fulfilled for a removal that never happened.
+      return rejectWithValue({ errorMessage: message });
     }
+
+    return undefined;
   },
 );
 
@@ -380,35 +391,6 @@ export const getSoroswapTokens = createAsyncThunk<
 
   return tokenData.assets;
 });
-
-// returns the full record so can save the best path and its rate
-export const getBestPath = createAsyncThunk<
-  Horizon.ServerApi.PaymentPathRecord,
-  {
-    amount: string;
-    sourceAsset: string;
-    destAsset: string;
-    networkDetails: NetworkDetails;
-  },
-  { rejectValue: ErrorMessage }
->(
-  "getBestPath",
-  async ({ amount, sourceAsset, destAsset, networkDetails }, thunkApi) => {
-    try {
-      return await horizonGetBestPath({
-        amount,
-        sourceAsset,
-        destAsset,
-        networkDetails,
-      });
-    } catch (e) {
-      const message = e instanceof Error ? e.message : JSON.stringify(e);
-      return thunkApi.rejectWithValue({
-        errorMessage: message,
-      });
-    }
-  },
-);
 
 export const getBestSoroswapPath = createAsyncThunk<
   {
@@ -475,8 +457,8 @@ export interface DestinationTokenDetails {
   tokenCode: string;
   // true when the user has no trustline for this destination yet.
   requiresTrustline: boolean;
-  // 7 for classic assets.
-  decimals: number;
+  // 7 for classic assets; unset when the picked row didn't say.
+  decimals?: number;
   // omitted for native XLM.
   issuer?: string;
   // from the pick-time Blockaid bulk scan.
@@ -506,7 +488,6 @@ interface TransactionData {
   destinationAsset: string;
   destinationDecimals?: number;
   destinationAmount: string;
-  destinationIcon: string;
   destinationTokenDetails: DestinationTokenDetails | null;
   path: string[];
   allowedSlippage: string;
@@ -526,6 +507,19 @@ interface TransactionData {
   // Persisted in Redux so it survives SendAmount unmount/remount (e.g. when
   // the user navigates to pick a recipient and returns).
   manualTransactionFee: string | null;
+  // Analytics-only: where the swap flow was entered from (`source` on
+  // swap.completed). Reset with the rest of the submission on Swap mount.
+  swapSource: SwapSource | null;
+  // The backend response behind `path`/`destinationAmount`; null on custom
+  // networks and whenever the quote is cleared.
+  swapQuotes: SwapQuotesResponse | null;
+  swapQuoteKey: SwapQuoteKey | null;
+  // The best route's resource fee from the last quote, kept past a new
+  // amount so Max can hold it back before that amount's quote lands.
+  swapLastQuotedFee: {
+    key: SwapQuoteKey;
+    resourceFee: string | null;
+  } | null;
 }
 
 interface HardwareWalletData {
@@ -534,12 +528,6 @@ interface HardwareWalletData {
   shouldSubmit: boolean;
 }
 
-export enum AssetSelectType {
-  MANAGE = "MANAGE",
-  REGULAR = "REGULAR",
-  PATH_PAY = "PATH_PAY",
-  SWAP = "SWAP",
-}
 interface InitialState {
   submitStatus: ActionStatus;
   hardwareWalletData: HardwareWalletData;
@@ -558,10 +546,6 @@ interface InitialState {
     preparedTransaction: string | null;
   };
   soroswapTokens: SoroswapToken[];
-  assetSelect: {
-    type: AssetSelectType;
-    isSource: boolean;
-  };
   memoRequiredAccounts: MemoRequiredAccount[];
 }
 
@@ -578,12 +562,11 @@ export const initialState: InitialState = {
     recipientName: "",
     federationAddress: "",
     transactionFee: "",
-    transactionTimeout: 180,
+    transactionTimeout: DEFAULT_TX_TIMEOUT,
     memo: "",
     memoType: "",
     destinationAsset: "",
     destinationAmount: "",
-    destinationIcon: "",
     destinationTokenDetails: null,
     path: [],
     allowedSlippage: "2",
@@ -600,6 +583,10 @@ export const initialState: InitialState = {
     balancesToMigrate: [] as BalanceToMigrate[],
     isSoroswap: false,
     manualTransactionFee: null,
+    swapSource: null,
+    swapQuotes: null,
+    swapQuoteKey: null,
+    swapLastQuotedFee: null,
   },
   transactionSimulation: {
     response: null,
@@ -611,10 +598,6 @@ export const initialState: InitialState = {
     shouldSubmit: true,
   },
   soroswapTokens: [],
-  assetSelect: {
-    type: AssetSelectType.MANAGE,
-    isSource: true,
-  },
   memoRequiredAccounts: [],
 };
 
@@ -626,8 +609,25 @@ const transactionSubmissionSlice = createSlice({
     resetSubmitStatus: (state) => {
       state.submitStatus = initialState.submitStatus;
     },
+    /**
+     * Puts the flow into its failed state without a submission having been
+     * attempted. `submitFreighterTransaction.rejected` covers the ordinary
+     * case, and `signFreighterTransaction.rejected` covers a signature that
+     * threw — but a sign that resolves *fulfilled* with an empty payload, and
+     * a hardware flow that arrives with no signed XDR, dispatch neither, so
+     * without this the view stays on ActionStatus.PENDING and the user is
+     * stranded on the sending spinner instead of reaching SubmitFail.
+     */
+    setSubmitError: (state, action: { payload: ErrorMessage | undefined }) => {
+      state.submitStatus = ActionStatus.ERROR;
+      state.error = action.payload;
+    },
     clearSwapQuoteExpired: (state) => {
       state.isSwapQuoteExpired = false;
+    },
+    // The quote no longer builds, so the next review must re-quote.
+    clearSwapQuoteKey: (state) => {
+      state.transactionData.swapQuoteKey = null;
     },
     saveDestination: (state, action) => {
       state.transactionData.destination = action.payload;
@@ -671,11 +671,11 @@ const transactionSubmissionSlice = createSlice({
     saveDestinationAsset: (state, action) => {
       state.transactionData.destinationAsset = action.payload;
     },
-    saveDestinationIcon: (state, action) => {
-      state.transactionData.destinationIcon = action.payload;
-    },
     saveIsSoroswap: (state, action) => {
       state.transactionData.isSoroswap = action.payload;
+    },
+    saveSwapSource: (state, action: PayloadAction<SwapSource | null>) => {
+      state.transactionData.swapSource = action.payload;
     },
     saveAllowedSlippage: (state, action) => {
       state.transactionData.allowedSlippage = action.payload;
@@ -724,22 +724,34 @@ const transactionSubmissionSlice = createSlice({
       state.hardwareWalletData.transactionXDR = "";
       state.hardwareWalletData.shouldSubmit = true;
     },
-    saveAssetSelectType: (state, action) => {
-      state.assetSelect.type = action.payload;
-    },
-    saveAssetSelectSource: (state, action) => {
-      state.assetSelect.isSource = action.payload;
-    },
     saveIsMergeSelected: (state, action) => {
       state.transactionData.isMergeSelected = action.payload;
     },
     saveBalancesToMigrate: (state, action) => {
       state.transactionData.balancesToMigrate = action.payload;
     },
-    saveSwapBestPath: (state, action) => {
+    saveSwapBestPath: (
+      state,
+      action: PayloadAction<{
+        path: string[];
+        destinationAmount: string;
+        quotes?: SwapQuotesResponse | null;
+        key?: SwapQuoteKey | null;
+      }>,
+    ) => {
       state.transactionData.path = action.payload.path;
       state.transactionData.destinationAmount =
         action.payload.destinationAmount;
+      state.transactionData.swapQuotes = action.payload.quotes ?? null;
+      state.transactionData.swapQuoteKey = action.payload.key ?? null;
+      const { quotes, key } = action.payload;
+      // An answer with no route says nothing about the pair's fee.
+      if (quotes?.routes[0] && key) {
+        state.transactionData.swapLastQuotedFee = {
+          key,
+          resourceFee: quotes.routes[0].resourceFee ?? null,
+        };
+      }
     },
     saveDestinationTokenDetails: (
       state,
@@ -759,6 +771,9 @@ const transactionSubmissionSlice = createSlice({
       // instead of dead-ending in SubmitFail. These op codes only arise from
       // swap path payments, so this is a no-op for sends.
       state.isSwapQuoteExpired = isQuoteExpiredError(action.payload);
+      if (state.isSwapQuoteExpired) {
+        state.transactionData.swapQuoteKey = null;
+      }
     });
     builder.addCase(submitFreighterTransaction.fulfilled, (state, action) => {
       state.submitStatus = ActionStatus.SUCCESS;
@@ -798,11 +813,6 @@ const transactionSubmissionSlice = createSlice({
         state.error = action.payload;
       },
     );
-    builder.addCase(getBestPath.rejected, (state) => {
-      state.transactionData.path = initialState.transactionData.path;
-      state.transactionData.destinationAmount =
-        initialState.transactionData.destinationAmount;
-    });
     builder.addCase(getBestSoroswapPath.rejected, (state) => {
       state.transactionData.path = initialState.transactionData.path;
       state.transactionData.destinationAmount =
@@ -815,27 +825,6 @@ const transactionSubmissionSlice = createSlice({
         ...state,
         soroswapTokens,
       };
-    });
-    builder.addCase(getBestPath.fulfilled, (state, action) => {
-      if (!action.payload) {
-        state.transactionData.path = [];
-        state.transactionData.destinationAmount = "";
-        return;
-      }
-
-      // store in canonical form for easier use
-      const path: string[] = [];
-      action.payload.path.forEach((p) => {
-        if (!p.asset_code && !p.asset_issuer) {
-          path.push(p.asset_type);
-        } else {
-          path.push(getCanonicalFromAsset(p.asset_code, p.asset_issuer));
-        }
-      });
-
-      state.transactionData.path = path;
-      state.transactionData.destinationAmount =
-        action.payload.destination_amount;
     });
     builder.addCase(getBestSoroswapPath.fulfilled, (state, action) => {
       if (!action.payload) {
@@ -860,7 +849,9 @@ const transactionSubmissionSlice = createSlice({
 export const {
   resetSubmission,
   resetSubmitStatus,
+  setSubmitError,
   clearSwapQuoteExpired,
+  clearSwapQuoteKey,
   saveDestination,
   saveRecipientName,
   saveFederationAddress,
@@ -872,8 +863,8 @@ export const {
   saveTransactionTimeout,
   saveMemoAndType,
   saveDestinationAsset,
-  saveDestinationIcon,
   saveIsSoroswap,
+  saveSwapSource,
   saveAllowedSlippage,
   saveIsToken,
   saveIsCollectible,
@@ -882,8 +873,6 @@ export const {
   startHwConnect,
   startHwSign,
   closeHwOverlay,
-  saveAssetSelectType,
-  saveAssetSelectSource,
   saveIsMergeSelected,
   saveBalancesToMigrate,
   saveSwapBestPath,

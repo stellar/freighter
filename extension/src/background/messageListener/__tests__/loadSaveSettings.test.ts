@@ -28,10 +28,6 @@ jest.mock("background/helpers/account", () => ({
   getOverriddenBlockaidResponse: jest.fn().mockResolvedValue(null),
 }));
 
-jest.mock("../helpers/get-hidden-assets", () => ({
-  getHiddenAssets: jest.fn().mockResolvedValue({ hiddenAssets: {} }),
-}));
-
 (global as any).chrome = {
   sidePanel: {
     setPanelBehavior: jest.fn().mockResolvedValue(undefined),

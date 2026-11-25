@@ -13,7 +13,7 @@ import * as StellarSdkServer from "@shared/api/helpers/stellarSdkServer";
 
 const TEST_TX = {
   signatureBase: () => "signatureBase",
-  toXDR: () => "toXDR",
+  toXdr: () => "toXDR",
   _networkPassphrase: "Test SDF Network ; September 2015",
   _tx: {},
   signatures: [],
@@ -50,15 +50,20 @@ jest.mock("stellar-sdk", () => {
         "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH",
     },
     TransactionBuilder: {
-      fromXDR: () => TEST_TX as any,
+      fromXdr: () => TEST_TX as any,
     },
     Keypair: {
       fromPublicKey: () => ({
-        signatureHint: () => "signatureHint",
+        // v17: xdr.SignatureHint is a 4-byte, hex-encoding BytesValue that
+        // validates its input — a placeholder string throws "invalid hex
+        // input" rather than passing through as it did on v16.
+        signatureHint: () => new Uint8Array([1, 2, 3, 4]),
       }),
     },
     xdr: {
       DecoratedSignature: original.xdr.DecoratedSignature,
+      encodeBytes: original.xdr.encodeBytes,
+      decodeBytes: original.xdr.decodeBytes,
     },
   };
 });
@@ -80,7 +85,9 @@ jest.mock("@ledgerhq/hw-app-str", () => {
         Promise.resolve({
           rawPublicKey: jest.fn(),
         }),
-      signTransaction: () => Promise.resolve({ signature: "L1" }),
+      // v17: xdr.Signature validates its input too, so hand back bytes.
+      signTransaction: () =>
+        Promise.resolve({ signature: new Uint8Array(64).fill(1) }),
     };
   });
 });
@@ -234,6 +241,137 @@ describe("ChangeTrustInternal", () => {
 
     await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
     expect(onCancel).not.toHaveBeenCalled();
+  });
+
+  const SUCCESSFUL_SUBMIT_RESPONSE = {
+    ok: true,
+    json: async () => ({
+      envelope_xdr:
+        "AAAAAgAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAPQkAAAYjdAAAA9gAAAAEAAAAAAAAAAAAAAABmXjffAAAAAAAAAAEAAAAAAAAABgAAAAFVU0RDAAAAACYFzNOyHT8GgwiyzcOOhwLtCctwM/RiSnrFp7JOe8xeAAAAAAAAAAAAAAAAAAAAAcskg+QAAABAA/rRMU+KKsxCX1pDBuCvYDz+eQTCsY9bzgPU4J+Xe3vOWUa8YOzWlL3N3zlxHVx9hsB7a8dpSXMSAINjjsY4Dg==",
+      hash: "hash",
+      successful: true,
+    }),
+  } as any;
+
+  const submitAndAwaitSuccess = async () => {
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("ChangeTrustInternal__Body"),
+      ).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByText("Confirm"));
+
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("SubmitTransaction__Title__Success"),
+      ).toBeInTheDocument(),
+    );
+  };
+
+  it("clears a stored hidden flag for the asset after a successful add", async () => {
+    jest
+      .spyOn(global, "fetch")
+      .mockImplementation(() => Promise.resolve(SUCCESSFUL_SUBMIT_RESPONSE));
+    jest.spyOn(ApiInternal, "getHiddenAssets").mockImplementation(() =>
+      Promise.resolve({
+        hiddenAssets: { [`${ASSET.code}:${ASSET.issuer}`]: "hidden" },
+        error: "",
+      }),
+    );
+    const changeVisibility = jest
+      .spyOn(ApiInternal, "changeAssetVisibility")
+      .mockImplementation(() =>
+        Promise.resolve({ hiddenAssets: {}, error: "" }),
+      );
+
+    renderComponent({ addTrustline: true });
+    await submitAndAwaitSuccess();
+
+    await waitFor(() => expect(changeVisibility).toHaveBeenCalledTimes(1));
+    expect(changeVisibility).toHaveBeenCalledWith({
+      assetIssuer: `${ASSET.code}:${ASSET.issuer}`,
+      assetVisibility: "visible",
+      activePublicKey: LEDGER_PUBLIC_KEY,
+      network: TESTNET_NETWORK_DETAILS.network,
+    });
+  });
+
+  it("notifies the caller only once the hidden flag is cleared", async () => {
+    jest
+      .spyOn(global, "fetch")
+      .mockImplementation(() => Promise.resolve(SUCCESSFUL_SUBMIT_RESPONSE));
+    jest.spyOn(ApiInternal, "getHiddenAssets").mockImplementation(() =>
+      Promise.resolve({
+        hiddenAssets: { [`${ASSET.code}:${ASSET.issuer}`]: "hidden" },
+        error: "",
+      }),
+    );
+    let finishWrite = () => {};
+    const changeVisibility = jest
+      .spyOn(ApiInternal, "changeAssetVisibility")
+      .mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            finishWrite = () => resolve({ hiddenAssets: {}, error: "" });
+          }),
+      );
+    const onTransactionSuccess = jest.fn();
+
+    renderComponent({ addTrustline: true, onTransactionSuccess });
+    await submitAndAwaitSuccess();
+
+    await waitFor(() => expect(changeVisibility).toHaveBeenCalledTimes(1));
+    // The dApp request must not resolve (and close the popup) while the
+    // cleanup write is still in flight.
+    expect(onTransactionSuccess).not.toHaveBeenCalled();
+
+    finishWrite();
+
+    await waitFor(() => expect(onTransactionSuccess).toHaveBeenCalledTimes(1));
+  });
+
+  it("leaves the hidden map alone when the added asset was not hidden", async () => {
+    jest
+      .spyOn(global, "fetch")
+      .mockImplementation(() => Promise.resolve(SUCCESSFUL_SUBMIT_RESPONSE));
+    const getHidden = jest
+      .spyOn(ApiInternal, "getHiddenAssets")
+      .mockImplementation(() =>
+        Promise.resolve({ hiddenAssets: {}, error: "" }),
+      );
+    const changeVisibility = jest
+      .spyOn(ApiInternal, "changeAssetVisibility")
+      .mockImplementation(() =>
+        Promise.resolve({ hiddenAssets: {}, error: "" }),
+      );
+
+    renderComponent({ addTrustline: true });
+    await submitAndAwaitSuccess();
+
+    await waitFor(() => expect(getHidden).toHaveBeenCalled());
+    expect(changeVisibility).not.toHaveBeenCalled();
+  });
+
+  it("leaves the hidden map alone after a successful remove", async () => {
+    jest
+      .spyOn(global, "fetch")
+      .mockImplementation(() => Promise.resolve(SUCCESSFUL_SUBMIT_RESPONSE));
+    jest
+      .spyOn(ApiInternal, "getHiddenAssets")
+      .mockImplementation(() =>
+        Promise.resolve({ hiddenAssets: {}, error: "" }),
+      );
+    const changeVisibility = jest
+      .spyOn(ApiInternal, "changeAssetVisibility")
+      .mockImplementation(() =>
+        Promise.resolve({ hiddenAssets: {}, error: "" }),
+      );
+
+    renderComponent({ addTrustline: false });
+    await submitAndAwaitSuccess();
+
+    expect(changeVisibility).not.toHaveBeenCalled();
   });
 
   it("calls onCancel on Done when onSuccess is not provided (backward-compatible default)", async () => {

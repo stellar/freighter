@@ -201,7 +201,19 @@ export const buildHasPrivateKeySelector = (localStore: DataStorageAccess) =>
     const isHardwareWalletActive = await getIsHardwareWalletActive({
       localStore,
     });
-    if (isHardwareWalletActive && !session?.isHardwareWalletLocked) {
+    // A hardware-wallet session is unlocked only when it has not been
+    // idle-locked AND the session still holds a public key. The session
+    // store lives in `storage.session`, which the browser wipes on restart
+    // and on extension reload/update. After a wipe, `isHardwareWalletLocked`
+    // falls back to its `false` default, so without the public key check
+    // an empty session would read as unlocked. The popup would then show
+    // the unlock screen (no public key) while already treating the wallet
+    // as unlocked, and a correct password would never navigate away.
+    if (
+      isHardwareWalletActive &&
+      !session?.isHardwareWalletLocked &&
+      !!session?.publicKey
+    ) {
       return true;
     }
     if (!session?.hashKey?.key) {

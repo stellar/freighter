@@ -14,6 +14,44 @@ import { xlmToStroop } from "helpers/stellar";
 import { parseTokenAmount } from "popup/helpers/soroban";
 import i18n from "popup/helpers/localizationConfig";
 
+/**
+ * Why the v1 backend's `/simulate-tx` rejected a simulation, read from its
+ * plain-text reply: `Error: <name> - <message>`, then the stack on the
+ * following lines.
+ *
+ * When the simulation itself failed (a frozen pool, a supply cap, a stale
+ * oracle, a balance too low), the message is the SDK's `simulation incorrect:
+ * <simulation JSON>`, whose `error` field opens with the host error, e.g.
+ * "HostError: Error(Contract, #1206)", then the event log. Only that first
+ * line is kept. Anything else keeps the backend's message without its stack.
+ * Mobile reads the reply the same way.
+ */
+export const getSimulateTxFailureReason = (reply: string): string => {
+  // JSON escapes its newlines, so the first real one starts the stack.
+  const [firstLine] = reply.split("\n");
+  const message = firstLine.replace(/^Error: \w+ - /, "").trim();
+
+  const SIMULATION_PREFIX = "simulation incorrect: ";
+  if (message.startsWith(SIMULATION_PREFIX)) {
+    try {
+      const simulation: unknown = JSON.parse(
+        message.slice(SIMULATION_PREFIX.length),
+      );
+      const simulationError =
+        simulation && typeof simulation === "object" && "error" in simulation
+          ? simulation.error
+          : undefined;
+      if (typeof simulationError === "string" && simulationError.trim()) {
+        return simulationError.split("\n")[0].trim();
+      }
+    } catch {
+      // Not JSON after all: the message itself is the reason.
+    }
+  }
+
+  return message;
+};
+
 interface BuildAndSimulateBlendDepositParams {
   publicKey: string;
   /** The reserve's asset contract address (a SAC for every current reserve). */
@@ -100,7 +138,9 @@ export const buildAndSimulateBlendDeposit = async ({
 
   if (!ok) {
     throw new Error(
-      typeof response === "string" ? response : JSON.stringify(response),
+      typeof response === "string"
+        ? getSimulateTxFailureReason(response) || response
+        : JSON.stringify(response),
     );
   }
 

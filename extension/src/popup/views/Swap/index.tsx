@@ -1,19 +1,17 @@
-import React, { useEffect, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useDispatch, useSelector, useStore } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
-import { STEPS } from "popup/constants/swap";
-import {
-  emitMetric,
-  emitScreenViewed,
-  ScreenViewedProps,
-} from "helpers/metrics";
+import { STEPS, SwapSource, isSwapSource } from "popup/constants/swap";
+import { emitMetric, emitScreenViewed } from "helpers/metrics";
 import { InputType } from "helpers/transaction";
 import { TransactionConfirm } from "popup/components/InternalTransaction/SubmitTransaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SwapAsset } from "popup/components/swap/SwapAsset";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
+import { useSwapSubmitScreenViews } from "popup/components/swap/hooks/useSwapSubmitScreenViews";
+import { SWAP_SCREEN_BY_STEP, swapSourceProps } from "popup/metrics/swap";
 import { useSwapSubmitQuoteExpiry } from "popup/components/swap/hooks/useSwapSubmitQuoteExpiry";
-import { AppDispatch } from "popup/App";
+import { AppDispatch, AppState } from "popup/App";
 import {
   resetSubmission,
   saveAmount,
@@ -22,35 +20,23 @@ import {
   saveDestinationAsset,
   saveDestinationTokenDetails,
   saveIsToken,
+  saveSwapSource,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { resetSimulation } from "popup/ducks/token-payment";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { publicKeySelector } from "popup/ducks/accountServices";
+import { isAssetVisible } from "popup/helpers/settings";
+import { swapIdentityKey } from "popup/helpers/swapQuote";
+import { readHiddenAssets } from "popup/helpers/useHiddenAssets";
 import { getAssetFromCanonical } from "helpers/stellar";
+import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import {
   DEFAULT_SWAP_DEST_CANONICAL,
   NETWORKS,
 } from "@shared/constants/stellar";
-
-// Each swap sub-step emits the consolidated `screen.viewed` event; the step's
-// identity lives in `screen_name`, declared as a literal below.
-const SWAP_SCREEN_BY_STEP: Partial<
-  Record<STEPS, { screen_name: string } & ScreenViewedProps>
-> = {
-  [STEPS.SWAP_CONFIRM]: {
-    screen_name: "swap_confirm",
-    flow: "swap",
-    // Canonical cross-platform stage (RFC #2883): mobile tags this screen
-    // step:"confirm"; keep them in sync so `step` is funnel-able across both.
-    step: "confirm",
-  },
-  [STEPS.SET_DST_ASSET]: { screen_name: "swap_to_asset", flow: "swap" },
-  [STEPS.AMOUNT]: { screen_name: "swap_amount", flow: "swap" },
-  [STEPS.CONFIRM_AMOUNT]: { screen_name: "swap_amount_review", flow: "swap" },
-  [STEPS.SET_FROM_ASSET]: { screen_name: "swap_from_asset", flow: "swap" },
-};
 
 export const Swap = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -58,6 +44,14 @@ export const Swap = () => {
   const location = useLocation();
   const [activeStep, setActiveStep] = useState(STEPS.AMOUNT);
   const lastEmittedStep = useRef<STEPS | null>(null);
+  // Where the swap was opened from, read off the URL rather than the store:
+  // the first screen view fires before the mount effect saves it there.
+  // Whitelisted so arbitrary query values never reach analytics; anything
+  // else, or no param at all, is Home's Swap tile.
+  const swapSource = useMemo(() => {
+    const sourceParam = new URLSearchParams(location.search).get("source");
+    return isSwapSource(sourceParam) ? sourceParam : SwapSource.Home;
+  }, [location.search]);
 
   // Emit a screen-view metric only once per step transition.
   useEffect(() => {
@@ -67,13 +61,19 @@ export const Swap = () => {
     const screen = SWAP_SCREEN_BY_STEP[activeStep];
     if (screen) {
       const { screen_name, ...props } = screen;
-      emitScreenViewed(screen_name, props);
+      emitScreenViewed(screen_name, {
+        ...props,
+        ...swapSourceProps(swapSource),
+      });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeStep]);
 
   const submission = useSelector(transactionSubmissionSelector);
+
   const { transactionSimulation, transactionData } = submission;
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const store = useStore<AppState>();
 
   const { isQuoteExpiredAtSubmit } = useSwapSubmitQuoteExpiry({
     onRecover: () => setActiveStep(STEPS.AMOUNT),
@@ -106,9 +106,11 @@ export const Swap = () => {
       }
     }
     dispatch(saveAsset(sourceAsset));
-    if (sourceAsset === "native") {
+    if (isNativeAssetId(sourceAsset)) {
       dispatch(saveIsToken(false));
     }
+
+    dispatch(saveSwapSource(swapSource));
 
     // Pre-populate destination asset if provided and valid; otherwise default
     // to the network's USDC — or to native when the flow starts from USDC
@@ -122,18 +124,46 @@ export const Swap = () => {
         // Invalid destination asset param, ignore
       }
     }
-    if (!destinationAsset) {
-      const defaultDest =
-        DEFAULT_SWAP_DEST_CANONICAL[networkDetails.network as NETWORKS];
-      if (defaultDest) {
-        destinationAsset = defaultDest === sourceAsset ? "native" : defaultDest;
+    let isCancelled = false;
+
+    const applyDestination = async () => {
+      if (!destinationAsset) {
+        const defaultDest =
+          DEFAULT_SWAP_DEST_CANONICAL[networkDetails.network as NETWORKS];
+        if (defaultDest === sourceAsset) {
+          destinationAsset = "native";
+        } else if (defaultDest) {
+          // A hidden default stays unselected: the pickers leave hidden
+          // tokens out, so preselecting one would be the only place it
+          // still shows up. The account is read from the store at call
+          // time so this mount-only effect never re-runs (and resets) for it.
+          const hiddenAssets = await readHiddenAssets(
+            publicKeySelector(store.getState()),
+            networkDetails.network,
+          );
+          if (isAssetVisible(hiddenAssets, defaultDest)) {
+            destinationAsset = defaultDest;
+          }
+        }
       }
-    }
-    if (destinationAsset) {
-      dispatch(saveDestinationAsset(destinationAsset));
-    }
-    setAreDefaultsApplied(true);
-  }, [dispatch, location.search, networkDetails.network]);
+      if (isCancelled) {
+        return;
+      }
+      if (destinationAsset) {
+        dispatch(saveDestinationAsset(destinationAsset));
+      }
+      setAreDefaultsApplied(true);
+    };
+
+    applyDestination();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [dispatch, location.search, networkDetails.network, store, swapSource]);
+
+  // The submission's processing and success screen views.
+  useSwapSubmitScreenViews(swapSource);
 
   const renderStep = (step: STEPS) => {
     switch (step) {
@@ -156,14 +186,19 @@ export const Swap = () => {
             selectionType="destination"
             hiddenAssets={[transactionData.asset]}
             goBack={() => setActiveStep(STEPS.AMOUNT)}
-            onClickAsset={(canonical, isContract, details) => {
+            onClickAsset={(canonical, _isContract, details) => {
               dispatch(saveDestinationAsset(canonical));
-              dispatch(saveIsToken(isContract));
+              // isToken describes the source (the review reads it against
+              // srcAsset), so a destination pick leaves it alone.
               dispatch(saveDestinationTokenDetails(details ?? null));
               // Can't swap a token for itself: if it matches the current
               // source, reset the source to "(+) Select".
-              if (canonical === transactionData.asset) {
+              if (
+                swapIdentityKey(canonical) ===
+                swapIdentityKey(transactionData.asset)
+              ) {
                 dispatch(saveAsset(""));
+                dispatch(saveIsToken(false));
                 dispatch(saveAmount("0"));
                 dispatch(saveAmountUsd("0.00"));
               }
@@ -171,7 +206,8 @@ export const Swap = () => {
                 asset_code: details?.tokenCode,
                 asset_issuer: details?.issuer,
                 requires_trustline: details?.requiresTrustline,
-                source: details?.source,
+                list: details?.source,
+                ...swapSourceProps(swapSource),
               });
               setActiveStep(STEPS.AMOUNT);
             }}
@@ -220,14 +256,18 @@ export const Swap = () => {
               dispatch(saveAmountUsd("0.00"));
               // Can't swap a token for itself: if it matches the current
               // destination, reset the destination to "(+) Select".
-              if (canonical === transactionData.destinationAsset) {
+              if (
+                swapIdentityKey(canonical) ===
+                swapIdentityKey(transactionData.destinationAsset)
+              ) {
                 dispatch(saveDestinationAsset(""));
                 dispatch(saveDestinationTokenDetails(null));
               }
               emitMetric(METRIC_NAMES.swapSourceSelected, {
                 asset_code: getAssetFromCanonical(canonical).code,
                 asset_issuer: getAssetFromCanonical(canonical).issuer,
-                source: "balances",
+                list: "balances",
+                ...swapSourceProps(swapSource),
               });
               setActiveStep(STEPS.AMOUNT);
             }}

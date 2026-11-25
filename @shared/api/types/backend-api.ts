@@ -1,4 +1,5 @@
 import { AssetBalance, NativeBalance, TokenBalance } from "./types";
+import { AssetType as SdkAssetType } from "stellar-sdk";
 
 export interface BalanceMap {
   [key: string]: AssetBalance | NativeBalance | TokenBalance;
@@ -79,7 +80,11 @@ export interface V2NativeBalance extends V2BalanceBase {
 export interface V2ClassicBalance extends V2BalanceBase {
   token_type: "CLASSIC";
   // `type` is the trustline's asset type verbatim (e.g. credit_alphanum4).
-  token: { type: string; code: string; issuer: V2TokenIssuer };
+  token: {
+    type: Exclude<SdkAssetType, "native">;
+    code: string;
+    issuer: V2TokenIssuer;
+  };
   code?: string;
   issuer?: string;
   type: string;
@@ -94,7 +99,11 @@ export interface V2ClassicBalance extends V2BalanceBase {
 export interface V2SacBalance extends V2BalanceBase {
   token_type: "SAC";
   // `type` is derived server-side from the code length (credit_alphanum4/12).
-  token: { type: string; code: string; issuer: V2TokenIssuer };
+  token: {
+    type: Exclude<SdkAssetType, "native">;
+    code: string;
+    issuer: V2TokenIssuer;
+  };
   code: string;
   issuer: string;
   decimals: number;
@@ -140,4 +149,68 @@ export interface V2AccountBalances {
   is_funded: boolean;
   subentry_count: number;
   balances: V2Balance[];
+}
+
+// freighter-backend-v2 `POST /swap/quotes` wire types; mirror
+// internal/types/swap.go. Assets are "XLM", "CODE:ISSUER" or a "C…" contract ID.
+export type SwapQuoteMode = "send" | "receive";
+
+export interface SwapHop {
+  venue: string;
+  from: string;
+  to: string;
+  pool?: string;
+  /** Estimated output of this hop, in `to`'s display units (not base units). Set on every hop of a LI.FI route or on none. */
+  toAmount?: string;
+}
+
+export interface SwapPath {
+  share: string;
+  hops: SwapHop[];
+}
+
+export interface SwapFee {
+  name: string;
+  amount: string;
+  asset: string;
+}
+
+export interface SwapRoute {
+  source: string;
+  fromAmount: string;
+  toAmount: string;
+  paths: SwapPath[];
+  fees: SwapFee[];
+  /** LI.FI only: the simulated Soroban resource fee, in XLM. */
+  resourceFee?: string;
+}
+
+export interface SwapUnavailable {
+  source: string;
+  reason: string;
+}
+
+export interface SwapQuotesResponse {
+  routes: SwapRoute[];
+  unavailable: SwapUnavailable[];
+}
+
+// `POST /swap/tx`. `fee` is the user's network fee setting in XLM; classic
+// builds split it across the operations, LI.FI builds add the resource fee.
+export interface SwapTxRequest {
+  account: string;
+  source: string;
+  fromAsset: string;
+  toAsset: string;
+  amount: string;
+  minOut: string;
+  fee: string;
+  slippage: string;
+  timeout: number;
+  paths?: SwapPath[];
+}
+
+export interface SwapTxResponse {
+  xdr: string;
+  addsTrustline: boolean;
 }

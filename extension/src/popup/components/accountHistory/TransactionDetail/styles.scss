@@ -7,7 +7,6 @@
 .TransactionDetail {
   &__header {
     border-bottom: 1px solid var(--sds-clr-gray-04);
-    color: var(--color-white);
     font-size: 2rem;
     font-weight: var(--font-weight-light);
     padding-bottom: 1.5rem;
@@ -18,7 +17,7 @@
     display: block;
 
     &--isMalicious {
-      color: var(--color-red-70);
+      color: var(--sds-clr-red-09);
     }
   }
 
@@ -33,7 +32,7 @@
     height: 9.75rem;
 
     &__row {
-      color: rgba(255, 255, 255, 0.6);
+      color: var(--sds-clr-gray-11);
       display: flex;
       flex-direction: column;
       margin-bottom: 0.75rem;
@@ -71,10 +70,7 @@
 
 .TransactionDetailModal {
   width: 100%;
-  height: auto;
-  max-width: 53rem;
-  margin: 0 auto;
-  padding: pxToRem(32px) pxToRem(16px);
+  // Padding, width cap and the pinned explorer button come from the sheet.
 
   &__title-row {
     align-items: center;
@@ -313,10 +309,6 @@
         &.failed {
           color: var(--sds-clr-red-11);
         }
-
-        &.success {
-          color: var(--sds-clr-white);
-        }
       }
 
       &__label {
@@ -380,7 +372,7 @@
     }
 
     .AssetDiff__value {
-      font-weight: var(--sds-font-weight-medium);
+      font-weight: var(--sds-fw-medium);
 
       &.credit {
         color: var(--sds-clr-green-11);

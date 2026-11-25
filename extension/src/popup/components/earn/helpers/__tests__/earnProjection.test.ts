@@ -1,7 +1,7 @@
 import BigNumber from "bignumber.js";
 
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
-import { PUBLIC_SACS } from "@shared/constants/sac";
+import { PUBLIC_SACS } from "@shared/api/__tests__/fixtures/sac";
 import { getBestEarnApy, projectAnnualEarnings } from "../earnProjection";
 
 const networkDetails = MAINNET_NETWORK_DETAILS;

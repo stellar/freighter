@@ -19,16 +19,17 @@
     gap: pxToRem(24px);
   }
 
+  // The rows pad and divide themselves; only the header keeps a gap.
   &__collection-group {
     display: flex;
     flex-direction: column;
-    gap: pxToRem(8px);
   }
 
   &__section-header {
     display: flex;
     align-items: center;
     gap: pxToRem(12px);
+    margin-bottom: pxToRem(4px);
 
     &__name {
       font-size: pxToRem(14px);
@@ -50,11 +51,26 @@
     }
   }
 
+  // Divided like the token rows above: a Border/Primary line under the text
+  // column (past the 32px image and its 12px gap) under every row but the
+  // last, where the next collection's header draws its own line.
   &__collection {
+    position: relative;
     display: flex;
     align-items: center;
     gap: pxToRem(12px);
+    padding: pxToRem(8px) 0;
     cursor: pointer;
+
+    &:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      left: pxToRem(44px);
+      right: 0;
+      bottom: 0;
+      height: 1px;
+      background-color: var(--sds-clr-gray-06);
+    }
 
     &__image {
       width: pxToRem(32px);

@@ -38,11 +38,13 @@
     background: none;
     appearance: none;
     font: inherit;
-    text-align: left;
+    text-align: right;
 
     // Block, not the button default of inline-block, so it keeps the exact
     // layout the div had -- inline-block would add baseline leading beneath it.
+    // Pushed to the right edge, matching the Add token screen.
     display: block;
+    margin-left: auto;
     color: var(--sds-clr-lilac-11);
     font-size: pxToRem(14px);
     font-weight: var(--sds-fw-medium);

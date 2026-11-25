@@ -14,7 +14,7 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { collectionsSelector } from "popup/ducks/cache";
 import { isContractId } from "popup/helpers/soroban";
-import { getAssetFromCanonical } from "helpers/stellar";
+import { getAssetFromCanonical, isContractDestination } from "helpers/stellar";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { Collection } from "@shared/api/types";
@@ -108,7 +108,7 @@ export function useSendQueryParams() {
     if (destinationParam) {
       const isValidDestination =
         StrKey.isValidEd25519PublicKey(destinationParam) ||
-        isContractId(destinationParam);
+        isContractDestination(destinationParam);
 
       if (isValidDestination) {
         dispatch(saveDestination(destinationParam));

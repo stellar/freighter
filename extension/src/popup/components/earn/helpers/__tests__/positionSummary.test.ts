@@ -1,5 +1,5 @@
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
-import { PUBLIC_SACS } from "@shared/constants/sac";
+import { PUBLIC_SACS } from "@shared/api/__tests__/fixtures/sac";
 import { getPositionSummary, hasResolvableSupply } from "../positionSummary";
 
 const networkDetails = MAINNET_NETWORK_DETAILS;

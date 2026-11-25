@@ -1,8 +1,6 @@
 @use "../../../../styles/utils.scss" as *;
 
 .ProtocolDetailsPanel {
-  padding: pxToRem(24);
-
   &__header {
     display: flex;
     align-items: center;
@@ -89,5 +87,16 @@
 
   &__description {
     color: var(--sds-clr-gray-12);
+    white-space: pre-line;
+    word-break: break-word;
+
+    a {
+      color: var(--sds-clr-lilac-11);
+      // The global `a { text-decoration: none; }` reset means color alone
+      // isn't enough to distinguish a link from surrounding text - restore
+      // an underline so links embedded in prose remain visible without
+      // relying on color perception.
+      text-decoration: underline;
+    }
   }
 }

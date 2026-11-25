@@ -1,0 +1,97 @@
+@use "../../../styles/utils.scss" as *;
+
+// Figma's Empty (1429:165964): 16px off the window's sides, so 8px past the
+// list's 24px column; right under the tab row, whose own 8px bottom padding is
+// the gap; and 16px above whatever follows.
+.HomeEmptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: pxToRem(12px);
+  min-height: pxToRem(256px);
+  margin: 0 pxToRem(-8px) pxToRem(16px);
+  padding: pxToRem(12px) pxToRem(24px);
+  border-radius: pxToRem(24px);
+  text-align: center;
+
+  &--wide {
+    padding-left: pxToRem(32px);
+    padding-right: pxToRem(32px);
+  }
+
+  &__top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: pxToRem(4px);
+    width: 100%;
+  }
+
+  &__icon {
+    display: flex;
+    padding: pxToRem(8px);
+    border-radius: pxToRem(1000px);
+  }
+
+  // Figma's 24.141x24 "Group 19" box; the exported sparkle and its glow hang
+  // off it at inset 0 -11.48% -28.51% -11.48%, unclipped.
+  &__sparkle {
+    position: relative;
+    width: pxToRem(24.141px);
+    height: pxToRem(24px);
+
+    img {
+      position: absolute;
+      top: 0;
+      left: -11.48%;
+      width: 122.96%;
+      height: 128.51%;
+      max-width: none;
+    }
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(4px);
+    width: 100%;
+  }
+
+  &__title {
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(14px);
+    line-height: pxToRem(20px);
+    font-weight: var(--sds-fw-semi-bold);
+  }
+
+  &__description {
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(12px);
+    line-height: pxToRem(18px);
+    font-weight: var(--sds-fw-regular);
+  }
+}
+
+// Figma paints the light card with this raw hex, not a token; the dark card
+// has no fill. The circle is Blue/03 in light and Blue/02 in dark.
+.sds-theme-light .HomeEmptyState {
+  background-color: #f5f7f9;
+
+  .HomeEmptyState__icon {
+    background-color: var(--sds-clr-lilac-03);
+  }
+
+  .HomeEmptyState__sparkle__dark {
+    display: none;
+  }
+}
+
+.sds-theme-dark .HomeEmptyState {
+  .HomeEmptyState__icon {
+    background-color: var(--sds-clr-lilac-02);
+  }
+
+  .HomeEmptyState__sparkle__light {
+    display: none;
+  }
+}

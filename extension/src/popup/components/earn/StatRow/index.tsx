@@ -1,5 +1,4 @@
 import React from "react";
-import { Text } from "@stellar/design-system";
 
 import "./styles.scss";
 
@@ -26,9 +25,7 @@ export const StatRow = ({
   testId,
 }: StatRowProps) => (
   <div className="EarnStatRow">
-    <Text as="div" size="sm">
-      {label}
-    </Text>
+    <div className="EarnStatRow__label">{label}</div>
     <div
       className={`EarnStatRow__value ${
         isPositive ? "EarnStatRow__value--positive" : ""

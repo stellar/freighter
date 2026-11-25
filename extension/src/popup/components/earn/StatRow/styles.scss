@@ -1,24 +1,28 @@
 @use "../../../styles/utils.scss" as *;
 
+// Rows repeat every 44px in the design: 20px lines with 12px on either side of
+// a 1px divider. The card around them supplies the 12/16 padding.
 .EarnStatRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: pxToRem(12);
-  padding: pxToRem(14) 0;
+  @include text(sm, medium);
   color: var(--sds-clr-gray-11);
 
   & + & {
+    margin-top: pxToRem(12);
+    padding-top: pxToRem(12);
     border-top: 1px solid var(--sds-clr-gray-06);
   }
 
   &__value {
     color: var(--sds-clr-gray-12);
-    font-weight: 500;
     text-align: right;
 
     &--positive {
       color: var(--sds-clr-green-11);
+      font-weight: 600;
     }
   }
 }

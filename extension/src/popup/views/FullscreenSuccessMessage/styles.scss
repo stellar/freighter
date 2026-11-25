@@ -92,7 +92,7 @@
       &__logo {
         display: flex;
         align-items: center;
-        img {
+        svg {
           width: #{pxToRem(24px)};
           height: #{pxToRem(24px)};
         }

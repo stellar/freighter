@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Button, Icon, Text } from "@stellar/design-system";
 import { Horizon } from "stellar-sdk";
 
+import { SheetLayout } from "popup/components/SheetLayout";
 import StellarLogo from "popup/assets/stellar-logo.png";
 
 import { emitMetric } from "helpers/metrics";
@@ -347,67 +348,68 @@ export const TransactionDetail = ({
     );
   };
 
-  return (
-    <div
-      className="TransactionDetailModal"
-      data-testid="TransactionDetailModal"
+  // Pinned under the scrolling detail, like mobile's history sheet.
+  const explorerButton = !isCustomNetwork(networkDetails) ? (
+    <Button
+      size="lg"
+      variant="secondary"
+      isFullWidth
+      isRounded
+      onClick={() => {
+        emitMetric(METRIC_NAMES.historyItemOpened, {
+          source: "transaction_detail",
+        });
+        openTab(`${stellarExpertUrl}/op/${activeOperation.id}`);
+      }}
+      icon={<Icon.LinkExternal01 />}
+      iconPosition="right"
     >
-      {renderBody(activeOperation)}
-      <div className="TransactionDetailModal__metadata">
-        <div className="Metadata">
-          <div className="Metadata__label">
-            <Icon.ClockCheck />
-            {t("Status")}
-          </div>
-          <div
-            className={`Metadata__value ${activeOperation.metadata.transactionFailed ? "failed" : "success"}`}
-            data-testid="TransactionDetailModal__status"
-          >
-            {activeOperation.metadata.transactionFailed
-              ? t("Failed")
-              : t("Success")}
-          </div>
-        </div>
-        <div className="Metadata">
-          <div className="Metadata__label">
-            <Icon.Route />
-            {t("Fee")}
-          </div>
-          <div className="Metadata__value">
-            {stroopToXlm(feeCharged as string).toString()} XLM
-          </div>
-        </div>
-        {/* Hide memo row when memo is disabled (e.g., for all M addresses) */}
-        {!isMemoDisabled && (
-          <div className="Metadata Metadata--memo">
+      {t("View on")} stellar.expert
+    </Button>
+  ) : undefined;
+
+  return (
+    <SheetLayout data-testid="TransactionDetailModal" footer={explorerButton}>
+      <div className="TransactionDetailModal">
+        {renderBody(activeOperation)}
+        <div className="TransactionDetailModal__metadata">
+          <div className="Metadata">
             <div className="Metadata__label">
-              <Icon.File02 />
-              {t("Memo")}
+              <Icon.ClockCheck />
+              {t("Status")}
             </div>
-            <div className="Metadata__value Metadata__value--memo">
-              <TruncatedMemo memo={memo} className="Metadata__memo" />
+            <div
+              className={`Metadata__value ${activeOperation.metadata.transactionFailed ? "failed" : "success"}`}
+              data-testid="TransactionDetailModal__status"
+            >
+              {activeOperation.metadata.transactionFailed
+                ? t("Failed")
+                : t("Success")}
             </div>
           </div>
-        )}
+          <div className="Metadata">
+            <div className="Metadata__label">
+              <Icon.Route />
+              {t("Fee")}
+            </div>
+            <div className="Metadata__value">
+              {stroopToXlm(feeCharged as string).toString()} XLM
+            </div>
+          </div>
+          {/* Hide memo row when memo is disabled (e.g., for all M addresses) */}
+          {!isMemoDisabled && (
+            <div className="Metadata Metadata--memo">
+              <div className="Metadata__label">
+                <Icon.File02 />
+                {t("Memo")}
+              </div>
+              <div className="Metadata__value Metadata__value--memo">
+                <TruncatedMemo memo={memo} className="Metadata__memo" />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-      {!isCustomNetwork(networkDetails) ? (
-        <Button
-          size="lg"
-          variant="secondary"
-          isFullWidth
-          isRounded
-          onClick={() => {
-            emitMetric(METRIC_NAMES.historyItemOpened, {
-              source: "transaction_detail",
-            });
-            openTab(`${stellarExpertUrl}/op/${activeOperation.id}`);
-          }}
-          icon={<Icon.LinkExternal01 />}
-          iconPosition="right"
-        >
-          {t("View on")} stellar.expert
-        </Button>
-      ) : null}
-    </div>
+    </SheetLayout>
   );
 };

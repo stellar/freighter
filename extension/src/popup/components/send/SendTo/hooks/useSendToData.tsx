@@ -10,8 +10,12 @@ import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { loadRecentAddresses } from "@shared/api/internal";
 import { getBaseAccount } from "popup/helpers/account";
-import { isFederationAddress, isMainnet, isSameAccount } from "helpers/stellar";
-import { isContractId } from "popup/helpers/soroban";
+import {
+  isContractDestination,
+  isFederationAddress,
+  isMainnet,
+  isSameAccount,
+} from "helpers/stellar";
 import {
   AppDataType,
   NeedsReRoute,
@@ -125,7 +129,7 @@ function useSendToData() {
         } as ResolvedSendToData;
 
         let destinationAccount = await getBaseAccount(validatedAddress);
-        if (destinationAccount && !isContractId(destinationAccount)) {
+        if (destinationAccount && !isContractDestination(destinationAccount)) {
           const destinationBalances = await fetchBalances(
             destinationAccount,
             _isMainnet,

@@ -1,12 +1,21 @@
-import React, { useLayoutEffect, useRef, useState } from "react";
-import { Button, Icon } from "@stellar/design-system";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { AssetIcon } from "popup/components/account/AccountAssets";
+import { Shimmer } from "popup/components/Shimmer";
 import { AssetIcons } from "@shared/api/types";
+import { isNativeAssetPair } from "@shared/helpers/assetIdentity";
 import { SecurityLevel } from "popup/constants/blockaid";
 import { InputType } from "helpers/transaction";
 import { formatAmountPreserveCursor } from "popup/helpers/formatters";
+import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 
 import "./styles.scss";
@@ -33,14 +42,8 @@ export interface AmountCardProps {
   hasUsdPrice?: boolean;
   fiatLineText: string;
   isAmountTooHigh: boolean;
-  /**
-   * How an over-limit amount is shown. "message" (the default) keeps the inline
-   * "Insufficient balance…" row. "amount" turns the amount itself red and leaves
-   * the card's height alone, which is what the Earn deposit design specifies —
-   * there the CTA already reads "Insufficient funds", so the row would only say
-   * it twice.
-   */
-  invalidAmountStyle?: "message" | "amount";
+  /** Shows a placeholder instead of the amount and fiat line. */
+  isAmountLoading?: boolean;
   /** Pre-formatted max-spendable amount shown in the insufficient-balance
    * error (e.g. "123.23"); the token code is taken from assetCode. */
   maxSpendableText?: string;
@@ -60,7 +63,8 @@ export interface AmountCardProps {
    * (e.g. the swap CTA disables itself while the sell input is focused). */
   onInputFocus?: () => void;
   onInputBlur?: () => void;
-  cryptoDecimals: number;
+  /** Input precision; a read-only card never uses it. */
+  cryptoDecimals?: number;
   onAmountChange: (next: { amount: string; newCursor: number }) => void;
   onAmountUsdChange: (next: { amount: string; newCursor: number }) => void;
   onToggleInputType: () => void;
@@ -84,7 +88,7 @@ export const AmountCard = ({
   hasUsdPrice = true,
   fiatLineText,
   isAmountTooHigh,
-  invalidAmountStyle = "message",
+  isAmountLoading = false,
   maxSpendableText = "",
   isAssetLocked = false,
   isReadOnly = false,
@@ -92,7 +96,7 @@ export const AmountCard = ({
   amountInputRef,
   onInputFocus,
   onInputBlur,
-  cryptoDecimals,
+  cryptoDecimals = CLASSIC_ASSET_DECIMALS,
   onAmountChange,
   onAmountUsdChange,
   onToggleInputType,
@@ -110,21 +114,37 @@ export const AmountCard = ({
   const [inputWidthCrypto, setInputWidthCrypto] = useState(0);
   const [inputWidthFiat, setInputWidthFiat] = useState(0);
 
+  const measureInputs = useCallback(() => {
+    if (cryptoSpanRef.current) {
+      setInputWidthCrypto(cryptoSpanRef.current.offsetWidth + 2);
+    }
+    if (fiatSpanRef.current) {
+      setInputWidthFiat(fiatSpanRef.current.offsetWidth + 4);
+    }
+  }, []);
+
   // Re-measure on font-class changes too (not just value changes): the
   // read-only receive card's inputType flips from the sell card's toggle
   // without its own value changing, so a font-size-bucket change would
   // otherwise leave a stale width and clip the value.
   useLayoutEffect(() => {
-    if (cryptoSpanRef.current) {
-      setInputWidthCrypto(cryptoSpanRef.current.offsetWidth + 2);
-    }
-  }, [amount, amountFontSizeClass]);
+    measureInputs();
+  }, [amount, amountUsd, amountFontSizeClass, measureInputs]);
 
-  useLayoutEffect(() => {
-    if (fiatSpanRef.current) {
-      setInputWidthFiat(fiatSpanRef.current.offsetWidth + 4);
-    }
-  }, [amountUsd, amountFontSizeClass]);
+  // And again whenever a mirror's size changes. Under a `display: none`
+  // ancestor a mirror measures 0, so a value that changes there sizes the
+  // input to nothing: Earn keeps its deposit screen mounted but hidden while a
+  // swap resets the amount, and the screen came back with its "0" clipped to a
+  // sliver until the next keystroke. Being shown again resizes the mirrors.
+  useEffect(() => {
+    const observer = new ResizeObserver(measureInputs);
+    [cryptoSpanRef.current, fiatSpanRef.current].forEach((span) => {
+      if (span) {
+        observer.observe(span);
+      }
+    });
+    return () => observer.disconnect();
+  }, [measureInputs]);
 
   const isSuspicious =
     securityLevel === SecurityLevel.MALICIOUS ||
@@ -136,7 +156,9 @@ export const AmountCard = ({
   const assetPill = (
     <>
       <AssetIcon
-        assetIcons={assetIssuerKey || assetCode !== "XLM" ? assetIcons : {}}
+        assetIcons={
+          !isNativeAssetPair(assetCode, assetIssuerKey) ? assetIcons : {}
+        }
         code={assetCode}
         issuerKey={assetIssuerKey}
         icon={assetIcon}
@@ -147,11 +169,7 @@ export const AmountCard = ({
     </>
   );
 
-  const isAmountShownInvalid =
-    isAmountTooHigh && invalidAmountStyle === "amount";
-  const fontClass = `AmountCard__input-amount AmountCard__${amountFontSizeClass}${
-    isAmountShownInvalid ? " AmountCard__input-amount--invalid" : ""
-  }`;
+  const fontClass = `AmountCard__input-amount AmountCard__${amountFontSizeClass}`;
 
   return (
     <div className="AmountCard">
@@ -190,7 +208,14 @@ export const AmountCard = ({
           >
             {amountUsd || "0"}
           </span>
-          {inputType === "crypto" && (
+          {isAmountLoading && (
+            <Shimmer
+              width="6rem"
+              height="1.5rem"
+              data-testid="amount-card-amount-loading"
+            />
+          )}
+          {!isAmountLoading && inputType === "crypto" && (
             <input
               ref={inputRef}
               className={fontClass}
@@ -223,7 +248,8 @@ export const AmountCard = ({
               autoComplete="off"
             />
           )}
-          {inputType === "fiat" &&
+          {!isAmountLoading &&
+            inputType === "fiat" &&
             (hasUsdPrice ? (
               <>
                 <div
@@ -287,12 +313,12 @@ export const AmountCard = ({
             {assetCode ? (
               <>
                 {assetPill}
-                <Icon.ChevronDown />
+                <Icon.ChevronRight />
               </>
             ) : (
               <>
                 <span className="AmountCard__asset-code">{t("Select")}</span>
-                <Icon.ChevronDown />
+                <Icon.ChevronRight />
               </>
             )}
           </button>
@@ -303,16 +329,20 @@ export const AmountCard = ({
           no value); only the input-type toggle depends on a usable USD price. */}
       <div className="AmountCard__balance-row">
         <div className="AmountCard__amount-price">
-          {fiatLineText}
+          {isAmountLoading ? (
+            <Shimmer width="3.5rem" height="0.875rem" />
+          ) : (
+            fiatLineText
+          )}
           {/* Read-only cards (e.g. the swap "You receive" card) show the fiat
               value but cannot toggle input type, so omit the toggle. The toggle
               also needs a usable USD price. */}
           {!isReadOnly && supportsUsd && (
-            <Button
-              size="md"
+            // A plain button: the design's 16px chip is smaller than any SDS
+            // Button size.
+            <button
               type="button"
-              isRounded
-              variant="tertiary"
+              className="AmountCard__fiat-toggle"
               data-testid="amount-fiat-toggle"
               // Do not take focus from the amount input. Pressing this fires a
               // blur that a parent tracking focus reads as the user leaving the
@@ -326,13 +356,13 @@ export const AmountCard = ({
                 onToggleInputType();
               }}
             >
-              <Icon.RefreshCw03 />
-            </Button>
+              <Icon.SwitchVertical01 />
+            </button>
           )}
         </div>
       </div>
 
-      {isAmountTooHigh && invalidAmountStyle === "message" && (
+      {isAmountTooHigh && (
         <div className="AmountCard__invalid-state">
           <Icon.AlertCircle />
           <span>

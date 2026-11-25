@@ -156,4 +156,26 @@ describe("useGetCollectibles cache filtering", () => {
     });
     expect(payload).toEqual({ collections: apiCollections });
   });
+
+  it("resolves with the error when the request fails, so callers can tell it from owning none", async () => {
+    hasValidCacheMock.mockReturnValue(false);
+    getCollectiblesMock.mockResolvedValue({ error: "boom" } as any);
+
+    const { Wrapper } = buildWrapper();
+    const { result } = renderHook(() => useGetCollectibles(), {
+      wrapper: Wrapper,
+    });
+
+    let payload: any;
+    await act(async () => {
+      payload = await result.current.fetchData({
+        publicKey: TEST_PUBLIC_KEY,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      });
+    });
+
+    expect(payload.collections).toEqual([]);
+    expect(payload.error).toBeInstanceOf(Error);
+    expect(fetchCollectiblesMock).not.toHaveBeenCalled();
+  });
 });

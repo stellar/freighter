@@ -4,10 +4,12 @@
  * Covers:
  *  1. Entry point + first-run interstitial, then skipped on re-entry
  *  2. Token picker: held vs supported sections, APY badges
- *  3. "Not enough X" sheet — EURC (swap/transfer, no Buy: not Coinbase-listed)
- *  4. "Not enough X" sheet — USDC (buy + swap + transfer)
+ *  3. "Not enough X" sheet — EURC (swap/receive, no Buy: not Coinbase-listed),
+ *     and the Receive sheet it opens in place
+ *  4. "Not enough X" sheet — USDC (buy + swap + transfer); Buy opens Add Funds
+ *     on USDC, and its X returns to the picker
  *  5. Held-token happy path: Max bounces off the fee guard, then a smaller
- *     amount -> review -> confirm -> Deposited!
+ *     amount -> review -> confirm -> Deposit complete
  *  6. Pool details sheet, including its Backstop row
  *  7. Earn tile hidden on a custom network with no allowlisted pool
  *
@@ -45,6 +47,8 @@
  *  - earn-apy-<CODE>           EarnTokenPicker/index.tsx
  *  - earn-not-enough-sheet     NotEnoughTokenSheet.tsx
  *  - earn-not-enough-{buy,swap,transfer}
+ *  - earn-receive-sheet        EarnReceiveSheet/index.tsx
+ *  - earn-receive-back         EarnReceiveSheet/index.tsx
  *  - earn-amount               EarnAmount/index.tsx
  *  - earn-amount-btn-continue  EarnAmount/index.tsx
  *  - earn-pool-card            EarnAmount/PoolCard.tsx
@@ -61,7 +65,12 @@
 import { test, expect } from "./test-fixtures";
 import { Page } from "@playwright/test";
 import { loginToTestAccount, switchToMainnet } from "./helpers/login";
-import { stubBlendEarn, stubEarnSimulateTx } from "./helpers/stubs";
+import { expectHomeReady, goToSettings } from "./helpers/network";
+import {
+  stubBlendEarn,
+  stubEarnDepositFlag,
+  stubEarnSimulateTx,
+} from "./helpers/stubs";
 
 /** Home -> Earn, through the first-run interstitial. */
 async function openEarnFlow(page: Page) {
@@ -81,6 +90,7 @@ test("Earn tile opens the interstitial once, then goes straight to the picker", 
 }) => {
   test.slow();
 
+  await stubEarnDepositFlag(context);
   await loginToTestAccount({
     page,
     extensionId,
@@ -121,6 +131,7 @@ test("token picker splits held from supported and shows each rate", async ({
 }) => {
   test.slow();
 
+  await stubEarnDepositFlag(context);
   await loginToTestAccount({
     page,
     extensionId,
@@ -131,14 +142,12 @@ test("token picker splits held from supported and shows each rate", async ({
   await openEarnFlow(page);
 
   // The test account holds only XLM, so XLM is the sole held row and the other
-  // two reserves fall into "Other supported assets" — the heading only reads
-  // "Supported tokens" when nothing is held, where there is no "other" to be
-  // other than. Scoped to the picker: the Earn view keeps every visited step
-  // mounted, and the intro and the picker now share a subtitle, so an unscoped
-  // getByText would match both screens.
+  // two reserves fall under "Supported tokens". Scoped to the picker: the Earn
+  // view keeps every visited step mounted, so an unscoped getByText could match
+  // another screen.
   const picker = page.getByTestId("earn-token-picker");
   await expect(picker.getByText("In your wallet")).toBeVisible();
-  await expect(picker.getByText("Other supported assets")).toBeVisible();
+  await expect(picker.getByText("Supported tokens")).toBeVisible();
 
   await expect(page.getByTestId("earn-token-row-XLM")).toBeVisible();
   await expect(page.getByTestId("earn-token-row-USDC")).toBeVisible();
@@ -148,10 +157,20 @@ test("token picker splits held from supported and shows each rate", async ({
   await expect(page.getByTestId("earn-apy-EURC")).toContainText("10.59%");
 
   await expect(
-    picker.getByText("APY may change based on protocol conditions.", {
+    picker.getByText("APY is variable and subject to change.", {
       exact: false,
     }),
   ).toBeVisible();
+
+  // The XLM row shows the spendable XLM, the figure the deposit screen offers,
+  // not the balance with the minimum balance in it.
+  const xlmRow = page.getByTestId("earn-token-row-XLM");
+  await expect(xlmRow).not.toContainText("10,000 XLM");
+  const rowAmount = (await xlmRow.innerText()).match(/[\d,.]+ XLM/)![0];
+  await xlmRow.click();
+  await expect(
+    page.getByTestId("earn-amount").locator(".AmountCard__available-balance"),
+  ).toContainText(`${rowAmount} available`);
 });
 
 // ---------------------------------------------------------------------------
@@ -164,6 +183,7 @@ test("zero-balance EURC offers swap and transfer but not buy", async ({
 }) => {
   test.slow();
 
+  await stubEarnDepositFlag(context);
   await loginToTestAccount({
     page,
     extensionId,
@@ -178,9 +198,19 @@ test("zero-balance EURC offers swap and transfer but not buy", async ({
   const sheet = page.getByTestId("earn-not-enough-sheet");
   await expect(sheet).toBeVisible();
   await expect(sheet).toContainText("Not enough EURC");
+  await expect(sheet).toContainText("Swap or transfer EURC to continue.");
   await expect(page.getByTestId("earn-not-enough-swap")).toBeVisible();
   await expect(page.getByTestId("earn-not-enough-transfer")).toBeVisible();
   await expect(page.getByTestId("earn-not-enough-buy")).toBeHidden();
+
+  // Receive takes over the sheet, and its back arrow returns to it.
+  await page.getByTestId("earn-not-enough-transfer").click();
+  await expect(page.getByTestId("earn-receive-sheet")).toBeVisible();
+  await expect(page.getByTestId("earn-receive-sheet")).toContainText(
+    "This address supports Stellar network.",
+  );
+  await page.getByTestId("earn-receive-back").click();
+  await expect(page.getByTestId("earn-not-enough-sheet")).toBeVisible();
 });
 
 // ---------------------------------------------------------------------------
@@ -193,6 +223,7 @@ test("zero-balance USDC offers buy, swap and transfer", async ({
 }) => {
   test.slow();
 
+  await stubEarnDepositFlag(context);
   await loginToTestAccount({
     page,
     extensionId,
@@ -207,9 +238,21 @@ test("zero-balance USDC offers buy, swap and transfer", async ({
   await expect(page.getByTestId("earn-not-enough-sheet")).toContainText(
     "Not enough USDC",
   );
+  await expect(page.getByTestId("earn-not-enough-sheet")).toContainText(
+    "Swap, buy or transfer USDC to continue.",
+  );
   await expect(page.getByTestId("earn-not-enough-buy")).toBeVisible();
   await expect(page.getByTestId("earn-not-enough-swap")).toBeVisible();
   await expect(page.getByTestId("earn-not-enough-transfer")).toBeVisible();
+
+  // Buy goes through Add Funds, as on mobile, and closing it comes back to
+  // Earn's picker.
+  await page.getByTestId("earn-not-enough-buy").click();
+  await expect(page.getByTestId("add-coinbase-button")).toBeVisible();
+  await expect(page).toHaveURL(/add-funds\?token=USDC/);
+  await page.getByTestId("BackButton").click();
+  await expect(page.getByTestId("earn-token-picker")).toBeVisible();
+  await expect(page.getByTestId("earn-not-enough-sheet")).toBeHidden();
 });
 
 // ---------------------------------------------------------------------------
@@ -222,6 +265,7 @@ test("depositing a held token reaches the success screen", async ({
 }) => {
   test.slow();
 
+  await stubEarnDepositFlag(context);
   await loginToTestAccount({
     page,
     extensionId,
@@ -274,7 +318,7 @@ test("depositing a held token reaches the success screen", async ({
   await expect(page.getByTestId("earn-submit-done")).toBeVisible({
     timeout: 30000,
   });
-  await expect(page.getByText("Deposited!")).toBeVisible();
+  await expect(page.getByText("Deposit complete")).toBeVisible();
 });
 
 // ---------------------------------------------------------------------------
@@ -287,6 +331,7 @@ test("pool details sheet shows market stats including Backstop", async ({
 }) => {
   test.slow();
 
+  await stubEarnDepositFlag(context);
   await loginToTestAccount({
     page,
     extensionId,
@@ -301,10 +346,10 @@ test("pool details sheet shows market stats including Backstop", async ({
 
   const sheet = page.getByTestId("earn-pool-details-sheet");
   await expect(sheet).toBeVisible();
-  await expect(page.getByTestId("earn-pool-interest-apy")).toContainText(
-    "4.24%",
+  // The rate the deposited token earns: XLM's, picked above.
+  await expect(page.getByTestId("earn-pool-deposit-apy")).toContainText(
+    "0.02%",
   );
-  await expect(page.getByTestId("earn-pool-net-apy")).toContainText("16.94%");
   await expect(page.getByTestId("earn-pool-supplied")).toContainText("$50.05M");
   await expect(page.getByTestId("earn-pool-borrowed")).toContainText("$16.15M");
 
@@ -313,7 +358,7 @@ test("pool details sheet shows market stats including Backstop", async ({
   // unavailable.
   await expect(page.getByTestId("earn-pool-backstop")).toContainText("$1.53M");
 
-  await expect(page.getByTestId("earn-pool-docs-link")).toBeVisible();
+  await expect(page.getByTestId("earn-pool-app-link")).toBeVisible();
 });
 
 // ---------------------------------------------------------------------------
@@ -329,6 +374,7 @@ test("Earn tile is hidden on a custom network with no allowlisted pool", async (
   // Both stock networks the selector offers — Testnet (where login lands) and
   // Mainnet — have a BLEND_FIXED_POOL_IDS entry, so neither exercises the gate.
   // A custom network is the only reachable one without an allowlisted pool.
+  await stubEarnDepositFlag(context);
   await loginToTestAccount({
     page,
     extensionId,
@@ -338,9 +384,8 @@ test("Earn tile is hidden on a custom network with no allowlisted pool", async (
 
   await expect(page.getByTestId("nav-link-earn")).toBeVisible();
 
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
-  await page.getByText("Network").click();
+  await goToSettings(page);
+  await page.getByTestId("settings-network-link").click();
   await page.getByText("Add custom network").click();
   await page.getByTestId("NetworkForm__networkName").fill("test standalone");
   await page
@@ -353,22 +398,20 @@ test("Earn tile is hidden on a custom network with no allowlisted pool", async (
     .getByTestId("NetworkForm__networkPassphrase")
     .fill("Test SDF Network ; September 2015");
   await page.getByTestId("NetworkForm__add").click();
-  await page.getByTestId("BackButton").click();
-  await page.getByTestId("BackButton").click();
-
-  await expect(page.getByTestId("account-view")).toBeVisible({
-    timeout: 30000,
-  });
 
   // Adding a network does not select it, so switch to it explicitly — the tile
   // is gated on the ACTIVE network, and without this the account is still on
-  // Testnet, which does have an allowlisted pool.
-  await page.getByTestId("network-selector-open").click();
-  await page.getByText("test standalone").click();
-  await expect(page.getByTestId("network-selector-open")).toContainText(
-    "test standalone",
-    { timeout: 30000 },
-  );
+  // Testnet, which does have an allowlisted pool. The form returns to Network
+  // settings, whose select is the only place that names the active network.
+  const networkSelect = page.getByTestId("network-settings-select");
+  await networkSelect.selectOption("test standalone");
+  await expect(networkSelect).toHaveValue("test standalone");
+
+  // Back out to Home: Network -> Settings -> Home.
+  await page.getByTestId("BackButton").click();
+  await expect(page.getByTestId("settings-network-link")).toBeVisible();
+  await page.getByTestId("BackButton").click();
+  await expectHomeReady(page);
 
   // Send stays available everywhere, so it pins that the action row rendered at
   // all — otherwise a blank row would satisfy the Earn assertion on its own.

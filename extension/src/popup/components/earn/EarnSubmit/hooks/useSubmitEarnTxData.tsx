@@ -1,18 +1,42 @@
 import { useReducer } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { captureException } from "@sentry/browser";
+import BigNumber from "bignumber.js";
 
 import { ErrorMessage } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { AppDispatch } from "popup/App";
-import { initialState, isError, reducer } from "helpers/request";
-import { isMainnet } from "helpers/stellar";
+import { initialState, reducer } from "helpers/request";
 import {
+  getAssetFromCanonical,
+  getCanonicalFromAsset,
+  isMainnet,
+} from "helpers/stellar";
+import {
+  buildSourceLegUsdProps,
+  classifyAssetIdentity,
+  getFailureCategory,
+  pickReasonCode,
+} from "helpers/usdVolume";
+import {
+  ConfirmationSnapshotHandle,
+  startConfirmationPriceSnapshot,
+} from "helpers/confirmationPriceSnapshot";
+import { balancesSelector, tokenPricesSelector } from "popup/ducks/cache";
+import { getResultCodes } from "popup/helpers/parseTransaction";
+import {
+  EarnDepositVolume,
   trackEarnDepositCompleted,
   trackEarnDepositFailed,
 } from "popup/metrics/earn";
 import { getFailureReasonCode } from "popup/components/earn/helpers/failureReasonCode";
-import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
+import {
+  emitSigningApproved,
+  emitSigningFailed,
+  SigningKind,
+  SigningSource,
+} from "popup/metrics/signing";
+import { useGetBalances } from "helpers/hooks/useGetBalances";
 import {
   signFreighterSorobanTransaction,
   submitFreighterSorobanTransaction,
@@ -51,12 +75,18 @@ interface SubmitEarnTxData {
  * The Earn view's effect still owns failures that happen before the flow reaches
  * this screen (a device-rejected signature at review) and still owns the UI
  * response to a failure; it skips its own emit while this step is active.
+ *
+ * An outcome the network returned carries the deposit's USD volume, measured
+ * as Send measures a payment's: one price fetch, started once signing has
+ * succeeded and right before the submit, falling back to the display cache.
  */
 export function useSubmitEarnTxData({
   isHardwareWallet,
   networkDetails,
   publicKey,
   xdr,
+  asset,
+  amount,
   assetCode,
   poolId,
   apy,
@@ -66,6 +96,10 @@ export function useSubmitEarnTxData({
   networkDetails: NetworkDetails;
   publicKey: string;
   xdr: string;
+  /** The deposited token, as a canonical id. */
+  asset: string;
+  /** The amount Review showed and Confirm signed. */
+  amount: string;
   assetCode: string;
   poolId: string;
   apy: number | null;
@@ -73,6 +107,8 @@ export function useSubmitEarnTxData({
 }) {
   const reduxDispatch = useDispatch<AppDispatch>();
   const { transactionSimulation } = useSelector(transactionSubmissionSelector);
+  const allBalancesCache = useSelector(balancesSelector);
+  const allTokenPricesCache = useSelector(tokenPricesSelector);
   // Read directly rather than added as a prop, so EarnSubmit itself needs no
   // change to hand it through.
   const { source } = useSelector(earnSelector);
@@ -85,17 +121,41 @@ export function useSubmitEarnTxData({
     includeIcons: false,
   });
 
-  const trackDepositFailed = (error: ErrorMessage | undefined) =>
+  const trackDepositFailed = (
+    error: ErrorMessage | undefined,
+    volume?: EarnDepositVolume,
+  ) =>
     trackEarnDepositFailed({
       assetCode,
       poolId,
       reasonCode: getFailureReasonCode(error),
       source,
+      // The category reads result codes only, as payment.failed's does:
+      // reason_code can fall back to the error's text.
+      volume: volume && {
+        ...volume,
+        failureCategory: getFailureCategory(
+          error,
+          pickReasonCode(getResultCodes(error)),
+        ),
+      },
     });
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
+    // Declared outside the try so the catch can drop the price fetch.
+    let snapshotHandle: ConfirmationSnapshotHandle | null = null;
     try {
+      // The deposited token, classified as a payment's source is.
+      const sourceAsset = getAssetFromCanonical(asset);
+      const identity = classifyAssetIdentity(
+        sourceAsset.code,
+        sourceAsset.issuer,
+        networkDetails.networkPassphrase,
+        allBalancesCache[networkDetails.network]?.[publicKey]?.balances ?? null,
+      );
+      const canonicalId = getCanonicalFromAsset(identity.code, identity.issuer);
+
       let signedXDR = transactionSimulation.preparedTransaction || xdr;
 
       if (!isHardwareWallet) {
@@ -115,17 +175,41 @@ export function useSubmitEarnTxData({
           // submitStatus to ERROR and the flow has already stepped back to the
           // amount screen, so the late submit rejection would report a second
           // earn.deposit_failed for one attempt.
-          trackDepositFailed(
-            signFreighterSorobanTransaction.rejected.match(res)
-              ? res.payload
-              : undefined,
+          const signingError = signFreighterSorobanTransaction.rejected.match(
+            res,
+          )
+            ? res.payload
+            : undefined;
+          // The signature failing is always a fault: the user already
+          // approved on the review, as on Send and Swap.
+          emitSigningFailed(
+            SigningKind.Transaction,
+            signingError?.errorMessage,
+            {
+              source: SigningSource.Internal,
+            },
           );
+          trackDepositFailed(signingError);
           dispatch({ type: "FETCH_DATA_ERROR", payload: res.payload });
           return res.payload;
         }
 
         signedXDR = res.payload.signedTransaction;
+        // The same event a dApp request and Send and Swap report; `source`
+        // separates them. Software keys only: the HardwareSign overlay reports
+        // a device's signature itself.
+        emitSigningApproved(SigningKind.Transaction, {
+          source: SigningSource.Internal,
+        });
       }
+
+      snapshotHandle = startConfirmationPriceSnapshot({
+        canonicalIds: [canonicalId],
+        networkDetails,
+        cachedDisplayPrices:
+          allTokenPricesCache[networkDetails.networkPassphrase]?.[publicKey] ??
+          null,
+      });
 
       const submitResp = await reduxDispatch(
         submitFreighterSorobanTransaction({
@@ -135,11 +219,24 @@ export function useSubmitEarnTxData({
         }),
       );
 
+      // Frozen for whichever outcome event fires.
+      const snapshot = snapshotHandle.resolve();
+      const volume: EarnDepositVolume = {
+        identity,
+        amount: new BigNumber(amount || 0).toNumber(),
+        usdProps: buildSourceLegUsdProps(
+          amount,
+          snapshot.pricesById?.[canonicalId]?.currentPrice,
+          snapshot,
+        ).usdProps,
+      };
+
       if (!submitFreighterSorobanTransaction.fulfilled.match(submitResp)) {
         trackDepositFailed(
           submitFreighterSorobanTransaction.rejected.match(submitResp)
             ? submitResp.payload
             : undefined,
+          volume,
         );
         dispatch({ type: "FETCH_DATA_ERROR", payload: submitResp.payload });
         return submitResp.payload;
@@ -151,23 +248,23 @@ export function useSubmitEarnTxData({
         apy,
         viaSwap,
         source,
+        volume,
       });
 
       // The deposit moved funds out of the account, so refresh balances. A
-      // failure here does not affect the deposit itself — log and move on
-      // rather than reporting a successful submission as an error.
-      const balancesResult = await fetchBalances(
-        publicKey,
-        isMainnet(networkDetails),
-        networkDetails,
-        false,
-      );
-
-      if (isError<AccountBalances>(balancesResult)) {
+      // failure here does not affect the deposit itself, so it is caught here
+      // and logged: the fetch throws, and reaching the outer catch would leave
+      // a confirmed deposit on the in-flight screen.
+      try {
+        await fetchBalances(
+          publicKey,
+          isMainnet(networkDetails),
+          networkDetails,
+          false,
+        );
+      } catch (error) {
         captureException(
-          `Failed to fetch balances after earn deposit - ${JSON.stringify(
-            balancesResult.message,
-          )} ${networkDetails.network}`,
+          `Failed to fetch balances after earn deposit - ${error} ${networkDetails.network}`,
         );
       }
 
@@ -175,6 +272,8 @@ export function useSubmitEarnTxData({
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
+      // Idempotent and safe after resolve().
+      snapshotHandle?.cancel();
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
       return error;
     }

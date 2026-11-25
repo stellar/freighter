@@ -1,5 +1,6 @@
 import { loginToTestAccount } from "./helpers/login";
 import { test, expect } from "./test-fixtures";
+import { goToSettings } from "./helpers/network";
 
 test("Login shows error state on bad password", async ({
   page,
@@ -8,8 +9,7 @@ test("Login shows error state on bad password", async ({
 }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId, context });
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
+  await goToSettings(page);
   await page.getByText("Log Out").click();
   await expect(page.getByText("Welcome back")).toBeVisible();
   await page.locator("#password-input").fill("wrong");
@@ -24,8 +24,7 @@ test("Password input is auto focused on unlock screen", async ({
 }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId, context });
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
+  await goToSettings(page);
   await page.getByText("Log Out").click();
   await expect(page.getByText("Welcome back")).toBeVisible();
   await expect(page.locator("#password-input")).toBeFocused();

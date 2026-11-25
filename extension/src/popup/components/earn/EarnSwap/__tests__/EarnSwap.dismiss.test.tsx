@@ -21,7 +21,10 @@ jest.mock("popup/components/InternalTransaction/SubmitTransaction", () => ({
 }));
 
 jest.mock("popup/components/swap/SwapAmount", () => ({
-  SwapAmount: () => <div data-testid="stub-amount" />,
+  // Its token pill opens the source picker.
+  SwapAmount: ({ goToEditSrc }: { goToEditSrc: () => void }) => (
+    <button type="button" data-testid="stub-amount" onClick={goToEditSrc} />
+  ),
 }));
 
 jest.mock("popup/components/swap/SwapAsset", () => ({
@@ -57,6 +60,7 @@ const renderSheet = ({
       }}
     >
       <EarnSwap
+        sourceAsset="native"
         destinationAsset={USDC}
         destinationTokenDetails={null}
         onDone={onDone}
@@ -90,11 +94,14 @@ describe("EarnSwap dismissal", () => {
       ActionStatus.SUCCESS,
     );
 
-    await userEvent.click(screen.getByTestId("earn-swap-close"));
+    // Escape is one of the sheet's own dismissals, open on every step.
+    await userEvent.keyboard("{Escape}");
 
     // The balance behind the sheet has changed. Treating this as a cancel is
     // what left the picker offering the token at its pre-swap balance.
-    expect(onDone).toHaveBeenCalledWith({ fromCode: "XLM", toCode: "USDC" });
+    expect(onDone).toHaveBeenCalledWith(
+      expect.objectContaining({ fromCode: "XLM", toCode: "USDC" }),
+    );
     expect(onCancel).not.toHaveBeenCalled();
   });
 
@@ -103,9 +110,29 @@ describe("EarnSwap dismissal", () => {
     const onCancel = jest.fn();
     renderSheet({ onDone, onCancel });
 
+    await userEvent.keyboard("{Escape}");
+
+    expect(onCancel).toHaveBeenCalled();
+    expect(onDone).not.toHaveBeenCalled();
+  });
+
+  it("closes the amount step from the X at the top right", async () => {
+    const onDone = jest.fn();
+    const onCancel = jest.fn();
+    renderSheet({ onDone, onCancel });
+
     await userEvent.click(screen.getByTestId("earn-swap-close"));
 
     expect(onCancel).toHaveBeenCalled();
     expect(onDone).not.toHaveBeenCalled();
+  });
+
+  it("steps back from the source picker with its arrow, not an X", async () => {
+    renderSheet({ onDone: jest.fn(), onCancel: jest.fn() });
+
+    await userEvent.click(screen.getByTestId("stub-amount"));
+
+    expect(screen.getByTestId("stub-asset")).toBeInTheDocument();
+    expect(screen.queryByTestId("earn-swap-close")).not.toBeInTheDocument();
   });
 });

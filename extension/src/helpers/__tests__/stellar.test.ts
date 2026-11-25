@@ -1,5 +1,15 @@
 import BigNumber from "bignumber.js";
 import {
+  Account,
+  Asset,
+  Keypair,
+  MuxedAccount,
+  Networks,
+  Operation,
+  TransactionBuilder,
+  xdr,
+} from "stellar-sdk";
+import {
   getTransactionInfo,
   truncatedPublicKey,
   truncateString,
@@ -8,6 +18,12 @@ import {
   encodeSep53Message,
   isSameAccount,
   toSignatureBuffer,
+  getTrustlineChangesForAccount,
+  getFeeSourceAccount,
+  getBaseAccount,
+  isContractDestination,
+  isMuxedContract,
+  isValidStellarAddress,
 } from "../stellar";
 import * as urls from "../urls";
 
@@ -158,13 +174,54 @@ describe("isSameAccount", () => {
     expect(isSameAccount(BASE_G, undefined)).toBe(false);
     expect(isSameAccount("", "")).toBe(false);
   });
+
+  it("never matches a muxed contract (W...) address to a G address", () => {
+    expect(isSameAccount(MUXED_CONTRACT, BASE_G)).toBe(false);
+    expect(isSameAccount(MUXED_CONTRACT, MUXED_CONTRACT)).toBe(true);
+  });
+});
+
+// The SEP-23 test vector: contract CA7QYNF7…UWDA with mux id 0.
+const MUXED_CONTRACT =
+  "WA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUAAAAAAAAAAAAAWWC";
+const BASE_CONTRACT =
+  "CA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUWDA";
+const MUXED_ACCOUNT =
+  "MAJVUHQV535IYW25XBTWTCUXNHLQN4F2PGIPOOX4DDKL2UPNXUHWUAAAAAAAAAAAAGPZI";
+
+describe("muxed contract (W...) addresses", () => {
+  it("recognises a W address as a muxed contract and nothing else", () => {
+    expect(isMuxedContract(MUXED_CONTRACT)).toBe(true);
+    expect(isMuxedContract(BASE_CONTRACT)).toBe(false);
+    expect(isMuxedContract(MUXED_ACCOUNT)).toBe(false);
+  });
+
+  it("treats both C and W addresses as contract destinations", () => {
+    expect(isContractDestination(MUXED_CONTRACT)).toBe(true);
+    expect(isContractDestination(BASE_CONTRACT)).toBe(true);
+    expect(isContractDestination(MUXED_ACCOUNT)).toBe(false);
+  });
+
+  it("accepts a W address as a valid Stellar address", () => {
+    expect(isValidStellarAddress(MUXED_CONTRACT)).toBe(true);
+    // One character off breaks the checksum.
+    expect(isValidStellarAddress(`${MUXED_CONTRACT.slice(0, -1)}A`)).toBe(
+      false,
+    );
+  });
+
+  it("leaves a W address unchanged when extracting the base account", () => {
+    expect(getBaseAccount(MUXED_CONTRACT)).toBe(MUXED_CONTRACT);
+  });
 });
 
 describe("encodeSep53Message", () => {
   test("should encode a simple ascii message", () => {
     const message = "Hello, World!";
     const expected = "1S61nAa7UQ0GWZf/kwdwaO7QpIbCAhW14C4asNLr6l8=";
-    expect(encodeSep53Message(message).toString("base64")).toEqual(expected);
+    expect(xdr.encodeBytes(encodeSep53Message(message), "base64")).toEqual(
+      expected,
+    );
   });
 });
 
@@ -183,5 +240,107 @@ describe("toSignatureBuffer", () => {
     const base64 = signature.toString("base64");
     expect(toSignatureBuffer(base64).toString("base64")).toEqual(base64);
     expect(toSignatureBuffer(signature).toString("base64")).toEqual(base64);
+  });
+});
+
+describe("getTrustlineChangesForAccount", () => {
+  const selected = Keypair.random().publicKey();
+  const other = Keypair.random().publicKey();
+  const issuer = Keypair.random().publicKey();
+  const aqua = new Asset("AQUA", issuer);
+  const usdc = new Asset("USDC", issuer);
+
+  const buildTx = (source: string, ops: xdr.Operation[]) => {
+    const builder = new TransactionBuilder(new Account(source, "1"), {
+      fee: "100",
+      networkPassphrase: Networks.TESTNET,
+    });
+    ops.forEach((op) => builder.addOperation(op));
+    return builder.setTimeout(0).build();
+  };
+
+  it("uses the tx source when the op has no source", () => {
+    const tx = buildTx(selected, [Operation.changeTrust({ asset: aqua })]);
+    expect(getTrustlineChangesForAccount(tx, selected)).toHaveLength(1);
+    expect(getTrustlineChangesForAccount(tx, other)).toHaveLength(0);
+  });
+
+  it("drops the trustline changes of other accounts", () => {
+    const tx = buildTx(selected, [
+      Operation.changeTrust({ asset: aqua }),
+      Operation.changeTrust({ asset: aqua, source: other }),
+      Operation.payment({
+        destination: other,
+        asset: Asset.native(),
+        amount: "1",
+      }),
+    ]);
+    const changes = getTrustlineChangesForAccount(tx, selected);
+    expect(changes).toHaveLength(1);
+    expect(changes[0].source).toBeUndefined();
+
+    const otherChanges = getTrustlineChangesForAccount(tx, other);
+    expect(otherChanges).toHaveLength(1);
+    expect(otherChanges[0].source).toBe(other);
+  });
+
+  it("uses the op source when it differs from the tx source", () => {
+    const tx = buildTx(other, [
+      Operation.changeTrust({ asset: aqua }),
+      Operation.changeTrust({ asset: usdc, source: selected }),
+    ]);
+    const changes = getTrustlineChangesForAccount(tx, selected);
+    expect(changes).toHaveLength(1);
+    expect((changes[0].line as Asset).code).toBe("USDC");
+  });
+
+  it("matches a muxed op source to its base account", () => {
+    const muxed = new MuxedAccount(new Account(selected, "1"), "7").accountId();
+    const tx = buildTx(other, [
+      Operation.changeTrust({ asset: aqua, source: muxed }),
+    ]);
+    expect(getTrustlineChangesForAccount(tx, selected)).toHaveLength(1);
+  });
+
+  it("reads the inner transaction of a fee bump", () => {
+    const inner = buildTx(selected, [
+      Operation.changeTrust({ asset: aqua }),
+      Operation.changeTrust({ asset: usdc, source: other }),
+    ]);
+    const feeBump = TransactionBuilder.buildFeeBumpTransaction(
+      Keypair.random(),
+      "200",
+      inner,
+      Networks.TESTNET,
+    );
+    const changes = getTrustlineChangesForAccount(feeBump, selected);
+    expect(changes).toHaveLength(1);
+    expect((changes[0].line as Asset).code).toBe("AQUA");
+  });
+});
+
+describe("getFeeSourceAccount", () => {
+  const source = Keypair.random().publicKey();
+  const tx = new TransactionBuilder(new Account(source, "1"), {
+    fee: "100",
+    networkPassphrase: Networks.TESTNET,
+  })
+    .addOperation(Operation.bumpSequence({ bumpTo: "2" }))
+    .setTimeout(0)
+    .build();
+
+  it("returns the tx source for a transaction", () => {
+    expect(getFeeSourceAccount(tx)).toBe(source);
+  });
+
+  it("returns the fee source for a fee bump", () => {
+    const feeSource = Keypair.random();
+    const feeBump = TransactionBuilder.buildFeeBumpTransaction(
+      feeSource,
+      "200",
+      tx,
+      Networks.TESTNET,
+    );
+    expect(getFeeSourceAccount(feeBump)).toBe(feeSource.publicKey());
   });
 });

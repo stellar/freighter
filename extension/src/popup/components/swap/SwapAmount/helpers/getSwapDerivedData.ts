@@ -8,7 +8,9 @@ import {
   roundUsdValue,
 } from "popup/helpers/formatters";
 import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
-import { getAssetDecimals, getAvailableBalance } from "popup/helpers/soroban";
+import { isNativeAssetId } from "@shared/helpers/assetIdentity";
+import { getAvailableBalance, isContractId } from "popup/helpers/soroban";
+import { swapIdentityKey } from "popup/helpers/swapQuote";
 import {
   findAssetBalance,
   getBalanceCanonicalKey,
@@ -40,7 +42,6 @@ interface GetSwapDerivedDataParams {
   data: ResolvedSwapAmountData;
   asset: string;
   destinationAsset: string;
-  isToken: boolean;
   destinationAmount: string;
   destinationTokenDetails: DestinationTokenDetails | null;
   /** formik.values.amount */
@@ -48,10 +49,13 @@ interface GetSwapDerivedDataParams {
   /** formik.values.amountUsd */
   amountUsd: string;
   fee: string;
+  /** The fee XLM must cover; `fee` can include a held-back resource fee. */
+  feesGateFee?: string;
   blockaidOverrideState?: string | null;
   networkDetails: NetworkDetails;
   inputType: InputType;
-  isLiveQuoteLoading: boolean;
+  /** The stored quote's key matches the current inputs. */
+  isQuoteForInputs: boolean;
   // Balances-derived "this swap adds a trustline", checked against the
   // UNFILTERED balances (a hidden held asset needs no new trustline). Drives
   // the reserve math; distinct from destinationIsNonHeld below, which is a
@@ -69,16 +73,16 @@ export const getSwapDerivedData = ({
   data,
   asset,
   destinationAsset,
-  isToken,
   destinationAmount,
   destinationTokenDetails,
   amount,
   amountUsd,
   fee,
+  feesGateFee = fee,
   blockaidOverrideState,
   networkDetails,
   inputType,
-  isLiveQuoteLoading,
+  isQuoteForInputs,
   destRequiresTrustline,
 }: GetSwapDerivedDataParams) => {
   const sendData = data;
@@ -93,11 +97,14 @@ export const getSwapDerivedData = ({
   // A non-held destination token can never become the source (we only swap
   // held/classic assets), so the direction toggle handles it specially. Detect
   // it by its absence from the account balances.
-  const heldCanonicals = new Set(
-    sendData.userBalances.balances.map((b) => getBalanceCanonicalKey(b)),
+  const heldKeys = new Set(
+    sendData.userBalances.balances.map((b) =>
+      swapIdentityKey(getBalanceCanonicalKey(b)),
+    ),
   );
   const destinationIsNonHeld =
-    Boolean(destinationAsset) && !heldCanonicals.has(destinationAsset);
+    Boolean(destinationAsset) &&
+    !heldKeys.has(swapIdentityKey(destinationAsset));
   const prices = sendData.tokenPrices;
   const assetPrice = prices[asset] && prices[asset].currentPrice;
   // Prefer the live backend price; fall back to the stellar.expert spot price
@@ -111,7 +118,6 @@ export const getSwapDerivedData = ({
     (isMainnet(data.networkDetails) && dstSpotPrice != null
       ? String(dstSpotPrice)
       : undefined);
-  const assetDecimals = getAssetDecimals(asset, sendData.userBalances, isToken);
   const priceValueUsd = assetPrice ? formatUsdValue(assetPrice, amount) : null;
   const supportsUsd = isMainnet(data.networkDetails) && assetPrice;
   const dstPriceValueUsd = dstAssetPrice
@@ -129,7 +135,7 @@ export const getSwapDerivedData = ({
   // insufficient-balance check.
   const availableBalance = deductNewTrustlineReserve({
     spendable: baseAvailableBalance,
-    sourceIsXlm: asset === "native",
+    sourceIsXlm: isNativeAssetId(asset),
     // The unfiltered-balances flag, NOT destinationIsNonHeld: a hidden held
     // destination builds no changeTrust, so no reserve should be withheld.
     requiresTrustline: destRequiresTrustline,
@@ -139,11 +145,13 @@ export const getSwapDerivedData = ({
   // "Swap for 0.5 XLM" reserve-recovery affordance on the XlmReserveSheet.
   // The sell side is the current source when it's already a non-XLM
   // classic token; otherwise the largest held non-XLM classic balance.
-  const sourceIsNonXlmClassic = !!asset && asset !== "native";
+  const sourceIsNonXlm = !!asset && !isNativeAssetId(asset);
+  const sourceIsNonXlmClassic =
+    sourceIsNonXlm && !isContractId(getAssetFromCanonical(asset).issuer);
 
   // Source token Blockaid verdict (from its held balance), passed to the review
   // gate so a flagged sell token also warns. XLM is never scanned.
-  const sourceBalance = sourceIsNonXlmClassic
+  const sourceBalance = sourceIsNonXlm
     ? findAssetBalance(
         sendData.userBalances.balances,
         getAssetFromCanonical(asset),
@@ -181,12 +189,18 @@ export const getSwapDerivedData = ({
       ? new BigNumber(cleanAmount(amount)).gt(0)
       : new BigNumber(cleanAmount(amountUsd)).gt(0);
 
-  // The live quote settled with no route for a positive amount → no swap path.
-  // While a quote is in flight (isLiveQuoteLoading) we leave the CTA enabled so
-  // it doesn't flicker disabled between keystrokes.
+  // Pending means the stored quote is not for these inputs. A failed quote
+  // also stores its key, so it settles; a dropped or superseded response
+  // stores nothing, so it stays pending until the newer one lands.
+  const isQuotePending =
+    !!asset &&
+    !!destinationAsset &&
+    new BigNumber(cleanAmount(amount)).gt(0) &&
+    !isQuoteForInputs;
+
   const hasNoSwapPath =
     swapAmountPositive &&
-    !isLiveQuoteLoading &&
+    !isQuotePending &&
     new BigNumber(cleanAmount(destinationAmount || "0")).isZero();
 
   // Non-XLM swaps pay the network fee from the separate XLM balance; block the
@@ -198,8 +212,8 @@ export const getSwapDerivedData = ({
     recommendedFee: "0",
   });
   const insufficientXlmForFees =
-    sourceIsNonXlmClassic &&
-    new BigNumber(xlmSpendableForFees).lt(new BigNumber(fee));
+    sourceIsNonXlm &&
+    new BigNumber(xlmSpendableForFees).lt(new BigNumber(feesGateFee));
 
   const cta = getSwapCtaState({
     hasSource: !!asset,
@@ -213,6 +227,7 @@ export const getSwapDerivedData = ({
     isAmountTooHigh,
     insufficientXlmForFees,
     hasNoSwapPath,
+    isQuotePending,
   });
 
   return {
@@ -222,7 +237,6 @@ export const getSwapDerivedData = ({
     destinationIsNonHeld,
     assetPrice,
     dstAssetPrice,
-    assetDecimals,
     priceValueUsd,
     supportsUsd,
     dstPriceValueUsd,
@@ -236,6 +250,7 @@ export const getSwapDerivedData = ({
     isAmountTooHigh,
     xlmSpendableForFees,
     insufficientXlmForFees,
+    isQuotePending,
     cta,
   };
 };

@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from "react";
-import { Button, Icon, Loader, Text } from "@stellar/design-system";
+import React, { useEffect, useRef, useState } from "react";
+import { Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
@@ -7,12 +7,14 @@ import { ActionStatus } from "@shared/api/types";
 import { View } from "popup/basics/layout/View";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
+import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
+import { formatEarnAmount } from "popup/components/earn/helpers/formatEarnAmount";
+import { EarnDepositDetailsSheet } from "popup/components/earn/EarnDepositDetailsSheet";
+import { SlideupModal } from "popup/components/SlideupModal";
+import { TransactionStatus } from "popup/components/TransactionStatus";
 import { RequestState } from "constants/request";
 import { getAssetFromCanonical } from "helpers/stellar";
-import { isCustomNetwork } from "@shared/helpers/stellar";
-import { formatAmount } from "popup/helpers/formatters";
-import { getStellarExpertUrl } from "popup/helpers/account";
-import { openTab } from "popup/helpers/navigate";
+import { cleanAmount } from "popup/helpers/formatters";
 import {
   hardwareWalletTypeSelector,
   publicKeySelector,
@@ -36,8 +38,8 @@ interface EarnSubmitProps {
 }
 
 /**
- * The deposit's terminal screen: "Depositing" while in flight, "Deposited!"
- * once it settles. One component, two states — the same shape SendingTransaction
+ * The deposit's terminal screen: "Deposit in progress" while in flight,
+ * "Deposit complete" once it settles. One component, two states — the same shape SendingTransaction
  * uses for Sending/Sent.
  *
  * Close is offered while in flight because a Soroban submission can outlast the
@@ -53,11 +55,19 @@ export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
-  const { pool, selectedAssetApy, didSwapInFlow, lastSubmitFailed } =
-    useSelector(earnSelector);
+  const {
+    pool,
+    selectedAssetApy,
+    didSwapInFlow,
+    lastSubmitFailed,
+    reviewedAmount,
+  } = useSelector(earnSelector);
   const cachedIcons = useSelector(iconsSelector);
 
-  const { amount, asset } = submission.transactionData;
+  const { amount: fieldAmount, asset } = submission.transactionData;
+  // The amount Review showed and Confirm signed. The field is only a fallback:
+  // it is stored as typed ("1,000") and can differ from the signed amount.
+  const amount = reviewedAmount ?? cleanAmount(fieldAmount);
   const srcAsset = getAssetFromCanonical(asset);
   const transactionHash = submission.response?.hash;
 
@@ -66,6 +76,8 @@ export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
     networkDetails,
     xdr,
     isHardwareWallet: !!hardwareWalletType,
+    asset,
+    amount,
     assetCode: srcAsset.code,
     poolId: pool?.id || "",
     apy: selectedAssetApy,
@@ -78,6 +90,7 @@ export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
   const isLoading = !isSuccess;
 
   const hasEmittedSuccessView = useRef(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   useEffect(() => {
     // A failed deposit drops this step and returns to the amount screen (the
@@ -144,24 +157,20 @@ export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
               </>
             )}
 
-            {isSuccess &&
-              !isCustomNetwork(networkDetails) &&
-              transactionHash && (
-                <Button
-                  size="lg"
-                  isFullWidth
-                  isRounded
-                  variant="tertiary"
-                  onClick={() =>
-                    openTab(
-                      `${getStellarExpertUrl(networkDetails)}/tx/${transactionHash}`,
-                    )
-                  }
-                  data-testid="earn-submit-view-tx"
-                >
-                  {t("View transaction")}
-                </Button>
-              )}
+            {/* Opens the deposit's own record, as on mobile; stellar.expert is
+                one tap further, from there. */}
+            {isSuccess && transactionHash && (
+              <Button
+                size="lg"
+                isFullWidth
+                isRounded
+                variant="tertiary"
+                onClick={() => setIsDetailsOpen(true)}
+                data-testid="earn-submit-view-tx"
+              >
+                {t("View transaction")}
+              </Button>
+            )}
 
             {isSuccess && (
               <Button
@@ -179,44 +188,50 @@ export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
         }
       >
         <div className="EarnSubmit">
-          <div className="EarnSubmit__title">
-            {isLoading ? (
-              <>
-                <Loader size="2rem" />
-                <span>{t("Depositing")}</span>
-              </>
-            ) : (
-              <>
-                <Icon.CheckCircle className="EarnSubmit__title-success" />
-                <span>{t("Deposited!")}</span>
-              </>
-            )}
-          </div>
-
-          <div className="EarnSubmit__summary">
-            <div className="EarnSubmit__icons">
-              {/* The cached icon map rather than an empty one, which AssetIcon
-                  reads as a lookup in flight. Warm by the time the flow reaches
-                  here: the deposited asset is held, so the picker and amount
-                  screens have both resolved it. */}
+          <TransactionStatus
+            isPending={isLoading}
+            title={isLoading ? t("Deposit in progress") : t("Deposit complete")}
+            fromIcon={
+              // The cached icon map rather than an empty one, which AssetIcon
+              // reads as a lookup in flight. Warm by the time the flow reaches
+              // here: the deposited asset is held, so the picker and amount
+              // screens have both resolved it.
               <AssetIcon
                 assetIcons={cachedIcons}
                 code={srcAsset.code}
                 issuerKey={srcAsset.issuer}
               />
-              <Icon.ChevronRightDouble />
-              <PoolIcon />
-            </div>
-            <Text as="div" size="sm">
-              {t("{{amount}} {{code}} to {{pool}}", {
-                amount: formatAmount(amount),
-                code: srcAsset.code,
-                pool: pool?.name || t("Blend pool"),
-              })}
-            </Text>
-          </div>
+            }
+            toIcon={<PoolIcon />}
+            amount={`${formatEarnAmount(amount)} ${srcAsset.code}`}
+            verb={t("to")}
+            target={formatPoolName(pool?.name, t)}
+            captionTestId="earn-submit-caption"
+          />
         </div>
       </View.Content>
+
+      <SlideupModal
+        isModalOpen={isDetailsOpen}
+        setIsModalOpen={setIsDetailsOpen}
+        ariaLabel={t("Deposited {{code}}", { code: srcAsset.code })}
+      >
+        {isDetailsOpen && transactionHash ? (
+          <EarnDepositDetailsSheet
+            amount={amount}
+            assetCode={srcAsset.code}
+            assetIssuer={srcAsset.issuer}
+            assetIcons={cachedIcons}
+            pool={pool}
+            transactionHash={transactionHash}
+            xdr={xdr}
+            networkDetails={networkDetails}
+            onClose={() => setIsDetailsOpen(false)}
+          />
+        ) : (
+          <></>
+        )}
+      </SlideupModal>
     </View>
   );
 };

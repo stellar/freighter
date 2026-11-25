@@ -4,17 +4,34 @@ import { captureException } from "@sentry/browser";
 import BigNumber from "bignumber.js";
 
 import { NetworkDetails } from "@shared/constants/stellar";
-import { ApiTokenPrices, BlockAidScanAssetResult } from "@shared/api/types";
+import {
+  ApiTokenPrices,
+  AssetVisibility,
+  BlockAidScanAssetResult,
+} from "@shared/api/types";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
+import { findTokenListIcon } from "@shared/api/helpers/getIconFromTokenList";
 import { AssetType } from "@shared/api/types/account-balance";
 
 import { initialState, reducer } from "helpers/request";
 import { RequestState } from "constants/request";
-import { isMainnet, isTestnet, getCanonicalFromAsset } from "helpers/stellar";
+import {
+  isMainnet,
+  isTestnet,
+  getCanonicalFromAsset,
+  truncateString,
+} from "helpers/stellar";
+import {
+  isNativeAssetPair,
+  isNativeBalance,
+} from "@shared/helpers/assetIdentity";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
-import { searchAsset } from "popup/helpers/searchAsset";
+import { buildNativeAssetRow, searchAsset } from "popup/helpers/searchAsset";
+import { getTokenDetails } from "@shared/api/internal";
+import { isSacContractExecutable } from "@shared/helpers/soroban/token";
+import { isNativeContract } from "@shared/helpers/assetIdentity";
 import {
   getPersistedPopularTokens,
   setPersistedPopularTokens,
@@ -23,6 +40,8 @@ import { splitVerifiedAssetCurrency } from "popup/helpers/assetList";
 import { isContractId } from "popup/helpers/soroban";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { sortBalancesByValue } from "popup/helpers/balance";
+import { isAssetVisible } from "popup/helpers/settings";
+import { readHiddenAssets } from "popup/helpers/useHiddenAssets";
 import {
   scanAssetBulk,
   MAX_ASSETS_TO_SCAN,
@@ -35,6 +54,7 @@ import {
 import { settingsSelector } from "popup/ducks/settings";
 import {
   tokensListsSelector,
+  iconsSelector,
   saveTokenLists,
   popularTokensSelector,
   savePopularTokens,
@@ -45,6 +65,7 @@ import {
   fetchTrendingAssets,
   TrendingAsset,
 } from "popup/helpers/trendingAssets";
+import { swapIdentityKey } from "popup/helpers/swapQuote";
 
 // Re-export RequestState for consumers
 export { RequestState };
@@ -75,14 +96,12 @@ export interface SwapTokenLookupResult {
     unverified: SwapTokenRecord[];
   };
   isSearch: boolean;
-  hadSorobanMatches: boolean;
   isFallback: boolean;
 }
 
 export const EMPTY_RESULT: SwapTokenLookupResult = {
   sections: { yourTokens: [], popular: [], verified: [], unverified: [] },
   isSearch: false,
-  hadSorobanMatches: false,
   isFallback: false,
 };
 
@@ -100,19 +119,18 @@ const heldToRecord = (
   maybeTokenPrices?: ApiTokenPrices | null,
 ): SwapTokenRecord | null => {
   const tokenPrices = maybeTokenPrices ?? {};
-  // Classic-only: swaps run over the Classic path, so the "Your tokens" list
-  // shows native + classic assets only. Exclude liquidity-pool shares (no token)
-  // and custom Soroban contract tokens (carry a contractId).
-  if (!("token" in balance) || !balance.token || "contractId" in balance) {
+  // Liquidity-pool shares have no token to swap.
+  if (!("token" in balance) || !balance.token) {
     return null;
   }
+  const sorobanDecimals =
+    "contractId" in balance ? Number(balance.decimals) : undefined;
   const token = balance.token as {
     code: string;
     type?: string;
     issuer?: { key: string };
   };
-  const isNative =
-    token.type === "native" || (token.code === "XLM" && !token.issuer);
+  const isNative = isNativeBalance(balance);
   const code = isNative ? "XLM" : token.code;
   const issuer = isNative ? "" : token.issuer?.key || "";
   const canonical = isNative ? "native" : getCanonicalFromAsset(code, issuer);
@@ -120,7 +138,7 @@ const heldToRecord = (
   // Held-token balance, fiat value and 24h delta (mirrors the account-home row).
   const total = new BigNumber(
     (balance as { total?: BigNumber.Value }).total ?? 0,
-  );
+  ).shiftedBy(-(sorobanDecimals ?? 0));
   const tokenAmount = formatAmount(total.toFixed());
   const price = tokenPrices[canonical];
   const fiatValue = price?.currentPrice
@@ -144,8 +162,9 @@ const heldToRecord = (
     fiatValue,
     percentChange24h,
     isHeld: true,
-    isContract: false,
+    isContract: sorobanDecimals !== undefined,
     requiresTrustline: false,
+    ...(sorobanDecimals !== undefined ? { decimals: sorobanDecimals } : {}),
   };
 };
 
@@ -175,17 +194,19 @@ const currencyToRecord = (
   asset: ManageAssetCurrency,
   isHeld: boolean,
 ): SwapTokenRecord => {
-  const isNative = asset.code === "XLM" && !asset.issuer;
+  const isNative = isNativeAssetPair(asset.code, asset.issuer);
   const canonical = isNative
     ? "native"
     : getCanonicalFromAsset(asset.code || "", asset.issuer || "");
-  const isContract = !!(asset.contract && isContractId(asset.contract));
+  // Soroban-only: a classic asset's own contract (SAC) is listed in its
+  // classic form, which needs a trustline.
+  const isContract = isContractId(asset.issuer);
   return {
     ...asset,
     canonical,
     isHeld,
     isContract,
-    requiresTrustline: !isHeld && !isNative,
+    requiresTrustline: !isHeld && !isNative && !isContract,
     spotPrice: asset.price,
   };
 };
@@ -196,29 +217,24 @@ const currencyToRecord = (
  * Idle (no searchTerm):  yourTokens + popular (volume7d ∩ verified, held filtered out)
  * Search (searchTerm):   yourTokens + verified + unverified (mutually exclusive, deduped)
  * Fallback:              yourTokens only (held-in-memory filter), popular/verified/unverified empty
- *
- * Classic-only: any non-SAC Soroban contract is stripped and sets hadSorobanMatches = true.
  */
 export const buildSwapSections = ({
   searchTerm,
   balances,
+  networkDetails,
   popular = [],
   verifiedAssets = [],
   unverifiedAssets = [],
-  searchResults = [],
   isFallback = false,
   icons = {},
   tokenPrices,
 }: {
   searchTerm: string;
   balances: AssetType[];
-  // Accepted for call-site symmetry with the lookup context; the record filter
-  // keys purely on contract-id shape and does not use the network value.
   networkDetails: NetworkDetails;
   popular?: TrendingAsset[];
   verifiedAssets?: ManageAssetCurrency[];
   unverifiedAssets?: ManageAssetCurrency[];
-  searchResults?: ManageAssetCurrency[];
   isFallback?: boolean;
   icons?: Record<string, string | null>;
   tokenPrices?: ApiTokenPrices | null;
@@ -227,31 +243,18 @@ export const buildSwapSections = ({
   const isSearch = term.length > 0;
 
   const heldRecords = balancesToHeldRecords({ balances, icons, tokenPrices });
-  const heldCanonicals = new Set(heldRecords.map((r) => r.canonical));
-
-  // Classic-only filter: drop any record whose issuer or contract is a contract
-  // id — i.e. a custom Soroban token. Classic CODE-ISSUER records are kept,
-  // including SAC-backed assets, which stellar.expert returns in their classic
-  // form (a bare SAC contract id has no classic representation to swap).
-  // Side-effect: sets hadSorobanMatches so the picker can show the "try a
-  // Classic token" empty state.
-  let hadSorobanMatches = false;
-  const isClassic = (asset: ManageAssetCurrency): boolean => {
-    const isSorobanContract =
-      (asset.contract && isContractId(asset.contract)) ||
-      (asset.issuer && isContractId(asset.issuer));
-    if (isSorobanContract) {
-      hadSorobanMatches = true;
-      return false;
-    }
-    return true;
-  };
+  const heldKeys = new Set(
+    heldRecords.map((r) => swapIdentityKey(r.canonical)),
+  );
+  // Only mainnet has a source (LI.FI) that routes contract tokens.
+  const isDiscoverable = (r: SwapTokenRecord) =>
+    !r.isContract || isMainnet(networkDetails);
 
   if (!isSearch) {
     // IDLE mode
     const verifiedKeys = new Set(
       verifiedAssets.map((a) =>
-        getCanonicalFromAsset(a.code || "", a.issuer || ""),
+        swapIdentityKey(getCanonicalFromAsset(a.code || "", a.issuer || "")),
       ),
     );
     const popularRecords = popular
@@ -262,14 +265,15 @@ export const buildSwapSections = ({
           contract: p.contract,
           domain: p.domain,
           image: p.icon,
+          decimals: p.decimals,
         }),
       )
-      .filter(isClassic)
       .map((a) => currencyToRecord(a, false))
-      .filter(
-        (r) =>
-          !heldCanonicals.has(r.canonical) && verifiedKeys.has(r.canonical),
-      );
+      .filter(isDiscoverable)
+      .filter((r) => {
+        const key = swapIdentityKey(r.canonical);
+        return !heldKeys.has(key) && verifiedKeys.has(key);
+      });
 
     return {
       sections: {
@@ -279,7 +283,6 @@ export const buildSwapSections = ({
         unverified: [],
       },
       isSearch: false,
-      hadSorobanMatches,
       isFallback,
     };
   }
@@ -296,31 +299,34 @@ export const buildSwapSections = ({
     return {
       sections: { yourTokens, popular: [], verified: [], unverified: [] },
       isSearch: true,
-      hadSorobanMatches: false,
       isFallback: true,
     };
   }
 
-  const heldSearchKeys = new Set(yourTokens.map((r) => r.canonical));
+  const heldSearchKeys = new Set(
+    yourTokens.map((r) => swapIdentityKey(r.canonical)),
+  );
 
-  // Dedupe by canonical, exclude held (already in yourTokens)
+  // Dedupe by identity against the held rows the term matched. A held
+  // contract searched by a code its balance doesn't carry is only reachable
+  // through its search row, which lists flagged as held.
   const dedupe = (assets: ManageAssetCurrency[]): SwapTokenRecord[] => {
     const seen = new Set<string>();
     return assets
-      .filter(isClassic)
-      .map((a) => currencyToRecord(a, false))
+      .map((a) => {
+        const { canonical } = currencyToRecord(a, false);
+        return currencyToRecord(a, heldKeys.has(swapIdentityKey(canonical)));
+      })
+      .filter(isDiscoverable)
       .filter((r) => {
-        if (heldSearchKeys.has(r.canonical) || seen.has(r.canonical)) {
+        const key = swapIdentityKey(r.canonical);
+        if (heldSearchKeys.has(key) || seen.has(key)) {
           return false;
         }
-        seen.add(r.canonical);
+        seen.add(key);
         return true;
       });
   };
-
-  // Scan searchResults for Soroban entries to ensure hadSorobanMatches is set
-  // even when the split already stripped them from verifiedAssets/unverifiedAssets.
-  searchResults.forEach((a) => isClassic(a));
 
   return {
     sections: {
@@ -330,7 +336,6 @@ export const buildSwapSections = ({
       unverified: dedupe(unverifiedAssets),
     },
     isSearch: true,
-    hadSorobanMatches,
     isFallback: false,
   };
 };
@@ -340,6 +345,85 @@ export const buildSwapSections = ({
  * The map is keyed by "CODE-ISSUER" (matching how scanAssetBulk IDs are built).
  * Native XLM (no issuer) is always trusted and left unmodified.
  */
+/**
+ * The result with the hidden tokens left out of Popular and the search
+ * buckets. Applied to every result the hook serves, cached ones included:
+ * `balances` already leaves hidden tokens out, so a hidden token the account
+ * holds would otherwise look new and picking it would offer a trustline the
+ * account already has. Your tokens is untouched; it comes from `balances`.
+ * The user unhides a token from Add token to swap into it.
+ */
+export const omitHiddenFromSections = (
+  result: SwapTokenLookupResult,
+  hiddenAssets: Record<string, AssetVisibility>,
+): SwapTokenLookupResult => {
+  if (!Object.keys(hiddenAssets).length) {
+    return result;
+  }
+  const hiddenByKey = Object.fromEntries(
+    Object.entries(hiddenAssets).map(([canonical, visibility]) => [
+      swapIdentityKey(canonical),
+      visibility,
+    ]),
+  );
+  const visible = (rows: SwapTokenRecord[]) =>
+    rows.filter((r) =>
+      isAssetVisible(hiddenByKey, swapIdentityKey(r.canonical)),
+    );
+  return {
+    ...result,
+    sections: {
+      ...result.sections,
+      popular: visible(result.sections.popular),
+      verified: visible(result.sections.verified),
+      unverified: visible(result.sections.unverified),
+    },
+  };
+};
+
+/**
+ * Discover rows' icons, in the order of spec §6: the icon the wallet already
+ * cached for the token (so it looks the same everywhere), then the user's
+ * asset lists, then the issuer's stellar.toml image that stellar.expert
+ * returned with the record.
+ */
+export const withRowIcons = (
+  result: SwapTokenLookupResult,
+  cachedIcons: Record<string, string | null>,
+  assetsListsData: AssetListResponse[],
+): SwapTokenLookupResult => {
+  const cachedByKey = Object.fromEntries(
+    Object.entries(cachedIcons).map(([canonical, icon]) => [
+      swapIdentityKey(canonical),
+      icon,
+    ]),
+  );
+  const withIcon = (r: SwapTokenRecord): SwapTokenRecord => {
+    if (!r.issuer) {
+      return r;
+    }
+    const image =
+      cachedByKey[swapIdentityKey(r.canonical)] ||
+      findTokenListIcon({
+        issuerId: r.isContract ? undefined : r.issuer,
+        contractId: r.isContract ? r.issuer : r.contract,
+        code: r.code ?? "",
+        assetsListsData,
+      }).icon ||
+      r.image;
+    return image === r.image ? r : { ...r, image };
+  };
+  return {
+    ...result,
+    sections: {
+      ...result.sections,
+      popular: result.sections.popular.map(withIcon),
+      verified: result.sections.verified.map(withIcon),
+      unverified: result.sections.unverified.map(withIcon),
+    },
+  };
+};
+
 export const mergeScanResults = ({
   rows,
   scanResults,
@@ -402,17 +486,61 @@ interface AssetSearchRecord {
   };
 }
 
+/**
+ * The one row a pasted contract ID resolves to: the token the backend
+ * describes, or a SAC as its classic asset (which needs the trustline).
+ * Empty when the contract is not a token; throws when the read fails.
+ */
+const lookupContractRow = async (
+  contractId: string,
+  publicKey: string,
+  networkDetails: NetworkDetails,
+  signal: AbortSignal,
+): Promise<ManageAssetCurrency[]> => {
+  if (isNativeContract(contractId, networkDetails.networkPassphrase)) {
+    return [buildNativeAssetRow(networkDetails)];
+  }
+  const details = await getTokenDetails({
+    contractId,
+    publicKey,
+    networkDetails,
+    signal,
+    throwOnFailure: true,
+  });
+  if (!details) {
+    return [];
+  }
+  const isSac = await isSacContractExecutable(
+    contractId,
+    networkDetails,
+    signal,
+  );
+  const issuer = isSac ? details.name.split(":")[1] || "" : contractId;
+  return [
+    {
+      code: details.symbol,
+      issuer,
+      contract: isSac ? undefined : contractId,
+      domain: "",
+      name: details.name,
+      decimals: details.decimals,
+    },
+  ];
+};
+
 const recordFromSearchResult = (
   record: AssetSearchRecord,
 ): ManageAssetCurrency => {
   if (isContractId(record.asset)) {
     return {
-      code: record.code || record.tomlInfo?.code || "",
+      code:
+        record.code || record.tomlInfo?.code || truncateString(record.asset),
       issuer: record.asset,
       contract: record.asset,
       domain: record.domain ?? null,
       image: record.tomlInfo?.image,
       price: record.price,
+      decimals: record.decimals,
     };
   }
   return {
@@ -512,7 +640,7 @@ export const useSwapTokenLookup = () => {
   const fetchData = async ({
     searchTerm,
     balances,
-    publicKey: _publicKey,
+    publicKey,
     networkDetails,
     icons = {},
     tokenPrices = {},
@@ -543,10 +671,28 @@ export const useSwapTokenLookup = () => {
       (isIdle
         ? undefined
         : getCachedSearchResult(networkDetails.network, normalizedTerm));
-    if (cachedResult) {
-      dispatch({ type: "FETCH_DATA_SUCCESS", payload: cachedResult });
-    } else {
+    if (!cachedResult) {
       dispatch({ type: "FETCH_DATA_START" });
+    }
+
+    // Read on every lookup, before anything is served (the cached repaint
+    // included), so a token hidden or unhidden since the last lookup is
+    // reflected straight away. The caches hold unfiltered results.
+    const hiddenAssets = await readHiddenAssets(
+      publicKey,
+      networkDetails.network,
+    );
+    if (signal.aborted) {
+      return;
+    }
+    const serve = (result: SwapTokenLookupResult) =>
+      dispatch({
+        type: "FETCH_DATA_SUCCESS",
+        payload: omitHiddenFromSections(result, hiddenAssets),
+      });
+
+    if (cachedResult) {
+      serve(cachedResult);
     }
 
     // Token discovery (Popular + search) only exists on Mainnet / Testnet.
@@ -555,9 +701,8 @@ export const useSwapTokenLookup = () => {
       isMainnet(networkDetails) || isTestnet(networkDetails);
 
     if (!supportsDiscovery) {
-      dispatch({
-        type: "FETCH_DATA_SUCCESS",
-        payload: buildSwapSections({
+      serve(
+        buildSwapSections({
           searchTerm,
           balances,
           networkDetails,
@@ -565,7 +710,7 @@ export const useSwapTokenLookup = () => {
           tokenPrices,
           isFallback: true,
         }),
-      });
+      );
       return;
     }
 
@@ -588,18 +733,24 @@ export const useSwapTokenLookup = () => {
       let verifiedAssets: ManageAssetCurrency[] = [];
       let unverifiedAssets: ManageAssetCurrency[] = [];
       let popular: TrendingAsset[] = [];
-      let searchResults: ManageAssetCurrency[] = [];
 
       if (searchTerm.trim()) {
-        // SEARCH path: fetch Stellar Expert results and split verified / unverified
-        const resJson = await searchAsset({
-          asset: searchTerm.trim(),
-          networkDetails,
-          signal,
-        });
-        searchResults = (
-          (resJson?._embedded?.records as AssetSearchRecord[]) ?? []
-        ).map(recordFromSearchResult);
+        // SEARCH path. A pasted contract ID is read from the backend, so any
+        // token contract resolves, indexed by stellar.expert or not; a failed
+        // read throws into the fallback below, unlike "not a token" (null).
+        // Anything else is a stellar.expert search.
+        const term = searchTerm.trim();
+        const searchResults = isContractId(term)
+          ? await lookupContractRow(term, publicKey, networkDetails, signal)
+          : (
+              ((
+                await searchAsset({
+                  asset: term,
+                  networkDetails,
+                  signal,
+                })
+              )?._embedded?.records as AssetSearchRecord[]) ?? []
+            ).map(recordFromSearchResult);
 
         const split = await splitVerifiedAssetCurrency({
           networkDetails,
@@ -646,6 +797,7 @@ export const useSwapTokenLookup = () => {
         const popularAsCurrency: ManageAssetCurrency[] = popular.map((p) => ({
           code: p.code,
           issuer: p.issuer,
+          contract: p.contract,
           domain: p.domain,
         }));
         const split = await splitVerifiedAssetCurrency({
@@ -657,31 +809,34 @@ export const useSwapTokenLookup = () => {
         verifiedAssets = split.verifiedAssets;
       }
 
-      let payload = buildSwapSections({
-        searchTerm,
-        balances,
-        networkDetails,
-        icons,
-        tokenPrices,
-        popular,
-        verifiedAssets,
-        unverifiedAssets,
-        searchResults,
-      });
+      let payload = withRowIcons(
+        buildSwapSections({
+          searchTerm,
+          balances,
+          networkDetails,
+          icons,
+          tokenPrices,
+          popular,
+          verifiedAssets,
+          unverifiedAssets,
+        }),
+        iconsSelector(store.getState()),
+        assetsListsData,
+      );
 
       // A newer lookup (the user typed again or cleared the box) may have
       // superseded this one. Some awaits above don't honor the AbortSignal
       // (splitVerifiedAssetCurrency), so a superseded call can still reach here
       // and commit its stale sections over the current render — the "Your
       // tokens" flash. The guard below drops it before dispatch.
-      // Non-held classic candidates to scan with Blockaid (mainnet only;
-      // testnet has no Blockaid).
+      // Non-held candidates to scan with Blockaid (mainnet only; testnet has
+      // no Blockaid).
       const scanCandidates = isBlockaidEnabled(networkDetails)
         ? [
             ...payload.sections.popular,
             ...payload.sections.verified,
             ...payload.sections.unverified,
-          ].filter((r) => r.issuer && !isContractId(r.issuer))
+          ].filter((r) => r.issuer)
         : [];
 
       // Decorate the given payload's scannable sections from a scan map.
@@ -738,7 +893,7 @@ export const useSwapTokenLookup = () => {
         return;
       }
 
-      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      serve(payload);
 
       // Bulk-scan only the candidates not already cached this session, in
       // parallel chunks. Cached verdicts seed the result map so the full
@@ -790,7 +945,7 @@ export const useSwapTokenLookup = () => {
           if (signal.aborted) {
             return;
           }
-          dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+          serve(payload);
         }
       }
 
@@ -806,18 +961,25 @@ export const useSwapTokenLookup = () => {
         // Cancelled — silently ignore (another call is already in flight)
         return;
       }
-      captureException(`useSwapTokenLookup fallback - ${JSON.stringify(e)}`);
+      // The Error itself, not an interpolated string — see the note in
+      // useAssetLookup.
+      captureException(e, {
+        tags: { operation: "swapTokenLookup" },
+        extra: {
+          network: networkDetails.network,
+          lookup: isIdle ? "popular" : "search",
+        },
+      });
       // Serve the last good cached result (idle or this search term) on a
       // transient failure instead of dropping Popular to held-only; fall back
       // to held-only only when there's nothing cached.
       if (cachedResult) {
-        dispatch({ type: "FETCH_DATA_SUCCESS", payload: cachedResult });
+        serve(cachedResult);
         return;
       }
       // Graceful fallback: stellar.expert or Blockaid unreachable → held-only
-      dispatch({
-        type: "FETCH_DATA_SUCCESS",
-        payload: buildSwapSections({
+      serve(
+        buildSwapSections({
           searchTerm,
           balances,
           networkDetails,
@@ -825,7 +987,7 @@ export const useSwapTokenLookup = () => {
           tokenPrices,
           isFallback: true,
         }),
-      });
+      );
     }
   };
 

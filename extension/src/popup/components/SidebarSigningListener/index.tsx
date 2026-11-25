@@ -2,6 +2,10 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import browser from "webextension-polyfill";
 import { ROUTES } from "popup/constants/routes";
+import {
+  forgetNativeWindowClose,
+  rememberNativeWindowClose,
+} from "popup/helpers/navigate";
 import { SIDEBAR_NAVIGATE } from "@shared/constants/services";
 
 export const SIDEBAR_PORT_NAME = "sidebar";
@@ -39,6 +43,8 @@ export const SidebarSigningListener = () => {
 
     // In sidebar mode, window.close() would collapse the panel. Navigate home instead.
     const originalClose = window.close.bind(window);
+    // closeWindow() uses the original, for callers that must collapse the panel.
+    rememberNativeWindowClose(originalClose);
     window.close = () => navigate(ROUTES.account);
 
     // Listen for navigation messages sent directly over the port from the
@@ -74,6 +80,7 @@ export const SidebarSigningListener = () => {
 
     return () => {
       window.close = originalClose;
+      forgetNativeWindowClose();
       port.onMessage.removeListener(portHandler);
       port.disconnect();
     };

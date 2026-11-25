@@ -4,7 +4,6 @@ import pt from "popup/locales/pt/translation.json";
 const swapKeys = [
   "Quote has expired, please try again to get a new quote",
   "Token discovery is temporarily unavailable. You can still swap between tokens you already hold.",
-  "Soroban contract tokens aren't supported for swaps yet. Try searching for a Classic token instead.",
   "No tokens match {{term}}",
   "Select a token",
   "You sell",
@@ -13,6 +12,7 @@ const swapKeys = [
   "Insufficient balance. Maximum spendable: {{amount}} {{symbol}}",
   "Not enough XLM for network fees",
   "No quote available",
+  "Swaps are temporarily unavailable",
   "The token you're receiving was flagged as malicious by Blockaid.",
   "The token you're receiving was flagged as suspicious by Blockaid.",
   "The token you're receiving couldn't be scanned for security risks.",
@@ -26,43 +26,58 @@ const swapKeys = [
   "Stellar requires this reserve to add {{tokenCode}}. You can get it back once your {{tokenCode}} balance is zero.",
   "Swap for 0.5 XLM",
   "Copy my wallet address",
+  "Swap in progress",
+  "Swap complete",
+  "was swapped for",
 ];
 
 const earnKeys = [
-  "Choose an asset",
+  "Choose a token",
+  "Select a token to deposit and earn yield.",
+  "Deposit into",
   "In your wallet",
-  "Other supported assets",
   "Supported tokens",
   "No supported assets in your wallet",
   "Add a supported asset to start earning.",
-  "APY may change based on protocol conditions.",
-  "{{rate}}% APY",
-  "Earn with Blend",
-  "Supply assets to Blend and earn variable yield.",
+  "*APY is variable and subject to change.",
+  "{{rate}}% APY*",
+  "Put your tokens to work",
+  "Supply tokens to Blend and earn variable yield.",
   "Earn variable yield",
-  "Supply supported assets and earn based on current APY.",
+  "Supply supported tokens and earn based on current APY.",
   "Stay in control",
-  "Manage and withdraw your supplied assets from your wallet.",
+  "Manage and withdraw your supplied tokens from your wallet.",
   "Not enough {{code}}",
+  "Get {{code}} to deposit into this pool.",
+  "Swap, buy or transfer {{code}} to continue.",
+  "Swap or transfer {{code}} to continue.",
+  "Buy or transfer {{code}} to continue.",
+  "Transfer {{code}} to continue.",
   "Swap for {{code}}",
   "Buy {{code}}",
+  "Receive {{code}}",
+  "Receive funds",
+  "This address supports Stellar network.",
   "Deposit",
   "You deposit",
   "{{amount}} {{code}} available",
-  "Current APY: {{rate}}*",
+  "Current APY: {{rate}}",
+  "{{name}} Pool",
   "by Blend",
   "Review deposit",
-  "Insufficient funds",
-  "You need some XLM for the network fee",
+  "You need XLM to pay fees",
+  "You don’t have enough available XLM to cover the transaction fee. Add XLM to continue with your deposit.",
   "Not enough XLM left for the network fee. Reduce your deposit by at least {{amount}} XLM.",
   "Not enough XLM to cover the network fee. Try depositing a smaller amount.",
-  "Add XLM to your wallet to continue",
+  "Not enough {{code}} for this deposit. Try a smaller amount.",
+  "The pool can’t take this deposit right now. Try again later.",
   "Transaction failed. Try again.",
-  "Pool Performance",
-  "Deposit supported assets into this Blend pool to earn yield. APY may change over time. Withdraw anytime.",
+  "Description",
+  "Deposit supported tokens into this Blend pool to earn yield. APY may change over time. Withdraw anytime.",
   "View pool details",
-  "Interest",
-  "Net APY",
+  "Current yield",
+  "Deposit APY",
+  "Pool liquidity",
   "Supplied",
   "Borrowed",
   "Backstop",
@@ -71,10 +86,11 @@ const earnKeys = [
   "Current APY",
   "Monthly earnings (est.)",
   "Yearly earnings (est.)",
-  "Depositing",
-  "Deposited!",
-  "{{amount}} {{code}} to {{pool}}",
-  "{{from}} has been swapped to {{to}}",
+  "Deposit in progress",
+  "Deposit complete",
+  "Deposited {{code}}",
+  "Deposited",
+  "{{from}} swapped to {{amount}} {{to}}",
   "My position",
   "About pool",
   "Your position",
@@ -98,7 +114,6 @@ const earnKeys = [
   "Est. monthly earnings",
   "Est. yearly earnings",
   "/year on your tokens",
-  "Fee settings",
 ];
 
 describe("earn i18n parity", () => {
@@ -144,6 +159,12 @@ describe("swap i18n parity", () => {
       expect(pt).toHaveProperty([k]);
     });
   });
+
+  // "Taxa" would read as a second fee next to the network fee row.
+  it("labels the Details sheet's rate as a quote rate, not a fee", () => {
+    expect(en).toHaveProperty(["Swap details rate"], "Rate");
+    expect(pt).toHaveProperty(["Swap details rate"], "Cotação");
+  });
 });
 
 // i18next only interpolates {{double}} braces. A single-brace placeholder type
@@ -184,5 +205,51 @@ describe("i18n placeholder syntax", () => {
         "Connect {walletType}": "Conectar {walletType}",
       }),
     ).toEqual(["Connect {walletType}", "Conectar {walletType}"]);
+  });
+});
+
+const lockScreenKeys = [
+  "Freighter is now Varial",
+  "Forgot password",
+  "Forgot your password?",
+  "Your password is stored only on this device and can’t be recovered.",
+  "You can reset Varial with your recovery phrase, set a new password, and re-import.",
+  "Make sure you have your recovery phrase before continuing.",
+  "Reset wallet",
+  "Couldn’t reset your wallet. Try again.",
+];
+
+describe("lock screen i18n parity", () => {
+  it("defines every lock-screen key in en and translates it in pt", () => {
+    lockScreenKeys.forEach((k) => {
+      expect(en).toHaveProperty([k], k);
+      expect(pt).toHaveProperty([k]);
+      expect((pt as Record<string, string>)[k]).not.toEqual(k);
+    });
+  });
+});
+
+const welcomeKeys = [
+  "Welcome to Varial",
+  "Your favorite Stellar wallet",
+  "Create new wallet",
+  "Import wallet",
+];
+
+describe("Welcome i18n parity", () => {
+  it("defines every Welcome key in en and translates it in pt", () => {
+    welcomeKeys.forEach((k) => {
+      expect(en).toHaveProperty([k], k);
+      expect(pt).toHaveProperty([k]);
+      expect((pt as Record<string, string>)[k]).not.toEqual(k);
+    });
+  });
+});
+
+describe("pt spelling", () => {
+  it("writes “Bem vindo” without a hyphen", () => {
+    expect(
+      Object.values(pt).filter((value) => /bem-vind/i.test(value)),
+    ).toEqual([]);
   });
 });

@@ -131,13 +131,15 @@ describe("SubmitTransaction", () => {
       });
       screen.getByTestId("enter-password-submit").click();
     });
+
+    // Confirming the password immediately satisfies both conditions the
+    // submission effect gates on (account data already loaded,
+    // hasPrivateKey just turned true), so — with every mock resolving
+    // synchronously — submission can reach "Sent!" before this poll ever
+    // observes the loading frame. Assert on the deterministic end state
+    // instead of a transient one.
     await waitFor(() => {
-      expect(
-        screen.getByTestId("sending-transaction-footer-subtext"),
-      ).toHaveTextContent(
-        "You can close this screen, your transaction should be complete in less than a minute.",
-      );
-      expect(screen.getByText("Close")).toBeInTheDocument();
+      expect(screen.getByText("Sent!")).toBeInTheDocument();
     });
   });
 

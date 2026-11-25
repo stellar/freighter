@@ -4,11 +4,9 @@
   position: relative;
   flex-direction: column;
   display: flex;
-  height: 100%;
   width: 100%;
   max-width: 49rem;
   margin: 0 auto;
-  padding: 0 var(--popup--side-padding);
 
   &__loader,
   &__error {
@@ -25,15 +23,14 @@
     display: flex;
     align-items: center;
     width: 100%;
-    flex: 1;
-    overflow-y: auto;
 
+    // No padding of its own: the SheetLayout around it already insets the
+    // sheet, as it does for ChangeTrustInternal.
     &__body {
       width: 100%;
       max-width: 49rem;
       display: flex;
       flex-direction: column;
-      padding: 1rem 1.5rem;
     }
 
     &__header {
@@ -170,16 +167,7 @@
   &__Actions {
     display: flex;
     justify-content: space-between;
+    gap: pxToRem(12px);
     width: 100%;
-    position: sticky;
-    bottom: 0;
-    z-index: 10;
-    padding-top: 1.5rem;
-
-    .Button {
-      &:last-child {
-        margin-left: pxToRem(12px);
-      }
-    }
   }
 }

@@ -1,3 +1,5 @@
+@use "sass:list";
+@use "sass:map";
 @use "sass:math";
 
 // Convert px to rem
@@ -11,9 +13,87 @@ $base-font-size: 16px;
   @return #{math.div(removePxUnit($pxValue), removePxUnit($base-font-size))}rem;
 }
 
+// SDS icons are drawn on a 24px viewBox and each path carries its own
+// `stroke-width="2"` attribute, which beats a value inherited from the svg.
+// Rendered in a box other than 24px the stroke scales with it, so this sets
+// the path to the user units that draw as `$stroke` px in a `$box` px box.
+// Include it inside the icon's `svg { }` rule; both arguments are unitless px.
+@mixin icon-stroke($box, $stroke: 2) {
+  path {
+    stroke-width: math.div(24 * $stroke, $box);
+  }
+}
+
 @mixin native-like-outline {
   outline-color: rgb(153, 200, 255);
   outline-offset: 1px;
   outline-style: auto;
   outline-width: 1px;
+}
+
+// Figma's Top (3705-77862; mobile's HeaderFade), for a header that stays
+// pinned over scrolling content: the page color runs solid to 80.714% of the
+// header and is clear by 93.214%, so content scrolling up under it fades out.
+@mixin header-fade-background {
+  background: linear-gradient(
+    to bottom,
+    var(--sds-clr-base-00) 80.714%,
+    transparent 93.214%
+  );
+}
+
+// The Varial type scale (Figma's Text/XS…LG): font size and line height per
+// step, with SDS's font weights. Figma's Text/SM is 14/20, not SDS
+// `Text--sm`'s 14/22, which is why screens that follow the frames set type
+// with this rather than SDS's Text sizes.
+$text-scale: (
+  xs: (
+    12px,
+    18px,
+  ),
+  sm: (
+    14px,
+    20px,
+  ),
+  md: (
+    16px,
+    24px,
+  ),
+  lg: (
+    18px,
+    26px,
+  ),
+);
+$text-weights: (
+  regular: var(--sds-fw-regular),
+  medium: var(--sds-fw-medium),
+  semi-bold: var(--sds-fw-semi-bold),
+);
+
+@mixin text($size, $weight: regular) {
+  $metrics: map.get($text-scale, $size);
+  font-size: pxToRem(list.nth($metrics, 1));
+  line-height: pxToRem(list.nth($metrics, 2));
+  font-weight: map.get($text-weights, $weight);
+}
+
+// Resizes AssetIcon's logo from outside. Include inside the
+// `.AccountAssets__asset--logo` rule; its margin is the host's to set.
+@mixin asset-logo-size($size) {
+  width: pxToRem($size);
+  height: pxToRem($size);
+  min-width: pxToRem($size);
+}
+
+// The designs' 1px ring around a token icon, drawn over the artwork so the
+// icon keeps its box. Include inside the `.AccountAssets__asset--logo` rule.
+@mixin asset-logo-ring {
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px solid var(--sds-clr-gray-06);
+    pointer-events: none;
+  }
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useContext, useState } from "react";
+import React, { useEffect, useRef, useContext } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Notification } from "@stellar/design-system";
@@ -27,36 +27,34 @@ import {
   saveSelectedAssetApy,
   saveSelectedAssetId,
 } from "popup/ducks/earn";
-import { navigateTo, openTab } from "popup/helpers/navigate";
+import { closeWindow, navigateTo, openTab } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { useSwapTopTokensPrewarm } from "popup/helpers/useSwapTopTokensPrewarm";
+import { useFundedAccountsRefresh } from "popup/helpers/useFundedAccountsRefresh";
 
 import { AccountAssets } from "popup/components/account/AccountAssets";
-import {
-  AccountCollectibles,
-  hasVisibleCollections,
-} from "popup/components/account/AccountCollectibles";
+import { AccountCollectibles } from "popup/components/account/AccountCollectibles";
 import { AccountPositions } from "popup/components/account/AccountPositions";
 import { AccountHeader } from "popup/components/account/AccountHeader";
-import { FloatingAddButton } from "popup/components/account/FloatingAddButton";
+import { InlineAddButton } from "popup/components/account/InlineAddButton";
 import { useHiddenCollectibles } from "popup/components/account/hooks/useHiddenCollectibles";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 
 import { isMainnet } from "helpers/stellar";
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
+import { onAccountValue } from "helpers/accountFunding";
 import { newTabHref } from "helpers/urls";
 import { getTotalUsd, getTotalUsdLabel } from "popup/helpers/balance";
-import { NetworkDetails } from "@shared/constants/stellar";
 import { isEarnSupportedNetwork } from "@shared/constants/blend";
 import { BlendCatalogPool } from "@shared/api/types/blend";
 import { projectAnnualEarnings } from "popup/components/earn/helpers/earnProjection";
 import { PositionTokenRow } from "popup/components/earn/helpers/positionRows";
 import { reRouteOnboarding } from "popup/helpers/route";
+import { ROUTES } from "popup/constants/routes";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
-import { ROUTES } from "popup/constants/routes";
 import {
   EARN_PREFILL_QUERY,
   EARN_SOURCE,
@@ -72,14 +70,6 @@ import {
 } from "./hooks/useGetIcons";
 import { useStableSortedBalances } from "./hooks/useStableSortedBalances";
 import { AccountTabsContext, TabsList } from "./contexts/activeTabContext";
-
-import {
-  Sheet,
-  SheetContent,
-  ScreenReaderOnly,
-  SheetTitle,
-} from "popup/basics/shadcn/Sheet";
-import { Discover } from "popup/views/Discover";
 
 import "popup/metrics/authServices";
 import "./styles.scss";
@@ -111,13 +101,12 @@ export const Account = () => {
     }
   }, [activeTab, networkDetails, setActiveTab]);
 
-  const [isDiscoverOpen, setIsDiscoverOpen] = useState(false);
-
   const isFullscreenModeEnabled = isFullscreenMode();
   const {
     state: accountData,
     fetchData,
     refreshAppData,
+    refreshBalances,
   } = useGetAccountData({
     showHidden: false,
     includeIcons: false,
@@ -126,12 +115,18 @@ export const Account = () => {
     useGetAccountHistoryData();
 
   const { state: iconsData, fetchData: fetchIconsData } = useGetIcons();
-  const { refreshHiddenCollectibles, isCollectibleHidden } =
-    useHiddenCollectibles();
+  const {
+    refreshHiddenCollectibles,
+    isCollectibleHidden,
+    isHiddenCollectiblesLoading,
+  } = useHiddenCollectibles();
 
   // Warm the swap top-tokens cache in the background so the first Swap entry
   // paints Popular instantly; no-op on testnet / when already cached.
   useSwapTopTokensPrewarm();
+  // Refresh the funded state of every own account in the background, for the
+  // funded_account_count user property. No-op off mainnet or when fresh.
+  useFundedAccountsRefresh();
 
   const previousAccountBalancesRef = useRef<AccountBalances | null>(null);
   const sorobanErrorShownRef = useRef(false);
@@ -183,6 +178,40 @@ export const Account = () => {
       : undefined;
   const sortedBalances = useStableSortedBalances(balances, tokenPrices);
 
+  // Funding detection for the active account. It reads the same balances
+  // and prices as the hero total, so it adds no request. Only a resolved
+  // fetch reaches here; a failed fetch sets no data.
+  const resolvedPublicKey =
+    accountData.state === RequestState.SUCCESS &&
+    accountData.data.type === AppDataType.RESOLVED
+      ? accountData.data.publicKey
+      : null;
+  const resolvedNetworkDetails =
+    accountData.state === RequestState.SUCCESS &&
+    accountData.data.type === AppDataType.RESOLVED
+      ? accountData.data.networkDetails
+      : null;
+  useEffect(() => {
+    if (!accountBalances || !resolvedPublicKey || !resolvedNetworkDetails) {
+      return;
+    }
+    onAccountValue({
+      publicKey: resolvedPublicKey,
+      networkDetails: resolvedNetworkDetails,
+      input: {
+        isFunded: accountBalances.isFunded,
+        balances: accountBalances.balances,
+        tokenPrices,
+        hasBalanceError: !!(
+          accountBalances.error?.horizon || accountBalances.error?.soroban
+        ),
+      },
+    });
+    // Runs only when new balances or prices arrive. The key and network
+    // come with the same data.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountBalances, tokenPrices]);
+
   useEffect(() => {
     const getData = async () => {
       if (accountBalances && !isScanAppended) {
@@ -222,7 +251,7 @@ export const Account = () => {
   if (accountData.data?.type === AppDataType.REROUTE) {
     if (accountData.data.shouldOpenTab) {
       openTab(newTabHref(accountData.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate
@@ -251,13 +280,17 @@ export const Account = () => {
   const isFunded = !!resolvedData?.balances?.isFunded;
   const canUseFriendbot = !!resolvedData?.networkDetails?.friendbotUrl;
   const collections = resolvedData?.collectibles?.collections ?? [];
-  const reloadBalances = () =>
-    fetchData({
-      useAppDataCache: true,
-      shouldForceBalancesRefresh: true,
-    });
+  // Deliberately the non-blanking refresh rather than `fetchData`. Asset
+  // Details calls this from its own close handler -- the X, and after Hide as
+  // well as after Remove -- and a full fetch resets the screen to LOADING,
+  // which replaced Home with a full-screen spinner every time a token sheet
+  // was dismissed.
+  const reloadBalances = () => refreshBalances();
 
-  const totalBalanceUsd = getTotalUsd(tokenPrices ?? {}, balances);
+  const { totalUsd: totalBalanceUsd, hasPrices } = getTotalUsd(
+    tokenPrices ?? {},
+    balances,
+  );
   // The hero is never hidden; see getTotalUsdLabel for which of a total, a
   // zero or the placeholder it shows. The network comes from Redux because
   // `resolvedData` is null once the fetch has failed.
@@ -265,7 +298,7 @@ export const Account = () => {
     hasError,
     hasPriceFeed: isMainnet(networkDetails),
     isFunded,
-    tokenPrices,
+    hasPrices,
     totalUsd: totalBalanceUsd,
   });
 
@@ -274,25 +307,17 @@ export const Account = () => {
       resolvedData?.publicKey
     ] ?? [];
 
-  // The Tokens tab dictates which kind of Add button Collectibles uses, so the
-  // two match wherever they can. It carries its own inline CTA exactly when it
-  // renders the unfunded empty state.
-  const isTokensEmptyStateShown =
-    !isFunded && !hasError && !resolvedData?.balances?.error?.horizon;
-
   // An empty `collections` means "owns none" only once the request lands, so that
   // tab spins until it does. Guarded on `resolvedData`: a failed fetch discards
   // the result, and waiting on it would spin forever.
+  //
+  // The visibility map is a second, independent request, and the grid filters
+  // against it -- so painting before it lands flashes every hidden collectible
+  // back into view. The hook reports a failed fetch as loaded, so this cannot
+  // spin forever either: an unfiltered grid beats a permanent loader.
   const isCollectiblesLoading =
-    !!resolvedData && !resolvedData.hasLoadedCollectibles;
-
-  // Only where there is an empty state to host it -- with collectibles on screen
-  // the pill stays, so that tab always has some way to add one. Same predicate
-  // that pane switches on, so the two cannot disagree.
-  const isCollectiblesCtaInline =
-    !isCollectiblesLoading &&
-    isTokensEmptyStateShown &&
-    !hasVisibleCollections(collections, isCollectibleHidden);
+    (!!resolvedData && !resolvedData.hasLoadedCollectibles) ||
+    isHiddenCollectiblesLoading;
 
   // Feeds the Positions tab's empty-state card. `earnOptions` is only ever
   // fetched once positions land empty (useGetAccountData), so this is a no-op
@@ -333,10 +358,7 @@ export const Account = () => {
         currentAccountName={currentAccountName}
         publicKey={resolvedData?.publicKey || reduxPublicKey}
         onAllowListRemove={refreshAppData}
-        onClickRow={async (updatedValues: {
-          publicKey?: string;
-          network?: NetworkDetails;
-        }) => {
+        onAccountChanged={async (updatedValues: { publicKey: string }) => {
           await fetchData({
             useAppDataCache: false,
             updatedAppData: updatedValues,
@@ -344,8 +366,6 @@ export const Account = () => {
           });
         }}
         roundedTotalBalanceUsd={roundedTotalBalanceUsd}
-        isFunded={isFunded}
-        onDiscoverClick={() => setIsDiscoverOpen(true)}
       />
       <View.Content hasNoPadding>
         <div className="AccountView" data-testid="account-view">
@@ -413,8 +433,17 @@ export const Account = () => {
                       balances: sortedBalances,
                     }}
                     historyData={historyData.data}
+                    hasHistoryError={historyData.state === RequestState.ERROR}
                     assetPrices={tokenPrices ?? {}}
                     assetIcons={resolvedIcons}
+                    reloadBalances={reloadBalances}
+                  />
+                  {/* Ends the list and scrolls with it. Only once funded:
+                      adding a token creates a trustline, which needs XLM. */}
+                  <InlineAddButton
+                    label={t("Add token")}
+                    route={ROUTES.searchAsset}
+                    data-testid="add-token-btn"
                   />
                 </div>
               ) : (
@@ -450,8 +479,8 @@ export const Account = () => {
               <div data-testid="account-collectibles">
                 <AccountCollectibles
                   collections={collections}
-                  hasInlineCta={isCollectiblesCtaInline}
                   isLoading={isCollectiblesLoading}
+                  hasError={hasError || !!resolvedData?.hasCollectiblesError}
                   refreshHiddenCollectibles={refreshHiddenCollectibles}
                   isCollectibleHidden={isCollectibleHidden}
                 />
@@ -460,35 +489,6 @@ export const Account = () => {
           />
         </div>
       </View.Content>
-      {/*
-        Kept a sibling of View.Content for readability only — the pill is
-        `position: fixed`, so with no transform/filter ancestor its containing
-        block is the viewport and nesting depth doesn't affect where it lands.
-        On Home nothing here is a scroll container: AccountView overrides
-        View.Content and its inset to `overflow: visible`, so the document
-        itself is the scrollport (document.scrollingElement === html).
-      */}
-      <FloatingAddButton
-        isFunded={isFunded}
-        isCollectiblesCtaInline={isCollectiblesCtaInline}
-        isCollectiblesLoading={isCollectiblesLoading}
-      />
-      <Sheet
-        open={isDiscoverOpen}
-        onOpenChange={(open) => !open && setIsDiscoverOpen(false)}
-      >
-        <SheetContent
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          aria-describedby={undefined}
-          side="bottom"
-          className="AccountView__discover-sheet"
-        >
-          <ScreenReaderOnly>
-            <SheetTitle>{t("Discover")}</SheetTitle>
-          </ScreenReaderOnly>
-          <Discover onClose={() => setIsDiscoverOpen(false)} />
-        </SheetContent>
-      </Sheet>
     </>
   );
 };

@@ -6,14 +6,21 @@
   align-items: center;
   height: 100%;
 
+  // A swap's status and summary, 96px from the top with the view's own 24px.
+  &--swap {
+    padding-top: pxToRem(72px);
+  }
+
   &__Footer {
     &__Done {
       margin-top: pxToRem(12px);
     }
+    // Text/SM/500 in secondary.
     &__Subtext {
       font-size: pxToRem(14px);
       line-height: pxToRem(20px);
-      color: var(--sds-clr-gray-09);
+      font-weight: 500;
+      color: var(--sds-clr-gray-11);
       margin-bottom: pxToRem(12px);
       text-align: center;
     }
@@ -102,9 +109,6 @@
       .IdenticonImg {
         width: pxToRem(32px);
         height: pxToRem(32px);
-        padding: pxToRem(6px);
-        border: 1px solid var(--sds-clr-gray-09);
-        border-radius: pxToRem(100px);
 
         &:not(:last-child) {
           margin-right: pxToRem(12px);

@@ -7,7 +7,6 @@ import {
   contract,
   StrKey,
 } from "stellar-sdk";
-import { XdrReader } from "@stellar/js-xdr";
 
 export interface TokenArgsDisplay {
   contractId: string;
@@ -448,7 +447,7 @@ export const valueToI128String = (value: xdr.ScVal) =>
 
 // How do we decode these in a more generic way?
 export const decodei128 = (b64: string) => {
-  const value = xdr.ScVal.fromXDR(b64, "base64");
+  const value = xdr.ScVal.fromXdr(b64, "base64");
   try {
     return valueToI128String(value);
   } catch (error) {
@@ -458,10 +457,12 @@ export const decodei128 = (b64: string) => {
 };
 
 export const decodeStr = (b64: string) =>
-  xdr.ScVal.fromXDR(b64, "base64").str().toString();
+  xdr
+    .expectUnionVariant(xdr.ScVal.fromXdr(b64, "base64"), "scvString")
+    .str.toString();
 
 export const decodeU32 = (b64: string) =>
-  xdr.ScVal.fromXDR(b64, "base64").u32();
+  xdr.expectUnionVariant(xdr.ScVal.fromXdr(b64, "base64"), "scvU32").u32;
 
 export const numberToI128 = (value: number): xdr.ScVal =>
   new ScInt(value).toI128();
@@ -471,10 +472,10 @@ export const getLedgerKeyContractCode = (contractId: string) => {
     new xdr.LedgerKeyContractData({
       contract: new Address(contractId).toScAddress(),
       key: xdr.ScVal.scvLedgerKeyContractInstance(),
-      durability: xdr.ContractDataDurability.persistent(),
+      durability: xdr.ContractDataDurability.persistent,
     }),
   );
-  return ledgerKey.toXDR("base64");
+  return ledgerKey.toXdr("base64");
 };
 
 export const getLedgerEntries = async (
@@ -509,45 +510,47 @@ export const getLedgerEntries = async (
 };
 
 export const getLedgerKeyWasmId = (contractLedgerEntryData: string) => {
-  const contractCodeWasmHash = xdr.LedgerEntryData.fromXDR(
-    contractLedgerEntryData,
-    "base64",
-  )
-    .contractData()
-    .val()
-    .instance()
-    .executable()
-    .wasmHash();
+  const contractData = xdr.expectUnionVariant(
+    xdr.LedgerEntryData.fromXdr(contractLedgerEntryData, "base64"),
+    "contractData",
+  ).contractData;
+  const executable = xdr.expectUnionVariant(
+    contractData.val,
+    "scvContractInstance",
+  ).instance.executable;
+
+  // A CAP-85 (protocol 28) external reference has no wasm hash of its own --
+  // resolving one needs an extra RPC round trip against the owner contract, so
+  // callers that only want a contract spec degrade instead.
+  if (executable.type === "contractExecutableExternalRef") {
+    throw new Error(
+      "Contract executable is an external reference; no wasm hash is available",
+    );
+  }
+
+  const contractCodeWasmHash = xdr.expectUnionVariant(
+    executable,
+    "contractExecutableWasm",
+  ).wasmHash;
   const ledgerKey = xdr.LedgerKey.contractCode(
     new xdr.LedgerKeyContractCode({
       hash: contractCodeWasmHash,
     }),
   );
-  return ledgerKey.toXDR("base64");
+  return ledgerKey.toXdr("base64");
 };
 
-export const parseWasmXdr = async (xdrContents: string) => {
-  const wasmBuffer = xdr.LedgerEntryData.fromXDR(xdrContents, "base64")
-    .contractCode()
-    .code();
-  const wasmBytes = new Uint8Array(
-    wasmBuffer.buffer as ArrayBuffer,
-    wasmBuffer.byteOffset,
-    wasmBuffer.byteLength,
-  );
-  const wasmModule = await WebAssembly.compile(wasmBytes);
-  const reader = new XdrReader(
-    Buffer.from(
-      WebAssembly.Module.customSections(wasmModule, "contractspecv0")[0],
-    ),
-  );
+export const parseWasmXdr = (xdrContents: string) => {
+  const wasmBytes = xdr.expectUnionVariant(
+    xdr.LedgerEntryData.fromXdr(xdrContents, "base64"),
+    "contractCode",
+  ).contractCode.code;
 
-  const specs = [];
-  do {
-    specs.push(xdr.ScSpecEntry.read(reader));
-  } while (!reader.eof);
-  const contractSpec = new contract.Spec(specs);
-  return contractSpec.jsonSchema();
+  // v17: `Spec.fromWasm` walks the wasm's `contractspecv0` custom section and
+  // decodes the ScSpecEntry stream itself, so we don't need WebAssembly.compile
+  // to read a custom section. Note the constructor is not equivalent — it
+  // treats a Uint8Array as an already-extracted spec stream.
+  return contract.Spec.fromWasm(wasmBytes).jsonSchema();
 };
 
 export const getContractSpec = async (

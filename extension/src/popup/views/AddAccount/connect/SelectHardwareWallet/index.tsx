@@ -21,6 +21,7 @@ const WalletOption = ({
 }: {
   walletType: ConfigurableWalletType;
 }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -33,12 +34,14 @@ const WalletOption = ({
     );
   };
 
+  const Logo = walletAssets[walletType].logo;
+
   return (
     <li
       className="SelectHardwareWallet__option"
       onClick={() => handleContinue(walletType)}
     >
-      <img src={walletAssets[walletType].logo} alt={`${walletType} logo`} />
+      <Logo role="img" aria-label={t("{{walletType}} logo", { walletType })} />
     </li>
   );
 };
@@ -55,9 +58,7 @@ export const SelectHardwareWallet = () => {
       />
       <View.Content>
         <div className="SelectHardwareWallet">
-          <p>
-            {t("Select a hardware wallet you’d like to use with Freighter.")}
-          </p>
+          <p>{t("Select a hardware wallet you’d like to use with Varial.")}</p>
           <ul className="SelectHardwareWallet__options-list">
             {Object.entries(WalletType).map(([_k, v]) =>
               v ? (

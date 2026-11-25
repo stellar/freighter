@@ -1,10 +1,15 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import { Button, Icon, Input } from "@stellar/design-system";
+import { Button, Input } from "@stellar/design-system";
 import { Field, FieldProps, Form, Formik } from "formik";
 import { object as YupObject, string as YupString } from "yup";
 
+import {
+  SheetHeader,
+  SheetHeaderIconTone,
+  SheetHeaderLayout,
+} from "popup/components/SheetHeader";
 import { AppDispatch } from "popup/App";
 import { Account } from "@shared/api/types";
 import { updateAccountName } from "popup/ducks/accountServices";
@@ -60,21 +65,17 @@ export const RenameWallet = ({
 
   return (
     <div className="RenameWallet">
-      <div className="RenameWallet__header">
-        <div className="RenameWallet__header__actions">
-          <button
-            className="RenameWallet__close"
-            onClick={onClose}
-            data-testid="rename-wallet-close"
-            aria-label={t("Close")}
-          >
-            <Icon.X />
-          </button>
-        </div>
+      <SheetHeader
+        layout={SheetHeaderLayout.Centered}
+        title={t("Rename wallet")}
+        onClose={onClose}
+        // In the account sheet's icon colour, like its other bodies.
+        iconTone={SheetHeaderIconTone.Secondary}
+        closeTestId="rename-wallet-close"
+      />
 
-        <div className="RenameWallet__identicon">
-          <IdenticonImg publicKey={publicKey} />
-        </div>
+      <div className="RenameWallet__identicon">
+        <IdenticonImg publicKey={publicKey} />
       </div>
 
       <Formik

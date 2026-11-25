@@ -14,9 +14,10 @@ import {
   stubScanDappUnableToScan,
   stubTokenDetails,
   stubTokenPrices,
-  createAssetObject,
   stubMemoRequiredAccounts,
+  stubSwapQuotes,
 } from "./helpers/stubs";
+import { goToAddAsset } from "./helpers/assets";
 
 test.describe("BlockAid Scan - Unable to Scan States", () => {
   test("Add asset shows 'Unable to scan token' warning when scan fails", async ({
@@ -68,10 +69,7 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
     // switch to Mainnet where asset scanning is supported and errors are surfaced
     await switchToMainnet(page);
 
-    await page.getByTestId("account-options-dropdown").click();
-    await page.getByText("Manage assets").click();
-    await expect(page.getByText("Your assets")).toBeVisible();
-    await page.getByText("Add an asset").click({ force: true });
+    await goToAddAsset(page);
 
     // Use a classic asset issuer address to trigger ChangeTrustInternal (not ToggleTokenInternal)
     // Searching by issuer will return classic assets which use ChangeTrustInternal
@@ -242,33 +240,7 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
         await stubAccountBalancesV2(page, balancesJson);
 
         // Mock swap path finding endpoint (Horizon path payment)
-        await page.route("**/paths**", async (route) => {
-          const url = new URL(route.request().url());
-          const sourceAsset = url.searchParams.get("source_asset_code");
-          const destAsset = url.searchParams.get("destination_asset_code");
-
-          const source = createAssetObject(sourceAsset, USDC_ISSUER);
-          const destination = createAssetObject(destAsset, USDC_ISSUER);
-
-          // Return a valid path for swaps
-          const json = {
-            _embedded: {
-              records: [
-                {
-                  source_asset_type: source.asset_type,
-                  source_asset_code: source.asset_code,
-                  source_asset_issuer: source.asset_issuer,
-                  destination_asset_type: destination.asset_type,
-                  destination_asset_code: destination.asset_code,
-                  destination_asset_issuer: destination.asset_issuer,
-                  destination_amount: "0.95",
-                  path: [],
-                },
-              ],
-            },
-          };
-          await route.fulfill({ json });
-        });
+        await stubSwapQuotes(context, { toAmount: "0.95" });
 
         // Transaction scan should be unable to scan
         await stubAccountHistory(page);
@@ -295,6 +267,10 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
       .getByTestId("swap-sell-card")
       .getByTestId("send-amount-amount-input")
       .fill("10");
+    // Disabled until the quote for the entered amount lands.
+    await expect(page.getByTestId("swap-amount-btn-continue")).toBeEnabled({
+      timeout: 10000,
+    });
     await page.getByTestId("swap-amount-btn-continue").click({ force: true });
 
     // Should be on review pane with warning banner visible

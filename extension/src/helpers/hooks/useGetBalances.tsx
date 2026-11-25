@@ -15,13 +15,15 @@ import {
 } from "@shared/api/types/backend-api";
 import { RequestState } from "constants/request";
 import { initialState, isCacheValid, reducer } from "helpers/request";
-import { storeBalanceMetricData } from "helpers/metrics";
 import { filterHiddenBalances, sortBalances } from "popup/helpers/account";
 import { AssetType } from "@shared/api/types/account-balance";
 import { settingsSelector } from "popup/ducks/settings";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 import { AppDispatch, AppState } from "popup/App";
-import { balancesV2Selector } from "popup/ducks/remoteConfig";
+import {
+  balancesV2Selector,
+  waitForRemoteConfig,
+} from "popup/ducks/remoteConfig";
 import {
   balancesSelector,
   iconsSelector,
@@ -33,10 +35,12 @@ import {
 
 const formatBalances = async ({
   publicKey,
+  network,
   balances,
   showHidden,
 }: {
   publicKey: string;
+  network: string;
   balances: NonNullable<BalanceMap>;
   showHidden: boolean;
 }) => {
@@ -44,6 +48,7 @@ const formatBalances = async ({
   if (!showHidden) {
     const hiddenAssets = await getHiddenAssets({
       activePublicKey: publicKey,
+      network,
     });
     return {
       balances: sortBalances(
@@ -103,19 +108,22 @@ function useGetBalances(options: {
       const accountBalances =
         useCache && isBalancesCacheValid
           ? cachedBalanceData
-          : await getAccountBalances(
-              publicKey,
-              networkDetails,
-              isMainnet,
-              shouldSkipScan,
-              // Read the flag from the store at call time (not a
-              // render-captured value) so a freshly resolved Amplitude flag
-              // isn't missed — mirrors useGetTokenPrices.
-              balancesV2Selector(store.getState()),
+          : await waitForRemoteConfig(store).then(() =>
+              getAccountBalances(
+                publicKey,
+                networkDetails,
+                isMainnet,
+                shouldSkipScan,
+                // Read the flag from the store at call time (not a
+                // render-captured value) so a freshly resolved Amplitude flag
+                // isn't missed — mirrors useGetTokenPrices.
+                balancesV2Selector(store.getState()),
+              ),
             );
 
       const { balances, unfilteredBalances } = await formatBalances({
         publicKey,
+        network: networkDetails.network,
         balances: accountBalances.balances as NonNullable<BalanceMap>,
         showHidden: options.showHidden,
       });
@@ -169,7 +177,6 @@ function useGetBalances(options: {
       }
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-      storeBalanceMetricData(publicKey, accountBalances.isFunded || false);
       return payload;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });

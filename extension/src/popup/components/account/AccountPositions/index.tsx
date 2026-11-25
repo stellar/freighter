@@ -17,7 +17,7 @@ import {
   ScreenReaderOnly,
 } from "popup/basics/shadcn/Sheet";
 import { SlideupModal } from "popup/components/SlideupModal";
-import { PoolDetailsSheet } from "popup/components/earn/PoolDetailsSheet";
+import { PositionDetailsSheet } from "popup/components/earn/PositionDetailsSheet";
 import {
   POOL_DETAILS_SOURCE,
   trackEarnPoolDetailsOpened,
@@ -232,10 +232,9 @@ export const AccountPositions = ({
           <SlideupModal
             isModalOpen={Boolean(sheetMode && selectedPool)}
             setIsModalOpen={() => setSheetMode(null)}
-            hasBackdrop
           >
             {sheetMode && selectedPool && selectedPosition ? (
-              <PoolDetailsSheet
+              <PositionDetailsSheet
                 pool={selectedPool}
                 position={selectedPosition}
                 focusedAssetId={

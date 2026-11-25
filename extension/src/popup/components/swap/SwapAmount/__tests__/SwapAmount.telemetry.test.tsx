@@ -19,10 +19,15 @@ import * as UseGetSwapAmountData from "popup/components/swap/SwapAmount/hooks/us
 import * as UseSimulateSwapData from "popup/components/swap/SwapAmount/hooks/useSimulateSwapData";
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
 import * as XlmReserve from "popup/helpers/xlmReserve";
+import * as SwapQuote from "popup/helpers/swapQuote";
 
 jest.mock("helpers/metrics", () => ({
   ...jest.requireActual("helpers/metrics"),
   emitMetric: jest.fn(),
+  // Opening the review modal emits the `confirm` screen view. The real
+  // emitScreenViewed runs buildCommonContext, which reads Redux slices this
+  // suite's minimal store does not provide, so stub it too.
+  emitScreenViewed: jest.fn(),
 }));
 
 // The quote-expired notice is a sonner toast; assert it fires rather than
@@ -105,6 +110,17 @@ describe("SwapAmount telemetry + quote-expired surfacing", () => {
     jest
       .spyOn(XlmReserve, "shouldShowXlmReservePreflight")
       .mockReturnValue(false);
+    jest
+      .spyOn(SwapQuote, "getSwapQuote")
+      .mockImplementation(async (params) => ({
+        route: {
+          sourceAmount: params.amount,
+          destinationAmount: "10",
+          path: [],
+        },
+        quotes: null,
+        key: SwapQuote.getSwapQuoteKey(params),
+      }));
   });
 
   afterEach(() => {
@@ -233,6 +249,9 @@ describe("SwapAmount telemetry + quote-expired surfacing", () => {
       goToNext,
     );
 
+    await waitFor(() =>
+      expect(screen.getByTestId("swap-amount-btn-continue")).toBeEnabled(),
+    );
     await act(async () => {
       fireEvent.click(screen.getByTestId("swap-amount-btn-continue"));
     });

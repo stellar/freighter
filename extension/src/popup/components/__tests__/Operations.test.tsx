@@ -1,5 +1,5 @@
 import React from "react";
-import { render, waitFor, screen } from "@testing-library/react";
+import { act, render, waitFor, screen } from "@testing-library/react";
 import {
   Address,
   Asset,
@@ -10,10 +10,16 @@ import {
   ScInt,
 } from "stellar-sdk";
 
-import { mockAccounts, TEST_PUBLIC_KEY, Wrapper } from "popup/__testHelpers__";
+import {
+  getTestStore,
+  mockAccounts,
+  TEST_PUBLIC_KEY,
+  Wrapper,
+} from "popup/__testHelpers__";
 import { Operations } from "../signTransaction/Operations";
 import * as internalApi from "@shared/api/internal";
 import { ROUTES } from "popup/constants/routes";
+import { saveSettingsAction } from "popup/ducks/settings";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
   TESTNET_NETWORK_DETAILS,
@@ -31,7 +37,10 @@ describe("Operations", () => {
         definitions: {
           transfer: {
             properties: {
-              args: { required: ["from", "to", "amount"] },
+              args: {
+                properties: { from: {}, to: {}, amount: {} },
+                required: ["from", "to", "amount"],
+              },
             },
           },
         },
@@ -45,7 +54,7 @@ describe("Operations", () => {
       const func = xdr.HostFunction.hostFunctionTypeInvokeContract(
         new xdr.InvokeContractArgs({
           contractAddress: xdr.ScAddress.scAddressTypeContract(
-            StrKey.decodeContract(CONTRACT) as any,
+            new xdr.ContractId(StrKey.decodeContract(CONTRACT)),
           ),
           functionName: Buffer.from("transfer"),
           args: [
@@ -116,6 +125,80 @@ describe("Operations", () => {
       expect(parameterValues[0]).toHaveTextContent(TEST_PUBLIC_KEY);
       expect(parameterValues[1]).toHaveTextContent(TEST_PUBLIC_KEY);
       expect(parameterValues[2]).toHaveTextContent("100");
+
+      // Names came from the spec, so they are qualified as the contract's own
+      // claim rather than presented as verified. The note qualifies the whole
+      // section, so it sits between the "Parameters" heading and the card of
+      // rows rather than inside the card.
+      const specNote = screen.getByTestId("ContractSpecNote");
+      expect(specNote.previousElementSibling).toHaveTextContent("Parameters");
+      expect(specNote.nextElementSibling).toHaveClass("Operations--item");
+      expect(specNote.closest(".Operations--item")).toBeNull();
+    });
+
+    it("renders a SAC transfer to a muxed contract (W) address", async () => {
+      const CONTRACT =
+        "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE";
+      // CAP-84: a muxed contract address is valid as a SAC transfer `to`.
+      const MUXED_CONTRACT =
+        "WA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUAAAAAAAAAAAAAWWC";
+
+      const func = xdr.HostFunction.hostFunctionTypeInvokeContract(
+        new xdr.InvokeContractArgs({
+          contractAddress: xdr.ScAddress.scAddressTypeContract(
+            new xdr.ContractId(StrKey.decodeContract(CONTRACT)),
+          ),
+          functionName: Buffer.from("transfer"),
+          args: [
+            new Address(TEST_PUBLIC_KEY).toScVal(),
+            new Address(MUXED_CONTRACT).toScVal(),
+            new ScInt(100).toI128(),
+          ],
+        }),
+      );
+
+      const op = {
+        auth: [],
+        func,
+        type: "invokeHostFunction",
+      } as Operation.InvokeHostFunction;
+
+      render(
+        <Wrapper
+          routes={[ROUTES.signTransaction]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: APPLICATION_STATE.PASSWORD_CREATED,
+              TEST_PUBLIC_KEY,
+              allAccounts: mockAccounts,
+              hasPrivateKey: true,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+              isSorobanPublicEnabled: true,
+              isRpcHealthy: true,
+            },
+          }}
+        >
+          <Operations
+            operations={[op]}
+            flaggedKeys={{}}
+            isMemoRequired={false}
+          />
+        </Wrapper>,
+      );
+
+      await waitFor(() => screen.getAllByTestId("ParameterKey"));
+      const parameterKeys = screen.getAllByTestId("ParameterKey");
+      const parameterValues = screen.getAllByTestId("ParameterValue");
+
+      expect(parameterKeys[1]).toHaveTextContent("to");
+      expect(parameterValues).toHaveLength(3);
+      expect(parameterValues[0]).toHaveTextContent(TEST_PUBLIC_KEY);
+      expect(parameterValues[1]).toHaveTextContent(MUXED_CONTRACT);
+      expect(parameterValues[2]).toHaveTextContent("100");
     });
 
     it("renders transfer operations if contract spec is not available", async () => {
@@ -128,7 +211,7 @@ describe("Operations", () => {
       const func = xdr.HostFunction.hostFunctionTypeInvokeContract(
         new xdr.InvokeContractArgs({
           contractAddress: xdr.ScAddress.scAddressTypeContract(
-            StrKey.decodeContract(CONTRACT) as any,
+            new xdr.ContractId(StrKey.decodeContract(CONTRACT)),
           ),
           functionName: Buffer.from("transfer"),
           args: [
@@ -190,16 +273,270 @@ describe("Operations", () => {
         );
       expect(invocationContractValue).toHaveTextContent("CA3D…GAXE");
 
+      // No spec means no trustworthy names, so rows render unlabelled rather
+      // than borrowing a label from somewhere else. (textContent, not
+      // toHaveTextContent: jest-dom matches an empty string against anything.)
       expect(parameterKeys).toHaveLength(3);
-      expect(parameterKeys[0]).not.toHaveTextContent("from");
-      expect(parameterKeys[1]).not.toHaveTextContent("to");
-      expect(parameterKeys[2]).not.toHaveTextContent("amount");
+      expect(parameterKeys[0].textContent).toBe("");
+      expect(parameterKeys[1].textContent).toBe("");
+      expect(parameterKeys[2].textContent).toBe("");
 
       expect(parameterValues).toHaveLength(3);
       expect(parameterValues[0]).toHaveTextContent(TEST_PUBLIC_KEY);
       expect(parameterValues[1]).toHaveTextContent(TEST_PUBLIC_KEY);
       expect(parameterValues[2]).toHaveTextContent("100");
+
+      // Nothing was labelled, so there is no claim to disclaim.
+      expect(screen.queryByTestId("ContractSpecNote")).not.toBeInTheDocument();
     });
+
+    it("keeps every label on its own value when a middle parameter is optional", async () => {
+      // gauge_schedule_reward(router, distributor, gauge,
+      // start_at: Option<u64>, duration, tps). `required` omits start_at, so
+      // indexing it positionally used to slide every later label up one row.
+      jest.spyOn(internalApi, "getContractSpec").mockImplementation(() => {
+        return Promise.resolve({
+          definitions: {
+            gauge_schedule_reward: {
+              properties: {
+                args: {
+                  properties: {
+                    router: {},
+                    distributor: {},
+                    gauge: {},
+                    start_at: {},
+                    duration: {},
+                    tps: {},
+                  },
+                  required: [
+                    "router",
+                    "distributor",
+                    "gauge",
+                    "duration",
+                    "tps",
+                  ],
+                },
+              },
+            },
+          },
+        });
+      });
+
+      // router and gauge are the same address, so a row key derived from the
+      // argument's value would collide and let React pair a label with the
+      // wrong value on the re-render that resolves the names.
+      const consoleError = jest.spyOn(console, "error");
+
+      const CONTRACT =
+        "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE";
+      const START_AT = 1750000000;
+      const DURATION = 604800;
+      const TPS = 42;
+
+      const func = xdr.HostFunction.hostFunctionTypeInvokeContract(
+        new xdr.InvokeContractArgs({
+          contractAddress: xdr.ScAddress.scAddressTypeContract(
+            new xdr.ContractId(StrKey.decodeContract(CONTRACT)),
+          ),
+          functionName: Buffer.from("gauge_schedule_reward"),
+          args: [
+            new Address(CONTRACT).toScVal(),
+            new Address(TEST_PUBLIC_KEY).toScVal(),
+            new Address(CONTRACT).toScVal(),
+            new ScInt(START_AT).toU64(),
+            new ScInt(DURATION).toU64(),
+            new ScInt(TPS).toI128(),
+          ],
+        }),
+      );
+
+      const op = {
+        auth: [],
+        func,
+        type: "invokeHostFunction",
+      } as Operation.InvokeHostFunction;
+
+      render(
+        <Wrapper
+          routes={[ROUTES.signTransaction]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: APPLICATION_STATE.PASSWORD_CREATED,
+              TEST_PUBLIC_KEY,
+              allAccounts: mockAccounts,
+              hasPrivateKey: true,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+              isSorobanPublicEnabled: true,
+              isRpcHealthy: true,
+            },
+          }}
+        >
+          <Operations
+            operations={[op]}
+            flaggedKeys={{}}
+            isMemoRequired={false}
+          />
+        </Wrapper>,
+      );
+
+      await waitFor(() => screen.getAllByTestId("ParameterKey"));
+      const parameterKeys = screen.getAllByTestId("ParameterKey");
+      const parameterValues = screen.getAllByTestId("ParameterValue");
+
+      expect(parameterKeys).toHaveLength(6);
+      expect(parameterKeys[0]).toHaveTextContent("router");
+      expect(parameterKeys[1]).toHaveTextContent("distributor");
+      expect(parameterKeys[2]).toHaveTextContent("gauge");
+      expect(parameterKeys[3]).toHaveTextContent("start_at");
+      expect(parameterKeys[4]).toHaveTextContent("duration");
+      expect(parameterKeys[5]).toHaveTextContent("tps");
+
+      // The timestamp must sit under start_at, not under duration.
+      expect(parameterValues[3]).toHaveTextContent(String(START_AT));
+      expect(parameterValues[4]).toHaveTextContent(String(DURATION));
+      expect(parameterValues[5]).toHaveTextContent(String(TPS));
+
+      expect(screen.getByTestId("ContractSpecNote")).toBeInTheDocument();
+
+      expect(
+        consoleError.mock.calls.filter((call) =>
+          call.some(
+            (arg) => typeof arg === "string" && arg.includes("same key"),
+          ),
+        ),
+      ).toEqual([]);
+      consoleError.mockRestore();
+    });
+
+    it("shows the loader rather than dropping labels when the spec is refetched", async () => {
+      // The signing popup can receive a settings refresh while it is mounted:
+      // `grantAccess` dispatches `saveSettingsAction` fire-and-forget, and in
+      // sidebar mode the same React tree carries over from the grant into the
+      // signing view. That writes a fresh `networkDetails` object with
+      // identical values, which re-runs the lookup. The names must not simply
+      // vanish -- unlabelled rows mean "the spec had nothing to say", and a
+      // refetch in flight is not that.
+      const SPEC = {
+        definitions: {
+          transfer: {
+            properties: {
+              args: {
+                properties: { from: {}, to: {}, amount: {} },
+                required: ["from", "to", "amount"],
+              },
+            },
+          },
+        },
+      };
+
+      let resolveRefetch: (spec: typeof SPEC) => void = () => {};
+      let calls = 0;
+      const getContractSpec = jest
+        .spyOn(internalApi, "getContractSpec")
+        .mockImplementation(() => {
+          calls += 1;
+          // Hold the refetch open so the in-flight state can be observed
+          // instead of raced.
+          return calls === 1
+            ? Promise.resolve(SPEC)
+            : new Promise((resolve) => {
+                resolveRefetch = resolve;
+              });
+        });
+
+      const CONTRACT =
+        "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE";
+
+      const func = xdr.HostFunction.hostFunctionTypeInvokeContract(
+        new xdr.InvokeContractArgs({
+          contractAddress: xdr.ScAddress.scAddressTypeContract(
+            new xdr.ContractId(StrKey.decodeContract(CONTRACT)),
+          ),
+          functionName: Buffer.from("transfer"),
+          args: [
+            new Address(TEST_PUBLIC_KEY).toScVal(),
+            new Address(TEST_PUBLIC_KEY).toScVal(),
+            new ScInt(100).toI128(),
+          ],
+        }),
+      );
+
+      const op = {
+        auth: [],
+        func,
+        type: "invokeHostFunction",
+      } as Operation.InvokeHostFunction;
+
+      render(
+        <Wrapper
+          routes={[ROUTES.signTransaction]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: APPLICATION_STATE.PASSWORD_CREATED,
+              TEST_PUBLIC_KEY,
+              allAccounts: mockAccounts,
+              hasPrivateKey: true,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+              isSorobanPublicEnabled: true,
+              isRpcHealthy: true,
+            },
+          }}
+        >
+          <Operations
+            operations={[op]}
+            flaggedKeys={{}}
+            isMemoRequired={false}
+          />
+        </Wrapper>,
+      );
+
+      await waitFor(() => screen.getAllByTestId("ParameterKey"));
+      expect(screen.getAllByTestId("ParameterKey")[0]).toHaveTextContent(
+        "from",
+      );
+
+      // Same values, new object -- exactly what a settings reload produces.
+      const store = getTestStore()!;
+      act(() => {
+        store.dispatch(
+          saveSettingsAction({
+            ...store.getState().settings,
+            networkDetails: { ...TESTNET_NETWORK_DETAILS },
+          }),
+        );
+      });
+
+      expect(calls).toBe(2);
+      // Back in the loading state: the rows and the note are gone together
+      // with the names, and the loader stands in for the whole section.
+      expect(
+        screen.queryByTestId("OperationParameters"),
+      ).not.toBeInTheDocument();
+      expect(screen.queryAllByTestId("ParameterKey")).toHaveLength(0);
+      expect(screen.queryByTestId("ContractSpecNote")).not.toBeInTheDocument();
+
+      await act(async () => {
+        resolveRefetch(SPEC);
+      });
+
+      const parameterKeys = screen.getAllByTestId("ParameterKey");
+      expect(parameterKeys).toHaveLength(3);
+      expect(parameterKeys[0]).toHaveTextContent("from");
+      expect(parameterKeys[1]).toHaveTextContent("to");
+      expect(parameterKeys[2]).toHaveTextContent("amount");
+      expect(screen.getByTestId("ContractSpecNote")).toBeInTheDocument();
+
+      getContractSpec.mockRestore();
+    });
+
     it("renders changeTrust operation", async () => {
       const assetCode = "KHL3";
       const op = {

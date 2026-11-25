@@ -1,4 +1,11 @@
 import React from "react";
+import {
+  Account,
+  Asset,
+  Keypair,
+  Operation,
+  TransactionBuilder,
+} from "stellar-sdk";
 import { Provider } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { renderHook, act } from "@testing-library/react";
@@ -13,6 +20,7 @@ import {
   TESTNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import * as AccountHelpers from "popup/helpers/account";
+import * as ApiInternal from "@shared/api/internal";
 import * as BlockaidHelpers from "popup/helpers/blockaid";
 import * as FetchHelpers from "popup/helpers/fetch";
 import { getSiteSecurityStates } from "popup/helpers/blockaid";
@@ -44,6 +52,10 @@ jest.spyOn(GetAppDataHooks, "useGetAppData").mockReturnValue({
       type: AppDataType.RESOLVED,
       account: {
         publicKey: TEST_PUBLIC_KEY,
+        allAccounts: [
+          { ...mockAccounts[0], publicKey: TEST_PUBLIC_KEY },
+          mockAccounts[1],
+        ],
       },
       settings: defaultSettingsState,
     }),
@@ -56,9 +68,11 @@ jest.spyOn(GetBalancesHooks, "useGetBalances").mockReturnValue({
       subentryCount: 3,
     }),
 } as any);
+// The signing account is the active account, as when `accountToSign` is not
+// in the wallet.
 jest
   .spyOn(AccountHelpers, "signFlowAccountSelector")
-  .mockReturnValue(mockAccounts[0]);
+  .mockReturnValue({ ...mockAccounts[0], publicKey: TEST_PUBLIC_KEY });
 
 jest.spyOn(TokenListHelpers, "getCombinedAssetListData").mockResolvedValue([
   {
@@ -111,6 +125,7 @@ describe("useGetSignTxData", () => {
   const preloadedState = {
     auth: {
       publicKey: TEST_PUBLIC_KEY,
+      allAccounts: mockAccounts,
     },
     cache: {
       balanceData: {
@@ -356,6 +371,142 @@ describe("useGetSignTxData", () => {
     expect((result.current.state.data as { type: string })?.type).toBe(
       AppDataType.RESOLVED,
     );
+  });
+
+  it("uses the accountToSign account, not the active account, for balances and trustline icons", async () => {
+    // The dApp asks to sign with another wallet account. The tx adds a
+    // trustline for that account.
+    const signingAccount = Keypair.random().publicKey();
+    const asset = new Asset("AQUA", Keypair.random().publicKey());
+    const xdr = new TransactionBuilder(new Account(signingAccount, "1"), {
+      fee: "100",
+      networkPassphrase: defaultSettingsState.networkDetails.networkPassphrase,
+    })
+      .addOperation(Operation.changeTrust({ asset }))
+      .setTimeout(0)
+      .build()
+      .toXDR();
+
+    // The real selector starts the switch to `accountToSign`.
+    jest
+      .spyOn(AccountHelpers, "signFlowAccountSelector")
+      .mockImplementationOnce(({ setActiveAccount }) => {
+        setActiveAccount(signingAccount);
+        return { ...mockAccounts[1], publicKey: signingAccount };
+      });
+    jest.spyOn(ApiInternal, "makeAccountActive").mockResolvedValueOnce({
+      publicKey: signingAccount,
+      hasPrivateKey: true,
+      bipPath: "",
+    });
+    const fetchBalances = jest.fn().mockResolvedValue({
+      balances: mockBalances.balances,
+      isFunded: true,
+      subentryCount: 3,
+    });
+    jest
+      .spyOn(GetBalancesHooks, "useGetBalances")
+      .mockReturnValue({ fetchData: fetchBalances } as any);
+    jest.spyOn(BlockaidHelpers, "useScanTx").mockReturnValue({
+      scanTx: () =>
+        Promise.resolve({
+          simulation: null,
+          validation: null,
+          request_id: "1",
+        }),
+    } as any);
+    const getIconUrlFromIssuer = jest
+      .spyOn(GetIconUrlFromIssuerHelpers, "getIconUrlFromIssuer")
+      .mockResolvedValue("https://example.com/aqua.png");
+
+    const { result } = renderHook(
+      () =>
+        useGetSignTxData(
+          { xdr, url: "https://example.com" },
+          { showHidden: false, includeIcons: false },
+          signingAccount,
+        ),
+      { wrapper: Wrapper(store) },
+    );
+
+    await act(async () => {
+      await result.current.fetchData();
+    });
+
+    const data = result.current.state.data as ResolvedData;
+    expect(data.publicKey).toBe(signingAccount);
+    expect(data.signFlowState.currentAccount.publicKey).toBe(signingAccount);
+    expect(fetchBalances.mock.calls[0][0]).toBe(signingAccount);
+    expect(getIconUrlFromIssuer).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "AQUA", key: asset.getIssuer() }),
+    );
+    expect(Object.values(data.icons)).toEqual(["https://example.com/aqua.png"]);
+  });
+
+  it("uses the active account when the switch to accountToSign fails", async () => {
+    // The dApp asks to sign with another wallet account. The tx adds a
+    // trustline for that account.
+    const signingAccount = Keypair.random().publicKey();
+    const asset = new Asset("AQUA", Keypair.random().publicKey());
+    const xdr = new TransactionBuilder(new Account(signingAccount, "1"), {
+      fee: "100",
+      networkPassphrase: defaultSettingsState.networkDetails.networkPassphrase,
+    })
+      .addOperation(Operation.changeTrust({ asset }))
+      .setTimeout(0)
+      .build()
+      .toXDR();
+
+    // The real selector starts the switch to `accountToSign`.
+    jest
+      .spyOn(AccountHelpers, "signFlowAccountSelector")
+      .mockImplementationOnce(({ setActiveAccount }) => {
+        setActiveAccount(signingAccount);
+        return { ...mockAccounts[1], publicKey: signingAccount };
+      });
+    jest
+      .spyOn(ApiInternal, "makeAccountActive")
+      .mockRejectedValueOnce(new Error("Unable to switch"));
+    const fetchBalances = jest.fn().mockResolvedValue({
+      balances: mockBalances.balances,
+      isFunded: true,
+      subentryCount: 3,
+    });
+    jest
+      .spyOn(GetBalancesHooks, "useGetBalances")
+      .mockReturnValue({ fetchData: fetchBalances } as any);
+    jest.spyOn(BlockaidHelpers, "useScanTx").mockReturnValue({
+      scanTx: () =>
+        Promise.resolve({
+          simulation: null,
+          validation: null,
+          request_id: "1",
+        }),
+    } as any);
+    const getIconUrlFromIssuer = jest
+      .spyOn(GetIconUrlFromIssuerHelpers, "getIconUrlFromIssuer")
+      .mockResolvedValue("https://example.com/aqua.png");
+
+    const { result } = renderHook(
+      () =>
+        useGetSignTxData(
+          { xdr, url: "https://example.com" },
+          { showHidden: false, includeIcons: false },
+          signingAccount,
+        ),
+      { wrapper: Wrapper(store) },
+    );
+
+    await act(async () => {
+      await result.current.fetchData();
+    });
+
+    // The previous active account signs, so the screen uses its data.
+    const data = result.current.state.data as ResolvedData;
+    expect(data.publicKey).toBe(TEST_PUBLIC_KEY);
+    expect(data.signFlowState.currentAccount.publicKey).toBe(TEST_PUBLIC_KEY);
+    expect(fetchBalances.mock.calls[0][0]).toBe(TEST_PUBLIC_KEY);
+    expect(getIconUrlFromIssuer).not.toHaveBeenCalled();
   });
 });
 

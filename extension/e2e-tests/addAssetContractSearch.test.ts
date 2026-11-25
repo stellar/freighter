@@ -8,6 +8,7 @@ import {
   stubAssetSearchWithContractId,
   stubAccountBalancesE2e,
 } from "./helpers/stubs";
+import { goToAddAsset } from "./helpers/assets";
 
 /**
  * Helper to locate a ManageAssetRow by its exact asset code.
@@ -37,13 +38,7 @@ test("Stellar Expert contract ID result shows as already added", async ({
     },
   });
 
-  await page.getByTestId("account-options-dropdown").click();
-  const manageAssets = page.getByText("Manage assets");
-  await expect(manageAssets).toBeVisible();
-  await manageAssets.click();
-
-  await expect(page.getByText("Your assets")).toBeVisible({ timeout: 10000 });
-  await page.getByText("Add an asset").click({ force: true });
+  await goToAddAsset(page);
 
   await page.getByTestId("search-asset-input").fill("E2E");
 
@@ -77,13 +72,7 @@ test("Stellar Expert contract ID result shows Add when not owned", async ({
     },
   });
 
-  await page.getByTestId("account-options-dropdown").click();
-  const manageAssets = page.getByText("Manage assets");
-  await expect(manageAssets).toBeVisible();
-  await manageAssets.click();
-
-  await expect(page.getByText("Your assets")).toBeVisible({ timeout: 10000 });
-  await page.getByText("Add an asset").click({ force: true });
+  await goToAddAsset(page);
 
   await page.getByTestId("search-asset-input").fill("E2E");
 
@@ -121,14 +110,7 @@ test("Can add a token returned as contract ID from Stellar Expert search", async
     },
   });
 
-  await page.getByTestId("account-options-dropdown").click();
-  const manageAssets = page.getByText("Manage assets");
-  await expect(manageAssets).toBeVisible();
-  await manageAssets.click();
-
-  await expect(page.getByText("Your assets")).toBeVisible({ timeout: 10000 });
-  await page.getByText("Add an asset").click({ force: true });
-
+  await goToAddAsset(page);
   await page.getByTestId("search-asset-input").fill("E2E");
 
   // Wait for search results
@@ -153,16 +135,22 @@ test("Can add a token returned as contract ID from Stellar Expert search", async
   // Confirm the add
   await page.getByRole("button", { name: "Confirm" }).click();
 
-  // Back out of the search screen to "Your assets". The token now shows the
-  // ellipsis menu rather than an "Add" button, which only happens when it is
-  // present in balances — and the balances API does not return it, because the
-  // account holds no balance for it. It is there purely from the locally saved
-  // contract ID (injectLocalTokenBalances).
+  // Search again: the token now shows the ellipsis menu rather than an "Add"
+  // button, which only happens when it is present in balances — and the
+  // balances API does not return it, because the account holds no balance for
+  // it. It is there purely from the locally saved contract ID
+  // (injectLocalTokenBalances). Asserted on the search screen rather than the
+  // retired asset list; both render ManageAssetRows.
+  // Search is reached from Home now, so backing out of the add flow lands on
+  // the account view rather than the asset list.
   await page.getByTestId("BackButton").click();
-  await expect(page.getByText("Your assets")).toBeVisible({ timeout: 10000 });
+  await goToAddAsset(page);
+  await page.getByTestId("search-asset-input").fill("E2E");
+  await expect(page.getByTestId("ManageAssetRow").first()).toBeVisible({
+    timeout: 10000,
+  });
 
-  // Balance rows label a contract token with its symbol, not its name.
-  const addedRow = getAssetRow(page, "E2E");
+  const addedRow = getAssetRow(page, "E2E Token");
   await expect(addedRow).toBeVisible();
   await addedRow.getByTestId("ManageAssetRowButton__ellipsis-E2E").click();
 

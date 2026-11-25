@@ -14,7 +14,7 @@ const V2_PRECONDITION_XDR =
 
 describe("getSerializableTransaction", () => {
   it("produces a JSON-serializable popup blob for a V2-precondition Soroban tx", () => {
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       V2_PRECONDITION_XDR,
       Networks.PUBLIC,
     );
@@ -47,17 +47,17 @@ describe("getSerializableTransaction", () => {
   });
 
   it("emits no BigInt values for any V2-precondition transaction", () => {
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       V2_PRECONDITION_XDR,
       Networks.PUBLIC,
     );
 
     // Sanity-check the precondition really is V2 (the trigger for the bug).
-    const cond = xdr.TransactionEnvelope.fromXDR(V2_PRECONDITION_XDR, "base64")
-      .v1()
-      .tx()
-      .cond();
-    expect(cond.switch().name).toBe("precondV2");
+    const cond = xdr.expectUnionVariant(
+      xdr.TransactionEnvelope.fromXdr(V2_PRECONDITION_XDR, "base64"),
+      "envelopeTypeTx",
+    ).v1.tx.cond;
+    expect(cond.type).toBe("precondV2");
 
     const serialized = getSerializableTransaction(transaction);
     const hasBigInt = (value: unknown): boolean => {
@@ -73,7 +73,7 @@ describe("getSerializableTransaction", () => {
   });
 
   it("avoids the BigInt that makes the live transaction object unserializable", () => {
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       V2_PRECONDITION_XDR,
       Networks.PUBLIC,
     );
@@ -93,7 +93,7 @@ describe("getSerializableTransaction", () => {
   });
 
   it("preserves operation types for a fee-bump transaction", () => {
-    const inner = TransactionBuilder.fromXDR(
+    const inner = TransactionBuilder.fromXdr(
       V2_PRECONDITION_XDR,
       Networks.PUBLIC,
     );

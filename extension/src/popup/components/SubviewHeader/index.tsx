@@ -15,6 +15,8 @@ interface SubviewHeaderProps {
   leftButton?: React.ReactNode;
   /** Forwarded to the back/close button itself, not this header's container. */
   "data-testid"?: string;
+  /** See `View.AppHeader`'s `isFloating`. */
+  isFloating?: boolean;
 }
 
 export const SubviewHeader = ({
@@ -26,8 +28,10 @@ export const SubviewHeader = ({
   rightButton,
   leftButton,
   "data-testid": dataTestId,
+  isFloating,
 }: SubviewHeaderProps) => (
   <View.AppHeader
+    isFloating={isFloating}
     pageTitle={title}
     pageSubtitle={subtitle}
     leftContent={leftButton}

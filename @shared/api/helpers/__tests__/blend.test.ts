@@ -4,10 +4,12 @@ import {
   getBlendPositions,
   getBlendSuppliedTokens,
 } from "../blend";
+import { captureException } from "@sentry/browser";
+
 import { sendMessageToBackground } from "../extensionMessaging";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
-import { PUBLIC_SACS } from "@shared/constants/sac";
+import { PUBLIC_SACS } from "@shared/api/__tests__/fixtures/sac";
 import { NETWORKS } from "@shared/constants/stellar";
 
 jest.mock("../extensionMessaging");
@@ -585,5 +587,41 @@ describe("getBlendPositions", () => {
     mockedSend.mockResolvedValue({ status: 200, body: {} });
 
     await expect(call()).rejects.toThrow();
+  });
+});
+
+describe("Blend error reporting", () => {
+  beforeEach(() => {
+    (captureException as jest.Mock).mockClear();
+  });
+
+  // Same as the other v2 clients: the Sentry message goes through
+  // redactErrorBody, and the thrown error keeps the body for the caller.
+  it("reports the body redacted, and throws it as it came", async () => {
+    const body = { error: `no positions for ${PUBLIC_KEY}` };
+    mockedSend.mockResolvedValue({ status: 500, body });
+
+    await expect(
+      getBlendSuppliedTokens({
+        publicKey: PUBLIC_KEY,
+        poolId: POOL_ID,
+        assetId: USDC_SAC,
+        networkDetails,
+      }),
+    ).rejects.toThrow(JSON.stringify(body));
+
+    const [message] = (captureException as jest.Mock).mock.calls[0];
+    expect(message).toContain("Failed to fetch Blend positions - 500");
+    expect(message).not.toContain(PUBLIC_KEY);
+  });
+
+  it("names the endpoint that failed", async () => {
+    mockedSend.mockResolvedValue({ status: 200, body: {} });
+
+    await expect(getBlendPools({ networkDetails })).rejects.toThrow();
+
+    expect(captureException).toHaveBeenCalledWith(
+      "Failed to fetch Blend pools - 200: {}",
+    );
   });
 });

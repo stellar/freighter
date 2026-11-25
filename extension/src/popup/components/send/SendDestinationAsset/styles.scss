@@ -4,6 +4,25 @@
   display: flex;
   flex-direction: column;
 
+  // Relocated from ChooseAsset, which owned this rule but is being retired.
+  // This screen was the only other consumer.
+  &__loader {
+    height: 100%;
+    width: 100%;
+    z-index: calc(var(--back--button-z-index) + 1);
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    top: 0;
+    left: 0;
+  }
+
+  &__fetch-fail {
+    padding: pxToRem(16px);
+  }
+
   &__collectibles-section {
     margin-top: pxToRem(16);
   }

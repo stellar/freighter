@@ -1,7 +1,14 @@
 import { BrowserContext, Page } from "@playwright/test";
+import {
+  Account,
+  Asset,
+  Networks,
+  Operation,
+  TransactionBuilder,
+} from "stellar-sdk";
 import { USDC_TOKEN_ADDRESS, TEST_TOKEN_ADDRESS } from "./test-token";
 import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
-import { PUBLIC_SACS } from "@shared/constants/sac";
+import { PUBLIC_SACS } from "@shared/api/__tests__/fixtures/sac";
 import { NETWORKS } from "@shared/constants/stellar";
 
 export const createAssetObject = (assetCode: string | null, issuer: string) => {
@@ -83,57 +90,68 @@ export const stubStellarAssetList = async (page: Page) => {
   });
 };
 
-export const stubAssetSearch = async (page: Page) => {
-  await page.route("**/asset?search**", async (route) => {
-    const json = {
-      _embedded: {
-        records: [
-          {
-            asset:
-              "USDC-GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
-            num_accounts: 1000,
-            num_trades: 5000,
-            num_liquidity_pools: 100,
-            bidding_liabilities: "1000000",
-            asking_liabilities: "2000000",
-          },
-        ],
-      },
-    };
-    await route.fulfill({ json });
+// StellarExpert's asset list (search, and the swap picker's Popular list) is
+// fetched through freighter-backend-v2's /assets/search from the background
+// service worker, so these routes must be stubbed on the BrowserContext;
+// page.route only sees the popup.
+export const ASSET_SEARCH_ROUTE = "**/assets/search?*search=*";
+export const TRENDING_ASSETS_ROUTE = "**/assets/search?*sort=volume7d*";
+export const TESTNET_TRENDING_ASSETS_ROUTE =
+  "**/assets/search?network=TESTNET&limit=50";
+
+/** The backend's answer: StellarExpert's body, unchanged, under `data`. */
+export const assetSearchResponse = (records: object[]) => ({
+  json: { data: { _embedded: { records } } },
+});
+
+export const stubAssetSearch = async (page: Page | BrowserContext) => {
+  const ctx = "context" in page ? page.context() : page;
+  await ctx.route(ASSET_SEARCH_ROUTE, async (route) => {
+    await route.fulfill(
+      assetSearchResponse([
+        {
+          asset:
+            "USDC-GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+          num_accounts: 1000,
+          num_trades: 5000,
+          num_liquidity_pools: 100,
+          bidding_liabilities: "1000000",
+          asking_liabilities: "2000000",
+        },
+      ]),
+    );
   });
 };
 
-export const stubAssetSearchWithContractId = async (page: Page) => {
-  await page.route("**/asset?search**", async (route) => {
-    const json = {
-      _embedded: {
-        records: [
-          {
-            asset:
-              "USDC-GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
-          },
-          {
-            asset: TEST_TOKEN_ADDRESS,
+export const stubAssetSearchWithContractId = async (
+  page: Page | BrowserContext,
+) => {
+  const ctx = "context" in page ? page.context() : page;
+  await ctx.route(ASSET_SEARCH_ROUTE, async (route) => {
+    await route.fulfill(
+      assetSearchResponse([
+        {
+          asset:
+            "USDC-GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+        },
+        {
+          asset: TEST_TOKEN_ADDRESS,
+          code: "E2E",
+          token_name: "E2E Token",
+          decimals: 3,
+          domain: "example.com",
+          tomlInfo: {
             code: "E2E",
-            token_name: "E2E Token",
-            decimals: 3,
-            domain: "example.com",
-            tomlInfo: {
-              code: "E2E",
-              // Use a different address than the token contract to match real
-              // Stellar Expert responses where tomlInfo.issuer is the token
-              // issuer, not the token contract itself.
-              issuer:
-                "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
-              name: "E2E Token",
-              image: "",
-            },
+            // Use a different address than the token contract to match real
+            // Stellar Expert responses where tomlInfo.issuer is the token
+            // issuer, not the token contract itself.
+            issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+            name: "E2E Token",
+            image: "",
           },
-        ],
-      },
-    };
-    await route.fulfill({ json });
+        },
+      ]),
+    );
   });
 };
 
@@ -266,6 +284,61 @@ export const stubFederationWithMemo = async (
   });
 };
 
+/**
+ * Builds the v1 balance entry the indexer returns for a contract ID handed to
+ * it as a `contract_ids` hint, shaped the way `injectLocalTokenBalances` builds
+ * the same entry on the v2 path so both endpoints render identically.
+ */
+const contractHintBalance = (contractId: string) => {
+  const { symbol, name, decimals } =
+    contractId === TEST_TOKEN_ADDRESS
+      ? { symbol: "E2E", name: "E2E Token", decimals: 3 }
+      : { symbol: "native", name: "native", decimals: 7 };
+
+  return {
+    key: `${symbol}:${contractId}`,
+    balance: {
+      token: { code: symbol, issuer: { key: contractId } },
+      contractId,
+      symbol,
+      name,
+      decimals,
+      // The hint exists precisely because the account holds no balance for the
+      // token; the indexer still resolves and returns it at zero.
+      total: "0",
+      available: "0",
+      blockaidData: undefined,
+    },
+  };
+};
+
+/**
+ * Fulfils the v1 account-balances GET, merging in a balance for every
+ * `contract_ids` query param the request carries. The real v1 backend resolves
+ * those hints server-side, which is the only way a locally added contract token
+ * reaches the balances view on v1 — the v2 path merges them client-side in
+ * `injectLocalTokenBalances` instead. A stub that ignored them would make any
+ * locally added token invisible whenever `use_balances_v2` is off.
+ */
+const fulfillV1Balances = async (
+  route: Parameters<Parameters<Page["route"]>[1]>[0],
+  json: { balances: { [key: string]: unknown } },
+) => {
+  const contractIds = new URL(route.request().url()).searchParams.getAll(
+    "contract_ids",
+  );
+
+  const balances = { ...json.balances };
+  for (const contractId of contractIds) {
+    const { key, balance } = contractHintBalance(contractId);
+    if (!balances[key]) {
+      balances[key] = balance;
+    }
+  }
+
+  await route.fulfill({ json: { ...json, balances } });
+};
+
 export const stubDefaultAccountBalances = async (page: Page) => {
   const json = {
     balances: {
@@ -303,7 +376,7 @@ export const stubDefaultAccountBalances = async (page: Page) => {
     },
   };
   await page.route("**/account-balances/**", async (route) => {
-    await route.fulfill({ json });
+    await fulfillV1Balances(route, json);
   });
   await stubAccountBalancesV2(page, json);
 };
@@ -367,7 +440,7 @@ export const stubScanDapp = async (context: BrowserContext) => {
     const json = {
       data: {
         status: "hit",
-        url: "https://play.freighter.app/#/extension/playground/setAllowed",
+        url: "https://play.varialwallet.com/#/extension/playground/setAllowed",
         scan_start_time: "2025-07-04T08:58:59.350000",
         scan_end_time: "2025-07-04T09:02:37.766000",
         malicious_score: 0,
@@ -408,7 +481,7 @@ export const stubScanDappMalicious = async (context: BrowserContext) => {
     const json = {
       data: {
         status: "hit",
-        url: "https://play.freighter.app/#/extension/playground/setAllowed",
+        url: "https://play.varialwallet.com/#/extension/playground/setAllowed",
         scan_start_time: "2025-07-04T08:58:59.350000",
         scan_end_time: "2025-07-04T09:02:37.766000",
         malicious_score: 0.95,
@@ -925,12 +998,174 @@ export const stubTokenPrices = async (page: Page | BrowserContext) => {
   });
 };
 
+/**
+ * Stubs `GET /token-price-history` (the frozen §6.1 wire contract). Like
+ * token-prices, it is fetched from the background service worker, so it MUST
+ * be intercepted on the BrowserContext — page.route silently misses SW
+ * fetches. Pass per-range overrides to shape empty/sparse/low-volume states;
+ * unlisted ranges serve a full 97-point 1D-shaped series.
+ */
+export const stubTokenPriceHistory = async (
+  page: Page | BrowserContext,
+  overridesByRange: Record<string, Record<string, unknown>> = {},
+) => {
+  const ctx = "context" in page ? page.context() : page;
+  await ctx.route("**/token-price-history*", async (route) => {
+    const url = new URL(route.request().url());
+    const token = url.searchParams.get("token") || "native";
+    const range = url.searchParams.get("range") || "1D";
+    const base = {
+      token,
+      range,
+      resolutionSeconds: 900,
+      currency: "USD",
+      lowVolume: false,
+      change: { absolute: "0.001359", percent: "0.86" },
+      points: Array.from({ length: 97 }, (_, i) => ({
+        t: 1786636800 + i * 900,
+        p: (0.1589 + i * 0.0001).toFixed(6),
+      })),
+    };
+    await route.fulfill({
+      json: { data: { ...base, ...(overridesByRange[range] || {}) } },
+    });
+  });
+};
+
+/**
+ * Stubs `GET /token-stats` (§6.1). Background service-worker fetch — must be
+ * intercepted on the BrowserContext. Absent fields stay absent per the
+ * contract; pass overrides with `undefined` values to drop them.
+ */
+export const stubTokenStats = async (
+  page: Page | BrowserContext,
+  overrides: Record<string, unknown> = {},
+) => {
+  const ctx = "context" in page ? page.context() : page;
+  await ctx.route("**/token-stats*", async (route) => {
+    const url = new URL(route.request().url());
+    const token = url.searchParams.get("token") || "native";
+    await route.fulfill({
+      json: {
+        data: {
+          token,
+          supplyOnStellar: "105443902087.3472865",
+          holders: 9926520,
+          ...overrides,
+        },
+      },
+    });
+  });
+};
+
+/**
+ * freighter-backend-v2 `POST /swap/quotes`. Sent from the background service
+ * worker, so it must be a context route. Echoes the request's assets back as a
+ * direct classic route; `toAmount: null` answers with no route.
+ */
+export const stubSwapQuotes = async (
+  context: BrowserContext,
+  { toAmount }: { toAmount: string | null } = { toAmount: null },
+) => {
+  await context.route("**/swap/quotes**", async (route) => {
+    const { fromAsset, toAsset, amount, mode } =
+      route.request().postDataJSON() ?? {};
+    const routes =
+      toAmount === null
+        ? []
+        : [
+            {
+              source: "classic",
+              fromAmount: mode === "receive" ? toAmount : amount,
+              toAmount: mode === "receive" ? amount : toAmount,
+              paths: [
+                {
+                  share: "1",
+                  hops: [
+                    { venue: "stellar-dex", from: fromAsset, to: toAsset },
+                  ],
+                },
+              ],
+              fees: [],
+            },
+          ];
+    await route.fulfill({
+      json: {
+        data: {
+          routes,
+          unavailable:
+            toAmount === null
+              ? [{ source: "classic", reason: "no_route" }]
+              : [],
+        },
+      },
+    });
+  });
+};
+
+const backendAsset = (asset: string) => {
+  if (asset === "XLM") {
+    return Asset.native();
+  }
+  const [code, issuer] = asset.split(":");
+  return new Asset(code, issuer);
+};
+
+/**
+ * freighter-backend-v2 `POST /swap/tx`, sent from the service worker. Builds
+ * the classic transaction the backend would: a path payment of the request,
+ * after a changeTrust when `addsTrustline`. `status` other than 200 answers
+ * with that error instead (409 is quote_moved).
+ */
+export const stubSwapTx = async (
+  context: BrowserContext,
+  {
+    addsTrustline = false,
+    status = 200,
+  }: { addsTrustline?: boolean; status?: number } = {},
+) => {
+  await context.route("**/swap/tx**", async (route) => {
+    if (status !== 200) {
+      await route.fulfill({ status, json: { error: "stubbed" } });
+      return;
+    }
+    const req = route.request().postDataJSON();
+    const network = new URL(route.request().url()).searchParams.get("network");
+    const builder = new TransactionBuilder(new Account(req.account, "1"), {
+      fee: "100",
+      networkPassphrase:
+        network === "PUBLIC" ? Networks.PUBLIC : Networks.TESTNET,
+    });
+    if (addsTrustline) {
+      builder.addOperation(
+        Operation.changeTrust({ asset: backendAsset(req.toAsset) }),
+      );
+    }
+    const xdr = builder
+      .addOperation(
+        Operation.pathPaymentStrictSend({
+          sendAsset: backendAsset(req.fromAsset),
+          sendAmount: req.amount,
+          destination: req.account,
+          destAsset: backendAsset(req.toAsset),
+          destMin: req.minOut,
+          path: [],
+        }),
+      )
+      .setTimeout(req.timeout)
+      .build()
+      .toXDR();
+    await route.fulfill({ json: { data: { xdr, addsTrustline } } });
+  });
+};
+
 // ---------------------------------------------------------------------------
 // freighter-backend-v2 `POST /accounts/balances` stub.
 //
-// The extension defaults to the v2 balances endpoint (use_balances_v2), so
-// every test that stubs `**/account-balances/**` (the v1 GET) also needs the
-// v2 route stubbed or the request escapes to the real beta backend.
+// The extension can be flipped onto the v2 balances endpoint (use_balances_v2)
+// from Amplitude, so every test that stubs `**/account-balances/**` (the v1
+// GET) also stubs the v2 route or the request escapes to the real beta
+// backend.
 // ---------------------------------------------------------------------------
 
 interface V1BalancesFixture {
@@ -3264,6 +3499,7 @@ export const stubAllExternalApis = async (
 
   // Feature flags
   await stubFeatureFlags(context);
+  await stubExperimentDefaults(context);
 
   // RPC health is fetched by the background service worker
   await stubRpcHealth(context);
@@ -3273,12 +3509,17 @@ export const stubAllExternalApis = async (
 
   // Stellar Asset List
   await stubStellarAssetList(page);
-  await stubAssetSearch(page);
+  // Asset search is fetched by the background service worker
+  await stubAssetSearch(context);
 
   // Token metadata
   await stubTokenDetails(page);
   await stubTokenPrices(page);
   await stubIsSac(page);
+  // AssetDetail mounts these on mainnet (the flag defaults on); background
+  // service-worker fetches, so they go on the context.
+  await stubTokenPriceHistory(context);
+  await stubTokenStats(context);
 
   // Horizon endpoints
   await stubFeeStats(page);
@@ -3328,6 +3569,9 @@ export const stubAllExternalApis = async (
   // Blockaid scan
   await stubScanTx(page);
   await stubScanDapp(context);
+
+  await stubSwapQuotes(context);
+  await stubSwapTx(context);
 };
 
 export const stubBackendSettings = async (page: Page) => {
@@ -3450,6 +3694,17 @@ export const stubReportTransactionWarning = async (
 
 const AMPLITUDE_EXPERIMENT_VARDATA_ROUTE = "**/sdk/v2/vardata**";
 const MAINTENANCE_VARIANT_VALUE = "on";
+
+/**
+ * Answers the Experiment flag request with no variants, so every flag keeps
+ * its default and balances don't wait on a real Amplitude request. Specs that
+ * need a variant register a page route, which takes precedence over this one.
+ */
+export const stubExperimentDefaults = async (context: BrowserContext) => {
+  await context.route(AMPLITUDE_EXPERIMENT_VARDATA_ROUTE, async (route) => {
+    await route.fulfill({ json: {} });
+  });
+};
 
 const stubExperimentVariants = async (
   page: Page,
@@ -3622,13 +3877,13 @@ export const stubAccountPositions = async (context: BrowserContext) => {
 };
 
 /**
- * A prepared Soroban envelope for `submit` on the mainnet Fixed pool, sourced by
- * the e2e test account. Generated with the SDK rather than hand-trimmed, so it
- * round-trips through `TransactionBuilder.fromXDR` under both network
- * passphrases.
+ * A prepared Soroban envelope for `submit` on the mainnet Fixed v2.1 pool,
+ * sourced by the e2e test account. Generated with the SDK rather than
+ * hand-trimmed, so it round-trips through `TransactionBuilder.fromXDR` under
+ * both network passphrases.
  */
 const EARN_PREPARED_TX_XDR =
-  "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAASM1YAAAAASZYC0wAAAAEAAAAAAAAAAAAAAABqh3mXAAAAAAAAAAEAAAAAAAAAGAAAAAAAAAABEpzIzGM28f273MDzmDQ0w824X9nqhWl6N4LTGNh0pYAAAAAGc3VibWl0AAAAAAAEAAAAEgAAAAAAAAAAy70KCGxcPZNLYI2aDqy07iSWPZBxWKf2ABAJbf8Yq2wAAAASAAAAAAAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAABIAAAAAAAAAAMu9CghsXD2TS2CNmg6stO4klj2QcVin9gAQCW3/GKtsAAAAEAAAAAEAAAABAAAAEQAAAAEAAAADAAAADwAAAAdhZGRyZXNzAAAAABIAAAABJbT82FmuwvpjSEOMSJs8PBDJi20hvk/TyzDLaJU++XcAAAAPAAAABmFtb3VudAAAAAAACgAAAAAAAAAAAAAAADuaygAAAAAPAAAADHJlcXVlc3RfdHlwZQAAAAMAAAACAAAAAAAAAAEAAAAAAAAAAAAAAAAAHoSAAAATiAAAC7gAAAAAAAhWWwAAAAA=";
+  "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAASM1YAAAAASZYC0wAAAAEAAAAAAAAAAAAAAABqh3mXAAAAAAAAAAEAAAAAAAAAGAAAAAAAAAABQKBmhEhAUGhiMGMtWUmeytQxITzKv/gY/dgKkQ2DWogAAAAGc3VibWl0AAAAAAAEAAAAEgAAAAAAAAAAy70KCGxcPZNLYI2aDqy07iSWPZBxWKf2ABAJbf8Yq2wAAAASAAAAAAAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAABIAAAAAAAAAAMu9CghsXD2TS2CNmg6stO4klj2QcVin9gAQCW3/GKtsAAAAEAAAAAEAAAABAAAAEQAAAAEAAAADAAAADwAAAAdhZGRyZXNzAAAAABIAAAABJbT82FmuwvpjSEOMSJs8PBDJi20hvk/TyzDLaJU++XcAAAAPAAAABmFtb3VudAAAAAAACgAAAAAAAAAAAAAAADuaygAAAAAPAAAADHJlcXVlc3RfdHlwZQAAAAMAAAACAAAAAAAAAAEAAAAAAAAAAAAAAAAAHoSAAAATiAAAC7gAAAAAAAhWWwAAAAA=";
 
 /**
  * Earn-scoped override for the deposit's simulation.
@@ -3641,13 +3896,14 @@ const EARN_PREPARED_TX_XDR =
  * instead of the submit screen.
  *
  * This returns a real prepared Soroban envelope: `submit` on the mainnet Fixed
- * pool, sourced by the test account, carrying sorobanData. Registered on the
- * PAGE, because /simulate-tx is a backend-v1 endpoint the popup fetches directly
- * — and registered after `stubAllExternalApis` so it wins the route match.
+ * v2.1 pool, sourced by the test account, carrying sorobanData. Registered on
+ * the PAGE, because /simulate-tx is a backend-v1 endpoint the popup fetches
+ * directly — and registered after `stubAllExternalApis` so it wins the route
+ * match.
  *
- * `minResourceFee` is the pool's real ~0.0546 XLM rather than the shared stub's
- * token 100 stroops, so the post-simulation fee guard is exercised at a
- * realistic magnitude.
+ * `minResourceFee` is a deposit's measured resource fee (~0.0546 XLM when this
+ * fixture was made) rather than the shared stub's token 100 stroops, so the
+ * post-simulation fee guard is exercised at a realistic magnitude.
  */
 export const stubEarnSimulateTx = async (page: Page) => {
   await page.route("**/simulate-tx**", async (route) => {
@@ -3664,6 +3920,44 @@ export const stubEarnSimulateTx = async (page: Page) => {
         },
       },
     });
+  });
+};
+
+/**
+ * Pins the `earn_deposit` Amplitude flag on, so the Earn specs don't depend on
+ * the flag's default or on the real Experiment endpoint. Call it BEFORE
+ * `loginToTestAccount`.
+ *
+ * A route cannot do this: neither `page.route` nor `context.route` sees the
+ * test page's own flags request, the same blind spot `stubSacViaInitScript`
+ * documents for the popup's early fetches. The request reaches the real
+ * Experiment endpoint, which rejects the test deployment key. An init script
+ * runs before the bundle, so the SDK, which binds `fetch` when its module
+ * loads, picks up this wrapper. It answers only the flags request.
+ */
+export const stubEarnDepositFlag = async (context: BrowserContext) => {
+  await context.addInitScript(() => {
+    const origFetch = window.fetch.bind(window);
+    window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+      const url =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.href
+            : input.url;
+      if (url.includes("/sdk/v2/vardata")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({ earn_deposit: { key: "on", value: "on" } }),
+            {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            },
+          ),
+        );
+      }
+      return origFetch(input, init);
+    };
   });
 };
 
@@ -3719,25 +4013,13 @@ export const stubBlendEarn = async (
 
   const offer = (supplyApy: number) => ({
     id: POOL_ID,
-    // The live pool is named "Fixed", not "Fixed Pool v2".
-    name: "Fixed",
+    // The live pool's own name.
+    name: "Fixed v2.1",
     supply_apy: supplyApy,
     // Null rather than 0 for USDC/EURC: on the live pool only XLM has a
     // supply-side BLND stream, so this mirrors what the backend returns.
     emissions_supply_apr: null,
     supplied_usd: 50050000,
-  });
-
-  // The Earn tile is gated on the `earn_deposit` Amplitude flag, which defaults
-  // to off. Serve it as "on" from the Experiment vardata endpoint so the entry
-  // point renders. Context-scoped like the rest of the Earn stubs, and — per
-  // this function's own doc comment above — followed by a reload so it is
-  // actually in place for the popup's flag fetch rather than just registered
-  // after the fact.
-  await context.route(AMPLITUDE_EXPERIMENT_VARDATA_ROUTE, async (route) => {
-    await route.fulfill({
-      json: { earn_deposit: { key: "on", value: "on" } },
-    });
   });
 
   await context.route("**/protocols/blend/earn-options**", async (route) => {
@@ -3782,7 +4064,7 @@ export const stubBlendEarn = async (
           pools: [
             {
               id: POOL_ID,
-              name: "Fixed",
+              name: "Fixed v2.1",
               status: "ACTIVE",
               supplied_usd: 50050000,
               borrowed_usd: 16150000,
@@ -3937,4 +4219,44 @@ export const positionsFixture = ({
       backstop: [],
     },
   ];
+};
+
+/**
+ * Stubs the contract-spec endpoint with caller-supplied `definitions`.
+ *
+ * `stubContractSpec` above hard-codes a single-arg `transfer`, which is all the
+ * muxed-support checks need. This one takes the whole `definitions` map, so a
+ * test can model any function and arity -- including a non-trailing `Option<T>`,
+ * where `required` legitimately omits a parameter that `properties` still
+ * carries.
+ */
+export const stubContractSpecDefinitions = async (
+  page: Page | BrowserContext,
+  contractId: string,
+  definitions: Record<string, unknown>,
+) => {
+  await page.route("**/contract-spec/**", async (route) => {
+    const request = route.request();
+    if (request.method() !== "GET") {
+      await route.continue();
+      return;
+    }
+
+    let match: RegExpMatchArray | null = null;
+    try {
+      match = new URL(request.url()).pathname.match(
+        /\/contract-spec\/([^/?]+)/,
+      );
+    } catch (e) {
+      await route.continue();
+      return;
+    }
+
+    if (!match || match[1] !== contractId) {
+      await route.continue();
+      return;
+    }
+
+    await route.fulfill({ json: { data: { definitions }, error: null } });
+  });
 };

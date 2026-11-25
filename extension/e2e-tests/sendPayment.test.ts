@@ -13,6 +13,7 @@ import {
   stubScanTxWithUnfundedNonNativeWarning,
   stubScanTx,
 } from "./helpers/stubs";
+import { goToAddAsset, startRemoveAsset } from "./helpers/assets";
 
 const MUXED_ACCOUNT_ADDRESS =
   "MCQ7EGW7VXHI4AKJAFADOIHCSK2OCVA42KUETUK5LQ3LVSEQEEKP6AAAAAAAAAAAAFLVY";
@@ -74,10 +75,20 @@ test("Swap doesn't throw error when account is unfunded", async ({
   page,
   extensionId,
 }) => {
-  // This test intentionally uses the unstubbed login() (real endpoints) with
-  // an unfunded account. The v2 balances endpoint can't serve every network in
-  // the beta env yet, so stub just that route as unfunded (is_funded=false
-  // with empty balances) to keep the account state deterministic.
+  // login() leaves the backend unstubbed, so both balances routes must be
+  // stubbed here: v1 is the default source (use_balances_v2 is off unless
+  // Amplitude flips it), and login() blocks on the TESTNET balances response.
+  // Fork-PR CI has no indexer to answer an unstubbed request.
+  await page.route("**/account-balances/**", async (route) => {
+    await route.fulfill({
+      json: {
+        balances: {},
+        isFunded: false,
+        subentryCount: 0,
+        error: { horizon: null, soroban: null },
+      },
+    });
+  });
   await stubAccountBalancesV2(page, () => null);
   await login({ page, extensionId });
 
@@ -256,9 +267,10 @@ test("Swap shows correct balances for assets", async ({
   // not the reserve-adjusted available balance.
   await expect(page.getByTestId("SwapTokenRow-XLM")).toContainText("999");
 
-  // The source "Your tokens" list is classic-only: Soroban contract tokens
-  // (carrying a contractId, e.g. PBT) are excluded, so PBT does NOT appear here.
-  await expect(page.getByTestId("SwapTokenRow-PBT")).toHaveCount(0);
+  // Held Soroban contract tokens are swap sources too; the balance is `total`
+  // shifted by `decimals` (9899700 at 5 decimals).
+  await expect(page.getByTestId("SwapTokenRow-PBT")).toBeVisible();
+  await expect(page.getByTestId("SwapTokenRow-PBT")).toContainText("98.997");
 });
 test("Send doesn't throw error when account is unfunded", async ({
   page,
@@ -677,10 +689,7 @@ test.fixme("Send SAC to C address", async ({ page, extensionId, context }) => {
   await loginToTestAccount({ page, extensionId, context });
 
   // add USDC asset
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Manage assets").click({ force: true });
-
-  await page.getByText("Add an asset").click({ force: true });
+  await goToAddAsset(page);
   await page
     .getByTestId("search-asset-input")
     .fill("GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5");
@@ -761,10 +770,7 @@ test.fixme("Send SAC to C address", async ({ page, extensionId, context }) => {
   });
 
   // remove USDC
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Manage assets").click({ force: true });
-  await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
-  await page.getByText("Remove asset").click({ force: true });
+  await startRemoveAsset(page, "USDC");
 
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
@@ -1122,8 +1128,6 @@ test("Swap resets state when navigating back to account", async ({
 
   // Open the "Swap from" picker via the sell card's asset selector
   // (send-amount-edit-dest-asset is shared by both cards, so it must be scoped).
-  // USDC is stubbed without a contractId: heldToRecord drops any balance carrying
-  // a contractId, so a contractId-bearing USDC would never render as SwapTokenRow-USDC.
   await page
     .getByTestId("swap-sell-card")
     .getByTestId("send-amount-edit-dest-asset")
@@ -1337,11 +1341,7 @@ test.afterAll(async ({ page, extensionId, context }) => {
     test.slow();
     await loginToTestAccount({ page, extensionId, context });
 
-    await page.getByTestId("account-options-dropdown").click();
-    await page.getByText("Manage assets").click({ force: true });
-
-    await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
-    await page.getByText("Remove asset").click();
+    await startRemoveAsset(page, "USDC");
     await expect(page.getByTestId("account-view")).toBeVisible({
       timeout: 30000,
     });

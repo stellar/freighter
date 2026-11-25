@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import get from "lodash/get";
@@ -17,10 +17,7 @@ import {
   resetSubmission,
 } from "popup/ducks/transactionSubmission";
 import { View } from "popup/basics/layout/View";
-import IconFail from "popup/assets/icon-fail.svg";
-import { emitMetric } from "helpers/metrics";
-import { getAssetFromCanonical } from "helpers/stellar";
-import { METRIC_NAMES } from "popup/constants/metricsNames";
+import IconFail from "popup/assets/icon-fail.svg?react";
 
 import "./styles.scss";
 
@@ -31,42 +28,28 @@ interface ErrorDetails {
   status: string;
 }
 
+// Renders the user-facing failure screen only — title, explanatory
+// notification, and any error-specific messaging/links, chosen by
+// classifying `error` into a RESULT_CODES case below. It does not emit
+// telemetry: paymentFailed / swapFailed / collectibleSendFailed are NOT
+// emitted here. They used to be, from an effect keyed on `error`/`asset`/etc
+// — but that re-fires on every remount (double-counting attempted volume).
+// useSubmitTxData's fetchData is the single, centralized emit site for every
+// terminal event (success and failure alike), and it runs exactly once per
+// confirmation attempt. For a submitted transaction it has the confirmation
+// price snapshot and the transaction result in scope, so its events carry
+// volume; its pre-submission failure path deliberately emits without either,
+// since nothing reached the network to have volume or a result.
 /**
  * @param onDismiss overrides "Got it", which otherwise resets the submission and
  * navigates home. An embedding flow needs to dismiss its own step instead.
  */
 export const SubmitFail = ({ onDismiss }: { onDismiss?: () => void } = {}) => {
-  const { error, transactionData } = useSelector(transactionSubmissionSelector);
+  const { error } = useSelector(transactionSubmissionSelector);
   const isSwap = useIsSwap();
-  const { isCollectible, asset, destinationAsset } = transactionData;
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
-  useEffect(() => {
-    const resultCodes = getResultCodes(error);
-    const reasonCode =
-      resultCodes.operations?.[0] || resultCodes.transaction || "unknown";
-
-    // A routed/path payment fails as a swap; a collectible send has its own
-    // terminal event. `network` rides on the common context.
-    if (isCollectible) {
-      emitMetric(METRIC_NAMES.collectibleSendFailed, {
-        reason_code: reasonCode,
-      });
-    } else if (isSwap) {
-      emitMetric(METRIC_NAMES.swapFailed, {
-        from_asset_code: getAssetFromCanonical(asset).code,
-        to_asset_code: getAssetFromCanonical(destinationAsset).code,
-        reason_code: reasonCode,
-      });
-    } else {
-      emitMetric(METRIC_NAMES.paymentFailed, {
-        payment_type: "payment",
-        reason_code: reasonCode,
-      });
-    }
-  }, [error, isSwap, isCollectible, asset, destinationAsset]);
 
   const getErrorDetails = (err: ErrorMessage | undefined): ErrorDetails => {
     const errorDetails: ErrorDetails = {
@@ -229,7 +212,7 @@ export const SubmitFail = ({ onDismiss }: { onDismiss?: () => void } = {}) => {
         <div className="SubmitResult__content">
           <div className="SubmitResult__amount">{errDetails.title}</div>
           <div className="SubmitResult__icon SubmitResult__fail">
-            <img src={IconFail} alt={t("Icon Fail")} />
+            <IconFail role="img" aria-label={t("Icon Fail")} />
           </div>
           <div className="SubmitResult__error-code">
             {errDetails.status ? `${t("Status")} ${errDetails.status}: ` : ""}

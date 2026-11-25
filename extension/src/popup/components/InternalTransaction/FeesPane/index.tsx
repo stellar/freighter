@@ -1,12 +1,28 @@
 import React from "react";
 import BigNumber from "bignumber.js";
-import { Heading, Icon, Text } from "@stellar/design-system";
+import { Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { RequestState, type State } from "constants/request";
 import { SimulateTxData } from "types/transactions";
+import { SheetHeader } from "popup/components/SheetHeader";
 
 import "./styles.scss";
+
+/**
+ * The value for FeesPane's total row, given the draft inclusion fee and the
+ * simulated resource fee. With no resource fee (classic, or before
+ * simulation) the inclusion fee IS the total.
+ */
+export const buildFeesPaneTotal = (
+  inclusionFee: string,
+  resourceFee: string | undefined,
+): string => {
+  if (!resourceFee) {
+    return inclusionFee;
+  }
+  return new BigNumber(inclusionFee).plus(resourceFee).toFixed();
+};
 
 export interface FeesPaneProps {
   fee: string;
@@ -36,23 +52,11 @@ export const FeesPane = ({
 
   return (
     <div className="FeesPane" data-testid="review-tx-fees-pane">
-      <div className="FeesPane__Header">
-        <div className="FeesPane__Header__Icon">
-          <Icon.Route />
-        </div>
-        <button
-          type="button"
-          className="FeesPane__Header__Close"
-          data-testid="review-tx-fees-close-btn"
-          onClick={onClose}
-          aria-label={t("Close")}
-        >
-          <Icon.X />
-        </button>
-      </div>
-      <Heading as="h2" size="sm" addlClassName="FeesPane__Title">
-        {t("Fees")}
-      </Heading>
+      <SheetHeader
+        title={t("Fees")}
+        onClose={onClose}
+        closeTestId="review-tx-fees-close-btn"
+      />
       <div className="FeesPane__Card">
         {isSoroban && (
           <div className="FeesPane__Card__Row">

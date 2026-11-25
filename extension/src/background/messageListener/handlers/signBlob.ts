@@ -64,7 +64,9 @@ export const signBlob = async ({
     }
 
     const signPayload = encodeSep53Message(blob.message);
-    const response = sourceKeys.sign(signPayload);
+    // Keypair.sign returns Uint8Array as of SDK v17; the dApp-facing
+    // SignBlobResponse contract is a Buffer, so re-wrap here.
+    const response = Buffer.from(sourceKeys.sign(signPayload));
 
     const responseIndex = responseQueue.findIndex((item) => item.uuid === uuid);
     const blobResponse =

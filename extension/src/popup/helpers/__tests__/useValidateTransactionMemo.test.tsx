@@ -11,7 +11,7 @@ describe("useValidateTransactionMemo", () => {
     jest.clearAllMocks();
   });
   it("should validate transaction memo if memo required accounts are found", async () => {
-    const txBuilderSpy = jest.spyOn(StellarSdk.TransactionBuilder, "fromXDR");
+    const txBuilderSpy = jest.spyOn(StellarSdk.TransactionBuilder, "fromXdr");
     jest.spyOn(ApiInternal, "getMemoRequiredAccounts").mockResolvedValue({
       memoRequiredAccounts: [
         {
@@ -61,7 +61,7 @@ describe("useValidateTransactionMemo", () => {
     );
   });
   it("should not validate transaction memo if memo required accounts are not found", async () => {
-    const txBuilderSpy = jest.spyOn(StellarSdk.TransactionBuilder, "fromXDR");
+    const txBuilderSpy = jest.spyOn(StellarSdk.TransactionBuilder, "fromXdr");
     jest
       .spyOn(ApiInternal, "getMemoRequiredAccounts")
       .mockResolvedValue({ memoRequiredAccounts: [] } as unknown as Awaited<

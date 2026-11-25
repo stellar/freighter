@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { ActionStatus } from "@shared/api/types";
 import { AppDispatch } from "popup/App";
 import { emitMetric } from "helpers/metrics";
+import { swapSourceProps } from "popup/metrics/swap";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { getQuoteExpiredOperationCodes } from "popup/helpers/quoteExpiry";
@@ -51,6 +52,7 @@ export const useSwapSubmitQuoteExpiry = ({
       to_asset_code: getAssetFromCanonical(transactionData.destinationAsset)
         .code,
       result_code: getQuoteExpiredOperationCodes(submission.error).join(", "),
+      ...swapSourceProps(transactionData.swapSource),
     });
     // Clear only the ERROR status (keep the transaction data + the
     // isSwapQuoteExpired flag, which drives the amount-screen notification).

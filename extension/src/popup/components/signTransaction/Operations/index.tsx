@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { Badge, Icon, IconButton } from "@stellar/design-system";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { OperationRecord, Signer, xdr } from "stellar-sdk";
+import { OperationRecord, xdr } from "stellar-sdk";
 
 import {
   FLAG_TYPES,
@@ -15,9 +15,14 @@ import { FlaggedKeys } from "types/transactions";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { truncateString, truncatedPoolId } from "helpers/stellar";
 import { scanAsset } from "popup/helpers/blockaid";
-import { addressToString, getCreateContractArgs } from "popup/helpers/soroban";
+import {
+  addressToString,
+  getCreateContractArgs,
+  xdrStringToRaw,
+} from "popup/helpers/soroban";
 import { CopyValue } from "popup/components/CopyValue";
 import {
+  ContractSpecNote,
   KeyValueClaimants,
   KeyValueInvokeHostFn,
   KeyValueInvokeHostFnArgs,
@@ -27,6 +32,7 @@ import {
   KeyValueSignerKeyOptions,
   KeyValueWithPublicKey,
   PathList,
+  useContractArgNames,
 } from "./KeyVal";
 
 import "./styles.scss";
@@ -121,6 +127,55 @@ const KeyValueAssetIssuer = ({ issuer }: { issuer?: string }) => {
       }
     />
   ) : null;
+};
+
+/**
+ * The parameters section of an invoke-host-function operation: the heading,
+ * the note qualifying spec-derived names, and the card of rows. The note sits
+ * between the heading and the card, so the spec lookup happens here and the
+ * names it resolves are handed down to the rows -- one lookup for both.
+ */
+const OperationParametersSection = ({
+  op,
+  renderArgs,
+}: {
+  op: OperationRecord;
+  renderArgs: (spec: {
+    argNames: string[] | null;
+    isLoadingArgNames: boolean;
+  }) => React.ReactNode;
+}) => {
+  const { t } = useTranslation();
+  // Only a contract invocation has declared parameters to name; every other
+  // host function renders its args unlabelled, so it has nothing to qualify.
+  const invocation =
+    op.type === "invokeHostFunction" &&
+    op.func.type === "hostFunctionTypeInvokeContract"
+      ? op.func.invokeContract
+      : undefined;
+  const { argNames, isLoading } = useContractArgNames({
+    contractId: invocation
+      ? addressToString(invocation.contractAddress)
+      : undefined,
+    // The raw signed name, not `toString()`: that decode replaces every
+    // invalid byte with U+FFFD, and a lossily decoded name is not a key any
+    // contract spec defines.
+    specFnName: invocation && xdrStringToRaw(invocation.functionName),
+    argCount: invocation?.args.length ?? 0,
+  });
+
+  return (
+    <>
+      <div className="Operations--header">
+        <Icon.BracketsEllipses />
+        <span>{t("Parameters")}</span>
+      </div>
+      {!!argNames?.length && <ContractSpecNote />}
+      <div className="Operations--item">
+        {renderArgs({ argNames, isLoadingArgNames: isLoading })}
+      </div>
+    </>
+  );
 };
 
 export const Operations = ({
@@ -417,11 +472,7 @@ export const Operations = ({
         } = op;
         return (
           <>
-            {signer && (
-              // v16 types the parsed setOptions signer as the builder opts
-              // type; at runtime it is a parsed Signer (Buffer-backed fields).
-              <KeyValueSigner signer={signer as unknown as Signer} />
-            )}
+            {signer && <KeyValueSigner signer={signer} />}
             {inflationDest && (
               <KeyValueWithPublicKey
                 operationKey={t("Inflation Destination")}
@@ -544,7 +595,9 @@ export const Operations = ({
                 isDeletingEntry ? (
                   <StatusBadge>{t("Deleted")}</StatusBadge>
                 ) : (
-                  value.toString()
+                  // v17: `value` is a Uint8Array; `toString()` would render
+                  // comma-joined decimals rather than the data-entry text.
+                  new TextDecoder().decode(value)
                 )
               }
             />
@@ -817,7 +870,7 @@ export const Operations = ({
           const { account, signer } = op;
           return (
             <>
-              <KeyValueSignerKeyOptions signer={signer as unknown as Signer} />
+              <KeyValueSignerKeyOptions signer={signer} />
               <KeyValueWithPublicKey
                 operationKey={t("Account")}
                 operationValue={account}
@@ -830,7 +883,17 @@ export const Operations = ({
     }
   };
 
-  const RenderOpArgsByType = ({ op }: { op: OperationRecord }) => {
+  const RenderOpArgsByType = ({
+    op,
+    argNames = null,
+    isLoadingArgNames = false,
+  }: {
+    op: OperationRecord;
+    // Resolved once by OperationParametersSection above, which needs them to
+    // decide whether the spec note belongs beside the heading.
+    argNames?: string[] | null;
+    isLoadingArgNames?: boolean;
+  }) => {
     const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
     useEffect(() => {
@@ -876,19 +939,18 @@ export const Operations = ({
         const hostfn = op.func;
 
         function renderDetails() {
-          switch (hostfn.switch()) {
-            case xdr.HostFunctionType.hostFunctionTypeCreateContractV2():
-            case xdr.HostFunctionType.hostFunctionTypeCreateContract(): {
+          switch (hostfn.type) {
+            case "hostFunctionTypeCreateContractV2":
+            case "hostFunctionTypeCreateContract": {
               const createContractArgs = getCreateContractArgs(hostfn);
               const preimage = createContractArgs.contractIdPreimage;
               const createV2Args = createContractArgs.constructorArgs;
 
-              if (preimage.switch().name === "contractIdPreimageFromAddress") {
-                const preimageFromAddress = preimage.fromAddress();
-                const address = preimageFromAddress.address();
+              if (preimage.type === "contractIdPreimageFromAddress") {
+                const preimageFromAddress = preimage.fromAddress;
+                const address = preimageFromAddress.address;
 
-                const addressType = address.switch();
-                if (addressType.name === "scAddressTypeAccount") {
+                if (address.type === "scAddressTypeAccount") {
                   return (
                     createV2Args && (
                       <KeyValueInvokeHostFnArgs args={createV2Args} />
@@ -914,24 +976,23 @@ export const Operations = ({
               );
             }
 
-            case xdr.HostFunctionType.hostFunctionTypeInvokeContract(): {
-              const invocation = hostfn.invokeContract();
-              const contractId = addressToString(invocation.contractAddress());
-              const fnName = invocation.functionName().toString();
-              const args = invocation.args();
+            case "hostFunctionTypeInvokeContract": {
+              const args = hostfn.invokeContract.args;
 
               return (
                 <KeyValueInvokeHostFnArgs
                   args={args}
-                  contractId={contractId}
-                  fnName={fnName}
+                  argNames={argNames}
+                  isLoadingArgNames={isLoadingArgNames}
                   showHeader={false}
                 />
               );
             }
 
-            case xdr.HostFunctionType.hostFunctionTypeUploadContractWasm(): {
-              const wasm = hostfn.wasm().toString();
+            case "hostFunctionTypeUploadContractWasm": {
+              // v17: `wasm` is a Uint8Array, whose `toString()` would render
+              // comma-joined decimals — encode it explicitly.
+              const wasm = xdr.encodeBytes(hostfn.wasm, "hex");
               return (
                 <KeyValueList operationKey={t("wasm")} operationValue={wasm} />
               );
@@ -983,15 +1044,10 @@ export const Operations = ({
               <PathList paths={op.path} />
             )}
             {type === "invokeHostFunction" && (
-              <>
-                <div className="Operations--header">
-                  <Icon.BracketsEllipses />
-                  <span>{t("Parameters")}</span>
-                </div>
-                <div className="Operations--item">
-                  <RenderOpArgsByType op={op} />
-                </div>
-              </>
+              <OperationParametersSection
+                op={op}
+                renderArgs={(spec) => <RenderOpArgsByType op={op} {...spec} />}
+              />
             )}
           </div>
         );

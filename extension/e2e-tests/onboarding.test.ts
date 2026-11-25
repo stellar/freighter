@@ -7,6 +7,8 @@ import {
   fillMnemonicInputs,
   clickImportAndWaitForSuccess,
 } from "./helpers/onboarding";
+import type { Page } from "@playwright/test";
+import { goToSettings } from "./helpers/network";
 
 const { generateMnemonic } = StellarHDWallet;
 
@@ -31,10 +33,14 @@ test.beforeEach(async ({ page, extensionId }) => {
 });
 
 test("Welcome page loads", async ({ page }) => {
-  await page.locator(".Welcome__column").waitFor();
-  await expect(page.getByText("Freighter Wallet")).toBeVisible();
+  await page.locator(".Welcome").waitFor();
+  await expect(
+    page.getByRole("heading", { name: "Welcome to Varial" }),
+  ).toBeVisible();
+  await expect(page.getByText("Your favorite Stellar wallet")).toBeVisible();
+  await expect(page.getByText("Freighter is now Varial")).toBeVisible();
   await expect(page.getByText("Create new wallet")).toBeVisible();
-  await expect(page.getByText("I already have a wallet")).toBeVisible();
+  await expect(page.getByText("Import wallet")).toBeVisible();
   await expectPageToHaveScreenshot({ page, screenshot: "welcome-page.png" });
 });
 
@@ -55,7 +61,7 @@ test("Create new wallet", async ({ page }) => {
   await expectPageToHaveScreenshot(
     { page, screenshot: "recovery-page.png" },
     {
-      mask: [page.locator(".MnemonicDisplay__list-item")],
+      mask: [page.locator(".MnemonicDisplay__word")],
     },
   );
 
@@ -91,7 +97,7 @@ test("Create new wallet", async ({ page }) => {
 });
 
 test("Import 12 word wallet", async ({ page }) => {
-  await page.getByText("I already have a wallet").click();
+  await page.getByText("Import wallet").click();
   await expect(page.getByText("Create a Password")).toBeVisible();
 
   await page.locator("#new-password-input").fill("My-password123");
@@ -132,7 +138,7 @@ test("Import 12 word wallet", async ({ page }) => {
 test("Import 12 word wallet by pasting", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
-  await page.getByText("I already have a wallet").click();
+  await page.getByText("Import wallet").click();
   await expect(page.getByText("Create a Password")).toBeVisible();
 
   await page.locator("#new-password-input").fill("My-password123");
@@ -178,7 +184,7 @@ test("Import 12 word wallet by pasting", async ({ page, context }) => {
 });
 
 test("Import 24 word wallet", async ({ page }) => {
-  await page.getByText("I already have a wallet").click();
+  await page.getByText("Import wallet").click();
   await expect(page.getByText("Create a Password")).toBeVisible();
 
   await page.locator("#new-password-input").fill("My-password123");
@@ -248,7 +254,7 @@ test("Import 24 word wallet", async ({ page }) => {
 test("Import 24 word wallet by pasting", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
-  await page.getByText("I already have a wallet").click();
+  await page.getByText("Import wallet").click();
   await expect(page.getByText("Create a Password")).toBeVisible();
 
   await page.locator("#new-password-input").fill("My-password123");
@@ -321,7 +327,7 @@ test("Import 24 word wallet by pasting", async ({ page, context }) => {
 });
 
 test("Import wallet with wrong password", async ({ page }) => {
-  await page.getByText("I already have a wallet").click();
+  await page.getByText("Import wallet").click();
   await expect(page.getByText("Create a password")).toBeVisible();
 
   await page.locator("#new-password-input").fill("My-password123");
@@ -356,7 +362,7 @@ test("Incorrect mnemonic phrase", async ({ page }) => {
   await expectPageToHaveScreenshot(
     { page, screenshot: "recovery-page.png" },
     {
-      mask: [page.locator(".MnemonicDisplay__list-item")],
+      mask: [page.locator(".MnemonicDisplay__word")],
     },
   );
 
@@ -387,159 +393,158 @@ test("Incorrect mnemonic phrase", async ({ page }) => {
   );
 });
 
-test("Logout and create new account", async ({
-  page,
-  extensionId,
-  context,
-}) => {
-  test.slow();
-  await loginToTestAccount({ page, extensionId, context });
-
-  await page.getByTestId("account-view-account-name").click();
-  const originalAccounts = page.getByTestId("wallet-row-select");
-  const originalAccountsCount = await originalAccounts.count();
-  // the test seed phrase should have multiple funded accounts
-  expect(originalAccountsCount).not.toBe(1);
-
-  await page.getByTestId("BackButton").click();
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
+// Logs out, resets the wallet from the lock screen and returns the Welcome
+// tab that opens, once the wallet is confirmed gone. The original page stays
+// on the lock screen.
+const resetWalletFromLockScreen = async (page: Page, extensionId: string) => {
+  await goToSettings(page);
   await page.getByText("Log Out").click();
 
+  await expect(page.getByText("Welcome back")).toBeVisible();
+  await expectPageToHaveScreenshot({ page, screenshot: "lock-screen.png" });
+
+  await page.getByTestId("forgot-password-button").click();
+  await expect(page.getByTestId("forgot-password-sheet")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
-    screenshot: "unlock-password-overwrite.png",
+    screenshot: "forgot-password-sheet.png",
   });
 
-  const newPagePromise = page.context().waitForEvent("page");
+  const welcomePagePromise = page.context().waitForEvent("page");
+  await page.getByTestId("forgot-password-sheet-reset").click();
+  const welcomePage = await welcomePagePromise;
 
-  await page.getByText("Create a wallet").click();
+  await expect(welcomePage.getByText("Create new wallet")).toBeVisible();
+  await expect(page.getByTestId("forgot-password-sheet")).toBeHidden();
 
-  const newPage = await newPagePromise;
-  await expect(
-    newPage.getByText(
-      "You are overwriting an existing account. You will permanently lose access to the account currently stored in Freighter.",
-    ),
-  ).toBeVisible();
-  await expectPageToHaveScreenshot({
-    page: newPage,
-    screenshot: "account-creator-overwrite.png",
-  });
+  // The Welcome tab opens as soon as the reset call returns, and creating or
+  // importing a wallet overwrites any wallet that is still stored. Without
+  // this check a reset that erased nothing would pass every assertion below.
+  // The root route shows Welcome only when no wallet is stored, and the lock
+  // screen otherwise.
+  await welcomePage.goto(`chrome-extension://${extensionId}/index.html`);
+  await expect(welcomePage.getByText("Import wallet")).toBeVisible();
+  await expect(welcomePage.getByText("Welcome back")).toHaveCount(0);
+  return welcomePage;
+};
 
-  await newPage.locator("#new-password-input").fill(PASSWORD);
-  await newPage.locator("#confirm-password-input").fill(PASSWORD);
-  await newPage.locator("#termsOfUse-input").check({ force: true });
-  await newPage.getByText("Confirm").click();
+const expectOldWalletAccountsCount = async (page: Page) => {
+  await page.getByTestId("account-view-account-name").click();
+  // the test seed phrase should have multiple funded accounts
+  expect(await page.getByTestId("wallet-row-select").count()).not.toBe(1);
+  await page.getByTestId("AccountSheet__close").click();
+};
 
-  await newPage.getByText("Do this later").click();
-  await expect(newPage.getByText("You’re all set!")).toBeVisible();
-
-  await newPage.goto(`chrome-extension://${extensionId}/index.html#/`);
-  await expect(newPage.getByTestId("account-view")).toBeVisible({
+const expectOnlyNewWalletAccount = async (page: Page, extensionId: string) => {
+  await page.goto(`chrome-extension://${extensionId}/index.html#/`);
+  await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 10000,
   });
-  await newPage.getByTestId("account-view-account-name").click();
-  const newAccounts = newPage.getByTestId("wallet-row-select");
-  await expect(newAccounts).toBeVisible();
-  const newAccountsCount = await newAccounts.count();
-  // the new seed phrase should only have one funded account; this confirms that the other accounts are no longer present
-  expect(newAccountsCount).toBe(1);
+  await page.getByTestId("account-view-account-name").click();
+  const accounts = page.getByTestId("wallet-row-select");
+  await expect(accounts).toBeVisible();
+  // the new wallet has a single account; the old wallet's accounts are gone
+  expect(await accounts.count()).toBe(1);
+};
 
-  await newPage.getByTestId("BackButton").click();
-  await newPage.getByTestId("account-options-dropdown").click();
-  await newPage.getByText("Settings").click();
-  await newPage.getByText("Log Out").click();
-
-  await newPage.locator("#password-input").fill(PASSWORD);
-  await newPage.getByRole("button", { name: "Unlock" }).click();
-
-  await expect(newPage.getByTestId("account-view")).toBeVisible({
+// The page where the reset started is still on the lock screen; the new
+// wallet's password unlocks it.
+const unlockOriginalPage = async (page: Page) => {
+  await expect(page.getByText("Welcome back")).toBeVisible();
+  await page.locator("#password-input").fill(PASSWORD);
+  await page.getByRole("button", { name: "Unlock" }).click();
+  await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
   });
-});
+};
 
-test("Logout and import new account", async ({
+const fillNewPassword = async (page: Page) => {
+  await expect(page.locator("#new-password-input")).toBeVisible();
+  await expect(page.getByText(/overwriting an existing account/)).toHaveCount(
+    0,
+  );
+  await page.locator("#new-password-input").fill(PASSWORD);
+  await page.locator("#confirm-password-input").fill(PASSWORD);
+  await page.locator("#termsOfUse-input").check({ force: true });
+  await page.getByText("Confirm").click();
+};
+
+test("Reset wallet and create a new wallet", async ({
   page,
   extensionId,
   context,
 }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId, context });
+  await expectOldWalletAccountsCount(page);
 
-  await page.getByTestId("account-view-account-name").click();
-  const originalAccounts = page.getByTestId("wallet-row-select");
-  const originalAccountsCount = await originalAccounts.count();
+  const welcomePage = await resetWalletFromLockScreen(page, extensionId);
 
-  // the test seed phrase should have multiple funded accounts
-  expect(originalAccountsCount).not.toBe(1);
+  await welcomePage.getByText("Create new wallet").click();
+  await fillNewPassword(welcomePage);
+  await welcomePage.getByText("Do this later").click();
+  await expect(welcomePage.getByText("You’re all set!")).toBeVisible();
 
-  await page.getByTestId("BackButton").click();
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
-  await page.getByText("Log Out").click();
+  await expectOnlyNewWalletAccount(welcomePage, extensionId);
+  await unlockOriginalPage(page);
+});
 
-  await expectPageToHaveScreenshot({
-    page,
-    screenshot: "unlock-password-overwrite.png",
-  });
+test("Reset wallet and import a wallet", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  await loginToTestAccount({ page, extensionId, context });
+  await expectOldWalletAccountsCount(page);
 
-  const newPagePromise = page.context().waitForEvent("page");
+  const welcomePage = await resetWalletFromLockScreen(page, extensionId);
 
-  await page.getByText("Import using account seed phrase").click();
-
-  const newPage = await newPagePromise;
+  await welcomePage.getByText("Import wallet").click();
+  await fillNewPassword(welcomePage);
   await expect(
-    newPage.getByText(
-      "You are overwriting an existing account. You will permanently lose access to the account currently stored in Freighter.",
-    ),
-  ).toBeVisible();
-  await expectPageToHaveScreenshot({
-    page: newPage,
-    screenshot: "account-creator-overwrite.png",
-  });
-
-  await newPage.locator("#new-password-input").fill(PASSWORD);
-  await newPage.locator("#confirm-password-input").fill(PASSWORD);
-  await newPage.locator("#termsOfUse-input").check({ force: true });
-  await newPage.getByText("Confirm").click();
-
-  await expect(
-    newPage.getByText("Import wallet from recovery phrase"),
-  ).toBeVisible();
-  await expect(
-    newPage.getByText("You can also paste the phrase in the first box."),
+    welcomePage.getByText("Import wallet from recovery phrase"),
   ).toBeVisible();
 
   const TEST_WORDS = generateMnemonic({ entropyBits: 128 }).split(" ");
-
   for (let i = 1; i <= TEST_WORDS.length; i++) {
-    await newPage.locator(`#MnemonicPhrase-${i}`).fill(TEST_WORDS[i - 1]);
+    await welcomePage.locator(`#MnemonicPhrase-${i}`).fill(TEST_WORDS[i - 1]);
   }
-
-  await newPage.getByRole("button", { name: "Import" }).click();
-
-  await expect(newPage.getByText("You’re all set!")).toBeVisible({
+  await welcomePage.getByRole("button", { name: "Import" }).click();
+  await expect(welcomePage.getByText("You’re all set!")).toBeVisible({
     timeout: 20000,
   });
 
-  await newPage.goto(`chrome-extension://${extensionId}/index.html#/`);
+  await expectOnlyNewWalletAccount(welcomePage, extensionId);
+  await unlockOriginalPage(page);
+});
 
-  await newPage.getByTestId("account-view-account-name").click();
-  const newAccounts = newPage.getByTestId("wallet-row-select");
-  await expect(newAccounts).toBeVisible();
-  const newAccountsCount = await newAccounts.count();
-  // the new seed phrase should only have one funded account; this confirms that the other accounts are no longer present
-  expect(newAccountsCount).toBe(1);
+test("Closing the Forgot password sheet keeps the wallet", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  await loginToTestAccount({ page, extensionId, context });
+  await goToSettings(page);
+  await page.getByText("Log Out").click();
+  const unlockButton = page.getByTestId("enter-password-submit");
+  await expect(unlockButton).toBeVisible();
+  const unlockBox = await unlockButton.boundingBox();
 
-  await newPage.getByTestId("BackButton").click();
-  await newPage.getByTestId("account-options-dropdown").click();
-  await newPage.getByText("Settings").click();
-  await newPage.getByText("Log Out").click();
+  await page.getByTestId("forgot-password-button").click();
+  await expect(page.getByTestId("forgot-password-sheet")).toBeVisible();
+  // "Reset wallet" is the same height as the lock screen's Unlock button.
+  const resetBox = await page
+    .getByTestId("forgot-password-sheet-reset")
+    .boundingBox();
+  expect(resetBox?.height).toBe(unlockBox?.height);
+  await page.getByTestId("forgot-password-sheet-close").click();
+  await expect(page.getByTestId("forgot-password-sheet")).toBeHidden();
 
-  await newPage.locator("#password-input").fill(PASSWORD);
-  await newPage.getByRole("button", { name: "Unlock" }).click();
-
-  await expect(newPage.getByTestId("account-view")).toBeVisible({
+  await page.locator("#password-input").fill(PASSWORD);
+  await page.getByRole("button", { name: "Unlock" }).click();
+  await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
   });
 });
@@ -567,7 +572,7 @@ test("Overwrites account when user abandons mnemonic phrase confirmation", async
 
   await expect(
     page.getByText(
-      "You previously did not complete onboarding. You will permanently lose access to the account you started to create in Freighter.",
+      "You previously did not complete onboarding. You will permanently lose access to the account you started to create in Varial.",
     ),
   ).toBeVisible();
 
@@ -598,10 +603,9 @@ test("Overwrites account when user abandons mnemonic phrase confirmation", async
 
   await expect(page.getByTestId("wallet-row-select")).toHaveCount(1);
 
-  await page.getByTestId("BackButton").click();
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
-  await page.getByText("Security").click();
+  await page.getByTestId("AccountSheet__close").click();
+  await goToSettings(page);
+  await page.getByRole("link", { name: "Security" }).click();
   await page.getByText("Show recovery phrase").click();
 
   await page.locator("#password").fill(PASSWORD);
@@ -640,7 +644,7 @@ test("Overwrites account when user abandons after password creation", async ({
 
   await expect(
     page.getByText(
-      "You previously did not complete onboarding. You will permanently lose access to the account you started to create in Freighter.",
+      "You previously did not complete onboarding. You will permanently lose access to the account you started to create in Varial.",
     ),
   ).toBeVisible();
 
@@ -670,10 +674,9 @@ test("Overwrites account when user abandons after password creation", async ({
 
   expect(page.getByTestId("wallet-row-select")).toHaveCount(1);
 
-  await page.getByTestId("BackButton").click();
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
-  await page.getByText("Security").click();
+  await page.getByTestId("AccountSheet__close").click();
+  await goToSettings(page);
+  await page.getByRole("link", { name: "Security" }).click();
   await page.getByText("Show recovery phrase").click();
 
   await page.locator("#password").fill(PASSWORD);
@@ -698,9 +701,8 @@ test("Password input is auto focused on Show recovery phrase screen", async ({
 }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId, context });
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
-  await page.getByText("Security").click();
+  await goToSettings(page);
+  await page.getByRole("link", { name: "Security" }).click();
   await page.getByText("Show recovery phrase").click();
   await expect(page.locator("#password")).toBeFocused();
 });

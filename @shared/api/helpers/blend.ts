@@ -2,6 +2,7 @@ import { captureException } from "@sentry/browser";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { fetchBackendV2 } from "./fetchBackendV2";
+import { redactErrorBody } from "./redactErrorBody";
 import {
   AccountPositions,
   ApiAccountPositions,
@@ -39,14 +40,31 @@ import {
  */
 
 /**
- * TEMPORARY — remove before opening the PR (one `git revert` of this commit).
+ * Calls a Blend endpoint and returns its `data` payload.
  *
- * Prints each Blend payload in full while the Positions UI is being built
- * against fields it does not consume yet.
+ * A non-200, or a 200 without `data`, throws: returning undefined would break
+ * the callers' return contracts, and their try/catch only handles throws. The
+ * Sentry message carries the body through `redactErrorBody`, as the other v2
+ * clients' messages do; the thrown error keeps the body as it is.
  */
-const debugLogBlendResponse = (label: string, body: unknown) => {
-  // eslint-disable-next-line no-console
-  console.log(`[blend] ${label}`, JSON.stringify(body, null, 2));
+const fetchBlendData = async <T>({
+  label,
+  ...request
+}: Parameters<typeof fetchBackendV2>[0] & {
+  /** What failed, for the Sentry message ("Blend pools"). */
+  label: string;
+}): Promise<T> => {
+  const { status, body } = await fetchBackendV2(request);
+
+  const parsed = body as { data?: T };
+  if (status !== 200 || !parsed?.data) {
+    captureException(
+      `Failed to fetch ${label} - ${status}: ${redactErrorBody(body)}`,
+    );
+    throw new Error(JSON.stringify(body));
+  }
+
+  return parsed.data;
 };
 
 const mapEarnPool = (pool: ApiBlendEarnPool): BlendEarnPool => ({
@@ -176,24 +194,13 @@ export const getBlendEarnOptions = async ({
 }: {
   networkDetails: NetworkDetails;
 }): Promise<BlendEarnAssetOption[]> => {
-  const { status, body } = await fetchBackendV2({
+  const data = await fetchBlendData<ApiBlendEarnOptionsCatalog>({
     method: "GET",
     path: `/protocols/blend/earn-options?network=${networkDetails.network}`,
+    label: "Blend earn options",
   });
 
-  // A 200 without a `data` payload is still a failure — returning undefined
-  // would violate the return contract, and the caller's try/catch only handles
-  // throws, not bad returns.
-  const parsed = body as { data?: ApiBlendEarnOptionsCatalog };
-  if (status !== 200 || !parsed?.data) {
-    const _err = JSON.stringify(body);
-    captureException(`Failed to fetch Blend earn options - ${status}: ${_err}`);
-    throw new Error(_err);
-  }
-
-  debugLogBlendResponse("earn-options", parsed.data);
-
-  return (parsed.data.options || []).map(mapEarnAssetOption);
+  return (data.options || []).map(mapEarnAssetOption);
 };
 
 /**
@@ -206,21 +213,13 @@ export const getBlendPools = async ({
 }: {
   networkDetails: NetworkDetails;
 }): Promise<BlendCatalogPool[]> => {
-  const { status, body } = await fetchBackendV2({
+  const data = await fetchBlendData<ApiBlendPoolsCatalog>({
     method: "GET",
     path: `/protocols/blend/pools?network=${networkDetails.network}`,
+    label: "Blend pools",
   });
 
-  const parsed = body as { data?: ApiBlendPoolsCatalog };
-  if (status !== 200 || !parsed?.data) {
-    const _err = JSON.stringify(body);
-    captureException(`Failed to fetch Blend pools - ${status}: ${_err}`);
-    throw new Error(_err);
-  }
-
-  debugLogBlendResponse("pools", parsed.data);
-
-  return (parsed.data.pools || []).map(mapCatalogPool);
+  return (data.pools || []).map(mapCatalogPool);
 };
 
 /**
@@ -242,22 +241,14 @@ export const getBlendPositions = async ({
   publicKey: string;
   networkDetails: NetworkDetails;
 }): Promise<AccountPositions> => {
-  const { status, body } = await fetchBackendV2({
+  const data = await fetchBlendData<ApiAccountPositions[]>({
     method: "POST",
     path: `/accounts/positions?network=${networkDetails.network}`,
     body: JSON.stringify({ addresses: [publicKey] }),
+    label: "Blend positions",
   });
 
-  const parsed = body as { data?: ApiAccountPositions[] };
-  if (status !== 200 || !parsed?.data) {
-    const _err = JSON.stringify(body);
-    captureException(`Failed to fetch Blend positions - ${status}: ${_err}`);
-    throw new Error(_err);
-  }
-
-  debugLogBlendResponse("positions", parsed.data);
-
-  const entry = parsed.data[0];
+  const entry = data[0];
   if (!entry) {
     return {
       address: publicKey,
@@ -306,22 +297,16 @@ export const getBlendSuppliedTokens = async ({
   assetId: string;
   networkDetails: NetworkDetails;
 }): Promise<string> => {
-  const { status, body } = await fetchBackendV2({
+  // The endpoint is a batch: `data` is an array with one entry per requested
+  // address, so unwrap the single element we asked for.
+  const data = await fetchBlendData<ApiAccountPositions[]>({
     method: "POST",
     path: `/accounts/positions?network=${networkDetails.network}`,
     body: JSON.stringify({ addresses: [publicKey] }),
+    label: "Blend positions",
   });
 
-  // The endpoint is a batch: `data` is an array with one entry per requested
-  // address, so unwrap the single element we asked for.
-  const parsed = body as { data?: ApiAccountPositions[] };
-  if (status !== 200 || !parsed?.data) {
-    const _err = JSON.stringify(body);
-    captureException(`Failed to fetch Blend positions - ${status}: ${_err}`);
-    throw new Error(_err);
-  }
-
-  const supplyRow = parsed.data[0]?.positions
+  const supplyRow = data[0]?.positions
     ?.find((position) => position.id === poolId)
     ?.blend?.supply?.find((row) => row.asset_id === assetId);
 

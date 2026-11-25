@@ -8,7 +8,7 @@ import { ROUTES } from "popup/constants/routes";
 import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
 
 import { isActiveNetwork } from "helpers/stellar";
-import { navigateTo, openTab } from "popup/helpers/navigate";
+import { closeWindow, navigateTo, openTab } from "popup/helpers/navigate";
 
 import {
   changeNetwork,
@@ -66,7 +66,7 @@ export const NetworkSettings = () => {
   if (state.data?.type === AppDataType.REROUTE) {
     if (state.data.shouldOpenTab) {
       openTab(newTabHref(state.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate
@@ -91,6 +91,7 @@ export const NetworkSettings = () => {
       <View.Content hasNoTopPadding>
         <div className="NetworkSettings">
           <Select
+            data-testid="network-settings-select"
             fieldSize="md"
             id="select"
             label={t("Current Network")}

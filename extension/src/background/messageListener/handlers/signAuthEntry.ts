@@ -59,8 +59,12 @@ export const signAuthEntry = async ({
       queueIndex !== -1 ? authEntryQueue.splice(queueIndex, 1)[0] : undefined;
     const authEntry = authEntryQueueItem?.authEntry;
 
+    // Keypair.sign returns Uint8Array as of SDK v17; the dApp-facing
+    // SignAuthEntryResponse contract is a Buffer, so re-wrap here.
     const response = authEntry
-      ? sourceKeys.sign(Sdk.hash(Buffer.from(authEntry.entry, "base64")))
+      ? Buffer.from(
+          sourceKeys.sign(Sdk.hash(Buffer.from(authEntry.entry, "base64"))),
+        )
       : null;
 
     const responseIndex = responseQueue.findIndex((item) => item.uuid === uuid);

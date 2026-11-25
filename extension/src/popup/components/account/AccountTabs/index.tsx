@@ -1,8 +1,9 @@
 /**
- * @fileoverview AccountTabs renders the Home screen's tab row. Adding tokens and
- * collectibles is handled by FloatingAddButton; hidden collectibles are reached
- * from the Add Collectible screen. Positions has no add flow of its own -- a
- * position is opened by depositing through Earn, not through this row.
+ * @fileoverview AccountTabs renders the Home screen's tab row. Each tab's list
+ * ends with its own InlineAddButton; hidden collectibles are reached from the
+ * Add Collectible screen.
+ * Positions has no add flow of its own -- a position is opened by depositing
+ * through Earn, not through this row.
  */
 
 import React from "react";

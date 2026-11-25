@@ -1,7 +1,8 @@
 import { emitMetric } from "helpers/metrics";
+import { AssetIdentity, FailureCategory } from "helpers/usdVolume";
 import { EarnSource, NotEnoughVariant } from "popup/constants/earn";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { PoolDetailsTab } from "popup/components/earn/PoolDetailsSheet/Tabs";
+import { PoolDetailsTab } from "popup/components/earn/PositionDetailsSheet/Tabs";
 
 /**
  * Emitters for the Earn deposit funnel.
@@ -11,12 +12,29 @@ import { PoolDetailsTab } from "popup/components/earn/PoolDetailsSheet/Tabs";
  * than spelled out at eight call sites across the flow. Every emitter here takes
  * camelCase arguments and is the only place their snake_case wire names appear.
  *
- * None of these carry an amount or a fiat value: the sibling outcome events
- * (`payment.completed`, `swap.completed`) carry asset codes only, and deposit
- * size is measurable on-chain from the pool.
+ * The funnel steps carry no amount or fiat value. A deposit that reached the
+ * network carries its USD volume on its outcome event, under the names
+ * `payment.completed` and `payment.failed` use, so one `SUM(amount_usd)`
+ * covers deposits too.
  *
  * `network`, `surface` and the account fields are stamped by buildCommonContext.
  */
+
+/** A deposit's USD volume, for an outcome that reached the network. */
+export interface EarnDepositVolume {
+  identity: AssetIdentity;
+  /** Deposited token amount, whole units. */
+  amount: number;
+  /** The `amount_usd` family, from `buildSourceLegUsdProps`. */
+  usdProps: Record<string, unknown>;
+}
+
+const depositVolumeProps = (volume: EarnDepositVolume) => ({
+  ...(volume.identity.issuer ? { asset_issuer: volume.identity.issuer } : {}),
+  asset_type: volume.identity.type,
+  amount: volume.amount,
+  ...volume.usdProps,
+});
 
 /** Which remedy the user chose on the "Not enough X" sheet. */
 export type EarnFundingAction = "buy" | "swap" | "transfer";
@@ -89,23 +107,8 @@ export const trackEarnFundingActionSelected = ({
 };
 
 /**
- * The swap branch settled and returned to the picker. Distinct from
- * `swap.completed`, which the reused Swap components emit for every swap and
- * cannot attribute to Earn.
+ * The pool details sheet opened, and which entry point opened it.
  */
-export const trackEarnSwapCompleted = ({
-  fromAssetCode,
-  toAssetCode,
-}: {
-  fromAssetCode: string;
-  toAssetCode: string;
-}) => {
-  emitMetric(METRIC_NAMES.earnSwapCompleted, {
-    from_asset_code: fromAssetCode,
-    to_asset_code: toAssetCode,
-  });
-};
-
 export const trackEarnPoolDetailsOpened = ({
   poolId,
   source,
@@ -227,6 +230,7 @@ export const trackEarnDepositCompleted = ({
   apy,
   viaSwap,
   source,
+  volume,
 }: {
   assetCode: string;
   poolId: string;
@@ -235,6 +239,7 @@ export const trackEarnDepositCompleted = ({
   viaSwap: boolean;
   /** Where the flow began — Home's Earn button or a Positions row/empty CTA. */
   source: EarnSource;
+  volume?: EarnDepositVolume;
 }) => {
   emitMetric(METRIC_NAMES.earnDepositCompleted, {
     asset_code: assetCode,
@@ -242,6 +247,7 @@ export const trackEarnDepositCompleted = ({
     apy,
     via_swap: viaSwap,
     source,
+    ...(volume ? depositVolumeProps(volume) : {}),
   });
 };
 
@@ -251,24 +257,32 @@ export const trackEarnDepositCompleted = ({
  * failure is still reported after the user closes it — and the Earn view owns
  * everything that fails earlier, a device-rejected signature at review being the
  * one that matters. Neither can see the other's failures, so they cannot double
- * count.
+ * count. Only a failure the network returned carries volume.
  */
 export const trackEarnDepositFailed = ({
   assetCode,
   poolId,
   reasonCode,
   source,
+  volume,
 }: {
   assetCode: string;
   poolId: string;
   reasonCode: string;
   /** Where the flow began — Home's Earn button or a Positions row/empty CTA. */
   source: EarnSource;
+  volume?: EarnDepositVolume & { failureCategory: FailureCategory };
 }) => {
   emitMetric(METRIC_NAMES.earnDepositFailed, {
     asset_code: assetCode,
     pool_id: poolId,
     reason_code: reasonCode,
     source,
+    ...(volume
+      ? {
+          ...depositVolumeProps(volume),
+          failure_category: volume.failureCategory,
+        }
+      : {}),
   });
 };

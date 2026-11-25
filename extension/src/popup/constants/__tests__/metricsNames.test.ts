@@ -51,7 +51,6 @@ describe("METRIC_NAMES domain-event catalog", () => {
     expect(METRIC_NAMES.earnFundingActionSelected).toBe(
       "earn.funding_action_selected",
     );
-    expect(METRIC_NAMES.earnSwapCompleted).toBe("earn.swap_completed");
     expect(METRIC_NAMES.earnPoolDetailsOpened).toBe("earn.pool_details_opened");
     expect(METRIC_NAMES.earnPoolDetailsTabSelected).toBe(
       "earn.pool_details_tab_selected",
@@ -115,7 +114,7 @@ describe("METRIC_NAMES domain-event catalog", () => {
     expect(METRIC_NAMES.accountCreated).toBe("account.created");
     expect(METRIC_NAMES.accountImported).toBe("account.imported");
     expect(METRIC_NAMES.accountImportFailed).toBe("account.import_failed");
-    expect(METRIC_NAMES.accountFirstFunded).toBe("account.first_funded");
+    expect(METRIC_NAMES.accountFunded).toBe("account.funded");
     expect(METRIC_NAMES.accountRenamed).toBe("account.renamed");
   });
 
@@ -128,6 +127,9 @@ describe("METRIC_NAMES domain-event catalog", () => {
     );
     expect(METRIC_NAMES.signingTransactionRejected).toBe(
       "signing.transaction_rejected",
+    );
+    expect(METRIC_NAMES.signingTransactionFailed).toBe(
+      "signing.transaction_failed",
     );
     expect(METRIC_NAMES.signingTransactionBlocked).toBe(
       "signing.transaction_blocked",

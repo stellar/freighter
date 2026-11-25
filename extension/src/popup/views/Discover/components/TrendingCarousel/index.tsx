@@ -18,7 +18,9 @@ const TrendingCard = ({
 
   return (
     <div
-      className="TrendingCarousel__card"
+      className={`TrendingCarousel__card${
+        showPlaceholder ? "" : " TrendingCarousel__card--has-image"
+      }`}
       data-testid="trending-card"
       role="button"
       onClick={() => onCardClick(protocol)}
@@ -37,7 +39,12 @@ const TrendingCard = ({
       )}
       <div className="TrendingCarousel__card__gradient" />
       <div className="TrendingCarousel__card__content">
-        <Text as="div" size="sm" weight="semi-bold">
+        <Text
+          as="div"
+          size="md"
+          weight="medium"
+          addlClassName="TrendingCarousel__card__name"
+        >
           {protocol.name}
         </Text>
         <div className="TrendingCarousel__card__tag">

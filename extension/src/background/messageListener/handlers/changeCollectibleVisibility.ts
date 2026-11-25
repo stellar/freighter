@@ -1,21 +1,26 @@
+import { Store } from "redux";
+
 import { ChangeCollectibleVisibilityMessage } from "@shared/api/types/message-request";
-import { DataStorageAccess } from "../../helpers/dataStorageAccess";
-import { getHiddenCollectibles } from "./getHiddenCollectibles";
-import { HIDDEN_COLLECTIBLES } from "../../../constants/localStorageTypes";
+import { DataStorageAccess } from "background/helpers/dataStorageAccess";
+import { setCollectibleVisibility } from "../helpers/hidden-collectibles";
 
 export const changeCollectibleVisibility = async ({
   request,
   localStore,
+  sessionStore,
 }: {
   request: ChangeCollectibleVisibilityMessage;
   localStore: DataStorageAccess;
+  sessionStore: Store;
 }) => {
-  const { collectibleVisibility } = request;
+  const { collectibleVisibility, publicKey, network } = request;
 
-  const { hiddenCollectibles } = await getHiddenCollectibles({ localStore });
-  hiddenCollectibles[collectibleVisibility.collectible] =
-    collectibleVisibility.visibility;
-
-  await localStore.setItem(HIDDEN_COLLECTIBLES, hiddenCollectibles);
-  return { hiddenCollectibles };
+  return setCollectibleVisibility({
+    publicKey,
+    network,
+    collectible: collectibleVisibility.collectible,
+    visibility: collectibleVisibility.visibility,
+    localStore,
+    sessionStore,
+  });
 };

@@ -11,8 +11,12 @@ import {
   STEPS,
 } from "popup/constants/earn";
 import { navigateTo } from "popup/helpers/navigate";
-import { emitScreenViewed, ScreenViewedProps } from "helpers/metrics";
+import {
+  ScreenByStep,
+  useStepScreenViews,
+} from "popup/helpers/useStepScreenViews";
 import { ActionStatus } from "@shared/api/types";
+import { resetSimulation } from "popup/ducks/token-payment";
 import {
   resetSubmission,
   resetSubmitStatus,
@@ -34,9 +38,10 @@ import {
 } from "popup/ducks/earn";
 import {
   trackEarnDepositFailed,
-  trackEarnSwapCompleted,
   trackEarnTokenSelected,
 } from "popup/metrics/earn";
+import { showToast } from "popup/basics/shadcn/Toast";
+import { formatAmount } from "popup/helpers/formatters";
 import { getFailureReasonCode } from "popup/components/earn/helpers/failureReasonCode";
 import { EarnIntro } from "popup/components/earn/EarnIntro";
 import { useEarnIntroSeen } from "popup/components/earn/EarnIntro/hooks/useEarnIntroSeen";
@@ -44,6 +49,8 @@ import { EarnTokenPicker } from "popup/components/earn/EarnTokenPicker";
 import { EarnAmount } from "popup/components/earn/EarnAmount";
 import { EarnSubmit } from "popup/components/earn/EarnSubmit";
 import { EarnSwap } from "popup/components/earn/EarnSwap";
+import { pickSwapSource } from "popup/components/earn/EarnSwap/helpers/pickSwapSource";
+import { tokenPricesSelector } from "popup/ducks/cache";
 import { resolveSwapDestination } from "popup/components/earn/EarnTokenPicker/helpers/resolveSwapDestination";
 import {
   DestinationTokenDetails,
@@ -51,7 +58,6 @@ import {
   saveDestinationTokenDetails,
 } from "popup/ducks/transactionSubmission";
 import { Notification } from "@stellar/design-system";
-import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
 import "./styles.scss";
@@ -68,9 +74,7 @@ type EnterAnim = "from-bottom" | "from-right" | "from-left";
  * transition, so it owns both of its screen views. The `confirm` step is the
  * review sheet, emitted by EarnAmount.
  */
-const EARN_SCREEN_BY_STEP: Partial<
-  Record<STEPS, { screen_name: string } & ScreenViewedProps>
-> = {
+const EARN_SCREEN_BY_STEP: ScreenByStep<STEPS> = {
   [STEPS.INTRO]: { screen_name: "earn_intro", flow: "earn" },
   [STEPS.CHOOSE_TOKEN]: { screen_name: "earn_select_token", flow: "earn" },
   [STEPS.AMOUNT]: { screen_name: "earn_amount", flow: "earn" },
@@ -84,6 +88,7 @@ export const Earn = () => {
   const { hasSeenIntro, dismissIntro } = useEarnIntroSeen();
   const submission = useSelector(transactionSubmissionSelector);
   const { pool, selectedAssetId, source } = useSelector(earnSelector);
+  const tokenPrices = useSelector(tokenPricesSelector);
 
   // Read once at mount: the view rewrites its own search when the swap branch
   // opens and closes, so the flag is gone by the time any later render looks.
@@ -92,31 +97,40 @@ export const Earn = () => {
   // user leaves by browser-back without closeEarnFlow running its resetEarn().
   const earnSource = useRef(getEarnSourceFromSearch(location.search)).current;
 
-  // Start on CHOOSE_TOKEN and only fall back to the interstitial once the
-  // persisted flag has actually resolved to false. Defaulting to INTRO instead
-  // would flash it for every returning user while the background round-trip is
-  // in flight.
-  const [activeStep, setActiveStep] = useState<STEPS>(
-    isPrefilled ? STEPS.AMOUNT : STEPS.CHOOSE_TOKEN,
+  // No step until the persisted intro flag has resolved: the flow opens on the
+  // interstitial only once it is known to be unseen. Opening on either step
+  // first would flash it — the intro for every returning user, or the picker
+  // for a first visit — and report that screen's view ahead of the right one.
+  // A prefilled entry from a position opens on the amount screen and skips the
+  // intro: the token and pool are already chosen.
+  const [activeStep, setActiveStep] = useState<STEPS | null>(
+    isPrefilled ? STEPS.AMOUNT : null,
   );
   const [visitedSteps, setVisitedSteps] = useState<Record<STEPS, boolean>>(
     () =>
       (isPrefilled
         ? { [STEPS.CHOOSE_TOKEN]: true, [STEPS.AMOUNT]: true }
-        : { [STEPS.CHOOSE_TOKEN]: true }) as Record<STEPS, boolean>,
+        : {}) as Record<STEPS, boolean>,
   );
   const [enterAnim, setEnterAnim] = useState<EnterAnim>("from-bottom");
-  // The picker stays mounted across the swap branch, so it needs an explicit
-  // nudge to re-fetch balances once a swap lands.
-  const [pickerRefreshKey, setPickerRefreshKey] = useState(0);
+  // The picker stays mounted across the swap branch, and so does the deposit
+  // screen once visited, so both need an explicit nudge to re-fetch balances
+  // once a swap lands. Otherwise the token a swap just bought reads as 0
+  // available on its deposit screen.
+  const [balancesRefreshKey, setBalancesRefreshKey] = useState(0);
   const [swapTarget, setSwapTarget] = useState<{
     canonical: string;
     details: DestinationTokenDetails;
+    /** The token the swap starts from. */
+    source: string;
   } | null>(null);
 
-  const hasResolvedIntro = useRef(isPrefilled);
-  const lastEmittedStep = useRef<STEPS | null>(null);
   const isFirstSubmitStatusRun = useRef(true);
+  // True while a submission the swap branch started is unsettled. The swap and
+  // the deposit share the submission slice, so this is how a swap's outcome is
+  // told apart from a deposit's, including a swap whose sheet was closed while
+  // it was still in flight.
+  const isSwapSubmitting = useRef(false);
 
   const goToStep = (next: STEPS, anim: EnterAnim | "dismiss") => {
     setEnterAnim(anim === "dismiss" ? "from-bottom" : anim);
@@ -144,14 +158,11 @@ export const Earn = () => {
   }, [dispatch, isPrefilled]);
 
   useEffect(() => {
-    if (hasResolvedIntro.current || hasSeenIntro === null) {
+    if (activeStep !== null || hasSeenIntro === null) {
       return;
     }
-    hasResolvedIntro.current = true;
-
-    if (!hasSeenIntro) {
-      goToStep(STEPS.INTRO, "from-bottom");
-    }
+    goToStep(hasSeenIntro ? STEPS.CHOOSE_TOKEN : STEPS.INTRO, "from-bottom");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasSeenIntro]);
 
   // A failed submission returns to the amount screen with a banner rather than
@@ -177,6 +188,33 @@ export const Earn = () => {
       isFirstSubmitStatusRun.current = false;
       return;
     }
+
+    // A swap's outcome is the swap's to show: its sheet renders the success
+    // and failure screens itself. Treating it as a deposit failure would report
+    // earn.deposit_failed for a deposit nobody made and drop the user onto the
+    // amount screen.
+    const isSwapOpen = swapTarget !== null;
+    if (isSwapOpen && submission.submitStatus === ActionStatus.PENDING) {
+      isSwapSubmitting.current = true;
+    }
+    const isSettled =
+      submission.submitStatus === ActionStatus.SUCCESS ||
+      submission.submitStatus === ActionStatus.ERROR;
+    if (isSwapSubmitting.current && isSettled) {
+      isSwapSubmitting.current = false;
+      if (!isSwapOpen) {
+        // Closed while in flight, so nothing is showing this outcome. Clear
+        // it so the deposit doesn't start from it, and re-read balances in
+        // case the swap went through.
+        dispatch(resetSubmitStatus());
+        setBalancesRefreshKey((key) => key + 1);
+      }
+      return;
+    }
+    if (isSwapOpen) {
+      return;
+    }
+
     if (submission.submitStatus !== ActionStatus.ERROR) {
       return;
     }
@@ -219,19 +257,7 @@ export const Earn = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [swapTarget]);
 
-  // Emit a screen-view metric only once per step transition.
-  useEffect(() => {
-    if (activeStep === lastEmittedStep.current) {
-      return;
-    }
-    lastEmittedStep.current = activeStep;
-
-    const screen = EARN_SCREEN_BY_STEP[activeStep];
-    if (screen) {
-      const { screen_name, ...props } = screen;
-      emitScreenViewed(screen_name, props);
-    }
-  }, [activeStep]);
+  useStepScreenViews(activeStep, EARN_SCREEN_BY_STEP);
 
   const renderStep = (step: STEPS) => {
     switch (step) {
@@ -248,7 +274,7 @@ export const Earn = () => {
       case STEPS.CHOOSE_TOKEN:
         return (
           <EarnTokenPicker
-            refreshKey={pickerRefreshKey}
+            refreshKey={balancesRefreshKey}
             onClose={closeEarnFlow}
             onSelect={(option, resolved) => {
               trackEarnTokenSelected({
@@ -296,15 +322,34 @@ export const Earn = () => {
               }
               // No step change: the swap opens as a sheet over the picker, which
               // stays the active step underneath it.
-              setSwapTarget(target);
+              setSwapTarget({
+                ...target,
+                source: pickSwapSource({
+                  balances: resolved.balances.balances,
+                  // Whatever Home last fetched for this account; without any,
+                  // the swap starts from XLM.
+                  prices:
+                    tokenPrices[resolved.networkDetails.networkPassphrase]?.[
+                      resolved.publicKey
+                    ],
+                  destinationCanonical: target.canonical,
+                }),
+              });
             }}
           />
         );
       case STEPS.AMOUNT:
         return (
           <EarnAmount
+            refreshKey={balancesRefreshKey}
             goBack={() => goToStep(STEPS.CHOOSE_TOKEN, "from-left")}
-            onConfirm={() => goToStep(STEPS.DEPOSIT_CONFIRM, "from-right")}
+            onClose={closeEarnFlow}
+            onConfirm={() => {
+              // The deposit owns the next submission, even if a swap closed
+              // in flight has still not settled.
+              isSwapSubmitting.current = false;
+              goToStep(STEPS.DEPOSIT_CONFIRM, "from-right");
+            }}
           />
         );
       case STEPS.DEPOSIT_CONFIRM:
@@ -339,6 +384,8 @@ export const Earn = () => {
             className={`Earn__step ${
               isActive ? `Earn__step--${enterAnim}` : "Earn__step--hidden"
             }`}
+            // Lets a step restyle the shared View it renders.
+            data-step={step}
             aria-hidden={!isActive}
           >
             {renderStep(step)}
@@ -351,39 +398,39 @@ export const Earn = () => {
           a `display: none` step wrapper. */}
       {swapTarget && (
         <EarnSwap
+          sourceAsset={swapTarget.source}
           destinationAsset={swapTarget.canonical}
           destinationTokenDetails={swapTarget.details}
           onCancel={() => {
             setSwapTarget(null);
-            dispatch(saveDestinationAsset(""));
-            dispatch(saveDestinationTokenDetails(null));
+            // The swap replaced the deposit's transaction data with its own
+            // when it opened. Clear what it leaves behind (its amount, a failed
+            // status) so none of it carries into the deposit, as a completed
+            // swap's `finish` does.
+            dispatch(resetSubmission());
+            dispatch(resetSimulation());
           }}
-          onDone={({ fromCode, toCode }) => {
-            trackEarnSwapCompleted({
-              fromAssetCode: fromCode,
-              toAssetCode: toCode,
-            });
+          onDone={({ fromCode, toCode, toAmount }) => {
             // Read back at deposit time as `via_swap`, which is how we tell a
             // deposit the swap branch made possible from one that needed nothing.
             dispatch(setDidSwapInFlow(true));
             setSwapTarget(null);
             dispatch(saveDestinationAsset(""));
             dispatch(saveDestinationTokenDetails(null));
-            toast.custom(
-              () => (
-                <Notification
-                  variant="success"
-                  title={t("{{from}} has been swapped to {{to}}", {
-                    from: fromCode,
-                    to: toCode,
-                  })}
-                />
-              ),
-              { id: "earn-swap-success" },
-            );
-            // The picker stayed mounted underneath, so it needs an explicit
-            // nudge to pick up the balance the swap just created.
-            setPickerRefreshKey((key) => key + 1);
+            showToast(() => (
+              <Notification
+                variant="success"
+                title={t("{{from}} swapped to {{amount}} {{to}}", {
+                  from: fromCode,
+                  amount: formatAmount(toAmount),
+                  to: toCode,
+                })}
+              />
+            ));
+            // The picker stayed mounted underneath, and the deposit screen
+            // too if it was visited, so they need an explicit nudge to pick
+            // up the balance the swap just created.
+            setBalancesRefreshKey((key) => key + 1);
           }}
         />
       )}

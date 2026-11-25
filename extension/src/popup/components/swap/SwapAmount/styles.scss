@@ -210,25 +210,6 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: pxToRem(12px);
-
-    // In a sheet the fee readout is gone, so the lone slippage pill would
-    // otherwise sit under the amount card's left edge.
-    &--sheet {
-      justify-content: flex-end;
-    }
-  }
-
-  // Bare icon in the sheet header's left slot; the circled X opposite it belongs
-  // to the sheet, not to this screen.
-  &__header-settings {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    border: none;
-    background: none;
-    cursor: pointer;
-    color: var(--sds-clr-gray-11);
   }
 
   &__settings-fee-display {
@@ -287,26 +268,15 @@
   }
 }
 
-.SlippageWrapper {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
 .Slippage {
-  z-index: var(--z-index--banner);
-  position: relative;
-
   &__Footer {
     display: flex;
     justify-content: space-between;
     margin-top: pxToRem(24px);
 
+    // Same gap as the Settings sheet's Cancel and Save, so the buttons match.
     .Button:first-child {
-      margin-right: pxToRem(6px);
+      margin-right: pxToRem(10px);
     }
   }
 
@@ -342,5 +312,40 @@
 
   &__custom-input {
     margin-bottom: 2rem;
+  }
+}
+
+.SwapAsset__quote-unavailable-body {
+  color: var(--sds-clr-gray-11);
+  font-size: pxToRem(14px);
+  line-height: pxToRem(20px);
+}
+
+.SwapAsset__details-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: pxToRem(6px);
+  margin-top: pxToRem(12px);
+  color: var(--sds-clr-gray-11);
+  font-size: pxToRem(12px);
+  line-height: pxToRem(18px);
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: pxToRem(4px);
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--sds-clr-gray-12);
+    font: inherit;
+    font-weight: var(--sds-fw-medium);
+    cursor: pointer;
+
+    svg {
+      width: pxToRem(14px);
+      height: pxToRem(14px);
+    }
   }
 }

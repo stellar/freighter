@@ -16,7 +16,8 @@ test("Open Discover, dismiss welcome modal, and open a trending protocol in a ne
   await patchChromeTabsCreate(page);
   await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
-  // 1. Open Discover from the account header
+  // 1. Open Discover from the bottom tab bar. The test id predates the tab
+  //    bar and was kept deliberately, so the selector reads as the header's.
   await page.getByTestId("account-header-discover-button").click();
 
   // 2. Welcome modal appears on first open (fresh storage) — dismiss it
@@ -177,7 +178,42 @@ test.describe("Discover critical flows (stubbed)", () => {
     await expect(page.getByTestId("protocol-details-panel")).toBeVisible();
   });
 
-  test("escape key dismisses the Discover sheet", async ({
+  // The extension popup has no viewport: Chrome sizes the window to fit the
+  // content without horizontal scrolling, i.e. to the document's min-content
+  // width. A wide non-shrinking row (the trending carousel) pushed that to
+  // ~848px and Discover opened more than twice as wide as every other screen.
+  // jsdom cannot see this and a fixed Playwright viewport hides it, so measure
+  // min-content directly.
+  test("does not widen the document beyond the popup width", async ({
+    page,
+    extensionId,
+    context,
+  }) => {
+    await loginToTestAccount({ page, extensionId, context });
+    await expect(page.getByTestId("account-view")).toBeVisible({
+      timeout: 30000,
+    });
+
+    const minContentWidth = () =>
+      page.evaluate(() => {
+        const root = document.getElementById("root")!;
+        const prev = root.style.width;
+        root.style.width = "min-content";
+        const width = Math.round(root.getBoundingClientRect().width);
+        root.style.width = prev;
+        return width;
+      });
+
+    const onHome = await minContentWidth();
+
+    await page.getByTestId("account-header-discover-button").click();
+    await page.getByTestId("discover-welcome-dismiss").click();
+    await expect(page.getByTestId("trending-carousel")).toBeVisible();
+
+    expect(await minContentWidth()).toBe(onHome);
+  });
+
+  test("leaves Discover via the Home tab", async ({
     page,
     extensionId,
     context,
@@ -188,9 +224,11 @@ test.describe("Discover critical flows (stubbed)", () => {
     await page.getByTestId("discover-welcome-dismiss").click();
     await expect(page.getByTestId("trending-carousel")).toBeVisible();
 
-    // Radix Dialog wires Escape to onOpenChange(false); the parent flips
-    // isDiscoverOpen to false via the handler we added, closing the sheet.
-    await page.keyboard.press("Escape");
+    // Discover is a tab root: no back button, and Escape no longer dismisses
+    // it either now that it is a route rather than a Radix sheet. The tab bar
+    // is the way out.
+    await expect(page.getByTestId("BackButton")).toHaveCount(0);
+    await page.getByTestId("nav-link-account").click();
     await expect(page.getByTestId("trending-carousel")).not.toBeVisible();
     await expect(page.getByTestId("account-view")).toBeVisible();
   });

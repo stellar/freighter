@@ -1,17 +1,28 @@
 import React, { useEffect, useState } from "react";
-import { Icon, Loader, Text } from "@stellar/design-system";
+import { Icon, IconButton, Loader, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import { Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { Navigate, useLocation } from "react-router-dom";
 
-import BlendLogo from "popup/assets/blend-logo.svg";
-import EarnGlow from "popup/assets/earn-glow.svg";
+import { BlendCatalogPool } from "@shared/api/types/blend";
+import { NetworkDetails } from "@shared/constants/stellar";
+import { getBlendAppUrl } from "popup/constants/externalLinks";
+import { PoolIcon } from "popup/components/earn/PoolIcon";
+import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
+import { formatRatePercent } from "popup/components/earn/helpers/formatPoolStats";
 import { BalanceRow } from "popup/components/BalanceRow";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { newTabHref } from "helpers/urls";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { NO_FIAT_VALUE, formatAmount } from "popup/helpers/formatters";
+import { useNetworkFees } from "popup/helpers/useNetworkFees";
+import { getSwapTotalFee } from "popup/components/swap/SwapAmount/hooks/useSimulateSwapData";
+import { getCanonicalFromAsset } from "@shared/helpers/stellar";
+import { isNativeContract } from "@shared/helpers/assetIdentity";
+import { transactionDataSelector } from "popup/ducks/transactionSubmission";
+import { getAvailableBalance } from "popup/helpers/soroban";
 import { trackEarnBalanceInsufficientShown } from "popup/metrics/earn";
 
 import { NotEnoughTokenSheet } from "./NotEnoughTokenSheet";
@@ -51,77 +62,90 @@ const ApyBadge = ({ apy, code }: { apy: number | null; code: string }) => {
           distinct from a rate that really is zero. */}
       {apy === null
         ? NO_FIAT_VALUE
-        : t("{{rate}}% APY", {
-            rate: formatAmount((apy * 100).toFixed(2)),
+        : t("{{rate}}% APY*", {
+            rate: formatRatePercent(apy),
           })}
     </div>
   );
 };
 
 /**
- * The screen's chrome: close affordance, protocol badge and title. Shared by
- * the loading and error states so neither shifts the header when the list
+ * The screen's chrome: the close affordance and the title. Shared by the
+ * loading, error and list states so the title doesn't move when the list
  * resolves.
  */
 const PickerShell = ({
   onClose,
   children,
-  contentFooter,
   "data-testid": dataTestId,
 }: {
   onClose: () => void;
   children: React.ReactNode;
-  contentFooter?: React.ReactNode;
   "data-testid": string;
 }) => {
   const { t } = useTranslation();
 
   return (
     <div className="EarnTokenPicker" data-testid={dataTestId}>
-      <img className="EarnTokenPicker__glow" src={EarnGlow} alt="" />
-
       <div className="EarnTokenPicker__header">
-        <button
+        <IconButton
           type="button"
-          className="EarnTokenPicker__close"
-          onClick={onClose}
+          icon={<Icon.X />}
+          altText={t("Close")}
           aria-label={t("Close")}
+          // The design's 24px X in Text/Primary.
+          customSize="1.5rem"
+          customColor="var(--sds-clr-gray-12)"
+          onClick={onClose}
           data-testid="earn-token-picker-close"
-        >
-          <Icon.XClose />
-        </button>
+        />
       </div>
 
       <div className="EarnTokenPicker__content">
-        <div className="EarnTokenPicker__intro">
-          {/* Not translated: the protocol's own name. */}
-          <div className="EarnTokenPicker__protocol">
-            <img
-              className="EarnTokenPicker__protocol-icon"
-              src={BlendLogo}
-              alt=""
-            />
-            <Text as="div" size="md" weight="medium">
-              Blend
-            </Text>
-          </div>
-
-          <div className="EarnTokenPicker__copy">
-            <Text as="h1" size="lg" weight="medium">
-              {t("Choose an asset")}
-            </Text>
-            <div className="EarnTokenPicker__subtitle">
-              <Text as="p" size="sm" weight="regular">
-                {t("Supply assets to Blend and earn variable yield.")}
-              </Text>
-            </div>
+        <div className="EarnTokenPicker__copy">
+          <h1 className="EarnTokenPicker__title">{t("Choose a token")}</h1>
+          <div className="EarnTokenPicker__subtitle">
+            {t("Select a token to deposit and earn yield.")}
           </div>
         </div>
 
         {children}
       </div>
+    </div>
+  );
+};
 
-      {contentFooter}
+/**
+ * The "Deposit into" chip. Shown with the list rather than behind the spinner,
+ * so its label appears once, with the pool's name, instead of reading "Blend"
+ * and then growing when the catalog loads.
+ */
+const DepositInto = ({
+  pool,
+  networkDetails,
+}: {
+  pool: BlendCatalogPool | null;
+  networkDetails: NetworkDetails;
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="EarnTokenPicker__deposit-into">
+      <div className="EarnTokenPicker__label">{t("Deposit into")}</div>
+      {/* Opens Blend's app for the network, as on mobile. The protocol's own
+          name is not translated. */}
+      <button
+        type="button"
+        className="EarnTokenPicker__protocol"
+        onClick={() => openTab(getBlendAppUrl(networkDetails.network))}
+        data-testid="earn-protocol-chip"
+      >
+        <PoolIcon size={16} />
+        <span className="EarnTokenPicker__protocol-name">
+          {pool ? `Blend · ${formatPoolName(pool.name, t)}` : "Blend"}
+        </span>
+        <Icon.LinkExternal01 />
+      </button>
     </div>
   );
 };
@@ -133,13 +157,18 @@ export const EarnTokenPicker = ({
   refreshKey = 0,
 }: EarnTokenPickerProps) => {
   const { t } = useTranslation();
+  const location = useLocation();
   const { state, fetchData } = useGetEarnTokensData();
+  const { recommendedFee } = useNetworkFees();
+  const { transactionFee } = useSelector(transactionDataSelector);
   const [notEnoughToken, setNotEnoughToken] = useState<EarnTokenOption | null>(
     null,
   );
 
   useEffect(() => {
-    fetchData();
+    // The first load lists what Home already fetched; the refresh after a swap
+    // needs the balances as they are now.
+    fetchData(refreshKey === 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey]);
 
@@ -148,9 +177,17 @@ export const EarnTokenPicker = ({
   if (state.data?.type === AppDataType.REROUTE) {
     if (state.data.shouldOpenTab) {
       openTab(newTabHref(state.data.routeTarget));
-      window.close();
+      closeWindow();
     }
-    return <Navigate to={state.data.routeTarget} replace />;
+    // `from` brings the user back here after unlocking, as every other
+    // reroute does.
+    return (
+      <Navigate
+        to={state.data.routeTarget}
+        state={{ from: location }}
+        replace
+      />
+    );
   }
 
   const isLoading =
@@ -178,14 +215,28 @@ export const EarnTokenPicker = ({
 
   const data = state.data as ResolvedEarnTokens;
 
-  // A zero-balance token is excluded from `hasSwappableBalance` by its own
-  // canonical, but it holds none of it anyway, so the assetId is a safe stand-in
-  // for a canonical we would otherwise have to resolve from the SAC.
-  const resolveNotEnoughVariant = (option: EarnTokenOption) =>
-    getNotEnoughVariant({
+  const resolveNotEnoughVariant = (option: EarnTokenOption) => {
+    // Swapping into a token the account has no trustline for opens one first,
+    // in the same transaction: a second operation for the fee, and another base
+    // reserve of XLM.
+    const requiresTrustline = !option.hasTrustline;
+    return getNotEnoughVariant({
       isOnrampable: isOnrampableAsset(option.code, data.networkDetails),
-      isSwappable: hasSwappableBalance(data.balances.balances, option.assetId),
+      isSwappable: hasSwappableBalance({
+        balances: data.balances.balances,
+        // A token without an issuer here is one the account holds none of, so
+        // it has no balance of its own to exclude.
+        targetCanonical: option.issuer
+          ? getCanonicalFromAsset(option.code, option.issuer)
+          : "",
+        transactionFee: getSwapTotalFee({
+          recommendedFee,
+          opCount: requiresTrustline ? 2 : 1,
+        }),
+        requiresTrustline,
+      }),
     });
+  };
 
   const openNotEnoughSheet = (option: EarnTokenOption) => {
     // The same resolver the sheet renders from, so the reported variant can
@@ -197,13 +248,26 @@ export const EarnTokenPicker = ({
     setNotEnoughToken(option);
   };
 
+  // XLM's total includes the minimum balance the account can't spend, so its
+  // held row shows what the deposit screen will offer, worked out as that
+  // screen's "available" is, as on mobile. Other tokens show their balance.
+  const getRowAmount = (option: EarnTokenOption, isHeld: boolean) =>
+    isHeld &&
+    isNativeContract(option.assetId, data.networkDetails.networkPassphrase)
+      ? getAvailableBalance({
+          assetCanonical: "native",
+          balances: data.balances.balances,
+          recommendedFee: transactionFee || recommendedFee,
+        })
+      : option.total;
+
   const renderRow = (option: EarnTokenOption, isHeld: boolean) => (
     <BalanceRow
       key={option.assetId}
       code={option.code}
       issuerKey={option.issuer}
       iconUrl={option.iconUrl}
-      amount={`${formatAmount(option.total)} ${option.code}`}
+      amount={`${formatAmount(getRowAmount(option, isHeld))} ${option.code}`}
       rightSlot={<ApyBadge apy={option.apy} code={option.code} />}
       onClick={() =>
         isHeld ? onSelect(option, data) : openNotEnoughSheet(option)
@@ -218,36 +282,30 @@ export const EarnTokenPicker = ({
     isHeld: boolean,
   ) => (
     <div className="EarnTokenPicker__section">
-      <div className="EarnTokenPicker__section-title">
-        <Text as="div" size="md" weight="medium">
-          {title}
-        </Text>
-      </div>
+      <h2 className="EarnTokenPicker__section-title">{title}</h2>
       <div className="EarnTokenPicker__rows">
         {options.map((option) => renderRow(option, isHeld))}
       </div>
     </div>
   );
 
-  const notEnoughVariant = notEnoughToken
-    ? resolveNotEnoughVariant(notEnoughToken)
+  // The row as the list has it now: its icon can arrive after the tap.
+  const notEnoughOption = notEnoughToken
+    ? [...data.held, ...data.supported].find(
+        (option) => option.assetId === notEnoughToken.assetId,
+      ) || notEnoughToken
+    : null;
+  const notEnoughVariant = notEnoughOption
+    ? resolveNotEnoughVariant(notEnoughOption)
     : null;
 
   const hasHeld = data.held.length > 0;
 
   return (
     <>
-      <PickerShell
-        onClose={onClose}
-        data-testid="earn-token-picker"
-        contentFooter={
-          <div className="EarnTokenPicker__disclaimer">
-            <Text as="p" size="sm" weight="regular">
-              {t("APY may change based on protocol conditions.")}
-            </Text>
-          </div>
-        }
-      >
+      <PickerShell onClose={onClose} data-testid="earn-token-picker">
+        <DepositInto pool={data.pool} networkDetails={data.networkDetails} />
+
         <div className="EarnTokenPicker__sections">
           {hasHeld ? (
             renderSection(t("In your wallet"), data.held, true)
@@ -260,19 +318,17 @@ export const EarnTokenPicker = ({
                 {t("No supported assets in your wallet")}
               </Text>
               <div className="EarnTokenPicker__empty-body">
-                <Text as="p" size="sm" weight="regular">
-                  {t("Add a supported asset to start earning.")}
-                </Text>
+                {t("Add a supported asset to start earning.")}
               </div>
             </div>
           )}
           {data.supported.length > 0 &&
-            renderSection(
-              // Nothing is held, so there is no "other" to be other than.
-              hasHeld ? t("Other supported assets") : t("Supported tokens"),
-              data.supported,
-              false,
-            )}
+            renderSection(t("Supported tokens"), data.supported, false)}
+        </div>
+
+        {/* Pairs with the asterisk on each rate. */}
+        <div className="EarnTokenPicker__disclaimer">
+          {t("*APY is variable and subject to change.")}
         </div>
       </PickerShell>
 
@@ -283,17 +339,20 @@ export const EarnTokenPicker = ({
             setNotEnoughToken(null);
           }
         }}
-        hasBackdrop
+        ariaLabel={
+          notEnoughToken
+            ? t("Not enough {{code}}", { code: notEnoughToken.code })
+            : undefined
+        }
       >
-        {notEnoughToken && notEnoughVariant ? (
+        {notEnoughOption && notEnoughVariant ? (
           <NotEnoughTokenSheet
-            option={notEnoughToken}
+            option={notEnoughOption}
             variant={notEnoughVariant}
             onClose={() => setNotEnoughToken(null)}
             onSwap={() => {
-              const option = notEnoughToken;
               setNotEnoughToken(null);
-              onSwapRequested(option, data);
+              onSwapRequested(notEnoughOption, data);
             }}
           />
         ) : (

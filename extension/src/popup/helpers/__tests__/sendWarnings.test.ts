@@ -5,6 +5,8 @@ import {
 
 const G_DEST = "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV";
 const C_DEST = "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC";
+const W_DEST =
+  "WA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUAAAAAAAAAAAAAWWC";
 const G_ISSUER = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
 const C_ISSUER = "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC";
 
@@ -65,6 +67,16 @@ describe("shouldCheckUnfundedDestinationWarning", () => {
       shouldCheckUnfundedDestinationWarning({
         assetCanonical: `USDC:${G_ISSUER}`,
         destination: C_DEST,
+        isCollectible: false,
+      }),
+    ).toBe(false);
+  });
+
+  it("skips the rule when destination is a muxed contract (W) address", () => {
+    expect(
+      shouldCheckUnfundedDestinationWarning({
+        assetCanonical: "native",
+        destination: W_DEST,
         isCollectible: false,
       }),
     ).toBe(false);

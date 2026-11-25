@@ -67,6 +67,14 @@ export interface EarnState {
    * branch opens and closes, which would carry away a flag set any other way.
    */
   source: EarnSource;
+  /**
+   * The amount the staged deposit was built with, in display units
+   * ("1234.56"), recorded when Review opens. Review and the deposit screens show
+   * it rather than the amount field, which stays editable while a build runs,
+   * so what they show is always what Confirm signs. Null until a deposit has
+   * been reviewed.
+   */
+  reviewedAmount: string | null;
 }
 
 export const initialState: EarnState = {
@@ -78,6 +86,7 @@ export const initialState: EarnState = {
   lastSubmitFailed: false,
   didSwapInFlow: false,
   source: EARN_SOURCE.HOME,
+  reviewedAmount: null,
 };
 
 const earnSlice = createSlice({
@@ -108,6 +117,9 @@ const earnSlice = createSlice({
     saveEarnSource: (state, action: { payload: EarnSource }) => {
       state.source = action.payload;
     },
+    saveReviewedAmount: (state, action: { payload: string | null }) => {
+      state.reviewedAmount = action.payload;
+    },
     /**
      * Resets everything except `hasSeenIntro` — that flag is persisted in the
      * background store and re-reading it on every flow entry would reintroduce
@@ -129,14 +141,10 @@ export const {
   setEarnSubmitFailed,
   setDidSwapInFlow,
   saveEarnSource,
+  saveReviewedAmount,
   resetEarn,
 } = earnSlice.actions;
 
 export const { reducer } = earnSlice;
 
 export const earnSelector = (state: { earn: EarnState }) => state.earn;
-
-export const earnPoolSelector = (state: { earn: EarnState }) => state.earn.pool;
-
-export const earnSubmitFailedSelector = (state: { earn: EarnState }) =>
-  state.earn.lastSubmitFailed;

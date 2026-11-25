@@ -21,6 +21,9 @@ jest.mock("../helpers/extensionMessaging");
 const mockedSend = sendMessageToBackground as jest.Mock;
 
 const PUBLIC_KEY = "GACCOUNTPUBLICKEY";
+// Real keys for scanned assets: the bulk scan leaves out an id whose issuer
+// isn't a valid G or C key, since the backend would reject the whole batch.
+const USDC_ISSUER = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
 // A real 56-char StrKey, needed where the scrubber's pattern must actually
 // match (PUBLIC_KEY above is a short stand-in that no scrubber would catch).
 const REAL_PUBLIC_KEY =
@@ -54,16 +57,16 @@ const v2AccountWithClassic = {
     {
       token_type: "CLASSIC",
       token_id: "CUSDC",
-      key: "USDC:GISSUER",
+      key: `USDC:${USDC_ISSUER}`,
       token: {
         type: "credit_alphanum4",
         code: "USDC",
-        issuer: { key: "GISSUER" },
+        issuer: { key: USDC_ISSUER },
       },
       total: "50",
       available: "50",
       code: "USDC",
-      issuer: "GISSUER",
+      issuer: USDC_ISSUER,
       type: "credit_alphanum4",
       limit: "1000",
       buying_liabilities: "0",
@@ -74,7 +77,8 @@ const v2AccountWithClassic = {
   ],
 };
 
-const LOCAL_CONTRACT = "CLOCALTOKENCONTRACTID";
+const LOCAL_CONTRACT =
+  "CADQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQP5KR";
 
 // Routes FETCH_BACKEND_V2 messages to the given chokepoint result and lets
 // every other message type (getTokenIds on the v1 path, and the local
@@ -172,7 +176,7 @@ describe("getAccountBalancesV2", () => {
     mockBackendV2({ status: 200, body: { data: [v2AccountWithClassic] } });
     mockFetch.mockResolvedValueOnce({
       json: async () => ({
-        data: { results: { "USDC-GISSUER": { result_type: "Spam" } } },
+        data: { results: { [`USDC-${USDC_ISSUER}`]: { result_type: "Spam" } } },
       }),
     });
 
@@ -184,8 +188,10 @@ describe("getAccountBalancesV2", () => {
     expect(mockFetch).toHaveBeenCalledTimes(1);
     const [scanUrl] = mockFetch.mock.calls[0];
     expect(scanUrl).toContain("/scan-asset-bulk");
-    expect(scanUrl).toContain("USDC-GISSUER");
-    expect((result.balances!["USDC:GISSUER"] as any).blockaidData).toEqual({
+    expect(scanUrl).toContain(`USDC-${USDC_ISSUER}`);
+    expect(
+      (result.balances![`USDC:${USDC_ISSUER}`] as any).blockaidData,
+    ).toEqual({
       result_type: "Spam",
     });
     // native isn't scannable — it gets the benign default
@@ -206,7 +212,7 @@ describe("getAccountBalancesV2", () => {
     expect(mockFetch).not.toHaveBeenCalled();
     // entries still carry the benign default so the payload matches v1
     expect(
-      (result.balances!["USDC:GISSUER"] as any).blockaidData.result_type,
+      (result.balances![`USDC:${USDC_ISSUER}`] as any).blockaidData.result_type,
     ).toBe("Benign");
   });
 

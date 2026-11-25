@@ -1,4 +1,5 @@
 @use "../../../styles/utils.scss" as *;
+@use "../compactAmountCard" as *;
 
 // The swap branch is a bottom sheet over the still-visible token picker. The
 // container rules are scoped by data-slot because our shadcn Sheet forwards
@@ -6,8 +7,14 @@
 // rather than take a solid background and a height.
 [data-slot="sheet-content"].EarnSwapSheet {
   background: var(--sds-clr-gray-01);
-  border-radius: 1.5rem 1.5rem 0 0;
-  box-shadow: 0 1rem 1.5rem rgba(0, 0, 0, 0.24);
+  // A floating card like the flow's other sheets (Varial 4478:116498): off
+  // the sides and bottom by SlideupModal's gutter, rounded all round.
+  left: var(--slideup-modal--gutter);
+  right: var(--slideup-modal--gutter);
+  bottom: var(--slideup-modal--inset-bottom);
+  width: auto;
+  border-radius: var(--slideup-modal--radius);
+  box-shadow: none;
   // Deliberately not `overflow: hidden`. The slide-in animation transforms this
   // element, which makes it the containing block for the review SlideupModal
   // that SwapAmount nests inside it — clipping here would cut that sheet off.
@@ -19,6 +26,12 @@
   // their content into a scroll.
   height: 90dvh;
   max-height: pxToRem(540);
+
+  // Except the swap's status (submitting, done), which the design draws hugging
+  // its content (4478:117063, 4478:117082).
+  &.EarnSwapSheet--status {
+    height: auto;
+  }
 
   // Nothing inside the sheet is a full-height screen any more.
   .View {
@@ -33,36 +46,34 @@
     border-right: 0;
   }
 
+  // `View__inset--scroll-shadows` paints the page colour (Base/0), which in
+  // this gray-01 sheet is a black slab in dark mode and a white one in light.
+  // The insets take the sheet's colour instead, as they do in SlideupModal.
+  .View__inset {
+    background-color: var(--sds-clr-gray-01);
+  }
+
   // Follow whichever inset paints first rather than assuming a header: the
   // submitting/success step renders only View.Content, and `--scroll-shadows`
   // gives that inset an opaque background that would otherwise square off the
   // sheet's rounded top corners.
   .EarnSwapSheet__body > :first-child .View__inset:first-of-type {
-    border-radius: 1.5rem 1.5rem 0 0;
+    border-radius: var(--slideup-modal--radius) var(--slideup-modal--radius) 0 0;
   }
 
-  // Leave room for the sheet's own X so a long title cannot run under it.
+  // Balances the 24px X on the left so the title stays centred.
   .View__header__box--right {
-    min-width: pxToRem(32);
+    min-width: pxToRem(24);
   }
 }
 
+// Places the sheet's X: at the top right, 16px in, level with the amount
+// step's title.
 .EarnSwapSheet__close {
   position: absolute;
-  // Centred on the 56px header row, whether or not the step draws one.
-  top: pxToRem(12);
-  right: 1rem;
+  top: pxToRem(24);
+  right: pxToRem(16);
   z-index: 1;
-  width: pxToRem(32);
-  height: pxToRem(32);
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  background: var(--sds-clr-gray-04);
-  color: var(--sds-clr-gray-11);
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .EarnSwapSheet__body {
@@ -77,17 +88,59 @@
   // padding rules that reference them collapse to zero, which is what left the
   // CTA flush against the sheet's bottom edge.
   //
-  // Values are measured off the Figma sheet (node 9459:47811, 360x436): a 32px
-  // header row 24px below the top edge (56px total), a 12px gap from the header
-  // to the sell card, and 24px under the CTA.
-  --View-header-height: #{pxToRem(56)};
-  --View-inset-padding-top: #{pxToRem(12)};
+  // Values are measured off the Figma sheet (Varial 4478:116498): a 24px
+  // header row 24px below the top edge with 24px under it, so the sell card
+  // starts 72px down, and 24px under the CTA.
   --View-footer-padding-bottom: #{pxToRem(24)};
+  @include compact-view-header;
 }
 
-// The seam notch is 40px in this sheet (Figma node 9459:48064). The standalone
-// Swap route keeps the shared 30px until design confirms the two should match.
+// The steps' titles at Text/MD/600, over the app header's 14px.
+.EarnSwapSheet__body .View__header__box--center .Text {
+  @include text(md, semi-bold);
+}
+
+// The submitting/success step has no header, so it starts its own content
+// where the design does: 48px down, clear of the sheet's X.
+.EarnSwapSheet__body .SendingTransaction {
+  margin-top: pxToRem(48);
+
+  // Main Swap's offset from the top of the page; the sheet sets its own.
+  &--swap {
+    padding-top: 0;
+  }
+}
+
+// The sheet's "You can close this screen…" note is Text/XS/500 (4478:117063).
+.EarnSwapSheet__body .SendingTransaction__Footer__Subtext {
+  font-size: pxToRem(12);
+  line-height: pxToRem(18);
+}
+
+// The cards between the seam: 12px apart, with a 32px notch in the sheet's
+// colour carrying a 12px chevron.
+.EarnSwapSheet__body .SwapAsset__direction {
+  height: pxToRem(12);
+}
+
 .EarnSwapSheet__body .SwapAsset__direction-btn {
-  width: pxToRem(40);
-  height: pxToRem(40);
+  width: pxToRem(32);
+  height: pxToRem(32);
+  background: var(--sds-clr-gray-01);
+
+  svg {
+    width: pxToRem(12);
+    height: pxToRem(12);
+  }
+}
+
+// The shared amount cards and percentage pills, drawn as the deposit screen
+// draws them (see EarnAmount), with a 24/32 amount. Scoped to the sheet so
+// main Swap keeps its own.
+.EarnSwapSheet__body {
+  @include compact-amount-card(
+    $amount-size: 24,
+    $amount-line-height: 32,
+    $amount-letter-spacing: -0.96
+  );
 }

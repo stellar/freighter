@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { act, render, screen, fireEvent } from "@testing-library/react";
 
 import { Wrapper } from "popup/__testHelpers__";
 import { AmountCard } from "popup/components/amount/AmountCard";
@@ -76,43 +76,6 @@ describe("AmountCard", () => {
         "Insufficient balance. Maximum spendable: {{amount}} {{symbol}}",
       ),
     ).toBeInTheDocument();
-  });
-
-  // The Earn deposit design carries the invalid state on the amount instead: its
-  // CTA already reads "Insufficient funds", and a message row would also grow
-  // the card past the design's fixed height.
-  it("reddens the amount instead of adding a row when asked to", () => {
-    render(
-      <Wrapper state={{}} routes={["/"]}>
-        <AmountCard
-          {...baseProps}
-          isAmountTooHigh
-          maxSpendableText="12.34"
-          invalidAmountStyle="amount"
-        />
-      </Wrapper>,
-    );
-
-    expect(
-      screen.queryByText(
-        "Insufficient balance. Maximum spendable: {{amount}} {{symbol}}",
-      ),
-    ).not.toBeInTheDocument();
-    expect(screen.getByTestId("send-amount-amount-input").className).toContain(
-      "AmountCard__input-amount--invalid",
-    );
-  });
-
-  it("leaves the amount unstyled when it is within balance", () => {
-    render(
-      <Wrapper state={{}} routes={["/"]}>
-        <AmountCard {...baseProps} invalidAmountStyle="amount" />
-      </Wrapper>,
-    );
-
-    expect(
-      screen.getByTestId("send-amount-amount-input").className,
-    ).not.toContain("AmountCard__input-amount--invalid");
   });
 
   it("shows the fiat line but no input-type toggle when read-only", () => {
@@ -243,5 +206,65 @@ describe("AmountCard", () => {
     expect(screen.getByTestId("send-amount-amount-input")).toBeDisabled();
     fireEvent.click(screen.getByTestId("send-amount-edit-dest-asset"));
     expect(onSelectAsset).toHaveBeenCalledTimes(1);
+  });
+
+  // jsdom has no layout, so the mirrors' widths and the observer are stubbed.
+  describe("input width", () => {
+    const OriginalResizeObserver = global.ResizeObserver;
+    let resizeCallbacks: ResizeObserverCallback[];
+    let mirrorWidth: number;
+    let offsetWidthSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      resizeCallbacks = [];
+      global.ResizeObserver = class {
+        constructor(callback: ResizeObserverCallback) {
+          resizeCallbacks.push(callback);
+        }
+
+        observe() {}
+
+        unobserve() {}
+
+        disconnect() {}
+      } as unknown as typeof ResizeObserver;
+      mirrorWidth = 0;
+      offsetWidthSpy = jest
+        .spyOn(HTMLElement.prototype, "offsetWidth", "get")
+        .mockImplementation(() => mirrorWidth);
+    });
+
+    afterEach(() => {
+      global.ResizeObserver = OriginalResizeObserver;
+      offsetWidthSpy.mockRestore();
+    });
+
+    const renderCard = (amount: string) => (
+      <Wrapper state={{}} routes={["/"]}>
+        <AmountCard {...baseProps} amount={amount} />
+      </Wrapper>
+    );
+
+    // Earn keeps its deposit screen mounted under a display: none step while a
+    // swap resets the amount. Measured there, the mirror is 0 wide, and the
+    // input kept that width once the screen was back, clipping its "0".
+    it("re-sizes the input once a card hidden during a value change is shown", () => {
+      mirrorWidth = 11;
+      const { rerender } = render(renderCard("5"));
+      const input = screen.getByTestId("send-amount-amount-input");
+      expect(input).toHaveStyle({ width: "13px" });
+
+      mirrorWidth = 0;
+      rerender(renderCard(""));
+      expect(input).toHaveStyle({ width: "2px" });
+
+      mirrorWidth = 13;
+      act(() => {
+        resizeCallbacks.forEach((callback) =>
+          callback([], {} as ResizeObserver),
+        );
+      });
+      expect(input).toHaveStyle({ width: "15px" });
+    });
   });
 });

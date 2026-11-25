@@ -1,0 +1,289 @@
+import React from "react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { Route, Routes } from "react-router-dom";
+
+import * as ApiInternal from "@shared/api/internal";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import {
+  FUTURENET_NETWORK_DETAILS,
+  MAINNET_NETWORK_DETAILS,
+  NetworkDetails,
+  TESTNET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
+import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
+import { ROUTES } from "popup/constants/routes";
+import { TEST_PUBLIC_KEY, Wrapper, mockAccounts } from "popup/__testHelpers__";
+import { UnlockAccount } from "popup/views/UnlockAccount";
+
+const lockedAuth = {
+  error: null,
+  applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+  publicKey: "",
+  hasPrivateKey: false,
+  allAccounts: [],
+};
+
+const unlockedResponse = {
+  publicKey: TEST_PUBLIC_KEY,
+  hasPrivateKey: true,
+  applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+  allAccounts: mockAccounts,
+  bipPath: "",
+};
+
+// A network the user added, pointed at Mainnet: still a custom network.
+const CUSTOM_MAINNET_NETWORK_DETAILS: NetworkDetails = {
+  ...MAINNET_NETWORK_DETAILS,
+  network: CUSTOM_NETWORK,
+  networkName: "My Mainnet node",
+  networkUrl: "https://horizon.example.com",
+};
+
+const renderLockScreen = (
+  entry:
+    | string
+    | {
+        pathname: string;
+        search?: string;
+        state?: unknown;
+      } = ROUTES.unlockAccount,
+  networkDetails: NetworkDetails = MAINNET_NETWORK_DETAILS,
+) =>
+  render(
+    <Wrapper
+      routes={[entry]}
+      state={{ auth: lockedAuth, settings: { networkDetails } }}
+    >
+      <Routes>
+        <Route path={ROUTES.unlockAccount} element={<UnlockAccount />} />
+        <Route
+          path={ROUTES.account}
+          element={<div data-testid="account-view-stub" />}
+        />
+        <Route
+          path={ROUTES.grantAccess}
+          element={<div data-testid="grant-access-stub" />}
+        />
+        <Route
+          path={ROUTES.rebrandAnnouncement}
+          element={<div data-testid="rebrand-announcement-stub" />}
+        />
+        <Route
+          path={ROUTES.ethenaLaunch}
+          element={<div data-testid="ethena-launch-stub" />}
+        />
+      </Routes>
+    </Wrapper>,
+  );
+
+const typePasswordAndUnlock = async (password: string) => {
+  await userEvent.type(screen.getByPlaceholderText("Password"), password);
+  await userEvent.click(screen.getByTestId("enter-password-submit"));
+};
+
+describe("UnlockAccount", () => {
+  beforeEach(() => {
+    // Only wallets that pre-date the rebrand are owed the announcement, and
+    // only wallets that pre-date the launch build are owed its promo.
+    jest
+      .spyOn(ApiInternal, "claimRebrandAnnouncement")
+      .mockResolvedValue(false);
+    jest.spyOn(ApiInternal, "claimEthenaLaunchPromo").mockResolvedValue(false);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("shows the redesigned lock screen", () => {
+    renderLockScreen();
+
+    expect(screen.getByText("Welcome back")).toBeInTheDocument();
+    expect(screen.getByText("Freighter is now Varial")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Password")).toHaveFocus();
+    expect(screen.getByTestId("enter-password-submit")).toBeDisabled();
+    expect(screen.getByTestId("forgot-password-button")).toHaveTextContent(
+      "Forgot password",
+    );
+    expect(screen.queryByTestId("identicon-img")).toBeNull();
+    expect(screen.queryByText("Import using account seed phrase")).toBeNull();
+    expect(screen.queryByText("Create a wallet")).toBeNull();
+  });
+
+  it("keeps the show/hide password toggle", async () => {
+    const { container } = renderLockScreen();
+    const input = screen.getByPlaceholderText("Password");
+    expect(input).toHaveAttribute("type", "password");
+
+    await userEvent.click(
+      container.querySelector(".PasswordMaskToggle") as HTMLElement,
+    );
+
+    expect(input).toHaveAttribute("type", "text");
+  });
+
+  it("unlocks and goes to the account view", async () => {
+    const confirmSpy = jest
+      .spyOn(ApiInternal, "confirmPassword")
+      .mockResolvedValue(unlockedResponse as any);
+    renderLockScreen();
+
+    await typePasswordAndUnlock("my password");
+
+    expect(await screen.findByTestId("account-view-stub")).toBeInTheDocument();
+    expect(confirmSpy).toHaveBeenCalledWith("my password");
+  });
+
+  it("returns to the interrupted dApp request after unlocking", async () => {
+    jest
+      .spyOn(ApiInternal, "confirmPassword")
+      .mockResolvedValue(unlockedResponse as any);
+    renderLockScreen({
+      pathname: ROUTES.unlockAccount,
+      search: "?request=abc",
+      state: { from: { pathname: ROUTES.grantAccess } },
+    });
+
+    await typePasswordAndUnlock("my password");
+
+    expect(await screen.findByTestId("grant-access-stub")).toBeInTheDocument();
+  });
+
+  it("shows the one-time rebrand announcement to a wallet that's owed it", async () => {
+    jest
+      .spyOn(ApiInternal, "confirmPassword")
+      .mockResolvedValue(unlockedResponse as any);
+    jest.spyOn(ApiInternal, "claimRebrandAnnouncement").mockResolvedValue(true);
+    renderLockScreen();
+
+    await typePasswordAndUnlock("my password");
+
+    expect(
+      await screen.findByTestId("rebrand-announcement-stub"),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("account-view-stub")).toBeNull();
+  });
+
+  it("shows the one-time Ethena launch promo on the way Home to a wallet that's owed it", async () => {
+    jest
+      .spyOn(ApiInternal, "confirmPassword")
+      .mockResolvedValue(unlockedResponse as any);
+    jest.spyOn(ApiInternal, "claimEthenaLaunchPromo").mockResolvedValue(true);
+    renderLockScreen();
+
+    await typePasswordAndUnlock("my password");
+
+    expect(await screen.findByTestId("ethena-launch-stub")).toBeInTheDocument();
+    expect(screen.queryByTestId("account-view-stub")).toBeNull();
+  });
+
+  it("goes Home when the launch promo can't be claimed", async () => {
+    jest
+      .spyOn(ApiInternal, "confirmPassword")
+      .mockResolvedValue(unlockedResponse as any);
+    jest
+      .spyOn(ApiInternal, "claimEthenaLaunchPromo")
+      .mockRejectedValue(new Error("no background"));
+    renderLockScreen();
+
+    await typePasswordAndUnlock("my password");
+
+    expect(await screen.findByTestId("account-view-stub")).toBeInTheDocument();
+  });
+
+  it("keeps a dApp request ahead of the launch promo, which stays owed", async () => {
+    jest
+      .spyOn(ApiInternal, "confirmPassword")
+      .mockResolvedValue(unlockedResponse as any);
+    const claimPromo = jest
+      .spyOn(ApiInternal, "claimEthenaLaunchPromo")
+      .mockResolvedValue(true);
+    renderLockScreen({
+      pathname: ROUTES.unlockAccount,
+      search: "?request=abc",
+      state: { from: { pathname: ROUTES.grantAccess } },
+    });
+
+    await typePasswordAndUnlock("my password");
+
+    expect(await screen.findByTestId("grant-access-stub")).toBeInTheDocument();
+    expect(claimPromo).not.toHaveBeenCalled();
+  });
+
+  it("shows the rebrand announcement first and leaves the launch promo owed", async () => {
+    jest
+      .spyOn(ApiInternal, "confirmPassword")
+      .mockResolvedValue(unlockedResponse as any);
+    jest.spyOn(ApiInternal, "claimRebrandAnnouncement").mockResolvedValue(true);
+    const claimPromo = jest
+      .spyOn(ApiInternal, "claimEthenaLaunchPromo")
+      .mockResolvedValue(true);
+    renderLockScreen();
+
+    await typePasswordAndUnlock("my password");
+
+    expect(
+      await screen.findByTestId("rebrand-announcement-stub"),
+    ).toBeInTheDocument();
+    expect(claimPromo).not.toHaveBeenCalled();
+  });
+
+  // USDe and sUSDe, and the pages the promo links to, are Mainnet's.
+  it.each([
+    ["Testnet", TESTNET_NETWORK_DETAILS],
+    ["Futurenet", FUTURENET_NETWORK_DETAILS],
+    [
+      "a custom network, even one pointing at Mainnet",
+      CUSTOM_MAINNET_NETWORK_DETAILS,
+    ],
+  ])(
+    "goes straight Home on %s, leaving the launch promo owed",
+    async (_networkName, networkDetails) => {
+      jest
+        .spyOn(ApiInternal, "confirmPassword")
+        .mockResolvedValue(unlockedResponse as any);
+      const claimPromo = jest
+        .spyOn(ApiInternal, "claimEthenaLaunchPromo")
+        .mockResolvedValue(true);
+      renderLockScreen(ROUTES.unlockAccount, networkDetails);
+
+      await typePasswordAndUnlock("my password");
+
+      expect(
+        await screen.findByTestId("account-view-stub"),
+      ).toBeInTheDocument();
+      expect(claimPromo).not.toHaveBeenCalled();
+    },
+  );
+
+  it("shows Incorrect Password and stays locked on a wrong password", async () => {
+    jest
+      .spyOn(ApiInternal, "confirmPassword")
+      .mockResolvedValue({ error: "Incorrect password" } as any);
+    renderLockScreen();
+
+    await typePasswordAndUnlock("wrong");
+
+    expect(await screen.findByText("Incorrect Password")).toBeInTheDocument();
+    expect(screen.queryByTestId("account-view-stub")).toBeNull();
+  });
+
+  it("opens and closes the Forgot password sheet", async () => {
+    renderLockScreen();
+
+    await userEvent.click(screen.getByTestId("forgot-password-button"));
+
+    const sheet = screen.getByTestId("forgot-password-sheet");
+    await waitFor(() =>
+      expect(sheet.closest(".SlideupModal")).toHaveClass("open"),
+    );
+    expect(screen.getByPlaceholderText("Password")).not.toHaveFocus();
+
+    await userEvent.click(screen.getByTestId("forgot-password-sheet-close"));
+
+    await waitFor(() =>
+      expect(sheet.closest(".SlideupModal")).toHaveClass("closed"),
+    );
+  });
+});

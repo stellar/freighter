@@ -1,13 +1,14 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, Heading } from "@stellar/design-system";
+import { Button, Display, Heading } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { View } from "popup/basics/layout/View";
+import { RebrandNotice } from "popup/components/RebrandNotice";
 
-import LogoWelcome from "popup/assets/logo-freighter-welcome-2.svg";
+import LogoWelcome from "popup/assets/logo-varial.svg?react";
 
 import "./styles.scss";
 
@@ -18,19 +19,28 @@ export const Welcome = () => {
   return (
     <React.Fragment>
       <View.Content>
-        <div className="Welcome__column">
-          <div className="Welcome__centered-screen">
-            <img src={LogoWelcome} alt={t("Freighter logo")} />
-            <div>
-              <Heading addlClassName="Welcome__heading" as="h1" size="lg">
-                {t("Freighter Wallet")}
-              </Heading>
+        <div className="Welcome">
+          <div className="Welcome__intro">
+            <LogoWelcome role="img" aria-label={t("Varial logo")} />
+            <div className="Welcome__titles">
+              <div>
+                <Heading as="h1" size="md" weight="semi-bold">
+                  {t("Welcome to Varial")}
+                </Heading>
+                <Display
+                  size="md"
+                  weight="semi-bold"
+                  addlClassName="Welcome__subtitle"
+                >
+                  {t("Your favorite Stellar wallet")}
+                </Display>
+              </div>
+              <RebrandNotice size="md" />
             </div>
           </div>
-          <div className="Welcome__row-screen">
+          <div className="Welcome__buttons">
             <Button
               size="lg"
-              isRounded
               variant="secondary"
               onClick={() => navigateTo(ROUTES.accountCreator, navigate)}
             >
@@ -38,11 +48,10 @@ export const Welcome = () => {
             </Button>
             <Button
               size="lg"
-              isRounded
               variant="tertiary"
               onClick={() => navigateTo(ROUTES.recoverAccount, navigate)}
             >
-              {t("I already have a wallet")}
+              {t("Import wallet")}
             </Button>
           </div>
         </div>

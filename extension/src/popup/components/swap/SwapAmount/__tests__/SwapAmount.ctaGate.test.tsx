@@ -12,11 +12,13 @@ import BigNumber from "bignumber.js";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { Wrapper } from "popup/__testHelpers__";
+import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
 import * as UseGetSwapAmountData from "popup/components/swap/SwapAmount/hooks/useGetSwapAmountData";
 import * as UseSimulateSwapData from "popup/components/swap/SwapAmount/hooks/useSimulateSwapData";
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
 import * as XlmReserve from "popup/helpers/xlmReserve";
+import * as SwapQuote from "popup/helpers/swapQuote";
 
 // Native-XLM balance that makes `availableBalance` > 0 so the "Review swap"
 // button is not disabled.
@@ -62,8 +64,24 @@ describe("SwapAmount CTA gate", () => {
       state: { state: RequestState.SUCCESS, data: swapData, error: null },
       fetchData: jest.fn().mockResolvedValue(undefined),
     } as any);
+    jest
+      .spyOn(SwapQuote, "getSwapQuote")
+      .mockImplementation(async (params) => ({
+        route: {
+          sourceAmount: params.amount,
+          destinationAmount: "10",
+          path: [],
+        },
+        quotes: null,
+        key: SwapQuote.getSwapQuoteKey(params),
+      }));
   });
   afterEach(() => jest.restoreAllMocks());
+
+  const waitForQuote = () =>
+    waitFor(() =>
+      expect(screen.getByTestId("swap-amount-btn-continue")).toBeEnabled(),
+    );
 
   it("opens the XLM-reserve sheet instead of review when pre-flight gates", async () => {
     const spyReserve = jest
@@ -109,6 +127,7 @@ describe("SwapAmount CTA gate", () => {
         />
       </Wrapper>,
     );
+    await waitForQuote();
     await act(async () => {
       fireEvent.click(screen.getByTestId("swap-amount-btn-continue"));
     });
@@ -297,7 +316,11 @@ describe("SwapAmount CTA gate", () => {
         state={
           {
             transactionSubmission: {
+              // The review sheet renders here, and it reads more of the slice
+              // than transactionData.
+              ...transactionSubmissionInitialState,
               transactionData: {
+                ...transactionSubmissionInitialState.transactionData,
                 asset: "native",
                 amount: "5",
                 destinationAsset:
@@ -323,7 +346,10 @@ describe("SwapAmount CTA gate", () => {
         />
       </Wrapper>,
     );
-    fireEvent.click(screen.getByTestId("swap-amount-btn-continue"));
+    await waitForQuote();
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("swap-amount-btn-continue"));
+    });
     await waitFor(() => {
       expect(screen.queryByTestId("XlmReserveSheet")).not.toBeInTheDocument();
     });

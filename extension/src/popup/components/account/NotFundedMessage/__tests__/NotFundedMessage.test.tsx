@@ -28,6 +28,20 @@ const renderMessage = ({
     </Wrapper>,
   );
 
+describe("NotFundedMessage card", () => {
+  // Figma's Empty card (1429:165964), worded as mobile's. The old copy's
+  // "Learn more" link went with it, as it did on mobile.
+  it("shows the Varial empty card copy", () => {
+    renderMessage({ canUseFriendbot: false });
+
+    expect(screen.getByText("Activate your wallet")).toBeInTheDocument();
+    expect(
+      screen.getByText("Add at least 2 XLM to get started"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Learn more")).not.toBeInTheDocument();
+  });
+});
+
 describe("NotFundedMessage funding action", () => {
   // The two used to stack: "Add XLM" always rendered and Friendbot was
   // appended below it, so test networks showed two competing funding buttons.

@@ -9,6 +9,13 @@
     display: flex;
     gap: pxToRem(16);
     overflow-x: auto;
+    // Keep the 288px cards out of the document's min-content width. The
+    // extension popup has no viewport -- Chrome sizes the window to fit the
+    // content without horizontal scrolling -- so this row reported ~900px and
+    // Discover opened more than twice as wide as every other screen. It was
+    // masked while Discover rendered inside a fixed-position sheet, which
+    // never contributed to document flow.
+    contain: inline-size;
     scroll-behavior: smooth;
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -54,28 +61,46 @@
       }
     }
 
-    &__gradient {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(
-        180deg,
-        transparent 40%,
-        var(--sds-clr-gray-03) 100%
-      );
-    }
-
     &__content {
       position: absolute;
-      bottom: pxToRem(12);
-      left: pxToRem(12);
-      right: pxToRem(12);
+      bottom: pxToRem(16);
+      left: pxToRem(16);
+      right: pxToRem(16);
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
+      gap: pxToRem(8);
+    }
+
+    &__name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     &__tag {
       color: var(--sds-clr-gray-11);
+      flex-shrink: 0;
+    }
+
+    // Over artwork the fade and text stay dark-on-image in both themes, as
+    // on mobile; the placeholder keeps theme colors.
+    &--has-image {
+      .TrendingCarousel__card__gradient {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(0deg, #232323, rgba(35, 35, 35, 0));
+        opacity: 0.9;
+      }
+
+      .TrendingCarousel__card__content {
+        color: var(--sds-clr-white);
+      }
+
+      .TrendingCarousel__card__tag {
+        color: #c7c7c7;
+      }
     }
   }
 }

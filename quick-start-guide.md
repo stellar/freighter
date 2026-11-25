@@ -3,8 +3,9 @@
 Evaluate the contributor's machine against all prerequisites for Freighter
 (browser extension), install what's missing, and run the initial setup.
 
-For the full contribution guide (conventions, architecture, linting, PR
-process), see [CONTRIBUTING.MD](CONTRIBUTING.MD).
+For the full developer guide (conventions, architecture, linting), see
+[DEVELOPMENT.md](DEVELOPMENT.md). For the contribution policy, see
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Step 1: Check all prerequisites
 

@@ -22,6 +22,7 @@ import {
 } from "../../popup/ducks/settings";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
+import { isSidebarMode } from "popup/helpers/isSidebarMode";
 import { POPUP_WIDTH } from "constants/dimensions";
 
 export enum AppDataType {
@@ -91,7 +92,10 @@ function useGetAppData() {
         const payload = {
           type: "re-route",
           routeTarget: hasOnboarded ? ROUTES.unlockAccount : ROUTES.welcome,
-          shouldOpenTab: window.innerWidth === POPUP_WIDTH && !hasOnboarded,
+          // The sidebar, like the popup, hands onboarding to a full tab.
+          shouldOpenTab:
+            !hasOnboarded &&
+            (isSidebarMode() || window.innerWidth === POPUP_WIDTH),
         } as NeedsReRoute;
         dispatch({ type: "FETCH_DATA_SUCCESS", payload });
         return payload;

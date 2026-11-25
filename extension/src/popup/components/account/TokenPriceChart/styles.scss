@@ -1,0 +1,204 @@
+@use "../../../styles/utils.scss" as *;
+
+.TokenPriceChart {
+  display: flex;
+  flex-direction: column;
+  // 24px between the plot block and the timeframe selector, per the design
+  // (plot frame ends y=200.47, badges start y=224.47).
+  gap: pxToRem(24px);
+  margin-top: pxToRem(16px);
+  width: 100%;
+
+  // The section draws no delta: the view's only one lives in the detail
+  // header, under the price (`AssetDetail__delta--range`).
+
+  // The always-mounted live region for the reliability notice. It must stay
+  // rendered while empty — `display: none` drops it from the accessibility
+  // tree, and a live region that appears together with its first text is not
+  // reliably announced. Instead, cancel the flex gap it would otherwise take.
+  &__notice:empty {
+    margin-top: pxToRem(-24px);
+  }
+
+  &__canvas {
+    position: relative;
+    width: 100%;
+  }
+
+  // The Figma "Data loading" state: a hairline at the plot's centre with the
+  // shared shimmer sweeping along it.
+  &__loading {
+    align-items: center;
+    display: flex;
+    height: 100%;
+    width: 100%;
+  }
+
+  &__placeholder {
+    align-items: center;
+    color: var(--sds-clr-gray-11);
+    display: flex;
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
+    height: 100%;
+    justify-content: center;
+    line-height: pxToRem(20px);
+    width: 100%;
+  }
+
+  // The label rows and the plot are one block with no gap between them, so
+  // the section's 12px column gap separates the block from its neighbours
+  // rather than pushing the labels away from the chart they describe.
+  &__plot {
+    display: flex;
+    flex-direction: column;
+  }
+
+  // Rows above and below the plot, never overlaid on it. Overlaying put the
+  // left-aligned low label directly under a series whose minimum sat at the
+  // left edge, so the line ran into its own label. The rows render in every
+  // state (empty without a series) to hold the section's height.
+  &__axis-label {
+    color: var(--sds-clr-gray-09);
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
+    height: pxToRem(20px);
+    line-height: pxToRem(20px);
+    pointer-events: none;
+    // The row is the positioning context; the text inside sits over the point
+    // it describes. Pinned to fixed corners the high label landed above the
+    // LOW point whenever a series peaked early, which reads as mislabelled.
+    position: relative;
+  }
+
+  &__axis-label-text {
+    position: absolute;
+    // `left` and `transform` are both set inline, per label, by
+    // `axisLabelPosition` — the shift has to scale with the position to keep
+    // an edge extreme inside the plot, and only the component knows where the
+    // point is. Nothing here may override them.
+    max-width: 100%;
+    white-space: nowrap;
+  }
+
+  // Figma "Drag to inspect": Text/XS/Medium in Foreground/Primary.
+  &__inspect-timestamp {
+    color: var(--sds-clr-gray-09);
+    font-size: pxToRem(12px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(18px);
+  }
+}
+
+@keyframes LineChart-fill-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.LineChart {
+  display: block;
+  height: 100%;
+  width: 100%;
+
+  // One colour per direction, inherited by every mark in the SVG: the
+  // polyline stroke, the gradient fill's stops and the end dot are all
+  // `currentColor`, so a losing range draws entirely red.
+  &--positive {
+    color: var(--sds-clr-green-10);
+  }
+
+  &--negative {
+    color: var(--sds-clr-red-09);
+  }
+
+  &--neutral {
+    color: var(--sds-clr-gray-09);
+  }
+
+  // The fill fades in while the line rises out of the hairline; a flat line's
+  // fill would otherwise flash as a solid block. Keep in step with
+  // CHART_MORPH_DURATION_MS and easeOutCubic.
+  &--rise &__fill {
+    animation: LineChart-fill-in 250ms cubic-bezier(0.33, 1, 0.68, 1);
+  }
+
+  &--inspectable {
+    cursor: crosshair;
+    // Vertical scrolling must keep working over the chart — the detail view is
+    // taller than the popup — so only the horizontal axis is claimed here: a
+    // horizontal drag becomes an inspect, a vertical one still scrolls the
+    // view. When the browser claims the vertical pan it fires `pointercancel`,
+    // which already clears the inspection; that is this platform's equivalent
+    // of mobile's "movement before the long-press fails the pan".
+    touch-action: pan-y;
+    // Stops a drag selecting the surrounding text; the press itself is left
+    // un-prevented so the compatibility mousedown still reaches listeners.
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  &__guide {
+    stroke: var(--sds-clr-gray-06);
+  }
+
+  &__inspect-ring {
+    stroke: var(--sds-clr-base-00);
+  }
+}
+
+.TimeframeSelector {
+  display: flex;
+  gap: pxToRem(8px);
+  width: 100%;
+
+  &__tab {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: pxToRem(100px);
+    color: var(--sds-clr-gray-11);
+    cursor: pointer;
+    flex: 1 0 0;
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-semi-bold);
+    line-height: pxToRem(20px);
+    padding: pxToRem(2px) pxToRem(8px);
+    text-align: center;
+
+    &--selected {
+      border-color: var(--sds-clr-gray-06);
+      color: var(--sds-clr-gray-12);
+    }
+  }
+}
+
+.TokenChartNotice {
+  // Styled after the Blockaid banners' amber info block
+  // (WarningMessage__infoBlock--warning).
+  background-color: var(--sds-clr-amber-03);
+  border-radius: pxToRem(16px);
+  color: var(--sds-clr-amber-11);
+  font-size: pxToRem(14px);
+  padding: pxToRem(16px) pxToRem(12px);
+
+  &__header {
+    align-items: center;
+    display: flex;
+    font-weight: var(--sds-fw-semi-bold);
+    gap: pxToRem(10px);
+  }
+
+  &__icon {
+    height: pxToRem(16px);
+    width: pxToRem(16px);
+  }
+
+  &__body {
+    line-height: pxToRem(20px);
+    margin-top: pxToRem(4px);
+  }
+}

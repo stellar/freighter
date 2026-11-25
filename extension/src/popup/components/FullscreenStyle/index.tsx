@@ -12,7 +12,10 @@ export const FullscreenStyle = () => {
       bodyHtmlSelector.forEach((el) => el.classList.add(fullscreenClassname));
     }
 
-    return () => document.body.classList.remove(fullscreenClassname);
+    return () =>
+      document
+        .querySelectorAll("body, html")
+        .forEach((el) => el.classList.remove(fullscreenClassname));
   }, []);
 
   return null;

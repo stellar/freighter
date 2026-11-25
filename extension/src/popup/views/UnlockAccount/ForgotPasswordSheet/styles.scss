@@ -1,0 +1,20 @@
+@use "../../../styles/utils.scss" as *;
+
+.ForgotPasswordSheet {
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8px);
+    // The frame sets this copy in Text/Primary rather than the info sheets'
+    // secondary gray.
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__reminder {
+    font-weight: var(--sds-fw-semi-bold);
+  }
+
+  &__error {
+    color: var(--sds-clr-red-11);
+  }
+}

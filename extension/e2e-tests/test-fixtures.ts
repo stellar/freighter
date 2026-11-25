@@ -27,6 +27,10 @@ export const test = base.extend<{
         `--disable-extensions-except=${pathToExtension}`,
         `--load-extension=${pathToExtension}`,
       ],
+      // Playwright emulates light by default; the UI follows the device
+      // scheme since #18 and every screenshot baseline was captured dark.
+      // theme.test.ts overrides per page with emulateMedia.
+      colorScheme: "dark",
       ...(viewportSize ? { viewport: viewportSize } : {}),
     });
 

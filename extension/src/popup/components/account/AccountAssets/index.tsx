@@ -8,11 +8,13 @@ import isEqual from "lodash/isEqual";
 
 import { ApiTokenPrices, AssetIcons, Balance } from "@shared/api/types";
 import { retryAssetIcon } from "@shared/api/internal";
+import { isNativeAssetPair } from "@shared/helpers/assetIdentity";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { isSorobanIssuer } from "popup/helpers/account";
 import { formatTokenAmount } from "popup/helpers/soroban";
+import { getTotalInWholeUnits } from "popup/helpers/balance";
 import {
   useIsAssetSuspicious,
   useIsAssetMalicious,
@@ -39,8 +41,6 @@ import { BalanceRow } from "popup/components/BalanceRow";
 import "./styles.scss";
 import { AssetDetail } from "../AssetDetail";
 
-const getIsXlm = (code: string) => code === "XLM";
-
 export const SorobanTokenIcon = ({ noMargin }: { noMargin?: boolean }) => (
   <div
     className={`AccountAssets__asset--logo AccountAssets__asset--soroban-token ${
@@ -64,11 +64,23 @@ interface AssetIconProps {
   isModal?: boolean;
 }
 
+// Skip a re-render only when nothing that affects the rendered icon changed.
+// `assetIcons` is compared deeply because callers build it per render; the
+// retry callback is left out because its identity is unstable and it does not
+// affect what is rendered. Every other prop feeds the render — the asset's
+// identity (code + issuer) decides between the bundled native logo, a Soroban
+// placeholder and an icon lookup — so each has to be compared.
 const shouldAssetIconSkipUpdate = (
   prevProps: AssetIconProps,
   nextProps: AssetIconProps,
 ) =>
   isEqual(prevProps.assetIcons, nextProps.assetIcons) &&
+  prevProps.code === nextProps.code &&
+  prevProps.issuerKey === nextProps.issuerKey &&
+  prevProps.icon === nextProps.icon &&
+  prevProps.isLPShare === nextProps.isLPShare &&
+  prevProps.isSorobanToken === nextProps.isSorobanToken &&
+  prevProps.isModal === nextProps.isModal &&
   prevProps.isSuspicious === nextProps.isSuspicious &&
   prevProps.isMalicious === nextProps.isMalicious;
 
@@ -91,7 +103,7 @@ export const AssetIcon = memo(
     Method 2. We get an icon path directly from an API (like in the trustline flow) and just pass it to this component to render
   */
 
-    const isXlm = getIsXlm(code);
+    const isXlm = isNativeAssetPair(code, issuerKey);
 
     // in Method 1, while we wait for the icon path to load, `assetIcons` will be empty until the promise resolves
     // This does not apply for XLM as there is no lookup as that logo lives in this codebase
@@ -195,6 +207,15 @@ interface AccountAssetsProps {
   balances: AccountBalances;
   historyData: AccountHistoryData | null;
   assetPrices?: ApiTokenPrices;
+  /** The account history request failed; AssetDetail shows an error, not a skeleton. */
+  hasHistoryError?: boolean;
+  /**
+   * Refetch the Account view's balances. Removing a token or a trustline from
+   * the detail sheet only refreshes the remover's own `useGetBalances`
+   * instance; these rows read `useGetAccountData`'s reducer, which nothing else
+   * reaches, so without this the removed row sits here until the 30s poll.
+   */
+  reloadBalances?: () => Promise<unknown>;
 }
 
 export const AccountAssets = ({
@@ -202,6 +223,8 @@ export const AccountAssets = ({
   balances,
   assetPrices,
   historyData,
+  hasHistoryError = false,
+  reloadBalances,
 }: AccountAssetsProps) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -272,8 +295,8 @@ export const AccountAssets = ({
     }
   };
 
-  const handleClick = (code: string) => {
-    setSelectedAsset(getIsXlm(code) ? "native" : code);
+  const handleClick = (canonicalAsset: string) => {
+    setSelectedAsset(canonicalAsset);
   };
 
   const getLPShareCode = (reserves: Horizon.HorizonApi.Reserve[]) => {
@@ -321,6 +344,8 @@ export const AccountAssets = ({
         }
 
         const canonicalAsset = getCanonicalFromAsset(code, issuer?.key);
+
+        // Native XLM is never hideable, matching filterHiddenBalances.
         const assetPrice = assetPrices ? assetPrices[canonicalAsset] : null;
 
         const isSuspicious = isAssetSuspicious((rb as Balance).blockaidData);
@@ -357,7 +382,7 @@ export const AccountAssets = ({
                   ? `$${formatAmount(
                       roundUsdValue(
                         new BigNumber(assetPrice.currentPrice)
-                          .multipliedBy(rb.total)
+                          .multipliedBy(getTotalInWholeUnits(rb))
                           .toString(),
                       ),
                     )}`
@@ -368,6 +393,9 @@ export const AccountAssets = ({
               fiatTestId={`asset-amount-${canonicalAsset}`}
               deltaTestId={`asset-price-delta-${canonicalAsset}`}
               onClick={isLP ? undefined : () => handleClick(canonicalAsset)}
+              // Every row, the last included: Home's list ends with a line
+              // above its Add token button.
+              hasDivider
             />
             <SheetContent
               onOpenAutoFocus={(e) => e.preventDefault()}
@@ -381,10 +409,12 @@ export const AccountAssets = ({
               <AssetDetail
                 accountBalances={balances}
                 historyData={historyData}
+                hasHistoryError={hasHistoryError}
                 selectedAsset={canonicalAsset}
                 handleClose={() => {
                   setSelectedAsset("");
                   clearAssetDetailQueryParams();
+                  void reloadBalances?.();
                 }}
               />
             </SheetContent>

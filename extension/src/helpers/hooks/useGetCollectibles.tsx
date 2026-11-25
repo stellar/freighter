@@ -28,9 +28,19 @@ interface UseGetCollectiblesOptions {
   useCache?: boolean;
 }
 
+/**
+ * `fetchData` resolves even when the request fails, with no collections; `error`
+ * is set then, so callers can tell "failed to load" from "owns none".
+ */
+export interface FetchCollectiblesResult extends Collectibles {
+  error?: Error;
+}
+
 interface UseGetCollectiblesReturn {
   state: State<Collectibles, Error>;
-  fetchData: (params: FetchCollectiblesParams) => Promise<Collectibles>;
+  fetchData: (
+    params: FetchCollectiblesParams,
+  ) => Promise<FetchCollectiblesResult>;
 }
 
 /**
@@ -54,7 +64,7 @@ function useGetCollectibles({
     async ({
       publicKey,
       networkDetails,
-    }: FetchCollectiblesParams): Promise<Collectibles> => {
+    }: FetchCollectiblesParams): Promise<FetchCollectiblesResult> => {
       dispatch({ type: "FETCH_DATA_START" });
 
       try {
@@ -106,7 +116,7 @@ function useGetCollectibles({
             type: "FETCH_DATA_ERROR",
             payload: error,
           });
-          return { collections: [] };
+          return { collections: [], error };
         }
 
         // Build contracts list from stored collectibles
@@ -168,7 +178,7 @@ function useGetCollectibles({
           type: "FETCH_DATA_ERROR",
           payload: errorObj,
         });
-        return { collections: [] };
+        return { collections: [], error: errorObj };
       }
     },
     [useCache, reduxDispatch],

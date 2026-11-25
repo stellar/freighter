@@ -2,9 +2,11 @@ import BigNumber from "bignumber.js";
 import {
   formatAmountPreserveCursor,
   formatFiatAmount,
+  formattedBuffer,
   getValidBigNumber,
   isValidPositiveAmount,
   normalizeNumericString,
+  roundUsdValue,
   trimTrailingZeros,
 } from "../formatters";
 
@@ -154,8 +156,9 @@ describe("formatAmountPreserveCursor", () => {
 });
 
 describe("formatFiatAmount", () => {
-  it("formats a USD amount, flooring to two decimals", () => {
-    expect(formatFiatAmount("1149.239")).toBe("$1,149.23");
+  it("formats a USD amount, rounded half-up to two decimals", () => {
+    expect(formatFiatAmount("1149.239")).toBe("$1,149.24");
+    expect(formatFiatAmount("1149.234")).toBe("$1,149.23");
     expect(formatFiatAmount("0.5")).toBe("$0.50");
   });
 
@@ -173,5 +176,41 @@ describe("formatFiatAmount", () => {
     expect(formatFiatAmount("")).toBe("$0.00");
     expect(formatFiatAmount(null)).toBe("$0.00");
     expect(formatFiatAmount("not a number")).toBe("$0.00");
+  });
+});
+
+describe("formattedBuffer", () => {
+  const bytes = new Uint8Array(32).fill(0xab);
+  const hex = "ab".repeat(32);
+
+  it("renders raw bytes as truncated uppercase hex", () => {
+    expect(formattedBuffer(bytes)).toBe("ABAB\u2026ABAB");
+  });
+
+  it("passes through a string that is already hex", () => {
+    // SDK 17's revokeSignerSponsorship arm hands us hex strings, not bytes,
+    // for sha256Hash / preAuthTx signer keys.
+    expect(formattedBuffer(hex)).toBe("ABAB\u2026ABAB");
+  });
+
+  it("renders bytes and their hex string identically", () => {
+    expect(formattedBuffer(hex)).toBe(formattedBuffer(bytes));
+  });
+});
+
+describe("roundUsdValue", () => {
+  // Half-up to the cent, like mobile's fiat formatter: the two apps must show
+  // the same header price for the same quote.
+  it("rounds to the nearest cent instead of flooring", () => {
+    expect(roundUsdValue("0.226429")).toBe("0.23");
+    expect(roundUsdValue("1.126641")).toBe("1.13");
+    expect(roundUsdValue("0.009")).toBe("0.01");
+    expect(roundUsdValue("1.235")).toBe("1.24");
+    expect(roundUsdValue("1.234")).toBe("1.23");
+  });
+
+  it("never returns a negative zero", () => {
+    expect(roundUsdValue("-0.004")).toBe("0.00");
+    expect(roundUsdValue("-0.005")).toBe("-0.01");
   });
 });

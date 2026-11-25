@@ -5,7 +5,7 @@ import { useDispatch } from "react-redux";
 import { useNavigate, useLocation, Navigate } from "react-router-dom";
 
 import { ROUTES } from "popup/constants/routes";
-import { navigateTo, openTab } from "popup/helpers/navigate";
+import { closeWindow, navigateTo, openTab } from "popup/helpers/navigate";
 import { confirmPassword } from "popup/ducks/accountServices";
 import { EnterPassword } from "popup/components/EnterPassword";
 
@@ -87,7 +87,7 @@ export const VerifyAccount = ({
   if (state.data?.type === AppDataType.REROUTE) {
     if (state.data.shouldOpenTab) {
       openTab(newTabHref(state.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate

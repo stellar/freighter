@@ -1,4 +1,5 @@
 import BigNumber from "bignumber.js";
+import { xdr } from "stellar-sdk";
 import { truncatedPublicKey } from "helpers/stellar";
 import { CLASSIC_ASSET_DECIMALS } from "./soroban";
 
@@ -143,8 +144,22 @@ export const formatAmount = (val: string) => {
   return formattedWholeVal;
 };
 
-export const formattedBuffer = (data: Buffer) =>
-  truncatedPublicKey(Buffer.from(data).toString("hex").toUpperCase());
+/**
+ * Renders a hash for display as truncated uppercase hex.
+ *
+ * Accepts a string as well as bytes because the SDK is inconsistent: the
+ * `revokeSponsorship` signer arm returns `sha256Hash` / `preAuthTx` as
+ * already-hex strings (`convertXdrSignerKeyToObject`), while `setOptions`
+ * returns real `Uint8Array`s. A string is passed through rather than re-encoded
+ * -- encoding it again would hex the ASCII of the hex.
+ */
+export const formattedBuffer = (data: Uint8Array | string) =>
+  truncatedPublicKey(
+    (typeof data === "string"
+      ? data
+      : xdr.encodeBytes(data, "hex")
+    ).toUpperCase(),
+  );
 
 export const scrubPathGkey = (route: string, url: string) => {
   try {
@@ -156,8 +171,18 @@ export const scrubPathGkey = (route: string, url: string) => {
   }
 };
 
-export const roundUsdValue = (fullValue: string) =>
-  (Math.floor(parseFloat(fullValue) * 100) / 100).toFixed(2);
+// Half-up to the cent, the same rounding as mobile's fiat formatter, so both
+// apps show one price for one quote. `parseFloat` keeps the old tolerance for
+// loosely formatted input; BigNumber does the rounding in decimal space.
+export const roundUsdValue = (fullValue: string) => {
+  const rounded = new BigNumber(parseFloat(fullValue)).toFixed(
+    2,
+    BigNumber.ROUND_HALF_UP,
+  );
+
+  // BigNumber keeps the sign on a negative zero, and "-0.00%" is not a delta.
+  return rounded === "-0.00" ? "0.00" : rounded;
+};
 
 /**
  * Shown in place of a USD amount that cannot be determined — no price for the

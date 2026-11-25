@@ -9,6 +9,7 @@ import {
   stubCollectibles,
   stubAllExternalApis,
 } from "./helpers/stubs";
+import { switchNetwork } from "./helpers/network";
 
 test("Add a collectible to an account", async ({
   page,
@@ -122,8 +123,7 @@ test("Add a collectible to an account", async ({
 
   test.slow();
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
-  await page.getByTestId("network-selector-open").click();
-  await page.getByText("Mainnet").click();
+  await switchNetwork(page, "Mainnet");
 
   // add the collectible
   await expect(page.getByTestId("account-view")).toBeVisible();

@@ -19,6 +19,7 @@ import {
   overriddenBlockaidResponseSelector,
 } from "popup/ducks/settings";
 import { isDev } from "@shared/helpers/dev";
+import { isBulkScannableAssetId } from "@shared/helpers/blockaid";
 import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
 import { fetchJson } from "./fetch";
 import { captureFetchError } from "./captureFetchError";
@@ -606,11 +607,7 @@ export const isTxSuspicious = (
     return false;
   }
 
-  const { simulation, validation } = blockaidData;
-
-  if (simulation && "error" in simulation) {
-    return true;
-  }
+  const { validation } = blockaidData;
 
   if (
     validation &&
@@ -727,9 +724,11 @@ export const getSiteSecurityLevel = ({
 
 /**
  * Collapses a transaction Blockaid scan into a single SecurityLevel (or null
- * when nothing is flagged) for the reusable BlockaidBanner. A simulation error
- * is treated as suspicious. The dev override takes precedence. Shared by the
- * swap review and the dApp sign-transaction flow so both read one source.
+ * when nothing is flagged) for the reusable BlockaidBanner. A risk verdict
+ * wins over a simulation revert: Malicious and Warning stay malicious /
+ * suspicious, and a revert with no risk verdict is LIKELY_TO_FAIL. The dev
+ * override takes precedence. Shared by the swap review and the dApp
+ * sign-transaction flow so both read one source.
  */
 export const getTransactionSecurityLevel = (
   txScanResult: BlockAidScanTxResult | null | undefined,
@@ -747,11 +746,6 @@ export const getTransactionSecurityLevel = (
 
   const { simulation, validation } = txScanResult;
 
-  // Handle simulation error - treat as suspicious
-  if (simulation && "error" in simulation) {
-    return SecurityLevel.SUSPICIOUS;
-  }
-
   if (validation && "result_type" in validation) {
     const resultType = validation.result_type;
     if (resultType === "Malicious") {
@@ -760,6 +754,11 @@ export const getTransactionSecurityLevel = (
     if (resultType === "Warning") {
       return SecurityLevel.SUSPICIOUS;
     }
+  }
+
+  // A revert is "this will fail". It is not a risk verdict.
+  if (simulation && "error" in simulation) {
+    return SecurityLevel.LIKELY_TO_FAIL;
   }
 
   if (isUnableToScan) {
@@ -872,8 +871,14 @@ export const scanAssetBulk = async (
       /* Scanning assets is only supported on Mainnet */
       return null;
     }
+    // One id the backend or Blockaid can't take fails the whole request, and
+    // a request with no ids is rejected too.
+    const scannableIds = addressList.filter(isBulkScannableAssetId);
+    if (!scannableIds.length) {
+      return { results: {} } as BlockAidBulkScanAssetResult;
+    }
     const url = new URL(`${INDEXER_URL}/scan-asset-bulk`);
-    addressList.forEach((address) => {
+    scannableIds.forEach((address) => {
       url.searchParams.append("asset_ids", address);
     });
     const resJson = await fetchJson<ScanAssetBulkResponse>(url.href, {

@@ -1,7 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@stellar/design-system";
-import { Asset } from "stellar-sdk";
+import { Button, Icon } from "@stellar/design-system";
 
 interface ActionButtonsProps {
   isOnBlockaidPane: boolean;
@@ -9,17 +8,13 @@ interface ActionButtonsProps {
   isRequiredMemoMissing: boolean;
   isValidatingMemo: boolean;
   onAddMemo?: () => void;
+  /** Opens the transaction settings sheet; shown as a gear beside Cancel. */
+  onEditSettings?: () => void;
   shouldShowTxWarning: boolean;
   onCancel: () => void;
   onConfirmTx: () => void;
   isSubmitDisabled: boolean;
-  dstAsset?: {
-    canonical: string;
-    amount: string;
-  };
-  dest: Asset | { code: string; issuer: string } | null;
-  asset: Asset | { code: string; issuer: string };
-  truncatedDest: string;
+  canConfirm: boolean;
 }
 
 export const ActionButtons: React.FC<ActionButtonsProps> = ({
@@ -28,16 +23,32 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
   isRequiredMemoMissing,
   isValidatingMemo,
   onAddMemo,
+  onEditSettings,
   shouldShowTxWarning,
   onCancel,
   onConfirmTx,
   isSubmitDisabled,
-  dstAsset,
-  dest,
-  asset,
-  truncatedDest,
+  canConfirm,
 }) => {
   const { t } = useTranslation();
+  // Only the side-by-side layouts carry the gear, as on mobile.
+  const settingsButton = onEditSettings ? (
+    <div className="ReviewTx__Actions__Settings">
+      <Button
+        size="lg"
+        isRounded
+        variant="tertiary"
+        aria-label={t("Settings")}
+        data-testid="review-tx-settings-btn"
+        onClick={(e) => {
+          e.preventDefault();
+          onEditSettings();
+        }}
+      >
+        <Icon.Settings04 />
+      </Button>
+    </div>
+  ) : null;
 
   // 1. Blockaid "Do not proceed" pane: Cancel (primary) and "Confirm anyway"
   // (text) which submits the transaction directly rather than returning to review.
@@ -63,6 +74,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
             isMalicious ? "error" : "default"
           }`}
           data-testid="SubmitAction"
+          disabled={!canConfirm}
           onClick={(e) => {
             e.preventDefault();
             onConfirmTx();
@@ -74,7 +86,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
     );
   }
 
-  // 2. Memo required but missing (only when no security warnings): Add Memo (primary) and Cancel (secondary)
+  // 2. Memo required but missing (only when no security warnings): Cancel and Add Memo side by side
   if (
     isRequiredMemoMissing &&
     !isValidatingMemo &&
@@ -82,20 +94,8 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
     !shouldShowTxWarning
   ) {
     return (
-      <>
-        <Button
-          size="lg"
-          isFullWidth
-          isRounded
-          variant="secondary"
-          data-testid="AddMemoAction"
-          onClick={(e) => {
-            e.preventDefault();
-            onAddMemo();
-          }}
-        >
-          {t("Add Memo")}
-        </Button>
+      <div className="ReviewTx__Actions__Row">
+        {settingsButton}
         <Button
           size="lg"
           isFullWidth
@@ -109,7 +109,20 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
         >
           {t("Cancel")}
         </Button>
-      </>
+        <Button
+          size="lg"
+          isFullWidth
+          isRounded
+          variant="secondary"
+          data-testid="AddMemoAction"
+          onClick={(e) => {
+            e.preventDefault();
+            onAddMemo();
+          }}
+        >
+          {t("Add Memo")}
+        </Button>
+      </div>
     );
   }
 
@@ -136,6 +149,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
             isMalicious ? "error" : "default"
           }`}
           data-testid="SubmitAction"
+          disabled={!canConfirm}
           onClick={(e) => {
             e.preventDefault();
             onConfirmTx();
@@ -147,26 +161,11 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
     );
   }
 
-  // 4. Normal case: Confirm (primary) and Cancel (secondary)
+  // 4. Normal case: Cancel and Confirm side by side (mobile and the frames
+  // use a plain "Confirm"; the summary above already says what is sent).
   return (
-    <>
-      <Button
-        size="lg"
-        isFullWidth
-        isRounded
-        variant="secondary"
-        data-testid="SubmitAction"
-        disabled={isSubmitDisabled}
-        isLoading={isValidatingMemo}
-        onClick={(e) => {
-          e.preventDefault();
-          onConfirmTx();
-        }}
-      >
-        {dstAsset && dest
-          ? `Swap ${asset.code} to ${dest.code}`
-          : `Send to ${truncatedDest}`}
-      </Button>
+    <div className="ReviewTx__Actions__Row">
+      {settingsButton}
       <Button
         size="lg"
         isFullWidth
@@ -180,6 +179,21 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
       >
         {t("Cancel")}
       </Button>
-    </>
+      <Button
+        size="lg"
+        isFullWidth
+        isRounded
+        variant="secondary"
+        data-testid="SubmitAction"
+        disabled={isSubmitDisabled}
+        isLoading={isValidatingMemo}
+        onClick={(e) => {
+          e.preventDefault();
+          onConfirmTx();
+        }}
+      >
+        {t("Confirm")}
+      </Button>
+    </div>
   );
 };

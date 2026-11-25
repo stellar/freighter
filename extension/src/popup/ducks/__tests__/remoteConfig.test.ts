@@ -5,9 +5,9 @@ import {
   maintenanceBannerSelector,
   maintenanceScreenSelector,
   isRemoteConfigInitializedSelector,
-  tokenPricesV2Selector,
   balancesV2Selector,
   earnDepositSelector,
+  tokenPriceHistoryEnabledSelector,
   reducer,
 } from "../remoteConfig";
 import {
@@ -75,14 +75,9 @@ describe("remoteConfig duck — initial state", () => {
     expect(getState(store).isInitialized).toBe(false);
   });
 
-  it("defaults use_token_prices_v2 to true", () => {
+  it("defaults use_balances_v2 to false", () => {
     const store = makeStore();
-    expect(getState(store).use_token_prices_v2).toBe(true);
-  });
-
-  it("defaults use_balances_v2 to true", () => {
-    const store = makeStore();
-    expect(getState(store).use_balances_v2).toBe(true);
+    expect(getState(store).use_balances_v2).toBe(false);
   });
 
   it("has both maintenance flags disabled with no payload by default", () => {
@@ -377,32 +372,7 @@ describe("remoteConfig selectors", () => {
     expect(isRemoteConfigInitializedSelector(store.getState())).toBe(false);
   });
 
-  it("tokenPricesV2Selector defaults to true", () => {
-    const store = makeStore();
-    expect(tokenPricesV2Selector(store.getState())).toBe(true);
-  });
-
-  it("tokenPricesV2Selector stays true when Amplitude omits the flag", async () => {
-    (getExperimentClient as jest.Mock).mockReturnValue(makeClient());
-
-    const store = makeStore();
-    await store.dispatch(fetchFeatureFlags());
-    expect(tokenPricesV2Selector(store.getState())).toBe(true);
-  });
-
-  it("tokenPricesV2Selector rolls back to false when variant is off", async () => {
-    (getExperimentClient as jest.Mock).mockReturnValue(
-      makeClient({
-        use_token_prices_v2: { value: "off" },
-      }),
-    );
-
-    const store = makeStore();
-    await store.dispatch(fetchFeatureFlags());
-    expect(tokenPricesV2Selector(store.getState())).toBe(false);
-  });
-
-  it("balancesV2Selector stays true when the variant is on", async () => {
+  it("balancesV2Selector turns true when the variant is on", async () => {
     (getExperimentClient as jest.Mock).mockReturnValue(
       makeClient({
         use_balances_v2: { value: "on" },
@@ -414,7 +384,7 @@ describe("remoteConfig selectors", () => {
     expect(balancesV2Selector(store.getState())).toBe(true);
   });
 
-  it("balancesV2Selector rolls back to false when the variant is off", async () => {
+  it("balancesV2Selector stays false when the variant is off", async () => {
     (getExperimentClient as jest.Mock).mockReturnValue(
       makeClient({
         use_balances_v2: { value: "off" },
@@ -426,28 +396,119 @@ describe("remoteConfig selectors", () => {
     expect(balancesV2Selector(store.getState())).toBe(false);
   });
 
-  it("earnDepositSelector defaults to false", () => {
-    const store = makeStore();
-    expect(earnDepositSelector(store.getState())).toBe(false);
+  describe("earnDepositSelector in a dev build (defaults on, fails closed)", () => {
+    it("is false before the flags settle, although the flag defaults to true", () => {
+      const store = makeStore();
+      expect(getState(store).earn_deposit).toBe(true);
+      expect(earnDepositSelector(store.getState())).toBe(false);
+    });
+
+    it("is true once the flags settle with the flag omitted", async () => {
+      (getExperimentClient as jest.Mock).mockReturnValue(makeClient());
+
+      const store = makeStore();
+      await store.dispatch(fetchFeatureFlags());
+      expect(earnDepositSelector(store.getState())).toBe(true);
+    });
+
+    it("is false when the variant is off", async () => {
+      (getExperimentClient as jest.Mock).mockReturnValue(
+        makeClient({ earn_deposit: { value: "off" } }),
+      );
+
+      const store = makeStore();
+      await store.dispatch(fetchFeatureFlags());
+      expect(earnDepositSelector(store.getState())).toBe(false);
+    });
   });
 
-  it("earnDepositSelector stays false when Amplitude omits the flag", async () => {
-    (getExperimentClient as jest.Mock).mockReturnValue(makeClient());
+  describe("earnDepositSelector in a production build (defaults off)", () => {
+    // DEV_EXTENSION is read when the duck loads, so load a copy built as
+    // production, with its own instance of the mocked experiment client.
+    const loadProductionDuck = () => {
+      let duck!: typeof import("../remoteConfig");
+      let experiment!: typeof import("helpers/experimentClient");
+      jest.isolateModules(() => {
+        jest.doMock("@shared/constants/services", () => ({
+          ...jest.requireActual("@shared/constants/services"),
+          DEV_EXTENSION: false,
+        }));
+        duck = require("../remoteConfig");
+        experiment = require("helpers/experimentClient");
+      });
+      const store = configureStore({
+        reducer: { remoteConfig: duck.reducer },
+      });
+      return { duck, experiment, store };
+    };
 
-    const store = makeStore();
-    await store.dispatch(fetchFeatureFlags());
-    expect(earnDepositSelector(store.getState())).toBe(false);
+    it("stays off once the flags settle with the flag omitted", async () => {
+      const { duck, experiment, store } = loadProductionDuck();
+      (experiment.getExperimentClient as jest.Mock).mockReturnValue(
+        makeClient(),
+      );
+
+      expect(store.getState().remoteConfig.earn_deposit).toBe(false);
+      await store.dispatch(duck.fetchFeatureFlags());
+      expect(duck.earnDepositSelector(store.getState())).toBe(false);
+    });
+
+    it("stays off when the flag fetch rejects", async () => {
+      const { duck, experiment, store } = loadProductionDuck();
+      const client = makeClient();
+      client.fetch.mockRejectedValue(new Error("Amplitude unreachable"));
+      (experiment.getExperimentClient as jest.Mock).mockReturnValue(client);
+
+      await store.dispatch(duck.fetchFeatureFlags());
+      expect(duck.earnDepositSelector(store.getState())).toBe(false);
+    });
+
+    it("turns on when the variant is on", async () => {
+      const { duck, experiment, store } = loadProductionDuck();
+      (experiment.getExperimentClient as jest.Mock).mockReturnValue(
+        makeClient({ earn_deposit: { value: "on" } }),
+      );
+
+      await store.dispatch(duck.fetchFeatureFlags());
+      expect(duck.earnDepositSelector(store.getState())).toBe(true);
+    });
   });
 
-  it("earnDepositSelector turns true when the variant is on", async () => {
-    (getExperimentClient as jest.Mock).mockReturnValue(
-      makeClient({
-        earn_deposit: { value: "on" },
-      }),
-    );
+  describe("tokenPriceHistoryEnabledSelector (kill switch, fails closed)", () => {
+    it("is false before the flags settle, although the flag defaults to true", () => {
+      const store = makeStore();
+      expect(getState(store).use_token_price_history).toBe(true);
+      expect(tokenPriceHistoryEnabledSelector(store.getState())).toBe(false);
+    });
 
-    const store = makeStore();
-    await store.dispatch(fetchFeatureFlags());
-    expect(earnDepositSelector(store.getState())).toBe(true);
+    it("is true once the flags settle with the flag omitted", async () => {
+      (getExperimentClient as jest.Mock).mockReturnValue(makeClient());
+
+      const store = makeStore();
+      await store.dispatch(fetchFeatureFlags());
+      expect(tokenPriceHistoryEnabledSelector(store.getState())).toBe(true);
+    });
+
+    it("is false when the variant is off", async () => {
+      (getExperimentClient as jest.Mock).mockReturnValue(
+        makeClient({ use_token_price_history: { value: "off" } }),
+      );
+
+      const store = makeStore();
+      await store.dispatch(fetchFeatureFlags());
+      expect(tokenPriceHistoryEnabledSelector(store.getState())).toBe(false);
+    });
+
+    it("is true when the flag fetch rejects — an unreachable Amplitude cannot wedge it off", async () => {
+      (getExperimentClient as jest.Mock).mockReturnValue({
+        fetch: jest.fn().mockRejectedValue(new Error("Network error")),
+        all: jest.fn().mockReturnValue({}),
+      });
+
+      const store = makeStore();
+      await store.dispatch(fetchFeatureFlags());
+      expect(getState(store).isInitialized).toBe(true);
+      expect(tokenPriceHistoryEnabledSelector(store.getState())).toBe(true);
+    });
   });
 });

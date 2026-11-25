@@ -1,8 +1,9 @@
 import React from "react";
-import { Icon, Text } from "@stellar/design-system";
+import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { formatRate } from "popup/components/earn/helpers/formatPoolStats";
+import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
 
 interface PoolCardProps {
@@ -22,10 +23,7 @@ export const PoolCard = ({ poolName, apy, onOpenDetails }: PoolCardProps) => {
   return (
     <div className="PoolCard">
       <div className="PoolCard__ribbon" data-testid="earn-pool-apy">
-        <Text as="div" size="xs" weight="medium">
-          {/* The asterisk ties to the APY disclaimer shown on the token picker. */}
-          {t("Current APY: {{rate}}*", { rate: formatRate(apy) })}
-        </Text>
+        {t("Current APY: {{rate}}", { rate: formatRate(apy) })}
       </div>
 
       <button
@@ -34,26 +32,10 @@ export const PoolCard = ({ poolName, apy, onOpenDetails }: PoolCardProps) => {
         onClick={onOpenDetails}
         data-testid="earn-pool-card"
       >
-        <PoolIcon />
+        <PoolIcon size={40} />
         <div className="PoolCard__identity">
-          {/* Both lines are Text/SM/500 in the design; only their colour
-              differs — primary for the pool, secondary for the provider. */}
-          <Text
-            as="div"
-            size="sm"
-            weight="medium"
-            addlClassName="PoolCard__name"
-          >
-            {poolName || t("Blend pool")}
-          </Text>
-          <Text
-            as="div"
-            size="sm"
-            weight="medium"
-            addlClassName="PoolCard__provider"
-          >
-            {t("by Blend")}
-          </Text>
+          <div className="PoolCard__name">{formatPoolName(poolName, t)}</div>
+          <div className="PoolCard__provider">{t("by Blend")}</div>
         </div>
         <div className="PoolCard__chevron">
           <Icon.ChevronRight />

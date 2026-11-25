@@ -1,5 +1,11 @@
 import React from "react";
-import { render, waitFor, screen, fireEvent } from "@testing-library/react";
+import {
+  act,
+  render,
+  waitFor,
+  screen,
+  fireEvent,
+} from "@testing-library/react";
 import BigNumber from "bignumber.js";
 import * as ReactRouterDom from "react-router-dom";
 
@@ -25,6 +31,8 @@ import * as TokenListHelpers from "@shared/api/helpers/token-list";
 import * as GetIconFromTokenList from "@shared/api/helpers/getIconFromTokenList";
 import * as GetIconUrlFromIssuer from "@shared/api/helpers/getIconUrlFromIssuer";
 import * as RouteHelpers from "popup/helpers/route";
+import { closeWindow, openTab } from "popup/helpers/navigate";
+import { newTabHref } from "helpers/urls";
 import * as GetLedgerKeyAccounts from "@shared/api/helpers/getLedgerKeyAccounts";
 import * as UseGetCollectibles from "helpers/hooks/useGetCollectibles";
 import { Toaster } from "popup/basics/shadcn/Toast";
@@ -39,7 +47,9 @@ import {
   TEST_CANONICAL,
   TEST_PUBLIC_KEY,
   TEST_USDC_CANONICAL,
+  getTestStore,
 } from "../../__testHelpers__";
+import { fetchFeatureFlags } from "popup/ducks/remoteConfig";
 import { Account } from "../Account";
 import { ROUTES } from "popup/constants/routes";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
@@ -52,6 +62,8 @@ import {
   AccountTabsContext,
   TabsList,
 } from "../Account/contexts/activeTabContext";
+import { onAccountValue } from "helpers/accountFunding";
+import { useFundedAccountsRefresh } from "popup/helpers/useFundedAccountsRefresh";
 
 const mockHistoryOperations = {
   operations: [
@@ -201,9 +213,11 @@ jest
   .spyOn(ApiInternal, "getTokenIds")
   .mockImplementation(() => Promise.resolve(["C1"]));
 
-jest
+const resolveDefaultAccountHistory = () =>
+  Promise.resolve(mockHistoryOperations.operations);
+const getAccountHistorySpy = jest
   .spyOn(ApiInternal, "getAccountHistory")
-  .mockImplementation(() => Promise.resolve(mockHistoryOperations.operations));
+  .mockImplementation(resolveDefaultAccountHistory);
 
 jest.spyOn(UseAssetDomain, "useAssetDomain").mockImplementation(() => {
   return { assetDomain: "centre.io", error: "" };
@@ -269,10 +283,20 @@ jest.spyOn(ApiInternal, "loadBackendSettings").mockImplementation(() =>
   }),
 );
 
+jest.mock("helpers/accountFunding", () => ({
+  onAccountValue: jest.fn(),
+  onListAccountValue: jest.fn(),
+}));
+
+// The app-open refresh fetches every account in the background. These tests
+// count balance requests, so keep it out of them.
+jest.mock("popup/helpers/useFundedAccountsRefresh", () => ({
+  useFundedAccountsRefresh: jest.fn(),
+}));
+
 jest.mock("helpers/metrics", () => ({
   storeAccountMetricsData: jest.fn(),
   registerHandler: jest.fn(),
-  storeBalanceMetricData: jest.fn(),
   emitMetric: jest.fn(),
   initAmplitude: jest.fn(),
   metricsMiddleware: jest.fn(),
@@ -288,6 +312,13 @@ jest.mock("popup/ducks/accountServices", () => {
   };
 });
 
+// A test must not open a real tab or close the jsdom window.
+jest.mock("popup/helpers/navigate", () => ({
+  ...jest.requireActual("popup/helpers/navigate"),
+  openTab: jest.fn(),
+  closeWindow: jest.fn(),
+}));
+
 describe("Account view", () => {
   afterAll(() => {
     jest.clearAllMocks();
@@ -295,6 +326,17 @@ describe("Account view", () => {
   afterEach(() => {
     jest.useRealTimers();
     jest.clearAllMocks();
+    // clearAllMocks keeps implementations; a test that overrides history
+    // must not hand its rejection or delay to the tests after it.
+    getAccountHistorySpy.mockImplementation(resolveDefaultAccountHistory);
+    // `clearAllMocks` drops recorded calls but keeps implementations, so a test
+    // that hides an asset would otherwise hide it for every test after it. The
+    // module-level default is "nothing hidden"; put it back.
+    jest
+      .spyOn(ApiInternal, "getHiddenAssets")
+      .mockImplementation(() =>
+        Promise.resolve({ hiddenAssets: {}, error: "" }),
+      );
   });
 
   jest
@@ -366,6 +408,90 @@ describe("Account view", () => {
       screen.queryAllByTestId("account-view-user-notification"),
     ).toHaveLength(0);
   });
+
+  it("pins only the top row, so the balance and tabs scroll under its fade", async () => {
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(() => screen.getByTestId("account-header"));
+    const pinned = screen
+      .getByTestId("account-chip")
+      .closest(".View__header--account");
+
+    expect(pinned).not.toBeNull();
+    expect(pinned).toContainElement(
+      screen.getByTestId("account-header-qr-button"),
+    );
+    expect(pinned).not.toContainElement(screen.getByTestId("account-header"));
+    expect(pinned).not.toContainElement(
+      screen.getByTestId("account-tab-tokens"),
+    );
+  });
+  it("keeps the pinned header solid only while a maintenance banner shows", async () => {
+    const renderHome = (isBannerOn: boolean) =>
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+              publicKey: "G1",
+              allAccounts: mockAccounts,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+            },
+            remoteConfig: {
+              isInitialized: true,
+              use_balances_v2: true,
+              use_token_price_history: true,
+              maintenance_screen: { enabled: false, payload: undefined },
+              maintenance_banner: {
+                enabled: isBannerOn,
+                payload: {
+                  theme: "warning",
+                  banner: { title: { en: "Services degraded" } },
+                },
+              },
+            },
+          }}
+        >
+          <Account />
+        </Wrapper>,
+      );
+    const pinnedHeader = () =>
+      screen.getByTestId("account-chip").closest(".View__header--account");
+
+    const { unmount } = renderHome(true);
+    await waitFor(() => screen.getByTestId("maintenance-banner"));
+    // A class, not `:has()`: Firefox before 121 drops `:has()` rules.
+    expect(pinnedHeader()).toHaveClass("View__header--solid");
+    unmount();
+
+    renderHome(false);
+    await waitFor(() => screen.getByTestId("account-header"));
+    expect(pinnedHeader()).not.toHaveClass("View__header--solid");
+  });
+
   it("should show user notification if user notification is enabled", async () => {
     jest.spyOn(ApiInternal, "loadBackendSettings").mockImplementationOnce(() =>
       Promise.resolve({
@@ -736,6 +862,61 @@ describe("Account view", () => {
     });
   });
 
+  it("does not fetch balances until the remote config flags have settled", async () => {
+    const balancesSpy = jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockBalances));
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+          remoteConfig: {
+            isInitialized: false,
+            use_balances_v2: false,
+            use_token_price_history: true,
+            maintenance_banner: { enabled: false, payload: undefined },
+            maintenance_screen: { enabled: false, payload: undefined },
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(balancesSpy).not.toHaveBeenCalled();
+
+    await act(async () => {
+      getTestStore()?.dispatch({
+        type: fetchFeatureFlags.fulfilled.type,
+        payload: {
+          isInitialized: true,
+          use_balances_v2: true,
+          use_token_price_history: true,
+          maintenance_banner: { enabled: false, payload: undefined },
+          maintenance_screen: { enabled: false, payload: undefined },
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(balancesSpy).toHaveBeenCalled();
+    });
+  });
+
   it("goes to account details", async () => {
     render(
       <Wrapper
@@ -782,6 +963,60 @@ describe("Account view", () => {
         screen.getByTestId("TransactionDetailModal__status"),
       ).toHaveTextContent("Success");
     });
+  });
+
+  it("does not blank Home when Asset Details is closed with the X", async () => {
+    // Closing through AssetDetail's own handler used to call the full
+    // `fetchData`, which resets the request to LOADING with `data: null` and
+    // makes Account early-return a full-screen <Loading />. Dismissing a token
+    // sheet with no change must not take Home off screen.
+    render(
+      <Wrapper
+        routes={[ROUTES.welcome]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(async () => {
+      await fireEvent.click(
+        screen.getByTestId("AccountAssets__asset--loading-USDC"),
+      );
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("asset-detail-available-copy"),
+      ).toHaveTextContent("100 USDC");
+    });
+
+    fireEvent.click(screen.getByTestId("BackButton"));
+
+    // Asserted in the same tick as the click, with no `waitFor` in between:
+    // `fetchData` dispatches FETCH_DATA_START synchronously, so the blank
+    // frame lands here and is gone again by the time a refetch settles.
+    expect(screen.queryByTestId("Loading")).not.toBeInTheDocument();
+    expect(screen.getAllByTestId("account-assets-item").length).toBeGreaterThan(
+      0,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("asset-detail-available-copy"),
+      ).not.toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("Loading")).not.toBeInTheDocument();
   });
 
   it("goes to account details and shows loading until history data is fetched", async () => {
@@ -832,6 +1067,49 @@ describe("Account view", () => {
     await waitFor(() => {
       expect(screen.getByTestId("history-item")).toHaveTextContent("100 USDC");
     });
+  });
+
+  it("shows the history error, not an endless skeleton, when the history fetch fails", async () => {
+    jest
+      .spyOn(ApiInternal, "getAccountHistory")
+      .mockImplementation(() => Promise.reject(new Error("history down")));
+
+    render(
+      <Wrapper
+        routes={[ROUTES.welcome]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(async () => {
+      await fireEvent.click(
+        screen.getByTestId("AccountAssets__asset--loading-USDC"),
+      );
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("asset-detail-available-copy"),
+      ).toHaveTextContent("100 USDC");
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("AssetDetail__list__error")).toHaveTextContent(
+        "Unable to load history",
+      );
+    });
+    expect(screen.queryByTestId("AssetDetail__list__loader")).toBeNull();
   });
 
   it("loads LP shares", async () => {
@@ -929,6 +1207,78 @@ describe("Account view", () => {
     });
   });
 
+  it("passes the home-total balances and prices to the funding detection", async () => {
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        isOpenSidebarByDefault: false,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+      }),
+    );
+    jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockBalances));
+    jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockImplementation(() => Promise.resolve(mockPrices));
+    (onAccountValue as jest.Mock).mockClear();
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(onAccountValue).toHaveBeenCalledWith(
+        expect.objectContaining({
+          publicKey: expect.any(String),
+          networkDetails: MAINNET_NETWORK_DETAILS,
+          input: expect.objectContaining({
+            isFunded: true,
+            tokenPrices: mockPrices,
+            hasBalanceError: false,
+            balances: expect.any(Array),
+          }),
+        }),
+      );
+    });
+    expect(useFundedAccountsRefresh).toHaveBeenCalled();
+  });
+
   it("shows prices and deltas", async () => {
     jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
       Promise.resolve({
@@ -996,10 +1346,10 @@ describe("Account view", () => {
         screen.getByTestId(`asset-price-delta-${TEST_USDC_CANONICAL}`),
       ).toHaveTextContent("0.50%");
       expect(screen.getByTestId(`asset-amount-native`)).toHaveTextContent(
-        "$13.81",
+        "$13.82",
       );
       expect(screen.getByTestId(`asset-price-delta-native`)).toHaveTextContent(
-        "1.09%",
+        "1.10%",
       );
       // Contract-ID issuers are filtered out by production `getTokenPrices`
       // (`@shared/api/internal.ts` → `isContractId`), so DT can never carry
@@ -1014,6 +1364,90 @@ describe("Account view", () => {
     });
   });
 
+  it("values a priced SEP-41 balance in whole units", async () => {
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        isOpenSidebarByDefault: false,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+      }),
+    );
+    jest.spyOn(ApiInternal, "getAccountBalances").mockImplementation(() =>
+      Promise.resolve({
+        ...mockBalances,
+        balances: {
+          ...mockBalances.balances,
+          [TEST_CANONICAL]: {
+            ...(mockBalances.balances as any)[TEST_CANONICAL],
+            contractId:
+              "CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
+          },
+        },
+      } as any),
+    );
+
+    jest.spyOn(ApiInternal, "getTokenPrices").mockImplementation(() =>
+      Promise.resolve({
+        ...mockPrices,
+        // DT holds raw 1000000000 at 7 decimals = 100 DT.
+        [TEST_CANONICAL]: { currentPrice: "2", percentagePriceChange24h: "0" },
+      }),
+    );
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId(`asset-amount-${TEST_CANONICAL}`),
+      ).toHaveTextContent(/^\$200\.00$/);
+    });
+    // 100 USDC + 100 DT × $2 + 50 XLM × $0.2763…
+    expect(screen.getByTestId("account-view-total-balance")).toHaveTextContent(
+      "$313.82",
+    );
+  });
+
+  // A hidden asset must still be priced. The price map is cached per account
+  // and network with no record of which assets it covers, so one built from
+  // the visibility-filtered list is served as complete -- and unhiding, which
+  // only writes the visibility mirror, brings the row back with no price.
   it("hides prices and deltas on token price failure", async () => {
     jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
       Promise.resolve({
@@ -1314,7 +1748,7 @@ describe("Account view", () => {
 
     // Fast-forward 30 seconds
     jest.advanceTimersByTime(30000);
-    expect(getAccountBalancesSpy).toHaveBeenCalledTimes(3);
+    await waitFor(() => expect(getAccountBalancesSpy).toHaveBeenCalledTimes(3));
   });
 
   // An unfunded account holds nothing, so zero is its real total even on a
@@ -1342,6 +1776,7 @@ describe("Account view", () => {
         },
         fetchData: jest.fn(),
         refreshAppData: jest.fn(),
+        refreshBalances: jest.fn(),
       } as any);
 
     render(
@@ -1388,6 +1823,7 @@ describe("Account view", () => {
         },
         fetchData: jest.fn(),
         refreshAppData: jest.fn(),
+        refreshBalances: jest.fn(),
       });
 
     render(
@@ -1450,6 +1886,7 @@ describe("Account view", () => {
         },
         fetchData: jest.fn(),
         refreshAppData: jest.fn(),
+        refreshBalances: jest.fn(),
       });
 
     render(
@@ -1498,16 +1935,18 @@ describe("Account view", () => {
   // that decision lives in this view rather than in the components it feeds, so
   // it has to be pinned here: the component suites take it as a literal prop and
   // cannot catch it drifting.
-  describe("Add CTA placement across the two tabs", () => {
+  describe("Add actions across the two tabs", () => {
     const renderWithHoldings = async ({
       collections,
       isFunded,
       hasLoadedCollectibles = true,
+      hasCollectiblesError = false,
       requestState = RequestState.SUCCESS,
     }: {
       collections: any[];
       isFunded: boolean;
       hasLoadedCollectibles?: boolean;
+      hasCollectiblesError?: boolean;
       requestState?: RequestState;
     }) => {
       const accountDataSpy = jest
@@ -1533,6 +1972,7 @@ describe("Account view", () => {
                     isScanAppended: true,
                     collectibles: { collections },
                     hasLoadedCollectibles,
+                    hasCollectiblesError,
                     // `isFunded` is the only part of this the CTA decision
                     // reads, and the list is post-normalisation here (this
                     // mocks the hook, not the network), so an empty array is
@@ -1543,6 +1983,7 @@ describe("Account view", () => {
                 } as any),
           fetchData: jest.fn(),
           refreshAppData: jest.fn(),
+          refreshBalances: jest.fn(),
         } as any);
 
       render(
@@ -1587,54 +2028,63 @@ describe("Account view", () => {
           screen.getAllByTestId("account-collectibles").length,
         ).toBeGreaterThan(0);
       });
+      // Both panes stay mounted for the 300ms slide, and the Tokens pane now
+      // carries its own Add token button, so wait for it to leave.
+      await waitFor(() => {
+        expect(screen.queryByTestId("account-assets")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("not-funded")).not.toBeInTheDocument();
+      });
     };
 
-    const pillTestIds = () =>
+    // The inline buttons that end each list (as opposed to the button inside
+    // the Collectibles empty state, `add-collectible-empty-btn`).
+    const listEndButtonTestIds = () =>
       ["add-token-btn", "add-collectible-btn"].filter((id) =>
         screen.queryByTestId(id),
       );
 
-    it("gives Collectibles an inline CTA while Tokens is showing its empty state", async () => {
+    it("gives Collectibles its empty-state button while Tokens is unfunded", async () => {
       const spy = await renderWithHoldings({
         collections: [],
         isFunded: false,
       });
 
-      // Tokens is untouched: its empty state carries "Add XLM" and no pill.
+      // Tokens' empty state carries "Add XLM", and no Add token: adding one
+      // needs a trustline, which needs XLM.
       expect(
         screen.getByTestId("not-funded").querySelectorAll("button"),
       ).toHaveLength(1);
-      expect(pillTestIds()).toEqual([]);
+      expect(listEndButtonTestIds()).toEqual([]);
 
-      // Collectibles follows suit, so both tabs show the same button style.
       await switchToCollectibles();
       spy.mockRestore();
 
       expect(
-        screen.getByTestId("add-collectible-inline-btn"),
+        screen.getByTestId("add-collectible-empty-btn"),
       ).toBeInTheDocument();
-      expect(pillTestIds()).toEqual([]);
+      expect(listEndButtonTestIds()).toEqual([]);
     });
 
-    it("moves Collectibles to the pill once Tokens shows one", async () => {
+    // As on mobile, the empty state carries its button funded or not: with
+    // nothing in the grid there is no list for an Add button to end.
+    it("ends a funded token list with Add token, and keeps the empty-state button on Collectibles", async () => {
       const spy = await renderWithHoldings({ collections: [], isFunded: true });
 
       expect(screen.queryByTestId("not-funded")).not.toBeInTheDocument();
-      expect(pillTestIds()).toEqual(["add-token-btn"]);
+      expect(listEndButtonTestIds()).toEqual(["add-token-btn"]);
 
       await switchToCollectibles();
       spy.mockRestore();
 
       expect(
-        screen.queryByTestId("add-collectible-inline-btn"),
-      ).not.toBeInTheDocument();
-      expect(pillTestIds()).toEqual(["add-collectible-btn"]);
+        screen.getByTestId("add-collectible-empty-btn"),
+      ).toBeInTheDocument();
+      expect(listEndButtonTestIds()).toEqual([]);
     });
 
-    // Collectibles can only host an inline CTA inside its empty state. With
-    // collectibles on screen there is no empty state, so it keeps the pill even
-    // though Tokens is inline -- otherwise the tab would have no way to add one.
-    it("keeps the Collectibles pill when that tab has collectibles to show", async () => {
+    // Holding a collectible needs no funded account, so a grid with content
+    // ends with Add collectible even while Tokens is unfunded.
+    it("ends a populated grid with Add collectible, funded or not", async () => {
       const spy = await renderWithHoldings({
         collections: mockCollectibles,
         isFunded: false,
@@ -1649,16 +2099,14 @@ describe("Account view", () => {
       spy.mockRestore();
 
       expect(
-        screen.queryByTestId("add-collectible-inline-btn"),
+        screen.queryByTestId("add-collectible-empty-btn"),
       ).not.toBeInTheDocument();
-      expect(pillTestIds()).toEqual(["add-collectible-btn"]);
+      expect(listEndButtonTestIds()).toEqual(["add-collectible-btn"]);
     });
 
     // Hiding the last collectible leaves that tab showing its empty state rather
-    // than a blank pane, so the CTA has to move inline with it. That only works
-    // because Home feeds isCollectibleHidden into the same predicate the pane
-    // switches on; reading "empty" any other way puts the two out of step.
-    it("gives Collectibles the inline CTA when every collectible is hidden", async () => {
+    // than a blank pane, so the Add action moves into it.
+    it("moves the Add action into the empty state when every collectible is hidden", async () => {
       const hidden: Record<string, string> = {};
       mockCollectibles.forEach(({ collection }) => {
         collection!.collectibles.forEach((item: { tokenId: string }) => {
@@ -1679,15 +2127,15 @@ describe("Account view", () => {
 
       // Awaited before restoring: the hidden set arrives from an async fetch.
       await waitFor(() => {
-        expect(screen.getByText("No collectibles yet")).toBeInTheDocument();
+        expect(screen.getByText("Collect your first NFT")).toBeInTheDocument();
       });
       spy.mockRestore();
       hiddenSpy.mockRestore();
 
       expect(
-        screen.getByTestId("add-collectible-inline-btn"),
+        screen.getByTestId("add-collectible-empty-btn"),
       ).toBeInTheDocument();
-      expect(pillTestIds()).toEqual([]);
+      expect(listEndButtonTestIds()).toEqual([]);
     });
 
     // The collectibles request resolves after balances, and until it does an empty
@@ -1713,16 +2161,95 @@ describe("Account view", () => {
       expect(
         screen.getByTestId("account-collectibles-loader"),
       ).toBeInTheDocument();
-      expect(screen.queryByText("No collectibles yet")).not.toBeInTheDocument();
       expect(
-        screen.queryByTestId("add-collectible-inline-btn"),
+        screen.queryByText("Collect your first NFT"),
       ).not.toBeInTheDocument();
-      expect(pillTestIds()).toEqual([]);
+      expect(
+        screen.queryByTestId("add-collectible-empty-btn"),
+      ).not.toBeInTheDocument();
+      expect(listEndButtonTestIds()).toEqual([]);
     });
 
-    // A failed balances fetch leaves Tokens with no CTA of either kind, so there
-    // is no style for Collectibles to match and it falls back to the pill.
-    it("falls back to the Collectibles pill when the balances fetch failed", async () => {
+    // The grid filters against the hidden map, which is a separate request. If
+    // the collections land first the hidden items paint for a frame and then
+    // vanish, so the tab keeps spinning until the map is in.
+    it("keeps spinning until the hidden-collectibles map has loaded", async () => {
+      let resolveHidden: (value: unknown) => void = () => {};
+      const hiddenSpy = jest
+        .spyOn(ApiInternal, "getHiddenCollectibles")
+        .mockImplementation(
+          () =>
+            new Promise((resolve) => {
+              resolveHidden = resolve;
+            }) as any,
+        );
+      const hiddenKey = `${mockCollectibles[0].collection!.address}:${
+        mockCollectibles[0].collection!.collectibles[0].tokenId
+      }`;
+
+      const spy = await renderWithHoldings({
+        collections: mockCollectibles,
+        isFunded: true,
+      });
+      await switchToCollectibles();
+
+      expect(
+        screen.getByTestId("account-collectibles-loader"),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByTestId("account-collectible-image"),
+      ).not.toBeInTheDocument();
+
+      await act(async () => {
+        resolveHidden({
+          hiddenCollectibles: { [hiddenKey]: "hidden" },
+          error: "",
+        });
+      });
+
+      await waitFor(() => {
+        expect(
+          screen.queryByTestId("account-collectibles-loader"),
+        ).not.toBeInTheDocument();
+      });
+      spy.mockRestore();
+      hiddenSpy.mockRestore();
+
+      const total = mockCollectibles.reduce(
+        (count, { collection }) => count + collection!.collectibles.length,
+        0,
+      );
+      // One image per collectible; the hidden one is filtered out.
+      expect(screen.getAllByTestId("account-collectible-image")).toHaveLength(
+        total - 1,
+      );
+    });
+
+    // The balances can load while the collectibles request alone fails; the
+    // tab still can't claim the account owns none.
+    it("keeps only the Collectibles Add button when only the collectibles fetch failed", async () => {
+      const spy = await renderWithHoldings({
+        collections: [],
+        isFunded: true,
+        hasCollectiblesError: true,
+      });
+
+      expect(listEndButtonTestIds()).toEqual(["add-token-btn"]);
+
+      await switchToCollectibles();
+      spy.mockRestore();
+
+      expect(
+        screen.getByTestId("add-collectible-empty-btn"),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByText("Collect your first NFT"),
+      ).not.toBeInTheDocument();
+    });
+
+    // After a failed fetch neither tab can claim the account is empty, so
+    // Collectibles keeps only its Add action.
+    it("keeps only the Collectibles Add button when the balances fetch failed", async () => {
       const spy = await renderWithHoldings({
         collections: [],
         isFunded: false,
@@ -1730,7 +2257,7 @@ describe("Account view", () => {
       });
 
       expect(screen.queryByTestId("not-funded")).not.toBeInTheDocument();
-      expect(pillTestIds()).toEqual([]);
+      expect(listEndButtonTestIds()).toEqual([]);
 
       await switchToCollectibles();
       spy.mockRestore();
@@ -1741,9 +2268,12 @@ describe("Account view", () => {
         screen.queryByTestId("account-collectibles-loader"),
       ).not.toBeInTheDocument();
       expect(
-        screen.queryByTestId("add-collectible-inline-btn"),
+        screen.getByTestId("add-collectible-empty-btn"),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByText("Collect your first NFT"),
       ).not.toBeInTheDocument();
-      expect(pillTestIds()).toEqual(["add-collectible-btn"]);
+      expect(listEndButtonTestIds()).toEqual([]);
     });
   });
 
@@ -1961,6 +2491,7 @@ describe("Account view", () => {
       },
       fetchData: jest.fn(),
       refreshAppData: jest.fn(),
+      refreshBalances: jest.fn(),
     });
 
     render(
@@ -1992,5 +2523,61 @@ describe("Account view", () => {
     await waitFor(() => {
       expect(screen.getByTestId("rerouted")).toBeInTheDocument();
     });
+  });
+
+  it("hands onboarding to a tab and closes the window for real when the re-route needs a tab", async () => {
+    jest.spyOn(AccountDataHooks, "useGetAccountData").mockReturnValue({
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          type: AppDataType.REROUTE,
+          shouldOpenTab: true,
+          routeTarget: ROUTES.welcome,
+        },
+        error: null,
+      },
+      fetchData: jest.fn(),
+      refreshAppData: jest.fn(),
+      refreshBalances: jest.fn(),
+    });
+    // In the sidebar a plain window.close() navigates home, which would run
+    // this hand-off again, so it must not be the call that closes the window.
+    const windowCloseSpy = jest
+      .spyOn(window, "close")
+      .mockImplementation(() => undefined);
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.APPLICATION_STARTED,
+            publicKey: "",
+            allAccounts: [],
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <ReactRouterDom.Routes>
+          <ReactRouterDom.Route path={ROUTES.account} element={<Account />} />
+          <ReactRouterDom.Route
+            path={ROUTES.welcome}
+            element={<div data-testid="rerouted" />}
+          />
+        </ReactRouterDom.Routes>
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("rerouted")).toBeInTheDocument();
+    });
+    expect(openTab).toHaveBeenCalledWith(newTabHref(ROUTES.welcome));
+    expect(closeWindow).toHaveBeenCalled();
+    expect(windowCloseSpy).not.toHaveBeenCalled();
+    windowCloseSpy.mockRestore();
   });
 });

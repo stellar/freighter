@@ -6,6 +6,7 @@ import {
   stubScanAssetSafe,
   stubAssetSearch,
 } from "./helpers/stubs";
+import { goToAddAsset } from "./helpers/assets";
 
 // The Add-a-token confirmation reuses the dApp SignTransaction Details view.
 // Its changeTrust operation uses token-centric labels ("Token Code" /
@@ -47,10 +48,7 @@ test.describe("Add-a-token transaction details", () => {
 
     await switchToMainnet(page);
 
-    await page.getByTestId("account-options-dropdown").click();
-    await page.getByText("Manage assets").click();
-    await expect(page.getByText("Your assets")).toBeVisible();
-    await page.getByText("Add an asset").click({ force: true });
+    await goToAddAsset(page);
 
     // A classic asset issuer routes through ChangeTrustInternal.
     const classicAssetIssuer =

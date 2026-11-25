@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { isContractId, isAssetSac } from "popup/helpers/soroban";
-import { findAssetBalance } from "popup/helpers/balance";
+import { findAssetBalance, getIsRemovable } from "popup/helpers/balance";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { Icon } from "@stellar/design-system";
 import {
@@ -45,36 +45,6 @@ export interface NewAssetFlags {
   isRevocable: boolean;
 }
 
-/**
- * Whether the row may offer "Remove asset".
- *
- * Classic assets are removed by closing their trustline, and SACs are not
- * removable at all — both unchanged. A custom token is removable only while it
- * is on screen because of the user's local token list: once the backend returns
- * it on its own, dropping the local entry would not stop it coming back, so it
- * can only be hidden (Manage assets → Toggle Assets).
- */
-const getIsRemovable = ({
-  contract,
-  isSac,
-  localOnlyTokenIds,
-}: {
-  contract: string;
-  isSac: boolean;
-  localOnlyTokenIds?: string[];
-}) => {
-  if (isSac) {
-    return false;
-  }
-  // No contract means a classic asset, removed by closing its trustline. This
-  // is the same test isAssetSac and shouldChangeTrust use to tell the two
-  // apart.
-  if (!contract) {
-    return true;
-  }
-  return !!localOnlyTokenIds?.includes(contract);
-};
-
 interface ManageAssetRowsProps {
   children?: React.ReactNode;
   header?: React.ReactNode;
@@ -85,6 +55,11 @@ interface ManageAssetRowsProps {
   verifiedLists?: string[];
   balances: AccountBalances;
   shouldSplitAssetsByVerificationStatus?: boolean;
+  /** Whether the account hid this held asset; its row then offers Unhide */
+  isAssetHidden?: (canonicalAsset: string) => boolean;
+  onUnhideAsset?: (asset: { code: string; canonicalAsset: string }) => void;
+  /** Canonical of the asset whose unhide is in flight, if any */
+  unhidingAsset?: string;
 }
 
 export const ManageAssetRows = ({
@@ -94,7 +69,11 @@ export const ManageAssetRows = ({
   unverifiedAssetRows,
   balances,
   shouldSplitAssetsByVerificationStatus = true,
+  isAssetHidden,
+  onUnhideAsset,
+  unhidingAsset,
 }: ManageAssetRowsProps) => {
+  const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
 
@@ -150,41 +129,55 @@ export const ManageAssetRows = ({
               isSac,
               isTrustlineActive,
               name,
-            }) => (
-              <AssetListRow
-                code={code}
-                issuer={issuer}
-                iconUrl={image}
-                domain={domain}
-                isSuspicious={isSuspicious}
-                isMalicious={isMalicious}
-                // Native (non-SAC) contract tokens display their name; classic
-                // assets and SAC-wrapped tokens display their code.
-                displayCode={name && contract && !isSac ? name : code}
-                codeTestId="ManageAssetCode"
-                domainTestId="ManageAssetDomain"
-                rightElement={
-                  <ManageAssetRowButton
-                    code={code}
-                    issuer={issuer}
-                    isTrustlineActive={!!isTrustlineActive}
-                    isRemovable={isRemovable}
-                    isLoading={false}
-                    onClick={async () => {
-                      setSelectedAsset({
-                        code,
-                        issuer,
-                        domain,
-                        name,
-                        image,
-                        isTrustlineActive,
-                        contract,
-                      });
-                    }}
-                  />
-                }
-              />
-            )}
+            }) => {
+              const canonicalAsset = getCanonicalFromAsset(code, issuer);
+              // A held asset the user hid offers Unhide instead of the menu.
+              const isHidden =
+                !!isTrustlineActive && !!isAssetHidden?.(canonicalAsset);
+
+              return (
+                <AssetListRow
+                  code={code}
+                  issuer={issuer}
+                  iconUrl={image}
+                  domain={domain}
+                  isSuspicious={isSuspicious}
+                  isMalicious={isMalicious}
+                  // Native (non-SAC) contract tokens display their name; classic
+                  // assets and SAC-wrapped tokens display their code.
+                  displayCode={name && contract && !isSac ? name : code}
+                  codeTestId="ManageAssetCode"
+                  domainTestId="ManageAssetDomain"
+                  rightElement={
+                    <ManageAssetRowButton
+                      code={code}
+                      issuer={issuer}
+                      isTrustlineActive={!!isTrustlineActive}
+                      isRemovable={isRemovable}
+                      isLoading={false}
+                      isHidden={isHidden}
+                      isUnhiding={unhidingAsset === canonicalAsset}
+                      onUnhide={
+                        onUnhideAsset
+                          ? () => onUnhideAsset({ code, canonicalAsset })
+                          : undefined
+                      }
+                      onClick={async () => {
+                        setSelectedAsset({
+                          code,
+                          issuer,
+                          domain,
+                          name,
+                          image,
+                          isTrustlineActive,
+                          contract,
+                        });
+                      }}
+                    />
+                  }
+                />
+              );
+            }}
           />
         </div>
         {children}
@@ -192,6 +185,7 @@ export const ManageAssetRows = ({
           <SlideupModal
             setIsModalOpen={() => setSelectedAsset(undefined)}
             isModalOpen={selectedAsset !== undefined}
+            ariaLabel={t("Manage token")}
           >
             <>
               {selectedAsset && shouldChangeTrust && (
@@ -213,7 +207,15 @@ export const ManageAssetRows = ({
               )}
             </>
           </SlideupModal>,
-          document.getElementById("layout-view")!,
+          // Portaled into the app's View rather than the body so the sheet
+          // inherits the .View-scoped cascade that ChangeTrustInternal's
+          // View.Content relies on for its padding and scroll region.
+          // Geometry does not depend on this: .View is position:relative with
+          // z-index:auto, so it is neither a containing block for the sheet's
+          // position:fixed nor a stacking context. That invariant is load
+          // bearing -- if #layout-view ever gains transform, filter or
+          // contain:paint, the sheet starts positioning against it instead.
+          document.getElementById("layout-view") ?? document.body,
         )}
       </div>
     </>

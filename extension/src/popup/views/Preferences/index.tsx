@@ -1,5 +1,10 @@
-import React, { useEffect } from "react";
-import { Notification, Toggle } from "@stellar/design-system";
+import React, { useEffect, useSyncExternalStore } from "react";
+import {
+  Icon,
+  Notification,
+  RadioButton,
+  Toggle,
+} from "@stellar/design-system";
 import { Field, Form, Formik } from "formik";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -15,10 +20,17 @@ import { AutoSaveFields } from "popup/components/AutoSave";
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { Navigate, useLocation } from "react-router-dom";
 import { reRouteOnboarding } from "popup/helpers/route";
+import { THEME_PREFERENCES, ThemePreference } from "@shared/constants/theme";
+import {
+  getThemePreferenceInEffect,
+  subscribeToThemePreference,
+} from "popup/helpers/systemTheme";
+import { selectThemePreference } from "popup/helpers/themePreference";
+import { PRIVACY_POLICY_URL } from "popup/constants/externalLinks";
 
 import "./styles.scss";
 
@@ -28,6 +40,24 @@ export const Preferences = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { state, fetchData } = useGetAppData();
   const autoLockTimeoutMinutes = useSelector(autoLockTimeoutMinutesSelector);
+  const themePreference = useSyncExternalStore(
+    subscribeToThemePreference,
+    getThemePreferenceInEffect,
+  );
+
+  const themeLabels: Record<ThemePreference, string> = {
+    system: t("Auto(System)"),
+    light: t("Light"),
+    dark: t("Dark"),
+  };
+
+  const handleThemeChange = async (preference: ThemePreference) => {
+    try {
+      await selectThemePreference(preference);
+    } catch (e) {
+      console.error("Failed to save theme preference:", e);
+    }
+  };
 
   interface SettingValues {
     isValidatingMemoValue: boolean;
@@ -86,7 +116,7 @@ export const Preferences = () => {
   if (state.data?.type === AppDataType.REROUTE) {
     if (state.data.shouldOpenTab) {
       openTab(newTabHref(state.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate
@@ -126,16 +156,91 @@ export const Preferences = () => {
         enableReinitialize
       >
         <View.Content hasNoTopPadding>
-          <div className="Preferences">
-            <Form>
-              <AutoSaveFields />
-              <div className="Preferences--section">
-                <div className="Preferences--section--title">
-                  <span>{t("Verification with")} stellar.expert</span>
-                  <div
-                    className="Preferences--toggle"
-                    data-testid="isValidatingMemoValue"
-                  >
+          <Form>
+            <AutoSaveFields />
+            <div className="Preferences__section">
+              <div className="Preferences__section__label" id="theme-label">
+                {t("Display")}
+              </div>
+              <div className="Preferences__card">
+                <div
+                  className="Preferences__options"
+                  role="radiogroup"
+                  aria-labelledby="theme-label"
+                >
+                  {THEME_PREFERENCES.map((preference) => (
+                    <RadioButton
+                      key={preference}
+                      id={`themeOption-${preference}`}
+                      data-testid={`themeOption-${preference}`}
+                      name="themePreference"
+                      value={preference}
+                      label={themeLabels[preference]}
+                      fieldSize="lg"
+                      checked={themePreference === preference}
+                      onChange={() => handleThemeChange(preference)}
+                    />
+                  ))}
+                </div>
+
+                {typeof globalThis.chrome?.sidePanel?.open === "function" && (
+                  <>
+                    <div className="Preferences__divider" />
+
+                    <div className="Preferences__setting">
+                      <div className="Preferences__setting__text">
+                        <div className="Preferences__setting__title">
+                          {t("Open in sidebar by default")}
+                        </div>
+                        <div className="Preferences__setting__description">
+                          {t(
+                            "Open Varial in the sidebar when clicking the extension icon.",
+                          )}
+                        </div>
+                      </div>
+                      <Toggle
+                        fieldSize="sm"
+                        checked={initialValues.isOpenSidebarByDefaultValue}
+                        customInput={<Field />}
+                        id="isOpenSidebarByDefaultValue"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="Preferences__section">
+              <div className="Preferences__section__label">{t("Security")}</div>
+              <div className="Preferences__card">
+                <div className="Preferences__setting">
+                  <div className="Preferences__setting__text">
+                    <div className="Preferences__setting__title">
+                      {t("Hide small payments")}
+                    </div>
+                    <div className="Preferences__setting__description">
+                      {t("Hide payments below 0.1 XLM.")}
+                    </div>
+                  </div>
+                  <Toggle
+                    fieldSize="sm"
+                    checked={initialValues.isHideDustEnabledValue}
+                    customInput={<Field />}
+                    id="isHideDustEnabledValue"
+                  />
+                </div>
+
+                <div className="Preferences__divider" />
+
+                <div className="Preferences__setting">
+                  <div className="Preferences__setting__text">
+                    <div className="Preferences__setting__title">
+                      {t("Verify addresses")}
+                    </div>
+                    <div className="Preferences__setting__description">
+                      {t("Check memo requirements with stellar.expert.")}
+                    </div>
+                  </div>
+                  <div data-testid="isValidatingMemoValue">
                     <Toggle
                       fieldSize="sm"
                       checked={initialValues.isValidatingMemoValue}
@@ -144,69 +249,40 @@ export const Preferences = () => {
                     />
                   </div>
                 </div>
-                <span className="Preferences--section--subtitle">
-                  {t("Validate addresses that require a memo")}
-                </span>
-              </div>
 
-              <div className="Preferences--section">
-                <div className="Preferences--section--title">
-                  <span>{t("Usage data sharing")} </span>
-                  <div className="Preferences--toggle">
-                    <Toggle
-                      fieldSize="sm"
-                      checked={initialValues.isDataSharingAllowedValue}
-                      customInput={<Field />}
-                      id="isDataSharingAllowedValue"
-                    />
-                  </div>
-                </div>
-                <span className="Preferences--section--subtitle">
-                  {t(
-                    "Help us improve Freighter by sharing usage, device, and activity data, including your public keys, IP address, and a persistent ID that links your wallet across extension and mobile, with our analytics and crash-reporting providers. You can turn this off at any time. See our Privacy Policy for details.",
-                  )}
-                </span>
-              </div>
+                <div className="Preferences__divider" />
 
-              <div className="Preferences--section">
-                <div className="Preferences--section--title">
-                  <span>{t("Hide small payments")} </span>
-                  <div className="Preferences--toggle">
-                    <Toggle
-                      fieldSize="sm"
-                      checked={initialValues.isHideDustEnabledValue}
-                      customInput={<Field />}
-                      id="isHideDustEnabledValue"
-                    />
-                  </div>
-                </div>
-                <span className="Preferences--section--subtitle">
-                  {t("Hide payments smaller than 0.1 XLM")}
-                </span>
-              </div>
-
-              {typeof globalThis.chrome?.sidePanel?.open === "function" && (
-                <div className="Preferences--section">
-                  <div className="Preferences--section--title">
-                    <span>{t("Open sidebar mode by default")} </span>
-                    <div className="Preferences--toggle">
-                      <Toggle
-                        fieldSize="sm"
-                        checked={initialValues.isOpenSidebarByDefaultValue}
-                        customInput={<Field />}
-                        id="isOpenSidebarByDefaultValue"
-                      />
+                <div className="Preferences__setting">
+                  <div className="Preferences__setting__text">
+                    <div className="Preferences__setting__title">
+                      {t("Usage data sharing")}
                     </div>
+                    <div className="Preferences__setting__description">
+                      {t(
+                        "Help us improve Varial by sharing usage, device, and activity data, including your public keys, IP address, and a persistent ID that links your wallet across extension and mobile, with our analytics and crash-reporting providers. You can turn this off at any time. See our Privacy Policy for details.",
+                      )}
+                    </div>
+                    <a
+                      className="Preferences__setting__link"
+                      href={PRIVACY_POLICY_URL}
+                      target="_blank"
+                      rel="noreferrer"
+                      data-testid="privacyPolicyLink"
+                    >
+                      {t("Learn more about data sharing")}
+                      <Icon.LinkExternal01 />
+                    </a>
                   </div>
-                  <span className="Preferences--section--subtitle">
-                    {t(
-                      "Open Freighter in sidebar instead of popup when clicking the extension icon",
-                    )}
-                  </span>
+                  <Toggle
+                    fieldSize="sm"
+                    checked={initialValues.isDataSharingAllowedValue}
+                    customInput={<Field />}
+                    id="isDataSharingAllowedValue"
+                  />
                 </div>
-              )}
-            </Form>
-          </div>
+              </div>
+            </div>
+          </Form>
         </View.Content>
       </Formik>
     </React.Fragment>

@@ -2,6 +2,7 @@ import { useReducer } from "react";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { ApiTokenPrices } from "@shared/api/types";
+import { RequestState } from "constants/request";
 import { initialState, isError, reducer } from "helpers/request";
 import { isMainnet } from "helpers/stellar";
 import {
@@ -28,6 +29,11 @@ export type EarnAmountData = NeedsReRoute | ResolvedEarnAmount;
  * Deliberately does NOT refetch the earn catalog — the chosen asset, its rate
  * and the pool were captured when the token was picked and live in redux.
  * Refetching would let the rate shift under a user mid-entry.
+ *
+ * Loads again after a swap, and the screen may be the one showing then, with
+ * the review sheet open over it. So, as the picker's list does, a refresh
+ * keeps the loaded balances on screen until the new ones land, and keeps them
+ * if it fails. Only a first load shows the spinner or the error.
  */
 export function useGetEarnAmountData() {
   const [state, dispatch] = useReducer(
@@ -35,16 +41,25 @@ export function useGetEarnAmountData() {
     initialState,
   );
   const { fetchData: fetchAppData } = useGetAppData();
+  // Hidden tokens included: Earn's picker lists a token hidden on Home at its
+  // balance, as mobile's does, so the deposit screen needs that balance to
+  // deposit it.
   const { fetchData: fetchBalances } = useGetBalances({
-    showHidden: false,
+    showHidden: true,
     includeIcons: true,
   });
   const { fetchData: fetchTokenPrices } = useGetTokenPrices();
 
+  const hasData =
+    state.state === RequestState.SUCCESS &&
+    state.data?.type === AppDataType.RESOLVED;
+
   const fetchData = async (
     useCache = false,
   ): Promise<EarnAmountData | Error> => {
-    dispatch({ type: "FETCH_DATA_START" });
+    if (!hasData) {
+      dispatch({ type: "FETCH_DATA_START" });
+    }
     try {
       const appData = await fetchAppData(useCache);
       if (isError(appData)) {
@@ -76,18 +91,22 @@ export function useGetEarnAmountData() {
         useCache: true,
       });
 
-      const payload = {
+      const payload: ResolvedEarnAmount = {
         type: AppDataType.RESOLVED,
         publicKey,
         networkDetails,
         balances,
-        tokenPrices: fetchedTokenPrices.tokenPrices,
-      } as EarnAmountData;
+        // The price fetch reports failure with null; the screen reads prices
+        // unguarded, so normalize here as Swap's and Send's loaders do.
+        tokenPrices: fetchedTokenPrices.tokenPrices || {},
+      };
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
-      dispatch({ type: "FETCH_DATA_ERROR", payload: error });
+      if (!hasData) {
+        dispatch({ type: "FETCH_DATA_ERROR", payload: error });
+      }
       throw new Error(`Failed to fetch earn amount data - ${error}`);
     }
   };

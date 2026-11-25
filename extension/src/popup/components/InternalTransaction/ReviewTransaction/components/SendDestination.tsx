@@ -1,7 +1,10 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Asset } from "stellar-sdk";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import { isMainnet } from "helpers/stellar";
+import { formatAmount, trimTrailingZeros } from "popup/helpers/formatters";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 
@@ -31,12 +34,13 @@ export const SendDestination: React.FC<SendDestinationProps> = ({
   isSuspicious = false,
   isMalicious = true,
 }) => {
+  const { t } = useTranslation();
   if (dstAsset && dest) {
     return (
       <>
         <AssetIcon
           assetIcons={
-            dstAsset.canonical !== "native"
+            !isNativeAssetId(dstAsset.canonical)
               ? { [dstAsset.canonical]: dstAsset.icon }
               : {}
           }
@@ -48,7 +52,7 @@ export const SendDestination: React.FC<SendDestinationProps> = ({
         />
         <div className="ReviewTx__SendAssetDetails">
           <span>
-            {dstAsset.amount} {dest.code}
+            {formatAmount(trimTrailingZeros(dstAsset.amount))} {dest.code}
           </span>
           {isMainnet(networkDetails) && dstAsset.priceUsd && (
             <span className="ReviewTx__SendAssetDetails__price">
@@ -63,11 +67,13 @@ export const SendDestination: React.FC<SendDestinationProps> = ({
   return (
     <>
       <IdenticonImg publicKey={destination} />
-      <div
-        className="ReviewTx__SendDestinationDetails"
-        data-testid="review-tx-send-destination-address"
-      >
-        {truncatedDest}
+      <div className="ReviewTx__SendDestinationDetails">
+        <span className="ReviewTx__SendDestinationDetails__label">
+          {t("To")}
+        </span>
+        <span data-testid="review-tx-send-destination-address">
+          {truncatedDest}
+        </span>
       </div>
     </>
   );

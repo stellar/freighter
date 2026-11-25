@@ -4,6 +4,13 @@ import { Provider } from "react-redux";
 import { renderHook, act } from "@testing-library/react";
 import { useGetTokenPrices } from "../hooks/useGetTokenPrices";
 import { makeDummyStore } from "popup/__testHelpers__";
+import { reducer as remoteConfigReducer } from "popup/ducks/remoteConfig";
+
+// Flags settled, as in a running popup once `fetchFeatureFlags` has resolved.
+const SETTLED_REMOTE_CONFIG = {
+  ...remoteConfigReducer(undefined, { type: "@@init" }),
+  isInitialized: true,
+};
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import { RequestState } from "constants/request";
 import {
@@ -29,6 +36,7 @@ describe("useGetTokenPrices", () => {
         }),
       );
     const preloadedState = {
+      remoteConfig: SETTLED_REMOTE_CONFIG,
       cache: {
         tokenPrices: {},
       },
@@ -62,7 +70,6 @@ describe("useGetTokenPrices", () => {
     expect(getTokenPricesSpy).toHaveBeenCalledWith(
       ["native"],
       MAINNET_NETWORK_DETAILS,
-      true,
     );
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
     expect(result.current.state.data?.tokenPrices).toEqual({
@@ -72,6 +79,50 @@ describe("useGetTokenPrices", () => {
       },
     });
   });
+  it("fetches prices without waiting for the remote config flags", async () => {
+    // Only freighter-backend-v2 serves prices, so no flag picks the endpoint
+    // and the fetch must not wait for the flags to settle.
+    const getTokenPricesSpy = jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockResolvedValue({});
+    const store = makeDummyStore({
+      remoteConfig: {
+        ...remoteConfigReducer(undefined, { type: "@@init" }),
+        isInitialized: false,
+      },
+      cache: { tokenPrices: {} },
+    });
+    const Wrapper =
+      (store: ReturnType<typeof makeDummyStore>) =>
+      ({ children }: { children: React.ReactNode }) => (
+        <Provider store={store}>{children}</Provider>
+      );
+    const { result } = renderHook(() => useGetTokenPrices(), {
+      wrapper: Wrapper(store),
+    });
+
+    await act(async () => {
+      await result.current.fetchData({
+        publicKey: "G123",
+        balances: [
+          {
+            token: { type: "native", code: "XLM" },
+            total: new BigNumber("50"),
+            available: new BigNumber("50"),
+            blockaidData: defaultBlockaidScanAssetResult,
+          },
+        ],
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      } as any);
+    });
+
+    expect(getTokenPricesSpy).toHaveBeenCalledTimes(1);
+    expect(getTokenPricesSpy).toHaveBeenCalledWith(
+      ["native"],
+      MAINNET_NETWORK_DETAILS,
+    );
+  });
+
   it("should return token prices from API with expired cache", async () => {
     const getTokenPricesSpy = jest
       .spyOn(ApiInternal, "getTokenPrices")
@@ -84,6 +135,7 @@ describe("useGetTokenPrices", () => {
         }),
       );
     const preloadedState = {
+      remoteConfig: SETTLED_REMOTE_CONFIG,
       cache: {
         tokenPrices: {
           [MAINNET_NETWORK_DETAILS.networkPassphrase]: {
@@ -127,7 +179,6 @@ describe("useGetTokenPrices", () => {
     expect(getTokenPricesSpy).toHaveBeenCalledWith(
       ["native"],
       MAINNET_NETWORK_DETAILS,
-      true,
     );
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
     expect(result.current.state.data?.tokenPrices).toEqual({
@@ -149,6 +200,7 @@ describe("useGetTokenPrices", () => {
         }),
       );
     const preloadedState = {
+      remoteConfig: SETTLED_REMOTE_CONFIG,
       cache: {
         tokenPrices: {
           [MAINNET_NETWORK_DETAILS.networkPassphrase]: {
@@ -213,6 +265,7 @@ describe("useGetTokenPrices", () => {
         }),
       );
     const preloadedState = {
+      remoteConfig: SETTLED_REMOTE_CONFIG,
       cache: {
         tokenPrices: {
           [MAINNET_NETWORK_DETAILS.networkPassphrase]: {
@@ -257,7 +310,6 @@ describe("useGetTokenPrices", () => {
     expect(getTokenPricesSpy).toHaveBeenCalledWith(
       ["native"],
       TESTNET_NETWORK_DETAILS,
-      true,
     );
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
     expect(result.current.state.data?.tokenPrices).toEqual({
@@ -292,6 +344,7 @@ describe("useGetTokenPrices", () => {
         }),
       );
     const preloadedState = {
+      remoteConfig: SETTLED_REMOTE_CONFIG,
       cache: {
         tokenPrices: {
           [customPubnet.networkPassphrase]: {
@@ -333,11 +386,7 @@ describe("useGetTokenPrices", () => {
         useCache: true,
       } as any);
     });
-    expect(getTokenPricesSpy).toHaveBeenCalledWith(
-      ["native"],
-      customTestnet,
-      true,
-    );
+    expect(getTokenPricesSpy).toHaveBeenCalledWith(["native"], customTestnet);
     expect(result.current.state.data?.tokenPrices).toEqual({
       native: {
         currentPrice: "2",
@@ -357,6 +406,7 @@ describe("useGetTokenPrices", () => {
         }),
       );
     const preloadedState = {
+      remoteConfig: SETTLED_REMOTE_CONFIG,
       cache: {
         tokenPrices: {},
       },
@@ -395,6 +445,7 @@ describe("useGetTokenPrices", () => {
       );
     // Valid cache that only covers native — the extra destination id is missing.
     const preloadedState = {
+      remoteConfig: SETTLED_REMOTE_CONFIG,
       cache: {
         tokenPrices: {
           [MAINNET_NETWORK_DETAILS.networkPassphrase]: {
@@ -438,7 +489,6 @@ describe("useGetTokenPrices", () => {
     expect(getTokenPricesSpy).toHaveBeenCalledWith(
       ["USDC:GUSD"],
       MAINNET_NETWORK_DETAILS,
-      true,
     );
     expect(result.current.state.data?.tokenPrices).toEqual({
       native: { currentPrice: "1", percentagePriceChange24h: ".5" },
@@ -455,7 +505,10 @@ describe("useGetTokenPrices", () => {
         }),
       )
       .mockImplementationOnce(() => Promise.reject(new Error("boom")));
-    const preloadedState = { cache: { tokenPrices: {} } };
+    const preloadedState = {
+      remoteConfig: SETTLED_REMOTE_CONFIG,
+      cache: { tokenPrices: {} },
+    };
 
     const store = makeDummyStore(preloadedState);
     const Wrapper =
@@ -489,13 +542,11 @@ describe("useGetTokenPrices", () => {
       1,
       ["native"],
       MAINNET_NETWORK_DETAILS,
-      true,
     );
     expect(getTokenPricesSpy).toHaveBeenNthCalledWith(
       2,
       ["USDC:GUSD"],
       MAINNET_NETWORK_DETAILS,
-      true,
     );
     expect(result.current.state.data?.tokenPrices).toEqual({
       native: { currentPrice: "1", percentagePriceChange24h: ".5" },
@@ -510,6 +561,7 @@ describe("useGetTokenPrices", () => {
         }),
       );
     const preloadedState = {
+      remoteConfig: SETTLED_REMOTE_CONFIG,
       cache: {
         tokenPrices: {
           [MAINNET_NETWORK_DETAILS.networkPassphrase]: {
@@ -551,5 +603,126 @@ describe("useGetTokenPrices", () => {
       } as any);
     });
     expect(getTokenPricesSpy).not.toHaveBeenCalled();
+  });
+
+  describe("a cache that has never seen a balance", () => {
+    const USDC =
+      "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+    const xlmBalance = {
+      token: { type: "native", code: "XLM" },
+      total: new BigNumber("50"),
+      available: new BigNumber("50"),
+    };
+    const usdcBalance = {
+      token: {
+        code: "USDC",
+        issuer: {
+          key: "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+        },
+      },
+      total: new BigNumber("10"),
+      available: new BigNumber("10"),
+    };
+
+    const renderWithCache = (cachedAt: number) => {
+      const store = makeDummyStore({
+        remoteConfig: SETTLED_REMOTE_CONFIG,
+        cache: {
+          tokenPrices: {
+            [MAINNET_NETWORK_DETAILS.networkPassphrase]: {
+              G123: {
+                native: { currentPrice: "1", percentagePriceChange24h: ".5" },
+                updatedAt: cachedAt,
+              },
+            },
+          },
+        },
+      });
+      const { result } = renderHook(() => useGetTokenPrices(), {
+        wrapper: ({ children }: { children: React.ReactNode }) => (
+          <Provider store={store}>{children}</Provider>
+        ),
+      });
+      return { store, result };
+    };
+
+    const fetchWithCache = (
+      result: { current: ReturnType<typeof useGetTokenPrices> },
+      balances: unknown[],
+    ) =>
+      act(async () => {
+        await result.current.fetchData({
+          publicKey: "G123",
+          balances,
+          networkDetails: MAINNET_NETWORK_DETAILS,
+          useCache: true,
+        } as any);
+      });
+
+    it("prices just the unseen balance, as when a token is unhidden", async () => {
+      const getTokenPricesSpy = jest
+        .spyOn(ApiInternal, "getTokenPrices")
+        .mockResolvedValueOnce({
+          [USDC]: { currentPrice: "2", percentagePriceChange24h: "0" },
+        });
+      const cachedAt = Date.now() - 1000;
+      const { store, result } = renderWithCache(cachedAt);
+
+      await fetchWithCache(result, [xlmBalance, usdcBalance]);
+
+      expect(getTokenPricesSpy).toHaveBeenCalledTimes(1);
+      expect(getTokenPricesSpy).toHaveBeenCalledWith(
+        [USDC],
+        MAINNET_NETWORK_DETAILS,
+      );
+      expect(result.current.state.data?.tokenPrices).toEqual({
+        native: { currentPrice: "1", percentagePriceChange24h: ".5" },
+        [USDC]: { currentPrice: "2", percentagePriceChange24h: "0" },
+      });
+      // Merged into the cache without making the older prices read as fresh
+      const cached = (store.getState() as any).cache.tokenPrices[
+        MAINNET_NETWORK_DETAILS.networkPassphrase
+      ].G123;
+      expect(cached[USDC]).toEqual({
+        currentPrice: "2",
+        percentagePriceChange24h: "0",
+      });
+      expect(cached.updatedAt).toBe(cachedAt);
+    });
+
+    it("records an id the API leaves out, so it isn't asked for again", async () => {
+      const getTokenPricesSpy = jest
+        .spyOn(ApiInternal, "getTokenPrices")
+        .mockResolvedValue({});
+      const { result } = renderWithCache(Date.now() - 1000);
+
+      await fetchWithCache(result, [xlmBalance, usdcBalance]);
+      await fetchWithCache(result, [xlmBalance, usdcBalance]);
+
+      expect(getTokenPricesSpy).toHaveBeenCalledTimes(1);
+      expect(result.current.state.data?.tokenPrices?.[USDC]).toBeNull();
+    });
+
+    it("makes no request when the cache covers every balance", async () => {
+      const getTokenPricesSpy = jest.spyOn(ApiInternal, "getTokenPrices");
+      const { result } = renderWithCache(Date.now() - 1000);
+
+      await fetchWithCache(result, [xlmBalance]);
+
+      expect(getTokenPricesSpy).not.toHaveBeenCalled();
+    });
+
+    it("keeps the cached prices when pricing the unseen balance fails", async () => {
+      jest
+        .spyOn(ApiInternal, "getTokenPrices")
+        .mockRejectedValueOnce(new Error("offline"));
+      const { result } = renderWithCache(Date.now() - 1000);
+
+      await fetchWithCache(result, [xlmBalance, usdcBalance]);
+
+      expect(result.current.state.data?.tokenPrices).toEqual({
+        native: { currentPrice: "1", percentagePriceChange24h: ".5" },
+      });
+    });
   });
 });

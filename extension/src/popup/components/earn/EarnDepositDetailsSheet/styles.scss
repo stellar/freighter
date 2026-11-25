@@ -1,0 +1,29 @@
+@use "../../../styles/utils.scss" as *;
+
+// Figma: Varial 4478:115461 "Deposited USDC".
+// The header and the explorer button are SheetLayout's.
+.EarnDepositDetailsSheet {
+  // The deposited token at 40px with the design's 1px ring.
+  &__token .AccountAssets__asset--logo {
+    @include asset-logo-size(40);
+    margin: 0;
+
+    @include asset-logo-ring;
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12);
+  }
+
+  &__group {
+    background: var(--sds-clr-gray-03);
+    border-radius: pxToRem(16);
+    padding: pxToRem(12) pxToRem(16);
+  }
+
+  &__protocol {
+    color: var(--sds-clr-gray-11);
+  }
+}

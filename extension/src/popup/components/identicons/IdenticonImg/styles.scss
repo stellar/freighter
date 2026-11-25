@@ -1,6 +1,22 @@
 .IdenticonImg {
+  display: block;
+  flex-shrink: 0;
   height: 100%;
-  // prevents content breaking out of circle
-  padding: 1px;
   width: 100%;
+
+  &--placeholder {
+    // A <div> has no intrinsic size, unlike the <svg> avatar it stands in for.
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: var(--sds-clr-gray-03);
+    color: var(--sds-clr-gray-11);
+
+    svg {
+      width: 50%;
+      height: 50%;
+    }
+  }
 }

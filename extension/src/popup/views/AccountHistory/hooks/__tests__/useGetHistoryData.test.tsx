@@ -1,3 +1,13 @@
+import {
+  Account,
+  Asset,
+  Keypair,
+  MuxedAccount,
+  Networks,
+  Operation,
+  TransactionBuilder,
+} from "stellar-sdk";
+
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 import { HistoryItemOperation } from "popup/components/accountHistory/HistoryItem";
@@ -45,6 +55,11 @@ const buildPaymentOperation = ({
   }) as unknown as HistoryItemOperation;
 
 const CONTRACT_ID = "CAAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQC526";
+// W_ADDRESS is W_BASE_CONTRACT with mux id 0.
+const W_BASE_CONTRACT =
+  "CA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUWDA";
+const W_ADDRESS =
+  "WA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUAAAAAAAAAAAAAWWC";
 
 const callGetRowData = (
   operation: HistoryItemOperation,
@@ -218,5 +233,185 @@ describe("getRowDataByOpType - Soroban asset balance changes muxed classificatio
 
     expect(row.metadata.isReceiving).toBe(true);
     expect(row.amount).toMatch(/^\+/);
+  });
+
+  it("shows a transfer to a muxed contract (W) as sent to the W address", async () => {
+    jest
+      .spyOn(sorobanHelpers, "getAttrsFromSorobanHorizonOp")
+      .mockReturnValue(null as any);
+
+    // Horizon reports the base contract as `to` and the mux id separately.
+    const operation = buildInvokeHostFnOperation({
+      asset_balance_changes: [
+        {
+          asset_type: "native",
+          from: PUBLIC_KEY,
+          to: W_BASE_CONTRACT,
+          amount: "5",
+          destination_muxed_id: "0",
+        },
+      ],
+    });
+
+    const row = await callGetRowData(operation);
+
+    expect(row.metadata.isReceiving).toBe(false);
+    expect(row.amount).toMatch(/^-/);
+    expect(row.metadata.to).toBe(W_ADDRESS);
+  });
+
+  it("shows a transfer to a muxed account (M) as sent to the M address", async () => {
+    jest
+      .spyOn(sorobanHelpers, "getAttrsFromSorobanHorizonOp")
+      .mockReturnValue(null as any);
+
+    // Horizon reports the base account as `to` and the mux id separately,
+    // the same way it does for a muxed contract.
+    const operation = buildInvokeHostFnOperation({
+      asset_balance_changes: [
+        {
+          asset_type: "native",
+          from: PUBLIC_KEY,
+          to: COUNTERPARTY,
+          amount: "5",
+          destination_muxed_id: "1",
+        },
+      ],
+    });
+
+    const row = await callGetRowData(operation);
+
+    expect(row.metadata.to).toBe(
+      new MuxedAccount(new Account(COUNTERPARTY, "0"), "1").accountId(),
+    );
+  });
+
+  it("falls back to the base address when the mux id cannot be encoded", async () => {
+    jest
+      .spyOn(sorobanHelpers, "getAttrsFromSorobanHorizonOp")
+      .mockReturnValue(null as any);
+
+    const operation = buildInvokeHostFnOperation({
+      asset_balance_changes: [
+        {
+          asset_type: "native",
+          from: PUBLIC_KEY,
+          to: W_BASE_CONTRACT,
+          amount: "5",
+          destination_muxed_id: "not-a-number",
+        },
+      ],
+    });
+
+    const row = await callGetRowData(operation);
+
+    expect(row.metadata.to).toBe(W_BASE_CONTRACT);
+    expect(row.amount).toMatch(/^-/);
+  });
+});
+
+const NON_NATIVE_CONTRACT =
+  "CCV3NAKLIBBNSJNNTV2AZVRX6VODUDWK4TVYILE5MW6R45SSQJS5VCAM";
+
+describe("getRowDataByOpType - Soroban transfer identity", () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  // A contract's symbol() is self-reported, so it cannot establish which asset
+  // the contract is. Only the contract address can.
+  it("does not label a contract as the native asset because it reports that symbol", async () => {
+    jest.spyOn(sorobanHelpers, "getAttrsFromSorobanHorizonOp").mockReturnValue({
+      fnName: SorobanTokenInterface.transfer,
+      contractId: NON_NATIVE_CONTRACT,
+      amount: "10000000",
+      from: COUNTERPARTY,
+      to: PUBLIC_KEY,
+    } as any);
+    fetchTokenDetails.mockResolvedValue({ symbol: "native", decimals: 7 });
+
+    // asset_issuer as a contract id keeps icon resolution offline in tests
+    const operation = buildInvokeHostFnOperation({
+      asset_issuer: NON_NATIVE_CONTRACT,
+    });
+    const row = await callGetRowData(operation);
+
+    expect(row.amount).not.toContain("XLM");
+  });
+
+  it("labels the native contract as the native asset", async () => {
+    const nativeContractId = Asset.native().contractId(
+      TESTNET_NETWORK_DETAILS.networkPassphrase as Networks,
+    );
+
+    jest.spyOn(sorobanHelpers, "getAttrsFromSorobanHorizonOp").mockReturnValue({
+      fnName: SorobanTokenInterface.transfer,
+      contractId: nativeContractId,
+      amount: "10000000",
+      from: COUNTERPARTY,
+      to: PUBLIC_KEY,
+    } as any);
+    fetchTokenDetails.mockResolvedValue({ symbol: "native", decimals: 7 });
+
+    // asset_issuer as a contract id keeps icon resolution offline in tests
+    const operation = buildInvokeHostFnOperation({
+      asset_issuer: nativeContractId,
+    });
+    const row = await callGetRowData(operation);
+
+    expect(row.amount).toContain("XLM");
+  });
+});
+
+describe("getRowDataByOpType - createAccount in a multi-operation transaction", () => {
+  it("shows the destination of this operation, not of another operation in the tx", async () => {
+    const otherDestination = Keypair.random().publicKey();
+    const newAccount = Keypair.random().publicKey();
+    // One transaction: a payment to one account, then a createAccount for another.
+    const envelopeXdr = new TransactionBuilder(new Account(PUBLIC_KEY, "1"), {
+      fee: "100",
+      networkPassphrase: Networks.TESTNET,
+    })
+      .addOperation(
+        Operation.payment({
+          destination: otherDestination,
+          asset: Asset.native(),
+          amount: "1",
+        }),
+      )
+      .addOperation(
+        Operation.createAccount({
+          destination: newAccount,
+          startingBalance: "2",
+        }),
+      )
+      .setTimeout(0)
+      .build()
+      .toXDR();
+
+    const operation = {
+      id: "op-2",
+      type: "create_account",
+      type_i: 0,
+      created_at: "2024-01-01T00:00:00Z",
+      account: newAccount,
+      funder: PUBLIC_KEY,
+      starting_balance: "2",
+      transaction_attr: {
+        operation_count: 2,
+        fee_charged: "200",
+        memo: "",
+        envelope_xdr: envelopeXdr,
+      },
+      isPayment: false,
+      isSwap: false,
+      isDustPayment: false,
+      isCreateExternalAccount: true,
+    } as unknown as HistoryItemOperation;
+
+    const row = await callGetRowData(operation);
+
+    expect(row.action).toBe("Sent");
+    expect(row.metadata.to).toBe(newAccount);
   });
 });

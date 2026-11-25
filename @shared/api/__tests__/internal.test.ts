@@ -8,6 +8,9 @@ import * as GetLedgerKeyAccounts from "../helpers/getLedgerKeyAccounts";
 import * as internalApi from "../internal";
 import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
 import { SERVICE_TYPES } from "@shared/constants/services";
+import { makeHistory } from "./fixtures/tokenPriceHistory";
+
+// §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
 
 jest.mock("@shared/api/helpers/extensionMessaging");
 const mockedSend = sendMessageToBackground as jest.Mock;
@@ -17,6 +20,116 @@ describe("internalApi", () => {
     jest.clearAllMocks();
     jest.restoreAllMocks();
   });
+  describe("signing wrappers surface failure", () => {
+    // The background answers with `{ error }` rather than throwing. These
+    // wrappers used to discard both that answer and any transport exception,
+    // so a failed signing resolved like a success and telemetry recorded an
+    // approval that never happened.
+    const SIGNERS = [
+      [
+        "signTransaction",
+        () => internalApi.signTransaction({ activePublicKey: "G1", uuid: "u" }),
+      ],
+      [
+        "signBlob",
+        () => internalApi.signBlob({ activePublicKey: "G1", uuid: "u" }),
+      ],
+      [
+        "signAuthEntry",
+        () => internalApi.signAuthEntry({ activePublicKey: "G1", uuid: "u" }),
+      ],
+      [
+        "handleSignedHwPayload",
+        () =>
+          internalApi.handleSignedHwPayload({ signedPayload: "x", uuid: "u" }),
+      ],
+    ] as const;
+
+    it.each(SIGNERS)(
+      "%s rejects when the background reports an error",
+      async (_name, call) => {
+        mockedSend.mockResolvedValue({ error: "Transaction not found" });
+
+        await expect(call()).rejects.toThrow("Transaction not found");
+      },
+    );
+
+    it.each(SIGNERS)(
+      "%s rejects when the message transport throws",
+      async (_name, call) => {
+        mockedSend.mockRejectedValue(new Error("Receiving end does not exist"));
+
+        await expect(call()).rejects.toThrow("Receiving end does not exist");
+      },
+    );
+
+    it.each(SIGNERS)("%s resolves on success", async (_name, call) => {
+      mockedSend.mockResolvedValue({});
+
+      await expect(call()).resolves.toBeUndefined();
+    });
+  });
+
+  describe("resetWallet", () => {
+    // `{}` is the only answer that means "the wallet is erased". Every other
+    // outcome must resolve `{ error }` instead, and none may reject.
+    it("sends RESET_WALLET with no active public key and resolves {} when the background confirms", async () => {
+      mockedSend.mockResolvedValue({});
+
+      await expect(internalApi.resetWallet()).resolves.toEqual({});
+
+      expect(mockedSend).toHaveBeenCalledTimes(1);
+      expect(mockedSend).toHaveBeenCalledWith({
+        activePublicKey: null,
+        type: SERVICE_TYPES.RESET_WALLET,
+      });
+    });
+
+    it("passes the background's error through", async () => {
+      mockedSend.mockResolvedValue({ error: "Failed to reset wallet" });
+
+      await expect(internalApi.resetWallet()).resolves.toEqual({
+        error: "Failed to reset wallet",
+      });
+    });
+
+    // `browser.runtime.sendMessage` resolves `undefined` instead of rejecting
+    // when the port closes without a reply, e.g. the MV3 service worker was
+    // terminated mid-reset. The outcome is unknown, so it must not read as
+    // success.
+    it.each([[undefined], [null]])(
+      "resolves an error, not success, when the background sends no reply (%s)",
+      async (noReply) => {
+        mockedSend.mockResolvedValue(noReply);
+
+        await expect(internalApi.resetWallet()).resolves.toEqual({
+          error: "No response from background",
+        });
+      },
+    );
+
+    it("resolves the error's message instead of rejecting when the send throws", async () => {
+      const consoleError = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => undefined);
+      mockedSend.mockRejectedValue(new Error("Receiving end does not exist"));
+
+      await expect(internalApi.resetWallet()).resolves.toEqual({
+        error: "Receiving end does not exist",
+      });
+      expect(consoleError).toHaveBeenCalledTimes(1);
+    });
+
+    it("stringifies a non-Error rejection", async () => {
+      jest.spyOn(console, "error").mockImplementation(() => undefined);
+      mockedSend.mockRejectedValue("port closed");
+
+      await expect(internalApi.resetWallet()).resolves.toEqual({
+        error: "port closed",
+      });
+    });
+  });
+
   describe("getAssetDomains", () => {
     it("should return a list of domains from a list of issuers", async () => {
       jest
@@ -99,6 +212,43 @@ describe("internalApi", () => {
     });
   });
 
+  describe("simulateTransaction", () => {
+    const args = {
+      xdr: "AAAA",
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    };
+
+    it("returns the prepared transaction from a successful reply", async () => {
+      jest.spyOn(global, "fetch").mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ preparedTransaction: "prepared" }),
+      } as unknown as Response);
+
+      await expect(internalApi.simulateTransaction(args)).resolves.toEqual({
+        ok: true,
+        response: { preparedTransaction: "prepared" },
+      });
+    });
+
+    // The backend replies to a rejected simulation in plain text. Parsing it
+    // as JSON threw, and the reason never reached the caller.
+    it("returns a rejection's plain-text reply as text", async () => {
+      const reply = "Error: Error - simulation incorrect: {}\n    at stack";
+      const json = jest.fn().mockRejectedValue(new SyntaxError("not JSON"));
+      jest.spyOn(global, "fetch").mockResolvedValue({
+        ok: false,
+        json,
+        text: jest.fn().mockResolvedValue(reply),
+      } as unknown as Response);
+
+      await expect(internalApi.simulateTransaction(args)).resolves.toEqual({
+        ok: false,
+        response: reply,
+      });
+      expect(json).not.toHaveBeenCalled();
+    });
+  });
+
   describe("simulateTokenTransfer", () => {
     it("includes the fee in stroops in the indexer request body", async () => {
       const fetchSpy = jest.spyOn(global, "fetch").mockResolvedValue({
@@ -154,7 +304,9 @@ describe("internalApi", () => {
 
     const sentMessage = () => mockedSend.mock.calls[0][0];
 
-    it("excludes contract-ID issuers from the indexer request", async () => {
+    it("includes contract tokens (SYMBOL:CONTRACTID) in the v2 request", async () => {
+      // The Go backend prices SEP-41 tokens. Without this, a priced contract token would show a
+      // live chart under a `--` header price (§4.1).
       mockSendOk();
 
       await internalApi.getTokenPrices(
@@ -164,23 +316,23 @@ describe("internalApi", () => {
           "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
         ],
         MAINNET_NETWORK_DETAILS,
-        true,
       );
 
       const body = JSON.parse(sentMessage().body as string);
       expect(body.tokens).toEqual([
         "native",
         "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+        "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
       ]);
     });
 
-    it("excludes liquidity-pool IDs from the indexer request", async () => {
+    it("excludes liquidity-pool IDs from the v2 request", async () => {
+      // LP shares are never priceable.
       mockSendOk();
 
       await internalApi.getTokenPrices(
         ["native", "abc123:lp"],
         MAINNET_NETWORK_DETAILS,
-        true,
       );
 
       const body = JSON.parse(sentMessage().body as string);
@@ -190,11 +342,7 @@ describe("internalApi", () => {
     it("targets the v2 chokepoint with the network query param", async () => {
       mockSendOk();
 
-      await internalApi.getTokenPrices(
-        ["native"],
-        TESTNET_NETWORK_DETAILS,
-        true,
-      );
+      await internalApi.getTokenPrices(["native"], TESTNET_NETWORK_DETAILS);
 
       const message = sentMessage();
       expect(message.type).toBe(SERVICE_TYPES.FETCH_BACKEND_V2);
@@ -208,16 +356,12 @@ describe("internalApi", () => {
 
       // Custom network stored as STANDALONE but sharing the pubnet passphrase
       // must still resolve to PUBLIC and hit the endpoint.
-      await internalApi.getTokenPrices(
-        ["native"],
-        {
-          ...MAINNET_NETWORK_DETAILS,
-          network: "STANDALONE",
-          networkName: "Custom Pubnet",
-          networkPassphrase: Networks.PUBLIC,
-        },
-        true,
-      );
+      await internalApi.getTokenPrices(["native"], {
+        ...MAINNET_NETWORK_DETAILS,
+        network: "STANDALONE",
+        networkName: "Custom Pubnet",
+        networkPassphrase: Networks.PUBLIC,
+      });
 
       expect(mockedSend).toHaveBeenCalled();
       expect(sentMessage().path).toContain("network=PUBLIC");
@@ -229,7 +373,6 @@ describe("internalApi", () => {
       const prices = await internalApi.getTokenPrices(
         ["native"],
         FUTURENET_NETWORK_DETAILS,
-        true,
       );
 
       expect(mockedSend).not.toHaveBeenCalled();
@@ -237,15 +380,12 @@ describe("internalApi", () => {
     });
 
     it("skips the request when every token is filtered out", async () => {
+      // Only LP shares are filtered, so an all-LP input is the empty case.
       mockSendOk();
 
       const prices = await internalApi.getTokenPrices(
-        [
-          "abc123:lp",
-          "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
-        ],
+        ["abc123:lp", "def456:lp"],
         MAINNET_NETWORK_DETAILS,
-        true,
       );
 
       expect(mockedSend).not.toHaveBeenCalled();
@@ -261,7 +401,6 @@ describe("internalApi", () => {
       const result = await internalApi.getTokenPrices(
         ["native"],
         TESTNET_NETWORK_DETAILS,
-        true,
       );
 
       expect(result).toEqual(prices);
@@ -271,7 +410,7 @@ describe("internalApi", () => {
       mockedSend.mockResolvedValue({ status: 500, body: null });
 
       await expect(
-        internalApi.getTokenPrices(["native"], TESTNET_NETWORK_DETAILS, true),
+        internalApi.getTokenPrices(["native"], TESTNET_NETWORK_DETAILS),
       ).rejects.toThrow();
     });
 
@@ -281,78 +420,389 @@ describe("internalApi", () => {
       mockedSend.mockResolvedValue({ status: 200, body: {} });
 
       await expect(
-        internalApi.getTokenPrices(["native"], TESTNET_NETWORK_DETAILS, true),
+        internalApi.getTokenPrices(["native"], TESTNET_NETWORK_DETAILS),
       ).rejects.toThrow();
     });
   });
 
-  describe("getTokenPrices v1 endpoint (useV2 = false)", () => {
-    const mockFetchOk = () =>
-      jest.spyOn(global, "fetch").mockResolvedValue({
-        ok: true,
-        json: jest.fn().mockResolvedValue({ data: {} }),
-      } as unknown as Response);
-
-    it("targets the v1 endpoint without a network query param", async () => {
-      const fetchSpy = mockFetchOk();
-
-      await internalApi.getTokenPrices(
-        ["native"],
-        TESTNET_NETWORK_DETAILS,
-        false,
-      );
-
-      const requestUrl = fetchSpy.mock.calls[0][0] as string;
-      expect(requestUrl).toContain("/token-prices");
-      expect(requestUrl).not.toContain("network=");
+  describe("getTokenPriceHistory", () => {
+    // Frozen §6.1 wire contract — the backend may not exist yet, so these
+    // fixtures ARE the contract. Numbers are strings; no data is 200 with
+    // points: [] and change: null, never a 404.
+    const historyPayload = makeHistory({
+      points: [{ t: 1786636800, p: "0.158900" }],
     });
 
-    it("still filters LP IDs and contract-ID issuers from the request", async () => {
-      const fetchSpy = mockFetchOk();
+    it("requests the endpoint with token, network, and range in the path query", async () => {
+      mockedSend.mockResolvedValue({
+        status: 200,
+        body: { data: historyPayload },
+      });
 
-      await internalApi.getTokenPrices(
-        [
-          "native",
-          "abc123:lp",
-          "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
-        ],
-        MAINNET_NETWORK_DETAILS,
-        false,
-      );
+      await internalApi.getTokenPriceHistory({
+        token: "native",
+        range: "1D",
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      });
 
-      const requestInit = fetchSpy.mock.calls[0][1] as RequestInit;
-      const body = JSON.parse(requestInit.body as string);
-      expect(body.tokens).toEqual(["native"]);
+      // Query string must live inside `path`: the background chokepoint signs
+      // the JWT over pathname + search (#2879).
+      expect(mockedSend).toHaveBeenCalledWith({
+        type: SERVICE_TYPES.FETCH_BACKEND_V2,
+        activePublicKey: null,
+        method: "GET",
+        path: "/token-price-history?token=native&network=PUBLIC&range=1D",
+      });
     });
 
-    it("does NOT skip unsupported networks (unlike v2)", async () => {
-      const fetchSpy = mockFetchOk();
+    it("URL-encodes contract-token identifiers (SYMBOL:CONTRACTID)", async () => {
+      mockedSend.mockResolvedValue({
+        status: 200,
+        body: {
+          data: { ...historyPayload, token: "DT:CCXVDIGMR6WT", range: "1W" },
+        },
+      });
 
-      await internalApi.getTokenPrices(
-        ["native"],
-        FUTURENET_NETWORK_DETAILS,
-        false,
+      await internalApi.getTokenPriceHistory({
+        token: "DT:CCXVDIGMR6WT",
+        range: "1W",
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      });
+
+      expect(mockedSend.mock.calls[0][0].path).toBe(
+        "/token-price-history?token=DT%3ACCXVDIGMR6WT&network=PUBLIC&range=1W",
       );
-
-      expect(fetchSpy).toHaveBeenCalled();
     });
 
-    it("does NOT skip when every token is filtered out (unlike v2)", async () => {
-      const fetchSpy = mockFetchOk();
+    it("returns the payload from a 200 response", async () => {
+      mockedSend.mockResolvedValue({
+        status: 200,
+        body: { data: historyPayload },
+      });
 
-      await internalApi.getTokenPrices(
-        [
-          "abc123:lp",
-          "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
-        ],
-        MAINNET_NETWORK_DETAILS,
-        false,
+      const result = await internalApi.getTokenPriceHistory({
+        token: "native",
+        range: "1D",
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      });
+
+      expect(result).toEqual(historyPayload);
+    });
+
+    it("resolves (not throws) an empty series — no data is a valid outcome", async () => {
+      const emptyPayload = {
+        ...historyPayload,
+        range: "1H",
+        points: [],
+        change: null,
+        lowVolume: null,
+      };
+      mockedSend.mockResolvedValue({
+        status: 200,
+        body: { data: emptyPayload },
+      });
+
+      const result = await internalApi.getTokenPriceHistory({
+        token: "native",
+        range: "1H",
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      });
+
+      expect(result).toEqual(emptyPayload);
+    });
+
+    it("throws on a non-200 response", async () => {
+      mockedSend.mockResolvedValue({
+        status: 503,
+        body: { error: "upstream down" },
+      });
+
+      await expect(
+        internalApi.getTokenPriceHistory({
+          token: "native",
+          range: "1D",
+          networkDetails: MAINNET_NETWORK_DETAILS,
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("throws on a 200 with no data payload", async () => {
+      mockedSend.mockResolvedValue({ status: 200, body: {} });
+
+      await expect(
+        internalApi.getTokenPriceHistory({
+          token: "native",
+          range: "1D",
+          networkDetails: MAINNET_NETWORK_DETAILS,
+        }),
+      ).rejects.toThrow();
+    });
+
+    // A malformed series reaches `Intl.DateTimeFormat` when the accessible
+    // label is built and throws during render, where the app-level
+    // ErrorBoundary replaces the whole popup. Reject it at the boundary.
+    it.each([
+      ["a non-finite timestamp", { points: [{ t: NaN, p: "1.0" }] }],
+      ["a non-positive resolutionSeconds", { resolutionSeconds: 0 }],
+      // Every label downstream prints these with a "$".
+      ["another currency", { currency: "EUR" }],
+      ["a missing currency", { currency: undefined }],
+      // `null` means "verdict unavailable" and warns; missing would read as
+      // false and silence the notice.
+      ["a missing lowVolume", { lowVolume: undefined }],
+      // A stringly verdict would read as falsy and silence the banner.
+      ["a stringly lowVolume", { lowVolume: "false" }],
+      // Nullable, not optional: present on every payload, `null` only when
+      // the coverage guard rejected the window. A missing field produces an
+      // empty header indistinguishable from the legitimate null.
+      ["a missing change", { change: undefined }],
+      // The header prints one sign, from the percent, in front of both
+      // halves — so this would render a $1 loss as "+$1.00 (2.00%)".
+      [
+        "a change whose halves disagree on sign",
+        { change: { absolute: "-1", percent: "2" } },
+      ],
+    ])("throws on %s", async (_label, overrides) => {
+      mockedSend.mockResolvedValue({
+        status: 200,
+        body: { data: { ...historyPayload, ...overrides } },
+      });
+
+      await expect(
+        internalApi.getTokenPriceHistory({
+          token: "native",
+          range: "1D",
+          networkDetails: MAINNET_NETWORK_DETAILS,
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("accepts a zero half against a non-zero one — that is ordinary rounding", async () => {
+      const rounded = {
+        ...historyPayload,
+        change: { absolute: "0", percent: "-0.01" },
+      };
+      mockedSend.mockResolvedValue({ status: 200, body: { data: rounded } });
+
+      await expect(
+        internalApi.getTokenPriceHistory({
+          token: "native",
+          range: "1D",
+          networkDetails: MAINNET_NETWORK_DETAILS,
+        }),
+      ).resolves.toEqual(rounded);
+    });
+
+    it("throws on unsupported networks instead of sending a request", async () => {
+      await expect(
+        internalApi.getTokenPriceHistory({
+          token: "native",
+          range: "1D",
+          networkDetails: FUTURENET_NETWORK_DETAILS,
+        }),
+      ).rejects.toThrow();
+      expect(mockedSend).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("getTokenStats", () => {
+    it("requests the endpoint with token and network in the path query", async () => {
+      mockedSend.mockResolvedValue({
+        status: 200,
+        body: {
+          data: {
+            token: "native",
+            supplyOnStellar: "105443902087.3472865",
+            holders: 9926520,
+          },
+        },
+      });
+
+      const result = await internalApi.getTokenStats({
+        token: "native",
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      });
+
+      expect(mockedSend).toHaveBeenCalledWith({
+        type: SERVICE_TYPES.FETCH_BACKEND_V2,
+        activePublicKey: null,
+        method: "GET",
+        path: "/token-stats?token=native&network=PUBLIC",
+      });
+      expect(result).toEqual({
+        token: "native",
+        supplyOnStellar: "105443902087.3472865",
+        holders: 9926520,
+      });
+    });
+
+    it("passes through per-asset field omissions — absent fields stay absent", async () => {
+      mockedSend.mockResolvedValue({
+        status: 200,
+        body: { data: { token: "DT:CCXVDIGMR6WT" } },
+      });
+
+      const result = await internalApi.getTokenStats({
+        token: "DT:CCXVDIGMR6WT",
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      });
+
+      expect(result).toEqual({ token: "DT:CCXVDIGMR6WT" });
+      expect("supplyOnStellar" in result).toBe(false);
+      expect("holders" in result).toBe(false);
+    });
+
+    // `formatStatValue` rounds down, so 1.9 would render a plausible "1".
+    it("throws on a fractional holders count", async () => {
+      mockedSend.mockResolvedValue({
+        status: 200,
+        body: {
+          data: { token: "native", supplyOnStellar: "12", holders: 1.9 },
+        },
+      });
+
+      await expect(
+        internalApi.getTokenStats({
+          token: "native",
+          networkDetails: MAINNET_NETWORK_DETAILS,
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("throws on a non-200 response", async () => {
+      mockedSend.mockResolvedValue({ status: 500, body: null });
+
+      await expect(
+        internalApi.getTokenStats({
+          token: "native",
+          networkDetails: MAINNET_NETWORK_DETAILS,
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("throws on unsupported networks instead of sending a request", async () => {
+      await expect(
+        internalApi.getTokenStats({
+          token: "native",
+          networkDetails: FUTURENET_NETWORK_DETAILS,
+        }),
+      ).rejects.toThrow();
+      expect(mockedSend).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("getStellarExpertAssets", () => {
+    const page = { _embedded: { records: [{ asset: "USDC-GUSD" }] } };
+
+    it("lists assets through the FETCH_BACKEND_V2 message", async () => {
+      mockedSend.mockResolvedValue({ status: 200, body: { data: page } });
+
+      const result = await internalApi.getStellarExpertAssets({
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        query: { sort: "volume7d", order: "desc", limit: "50" },
+      });
+
+      expect(mockedSend).toHaveBeenCalledWith({
+        type: SERVICE_TYPES.FETCH_BACKEND_V2,
+        activePublicKey: null,
+        method: "GET",
+        path: "/assets/search?network=PUBLIC&sort=volume7d&order=desc&limit=50",
+      });
+      expect(result).toEqual(page);
+    });
+
+    it("asks for Testnet assets on Testnet", async () => {
+      mockedSend.mockResolvedValue({ status: 200, body: { data: page } });
+
+      await internalApi.getStellarExpertAssets({
+        networkDetails: TESTNET_NETWORK_DETAILS,
+        query: { limit: "50" },
+      });
+
+      expect(mockedSend.mock.calls[0][0].path).toBe(
+        "/assets/search?network=TESTNET&limit=50",
       );
+    });
 
-      expect(fetchSpy).toHaveBeenCalled();
-      const requestInit = fetchSpy.mock.calls[0][1] as RequestInit;
-      const body = JSON.parse(requestInit.body as string);
-      expect(body.tokens).toEqual([]);
+    // A raw "&" would start another parameter, which the backend refuses.
+    it("encodes the search term", async () => {
+      mockedSend.mockResolvedValue({ status: 200, body: { data: page } });
+
+      await internalApi.getStellarExpertAssets({
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        query: { search: "a&b c" },
+      });
+
+      expect(mockedSend.mock.calls[0][0].path).toBe(
+        "/assets/search?network=PUBLIC&search=a%26b+c",
+      );
+    });
+
+    it("returns no assets on networks StellarExpert doesn't serve, without a request", async () => {
+      const result = await internalApi.getStellarExpertAssets({
+        networkDetails: FUTURENET_NETWORK_DETAILS,
+        query: { search: "usdc" },
+      });
+
+      expect(result).toEqual({ _embedded: { records: [] } });
+      expect(mockedSend).not.toHaveBeenCalled();
+    });
+
+    it("throws on a non-200 response", async () => {
+      mockedSend.mockResolvedValue({
+        status: 503,
+        body: { error: "asset search temporarily unavailable" },
+      });
+
+      await expect(
+        internalApi.getStellarExpertAssets({
+          networkDetails: MAINNET_NETWORK_DETAILS,
+          query: { search: "usdc" },
+        }),
+      ).rejects.toThrow("503");
+    });
+
+    it("throws on a 200 whose body has no records", async () => {
+      mockedSend.mockResolvedValue({ status: 200, body: { data: {} } });
+
+      await expect(
+        internalApi.getStellarExpertAssets({
+          networkDetails: MAINNET_NETWORK_DETAILS,
+          query: { search: "usdc" },
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("sends nothing once the signal has aborted", async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      await expect(
+        internalApi.getStellarExpertAssets({
+          networkDetails: MAINNET_NETWORK_DETAILS,
+          query: { search: "usdc" },
+          signal: controller.signal,
+        }),
+      ).rejects.toMatchObject({ name: "AbortError" });
+      expect(mockedSend).not.toHaveBeenCalled();
+    });
+
+    // The background request can't be cancelled, so its late answer is
+    // refused instead.
+    it("rejects an answer that arrives after the abort", async () => {
+      const controller = new AbortController();
+      mockedSend.mockImplementation(async () => {
+        controller.abort();
+        return { status: 200, body: { data: page } };
+      });
+
+      await expect(
+        internalApi.getStellarExpertAssets({
+          networkDetails: MAINNET_NETWORK_DETAILS,
+          query: { search: "usdc" },
+          signal: controller.signal,
+        }),
+      ).rejects.toMatchObject({ name: "AbortError" });
     });
   });
 
@@ -390,6 +840,28 @@ describe("internalApi", () => {
         iconUrl: "i",
         isTrending: true,
       });
+    });
+  });
+
+  describe("getTokenDetails", () => {
+    afterEach(() => jest.restoreAllMocks());
+
+    it("treats a plain-text 400 as not a token, even when asked to throw", async () => {
+      jest.spyOn(global, "fetch").mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: () => Promise.reject(new SyntaxError("Unexpected token S")),
+      } as unknown as Response);
+
+      await expect(
+        internalApi.getTokenDetails({
+          contractId:
+            "CBI7UCH5KGSVQRO5H4SUCZUTZABCITZLRHQQZTWL2TK4RZ72TAR6IHRV",
+          publicKey: "G123",
+          networkDetails: MAINNET_NETWORK_DETAILS,
+          throwOnFailure: true,
+        }),
+      ).resolves.toBeNull();
     });
   });
 });

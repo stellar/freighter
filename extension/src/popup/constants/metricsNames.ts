@@ -1,3 +1,5 @@
+// §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
+
 export const METRIC_NAMES = {
   // Domain (action/outcome) event catalog, shared cross-platform.
   //
@@ -28,6 +30,10 @@ export const METRIC_NAMES = {
   paymentSimulationFailed: "payment.simulation_failed",
 
   // -- Swap (first-class; also the home of routed/path-payment outcomes) ---
+  // Every swap event carries `source`, where the swap was opened from:
+  // "home", "token_details" or "earn" (popup/metrics/swap.ts). The
+  // picker events say what opened the picker as `trigger`, and the selection
+  // events which list the token came from as `list`.
   swapPickerOpened: "swap.picker_opened",
   swapSourceSelected: "swap.source_selected",
   swapDestinationSelected: "swap.destination_selected",
@@ -50,9 +56,8 @@ export const METRIC_NAMES = {
   earnBalanceInsufficientShown: "earn.balance_insufficient_shown",
   // Which remedy was chosen on that sheet: buy | swap | transfer.
   earnFundingActionSelected: "earn.funding_action_selected",
-  // The swap-within-earn branch settled. Distinct from `swap.completed`, which
-  // the reused Swap components emit and cannot attribute to Earn.
-  earnSwapCompleted: "earn.swap_completed",
+  // The swap inside Earn reports the regular swap events, tagged
+  // `source: "earn"` (popup/metrics/swap.ts).
   // The pool details sheet was opened, and which entry point opened it.
   earnPoolDetailsOpened: "earn.pool_details_opened",
   // A tap that CHANGED the sheet's tab. Never emitted for the default tab, and
@@ -104,6 +109,40 @@ export const METRIC_NAMES = {
   discoverProtocolOpenedFromDetails: "discover.protocol_opened_from_details",
   discoverWelcomeModalViewed: "discover.welcome_modal_viewed",
 
+  // Rebrand announcement (existing users only)
+  rebrandAnnouncementViewed: "rebrand.announcement_viewed",
+  // carries source (continue)
+  rebrandAnnouncementDismissed: "rebrand.announcement_dismissed",
+
+  // Ethena launch promo (USDe and sUSDe), named like the mobile app's
+  // carries source (launch | banner)
+  ethenaLaunchPromoViewed: "ethena_launch.promo_viewed",
+  // carries token (USDe | sUSDe)
+  ethenaLaunchSwapTapped: "ethena_launch.swap_tapped",
+  // carries token (USDe | sUSDe); extension only, mobile has no Transfer
+  ethenaLaunchTransferTapped: "ethena_launch.transfer_tapped",
+  // carries token (USDe | sUSDe)
+  ethenaLaunchReceiveTapped: "ethena_launch.receive_tapped",
+  ethenaLaunchLearnMoreTapped: "ethena_launch.learn_more_tapped",
+  ethenaLaunchBannerDismissed: "ethena_launch.banner_dismissed",
+  // carries preferred_theme, previous_preferred_theme (system | light | dark)
+  themeChanged: "theme.changed",
+
+  // -- Token price chart ----------------------------------------------------
+  // Fired when the price-history fetch resolves (`has_data` known) — not a
+  // screen view; `screen.viewed` (asset_detail) covers that. Props are a
+  // frozen cross-platform fixture: snake_case, `range` verbatim, `low_volume`
+  // only when true.
+  tokenChartLoaded: "token_chart.loaded",
+  // Per range shown, unlike `loaded` (per network fetch, ~once per open thanks
+  // to warming). Answers "which chart did they look at / was it empty".
+  tokenChartViewed: "token_chart.viewed",
+  tokenChartRangeChanged: "token_chart.range_changed",
+  // Once per inspection (a mouse hover or a touch press) — on its first move
+  // beyond the threshold, never per move and never for a tap or a still
+  // hover (§7.5, Phase 3).
+  tokenChartBrushed: "token_chart.brushed",
+
   // -- Assets / trustlines -------------------------------------------------
   assetAdded: "asset.added",
   assetRemoved: "asset.removed",
@@ -139,9 +178,9 @@ export const METRIC_NAMES = {
   accountCreated: "account.created",
   accountImported: "account.imported",
   accountImportFailed: "account.import_failed",
-  // Extension-only: no mobile equivalent (mobile has no first-funded milestone
-  // detector). Documented cross-platform asymmetry.
-  accountFirstFunded: "account.first_funded",
+  // An own account went from a USD value of zero to above zero, on mainnet.
+  // Mobile emits the same event.
+  accountFunded: "account.funded",
   accountRenamed: "account.renamed",
   accountPublicKeyCopied: "account.public_key_copied",
   accountStellarExpertOpened: "account.stellar_expert_opened",
@@ -173,6 +212,11 @@ export const METRIC_NAMES = {
   // -- Signing -------------------------------------------------------------
   signingTransactionApproved: "signing.transaction_approved",
   signingTransactionRejected: "signing.transaction_rejected",
+  // Signing threw for a reason the user did not choose. Kept distinct from
+  // `rejected`, which is the user declining — in the popup or on a hardware
+  // device. Mirrors the message and auth-entry families, which have carried
+  // both halves of this split from the start.
+  signingTransactionFailed: "signing.transaction_failed",
   signingTransactionBlocked: "signing.transaction_blocked",
   signingAuthEntryApproved: "signing.auth_entry_approved",
   signingAuthEntryRejected: "signing.auth_entry_rejected",
@@ -182,6 +226,11 @@ export const METRIC_NAMES = {
   signingMessageFailed: "signing.message_failed",
 
   // -- History -------------------------------------------------------------
+  navTabSelected: "navigation.tab_selected",
+  // Retired by the bottom tab bar, which replaced the account header's history
+  // button. It is fully derivable from `navigation.tab_selected` where
+  // `tab === "history"`, so emitting it too would only double-count. Kept for a
+  // shared catalog; any dashboard filtering this name needs repointing.
   historyFullHistoryOpened: "history.full_history_opened",
   historyItemOpened: "history.item_opened",
 

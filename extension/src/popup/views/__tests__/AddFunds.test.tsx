@@ -143,4 +143,38 @@ describe("AddFunds view", () => {
       });
     });
   });
+  // Earn's Buy names the token the user was trying to deposit, as on mobile.
+  it("opens Coinbase on the token the caller names", async () => {
+    render(
+      <Wrapper
+        routes={[`${ROUTES.addFunds}?token=USDC`]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            hasPrivateKey: true,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <AddFunds />
+      </Wrapper>,
+    );
+
+    await waitFor(async () => {
+      expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
+        "Add funds",
+      );
+      const coinbaseButton = screen.getByTestId("add-coinbase-button");
+      await fireEvent.click(coinbaseButton);
+      expect(newTabSpy).toHaveBeenCalledWith({
+        url: `https://pay.coinbase.com/buy/select-asset?sessionToken=${token}&defaultExperience=buy&defaultAsset=USDC`,
+      });
+    });
+  });
 });

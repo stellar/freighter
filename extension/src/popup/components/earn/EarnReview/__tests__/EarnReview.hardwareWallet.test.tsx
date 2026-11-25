@@ -4,7 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { Keypair, TransactionBuilder, Account } from "stellar-sdk";
 
 import { WalletType } from "@shared/constants/hardwareWallet";
-import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import { TESTNET_NETWORK_DETAILS, NETWORKS } from "@shared/constants/stellar";
+import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
 import {
   BlendRequestType,
   buildBlendRequestScVal,
@@ -24,7 +25,7 @@ import { getTestStore, Wrapper } from "popup/__testHelpers__";
 const deviceKeypair = Keypair.fromRawEd25519Seed(Buffer.alloc(32, 7));
 const TEST_PUBLIC_KEY = deviceKeypair.publicKey();
 
-const POOL_ID = "CAJJZSGMMM3PD7N33TAPHGBUGTB43OC73HVIK2L2G6BNGGGYOSSYBXBD";
+const POOL_ID = BLEND_FIXED_POOL_IDS[NETWORKS.PUBLIC]!;
 const USDC_SAC = "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75";
 
 const { networkPassphrase } = TESTNET_NETWORK_DETAILS;
@@ -122,7 +123,6 @@ const renderReview = ({
         apy={0.05}
         currentPosition="0"
         currentPositionUsd="0"
-        fee="0.001"
         simulationState={{
           state: RequestState.SUCCESS,
           data: {
@@ -133,9 +133,11 @@ const renderReview = ({
           },
           error: null,
         }}
+        isBuildCurrent
         networkDetails={TESTNET_NETWORK_DETAILS}
         onCancel={onCancel}
         onConfirm={onConfirm}
+        onEditSettings={jest.fn()}
       />
     </Wrapper>,
   );
@@ -186,9 +188,9 @@ describe("EarnReview hardware wallet signing", () => {
     renderReview({
       preparedXdr,
       hardwareWalletType: WalletType.LEDGER,
-      hwStatus: ShowOverlayStatus.IN_PROGRESS,
       onConfirm,
     });
+    await userEvent.click(screen.getByTestId("earn-review-confirm"));
 
     await waitFor(() =>
       expect(screen.getByTestId("HardwareSign__connect-text")).toBeDefined(),
@@ -205,12 +207,32 @@ describe("EarnReview hardware wallet signing", () => {
     renderReview({
       preparedXdr: buildDepositXdr(),
       hardwareWalletType: WalletType.LEDGER,
-      hwStatus: ShowOverlayStatus.IN_PROGRESS,
       onConfirm: jest.fn(),
     });
+    await userEvent.click(screen.getByTestId("earn-review-confirm"));
 
     expect(await screen.findByTestId("HardwareSign__internal")).toBeDefined();
     expect(screen.queryByTestId("earn-review")).toBeNull();
+  });
+
+  it("ignores a device signature some other screen started", async () => {
+    // The review stays mounted behind the token picker, where the Earn swap's
+    // own review starts a device signature. Rendering the overlay for it would
+    // ask the device to sign twice, then advance the deposit with the swap's
+    // signed envelope.
+    const onConfirm = jest.fn();
+
+    renderReview({
+      preparedXdr: buildDepositXdr(),
+      hardwareWalletType: WalletType.LEDGER,
+      hwStatus: ShowOverlayStatus.IN_PROGRESS,
+      onConfirm,
+    });
+
+    expect(await screen.findByTestId("earn-review")).toBeDefined();
+    expect(screen.queryByTestId("HardwareSign__internal")).toBeNull();
+    expect(mockHardwareSign).not.toHaveBeenCalled();
+    expect(onConfirm).not.toHaveBeenCalled();
   });
 
   it("writes the signed envelope to redux, then advances the flow", async () => {
@@ -223,9 +245,9 @@ describe("EarnReview hardware wallet signing", () => {
     renderReview({
       preparedXdr,
       hardwareWalletType: WalletType.LEDGER,
-      hwStatus: ShowOverlayStatus.IN_PROGRESS,
       onConfirm,
     });
+    await userEvent.click(screen.getByTestId("earn-review-confirm"));
 
     await waitFor(() => expect(onConfirm).toHaveBeenCalledTimes(1));
 
@@ -241,7 +263,7 @@ describe("EarnReview hardware wallet signing", () => {
     expect(
       deviceKeypair.verify(
         signed.signatureBase(),
-        signed.signatures[0].signature(),
+        signed.signatures[0].signature,
       ),
     ).toBe(true);
   });

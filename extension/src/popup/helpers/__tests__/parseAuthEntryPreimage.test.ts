@@ -41,15 +41,18 @@ const BOUND_ADDRESS =
 
 describe("parseAuthEntryPreimage", () => {
   it("parses a Soroban authorization preimage", () => {
-    const preimage = xdr.HashIdPreimage.fromXDR(AUTH_ENTRY_TO_SIGN, "base64");
+    const preimage = xdr.HashIdPreimage.fromXdr(AUTH_ENTRY_TO_SIGN, "base64");
     const parsed = parseAuthEntryPreimage(preimage);
 
     // matches the values reachable through the raw accessor
-    const sorobanAuth = preimage.sorobanAuthorization();
-    expect(parsed.networkId().equals(sorobanAuth.networkId())).toBe(true);
-    expect(parsed.networkId().length).toBe(32);
-    expect(parsed.invocation().toXDR("base64")).toEqual(
-      sorobanAuth.invocation().toXDR("base64"),
+    const sorobanAuth = xdr.expectUnionVariant(
+      preimage,
+      "envelopeTypeSorobanAuthorization",
+    ).sorobanAuthorization;
+    expect(parsed.networkId.equals(sorobanAuth.networkId)).toBe(true);
+    expect(parsed.networkId.toBytes().length).toBe(32);
+    expect(parsed.invocation.toXdr("base64")).toEqual(
+      sorobanAuth.invocation.toXdr("base64"),
     );
 
     // classic (non address-bound) preimages carry no bound address
@@ -59,7 +62,7 @@ describe("parseAuthEntryPreimage", () => {
   });
 
   it("throws for a non-Soroban preimage variant (OP_ID)", () => {
-    const preimage = xdr.HashIdPreimage.fromXDR(
+    const preimage = xdr.HashIdPreimage.fromXdr(
       NON_SOROBAN_AUTH_ENTRY,
       "base64",
     );
@@ -92,39 +95,34 @@ describe("parseAuthEntryPreimage", () => {
   });
 
   it("parses a CAP-71 address-bound (V2) preimage", () => {
-    const preimage = xdr.HashIdPreimage.fromXDR(
+    const preimage = xdr.HashIdPreimage.fromXdr(
       V2_AUTH_ENTRY_PREIMAGE,
       "base64",
     );
     const parsed = parseAuthEntryPreimage(preimage);
 
     expect(
-      parsed.networkId().equals(hash(Buffer.from(TESTNET_PASSPHRASE))),
+      parsed.networkId.equals(
+        new xdr.Hash(hash(Buffer.from(TESTNET_PASSPHRASE))),
+      ),
     ).toBe(true);
-    expect(parsed.invocation()).toBeDefined();
+    expect(parsed.invocation).toBeDefined();
 
     expect(
       parsed instanceof xdr.HashIdPreimageSorobanAuthorizationWithAddress,
     ).toBe(true);
     const withAddress =
       parsed as xdr.HashIdPreimageSorobanAuthorizationWithAddress;
-    expect(Address.fromScAddress(withAddress.address()).toString()).toBe(
+    expect(Address.fromScAddress(withAddress.address).toString()).toBe(
       BOUND_ADDRESS,
     );
   });
 });
 
 describe("getAuthEntryBoundAddress", () => {
-  const legacyAddressEntry = () =>
+  const entryWithCredentials = (credentials: xdr.SorobanCredentials) =>
     new xdr.SorobanAuthorizationEntry({
-      credentials: xdr.SorobanCredentials.sorobanCredentialsAddress(
-        new xdr.SorobanAddressCredentials({
-          address: new Address(BOUND_ADDRESS).toScAddress(),
-          nonce: new xdr.Int64(42),
-          signatureExpirationLedger: 1000000,
-          signature: xdr.ScVal.scvVoid(),
-        }),
-      ),
+      credentials,
       rootInvocation: new xdr.SorobanAuthorizedInvocation({
         function:
           xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeContractFn(
@@ -140,18 +138,33 @@ describe("getAuthEntryBoundAddress", () => {
       }),
     });
 
+  const legacyAddressEntry = () =>
+    entryWithCredentials(
+      xdr.SorobanCredentials.sorobanCredentialsAddress(
+        new xdr.SorobanAddressCredentials({
+          address: new Address(BOUND_ADDRESS).toScAddress(),
+          nonce: BigInt(42),
+          signatureExpirationLedger: 1000000,
+          signature: xdr.ScVal.scvVoid(),
+        }),
+      ),
+    );
+
   it("returns the address for legacy ADDRESS credentials", () => {
     expect(getAuthEntryBoundAddress(legacyAddressEntry())).toBe(BOUND_ADDRESS);
   });
 
   it("returns undefined for source-account credentials", () => {
-    const entry = legacyAddressEntry();
-    entry.credentials(xdr.SorobanCredentials.sorobanCredentialsSourceAccount());
+    // v17: XDR values are immutable, so build a fresh entry rather than
+    // reassigning `credentials` on an existing one.
+    const entry = entryWithCredentials(
+      xdr.SorobanCredentials.sorobanCredentialsSourceAccount(),
+    );
     expect(getAuthEntryBoundAddress(entry)).toBeUndefined();
   });
 
   it("returns the address for CAP-71 ADDRESS_V2 credentials", () => {
-    const entry = xdr.SorobanAuthorizationEntry.fromXDR(
+    const entry = xdr.SorobanAuthorizationEntry.fromXdr(
       V2_CREDENTIAL_AUTH_ENTRY,
       "base64",
     );
@@ -159,7 +172,7 @@ describe("getAuthEntryBoundAddress", () => {
   });
 
   it("returns the top-level address for CAP-71 ADDRESS_WITH_DELEGATES credentials", () => {
-    const entry = xdr.SorobanAuthorizationEntry.fromXDR(
+    const entry = xdr.SorobanAuthorizationEntry.fromXdr(
       WITH_DELEGATES_AUTH_ENTRY,
       "base64",
     );

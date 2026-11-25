@@ -1,6 +1,7 @@
 import React from "react";
 
 import { AssetIcon } from "popup/components/account/AccountAssets";
+import { isNativeAssetPair } from "@shared/helpers/assetIdentity";
 import { formatDomain, getCanonicalFromAsset } from "helpers/stellar";
 import { truncateString } from "helpers/stellar";
 
@@ -50,8 +51,7 @@ export const AssetListRow = ({
   codeTestId,
   domainTestId,
 }: AssetListRowProps) => {
-  const canonical =
-    code === "XLM" && !issuer ? "native" : getCanonicalFromAsset(code, issuer);
+  const canonical = getCanonicalFromAsset(code, issuer);
   const label = displayCode ?? code;
   const displayLabel = label.length > 20 ? truncateString(label) : label;
 
@@ -64,7 +64,11 @@ export const AssetListRow = ({
         role={onClick ? "button" : undefined}
       >
         <AssetIcon
-          assetIcons={code !== "XLM" ? { [canonical]: iconUrl || "" } : {}}
+          assetIcons={
+            !isNativeAssetPair(code, issuer)
+              ? { [canonical]: iconUrl || "" }
+              : {}
+          }
           code={code}
           issuerKey={issuer}
           icon={iconUrl || undefined}

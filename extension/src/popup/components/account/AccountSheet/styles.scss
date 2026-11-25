@@ -1,0 +1,161 @@
+@use "../../../styles/utils.scss" as *;
+
+.AccountSheet {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(16px);
+  // Padding, the height cap and the pinned header/footer come from SheetLayout.
+
+  &__identity {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: pxToRem(16px);
+    text-align: center;
+    flex-shrink: 0;
+
+    // Figma's Avatar (2709:129284): a 56px marble filling its circle. The
+    // padding and gray backdrop this used to carry framed the old blocky
+    // identicon glyph, and only shrank the marble inside a gray ring.
+    &__identicon {
+      width: pxToRem(56px);
+      height: pxToRem(56px);
+      flex-shrink: 0;
+      border-radius: 50%;
+      overflow: hidden;
+    }
+
+    // Name sits directly above the address with no gap between them; the
+    // parent's 16px gap separates this pair from the identicon and actions.
+    &__text {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    &__name {
+      font-size: pxToRem(16px);
+      line-height: pxToRem(24px);
+      font-weight: var(--sds-fw-semi-bold);
+      color: var(--sds-clr-gray-12);
+    }
+
+    &__address {
+      font-size: pxToRem(12px);
+      line-height: pxToRem(18px);
+      font-weight: var(--sds-fw-medium);
+      color: var(--sds-clr-gray-11);
+    }
+
+    &__actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: pxToRem(16px);
+    }
+
+    &__action {
+      width: pxToRem(48px);
+      height: pxToRem(48px);
+      padding: pxToRem(8px);
+      border: none;
+      border-radius: 100px;
+      background-color: var(--sds-clr-gray-03);
+      color: var(--sds-clr-gray-09);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+
+      svg {
+        width: pxToRem(20px);
+        height: pxToRem(20px);
+      }
+
+      &:hover {
+        background-color: var(--sds-clr-gray-04);
+      }
+    }
+  }
+
+  &__divider {
+    height: 1px;
+    flex-shrink: 0;
+    background-color: var(--sds-clr-gray-06);
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(16px);
+  }
+
+  &__loader {
+    display: flex;
+    justify-content: center;
+    padding: pxToRem(12px) 0;
+    color: var(--sds-clr-gray-11);
+  }
+
+  // Per the spec this reads as a purple icon chip sitting beside a plain purple
+  // label — the tinted background belongs to the chip alone, not to the whole
+  // control, so the button itself is transparent.
+  &__add-wallet {
+    flex-shrink: 0;
+
+    // SDS `Button` overwrites (rather than merges) any `className` passed to
+    // it, so a class placed directly on it can never combine with its own
+    // `Button`/`Button--*` classes. Scope the override through this wrapper
+    // instead, at higher specificity than `.Button--tertiary` itself.
+    // Height and padding come from SDS's `xl` size; the frame sets the label in
+    // Text/SM/500, so colors, gap, size and weight are overridden.
+    .Button {
+      --Button-gap: #{pxToRem(16px)};
+      --Button-color-text-default: var(--sds-clr-lilac-11);
+      --Button-color-icon-default: var(--sds-clr-lilac-09);
+      --Button-color-background-default: transparent;
+      --Button-color-border-default: transparent;
+      --Button-color-text-hover: var(--sds-clr-lilac-11);
+      --Button-color-icon-hover: var(--sds-clr-lilac-09);
+      --Button-color-background-hover: transparent;
+      --Button-color-border-hover: transparent;
+
+      // SDS exposes no font-weight custom property, so set it directly.
+      font-weight: var(--sds-fw-medium);
+      font-size: pxToRem(14px);
+      line-height: pxToRem(20px);
+
+      // SDS drives both sides from one horizontal custom property, so zero the
+      // left alone here to line the icon chip up with the list's avatars.
+      padding-left: 0;
+    }
+
+    // The chip. Sized to the list rows' 40px avatars so the two circles read as
+    // one column — with the 16px gap above, that also lines the "Add wallet"
+    // label up with each row's name. The plus glyph uses `stroke="currentColor"`,
+    // inheriting whatever `color` it finds — which would otherwise be the
+    // button's own (lighter) text color above. Setting `color` here keeps it the
+    // spec's more saturated fill purple.
+    .Button__icon {
+      width: pxToRem(40px);
+      height: pxToRem(40px);
+      flex-shrink: 0;
+      border-radius: 100px;
+      background-color: var(--sds-clr-lilac-02);
+      color: var(--sds-clr-lilac-09);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      svg {
+        width: pxToRem(16px);
+        height: pxToRem(16px);
+        @include icon-stroke(16);
+      }
+    }
+
+    .Button:hover .Button__icon {
+      background-color: var(--sds-clr-lilac-03);
+    }
+  }
+}

@@ -1,11 +1,26 @@
 import React from "react";
-import { Button, Heading, Icon, Text } from "@stellar/design-system";
+import { Button, Icon, IconButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import BlendLogo from "popup/assets/blend-logo.svg";
-import EarnGlow from "popup/assets/earn-glow.svg";
+import { EarnGlow } from "popup/components/earn/EarnGlow";
 
 import "./styles.scss";
+
+// A four-point star, coloured by its host through `currentColor`.
+const Sparkle = ({ className }: { className: string }) => (
+  <svg
+    className={className}
+    viewBox="0 0 9.70129 9.70129"
+    fill="none"
+    aria-hidden="true"
+  >
+    <path
+      d="M4.45906 0.228646C4.57153 -0.0762157 5.12976 -0.0762154 5.24223 0.228647C6.00229 2.28886 7.41242 3.699 9.47264 4.45906C9.7775 4.57153 9.7775 5.12976 9.47264 5.24223C7.41242 6.00229 6.00229 7.41242 5.24223 9.47264C5.12976 9.7775 4.57153 9.7775 4.45906 9.47264C3.699 7.41242 2.28886 6.00229 0.228646 5.24223C-0.0762157 5.12976 -0.0762154 4.57153 0.228647 4.45906C2.28886 3.699 3.699 2.28886 4.45906 0.228646Z"
+      fill="currentColor"
+    />
+  </svg>
+);
 
 interface EarnIntroProps {
   onStart: () => void;
@@ -18,11 +33,8 @@ interface EarnIntroProps {
  * A full view rather than a modal: it fills the popup, top to bottom, with the
  * close affordance in the header and the primary action pinned to the footer.
  *
- * Ported from Figma `Freighter-Mobile` node 13701:332277 ("Blend intro (first
- * time user)"). The mock is a 402x874 phone frame; the popup is 360x600, so
- * every horizontal measure carries over unchanged (both use 24px gutters) while
- * the header-to-content gap is the one measure tightened to fit the shorter
- * viewport.
+ * Figma: Varial 4464:110421 ("Blend intro (first time user only)"), drawn at
+ * the popup's own 360x600.
  */
 export const EarnIntro = ({ onStart, onClose }: EarnIntroProps) => {
   const { t } = useTranslation();
@@ -31,44 +43,48 @@ export const EarnIntro = ({ onStart, onClose }: EarnIntroProps) => {
     {
       key: "yield",
       title: t("Earn variable yield"),
-      body: t("Supply supported assets and earn based on current APY."),
+      body: t("Supply supported tokens and earn based on current APY."),
     },
     {
       key: "control",
       title: t("Stay in control"),
-      body: t("Manage and withdraw your supplied assets from your wallet."),
+      body: t("Manage and withdraw your supplied tokens from your wallet."),
     },
   ];
 
   return (
     <div className="EarnIntro" data-testid="earn-intro">
       {/* Sits outside __content, which scrolls and would clip it. */}
-      <img className="EarnIntro__glow" src={EarnGlow} alt="" />
+      <EarnGlow className="EarnIntro__glow" />
 
       <div className="EarnIntro__header">
-        <button
+        <IconButton
           type="button"
-          className="EarnIntro__close"
-          onClick={onClose}
+          icon={<Icon.X />}
+          altText={t("Close")}
           aria-label={t("Close")}
+          // The design's 24px X in Text/Primary.
+          customSize="1.5rem"
+          customColor="var(--sds-clr-gray-12)"
+          onClick={onClose}
           data-testid="earn-intro-close"
-        >
-          <Icon.XClose />
-        </button>
+        />
       </div>
 
       <div className="EarnIntro__content">
         <div className="EarnIntro__intro">
-          <img className="EarnIntro__logo" src={BlendLogo} alt="" />
+          <div className="EarnIntro__mark">
+            <img className="EarnIntro__logo" src={BlendLogo} alt="" />
+            {/* Decorative sparkles around the mark, placed as in the design. */}
+            <Sparkle className="EarnIntro__sparkle EarnIntro__sparkle--top" />
+            <Sparkle className="EarnIntro__sparkle EarnIntro__sparkle--right" />
+            <Sparkle className="EarnIntro__sparkle EarnIntro__sparkle--left" />
+          </div>
 
           <div className="EarnIntro__copy">
-            <Heading as="h1" size="sm" weight="medium">
-              {t("Earn with Blend")}
-            </Heading>
+            <h1 className="EarnIntro__title">{t("Put your tokens to work")}</h1>
             <div className="EarnIntro__subtitle">
-              <Text as="p" size="sm" weight="regular">
-                {t("Supply assets to Blend and earn variable yield.")}
-              </Text>
+              {t("Supply tokens to Blend and earn variable yield.")}
             </div>
           </div>
         </div>
@@ -80,14 +96,8 @@ export const EarnIntro = ({ onStart, onClose }: EarnIntroProps) => {
                 <Icon.Asterisk01 />
               </div>
               <div className="EarnIntro__feature__copy">
-                <Text as="div" size="md" weight="medium">
-                  {title}
-                </Text>
-                <div className="EarnIntro__feature__body">
-                  <Text as="p" size="sm" weight="regular">
-                    {body}
-                  </Text>
-                </div>
+                <div className="EarnIntro__feature__title">{title}</div>
+                <div className="EarnIntro__feature__body">{body}</div>
               </div>
             </li>
           ))}
@@ -96,7 +106,7 @@ export const EarnIntro = ({ onStart, onClose }: EarnIntroProps) => {
 
       <div className="EarnIntro__footer">
         <Button
-          size="xl"
+          size="lg"
           variant="secondary"
           isFullWidth
           isRounded

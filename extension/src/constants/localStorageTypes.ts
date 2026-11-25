@@ -24,10 +24,15 @@ export const IS_HASH_SIGNING_ENABLED_ID = "isHashSigningEnabled";
 export const IS_NON_SSL_ENABLED_ID = "isNonSSLEnabled";
 export const IS_BLOCKAID_ANNOUNCED_ID = "isBlockaidAnnounced";
 export const IS_HIDE_DUST_ENABLED_ID = "isHideDustEnabled";
+// Legacy wallet-wide list, only read to migrate to HIDDEN_ASSET_LIST
 export const HIDDEN_ASSETS = "hiddenAssets";
+export const HIDDEN_ASSET_LIST = "hiddenAssetList";
+// Legacy wallet-wide map, only read to migrate to HIDDEN_COLLECTIBLE_LIST
 export const HIDDEN_COLLECTIBLES = "hiddenCollectibles";
+export const HIDDEN_COLLECTIBLE_LIST = "hiddenCollectibleList";
 export const TEMPORARY_STORE_ID = "temporaryStore";
 export const TEMPORARY_STORE_EXTRA_ID = "temporaryStoreExtra";
+export const ETHENA_LAUNCH_BANNER_DISMISSED = "ethenaLaunchBannerDismissed";
 export const OVERRIDDEN_BLOCKAID_RESPONSE_ID = "overriddenBlockaidResponse";
 export const COLLECTIBLES_ID = "collectibles";
 export const IS_OPEN_SIDEBAR_BY_DEFAULT_ID = "isOpenSidebarByDefault";
@@ -35,4 +40,13 @@ export const METRICS_USER_ID = "metrics_user_id";
 export const RECENT_PROTOCOLS = "recentProtocols";
 export const HAS_SEEN_DISCOVER_WELCOME = "hasSeenDiscoverWelcome";
 export const HAS_SEEN_EARN_INTRO = "hasSeenEarnIntro";
+export const REBRAND_ANNOUNCEMENT_STATUS_ID = "rebrandAnnouncementStatus";
+export const ETHENA_LAUNCH_PROMO_STATUS_ID = "ethenaLaunchPromoStatus";
 export const AUTO_LOCK_TIMEOUT_MINUTES_ID = "autoLockTimeoutMinutes";
+export const THEME_PREFERENCE_ID = "themePreference";
+// Funding records of the account.funded event and funded_account_count
+export const ACCOUNT_FUNDING_RECORDS_ID = "accountFundingRecords";
+// Time (ms) of the last successful app-open refresh of funded_account_count
+export const FUNDED_ACCOUNTS_REFRESHED_AT_ID = "fundedAccountsRefreshedAt";
+// Time (ms) until which a running app-open refresh holds the lease
+export const FUNDED_ACCOUNTS_REFRESH_LEASE_ID = "fundedAccountsRefreshLease";

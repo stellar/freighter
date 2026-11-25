@@ -10,7 +10,6 @@ import "./styles.scss";
 interface IdenticonWrapperElProps {
   customSize?: {
     dimension: string;
-    padding: string;
   };
   isSmall?: boolean;
 }
@@ -34,8 +33,6 @@ export const KeyIdenticon = ({
   const customStyle = {
     ...(isSmall
       ? {
-          "--Icon-padding": "0.2rem",
-
           "--Icon-dimension": "1.5rem",
           marginRight: iconSide === "left" ? "0.5rem" : 0,
           marginLeft: iconSide === "right" ? "0.5rem" : 0,
@@ -45,8 +42,6 @@ export const KeyIdenticon = ({
         }),
     ...(customSize
       ? {
-          "--Icon-padding": customSize.padding,
-
           "--Icon-dimension": customSize.dimension,
           marginRight: iconSide === "left" ? "0.5rem" : 0,
           marginLeft: iconSide === "right" ? "0.5rem" : 0,

@@ -2,9 +2,11 @@ import {
   createAsyncThunk,
   createSelector,
   createSlice,
+  Store,
 } from "@reduxjs/toolkit";
 import type { Variant } from "@amplitude/experiment-js-client";
 
+import { DEV_EXTENSION } from "@shared/constants/services";
 import { getExperimentClient } from "helpers/experimentClient";
 import { BUNDLE_ID_USER_PROPERTY_KEY, getBundleId } from "helpers/analytics";
 import {
@@ -27,9 +29,9 @@ const ON_VARIANT_VALUES = ["on", "true", "enabled", "yes"];
  * Add flag names here as new boolean flags are introduced.
  */
 const BOOLEAN_FLAGS = [
-  "use_token_prices_v2",
   "use_balances_v2",
   "earn_deposit",
+  "use_token_price_history",
 ] as const;
 
 /**
@@ -86,14 +88,16 @@ interface RemoteConfigState extends FeatureFlags {
 
 const initialState: RemoteConfigState = {
   isInitialized: false,
-  // Defaults to v2; Amplitude can flip it off to roll back to the v1
-  // token-prices endpoint without a release.
-  use_token_prices_v2: true,
-  // Defaults to v2; Amplitude can flip it off to roll back to the v1
-  // account-balances endpoint without a release.
-  use_balances_v2: true,
-  // Defaults to off; Amplitude turns it on to expose the Earn entry point.
-  earn_deposit: false,
+  // Defaults to v1 while the balances-v2 work is still in progress; Amplitude
+  // can flip it on to opt into the v2 account-balances endpoint without a
+  // release.
+  use_balances_v2: false,
+  // Earn's entry point on Home. OFF in production until Amplitude turns it on;
+  // ON in dev builds, which usually run without Amplitude's keys.
+  earn_deposit: DEV_EXTENSION,
+  // Token price-history chart on AssetDetail. Ships ON — a kill switch, not
+  // launch choreography (§11 of the token-price-graphs design).
+  use_token_price_history: true,
   maintenance_banner: { enabled: false, payload: undefined },
   maintenance_screen: { enabled: false, payload: undefined },
 };
@@ -190,6 +194,16 @@ const remoteConfigSelector = (state: { remoteConfig: RemoteConfigState }) =>
   state.remoteConfig;
 
 /**
+ * A default-ON flag read fail-closed: off until `fetchFeatureFlags` settles.
+ * The app renders before that, so a bare read would run the feature during
+ * the first few hundred ms of exactly the incident the switch is for.
+ * `isInitialized` is set on failure too, so Amplitude being down can't wedge
+ * the feature off.
+ */
+const killSwitchSelector = (flag: (typeof BOOLEAN_FLAGS)[number]) =>
+  createSelector(remoteConfigSelector, (rc) => rc.isInitialized && rc[flag]);
+
+/**
  * Returns the maintenance banner flag state (enabled + resolved content).
  * Payload parsing happens here so the Redux store stays generic.
  */
@@ -230,31 +244,27 @@ export const maintenanceScreenSelector = createSelector(
 );
 
 /**
- * Returns whether the v2 token-prices endpoint should be used. Defaults to
- * true; Amplitude can flip the flag off to roll back to the v1 endpoint.
- */
-export const tokenPricesV2Selector = createSelector(
-  remoteConfigSelector,
-  (rc) => rc.use_token_prices_v2,
-);
-
-/**
  * Returns whether the v2 account-balances endpoint should be used. Defaults
- * to true; Amplitude can flip the flag off to roll back to the v1 endpoint.
+ * to false while the balances-v2 work is in progress; Amplitude can flip the
+ * flag on to opt into the v2 endpoint.
  */
 export const balancesV2Selector = createSelector(
   remoteConfigSelector,
   (rc) => rc.use_balances_v2,
 );
 
-/**
- * Returns whether the Earn deposit flow should be exposed. Defaults to false
- * so the entry point stays hidden until Amplitude turns the flag on.
- */
-export const earnDepositSelector = createSelector(
-  remoteConfigSelector,
-  (rc) => rc.earn_deposit,
+/** Kill switch for the AssetDetail chart/stats/about section. Defaults to true. */
+export const tokenPriceHistoryEnabledSelector = killSwitchSelector(
+  "use_token_price_history",
 );
+
+/**
+ * Whether the Earn deposit flow is exposed: off in production until Amplitude
+ * turns it on, on in dev builds. Read fail-closed, so the Home tile stays
+ * hidden until the flags settle rather than flashing in before Amplitude has
+ * answered.
+ */
+export const earnDepositSelector = killSwitchSelector("earn_deposit");
 
 /**
  * Returns true once the Experiment flags have been fetched (or failed).
@@ -263,3 +273,24 @@ export const isRemoteConfigInitializedSelector = createSelector(
   remoteConfigSelector,
   (rc) => rc.isInitialized,
 );
+
+/**
+ * Resolves once the Experiment flags have been fetched (or failed). Await it
+ * before reading a flag that picks a backend, since every popup, tab, and
+ * sidebar starts with the flags unloaded.
+ */
+export const waitForRemoteConfig = (
+  store: Store<{ remoteConfig: RemoteConfigState }>,
+): Promise<void> =>
+  new Promise((resolve) => {
+    if (isRemoteConfigInitializedSelector(store.getState())) {
+      resolve();
+      return;
+    }
+    const unsubscribe = store.subscribe(() => {
+      if (isRemoteConfigInitializedSelector(store.getState())) {
+        unsubscribe();
+        resolve();
+      }
+    });
+  });

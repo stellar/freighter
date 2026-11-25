@@ -13,6 +13,7 @@ import {
 } from "./types";
 import { AssetsListItem } from "@shared/constants/soroban/asset-list";
 import { AutoLockTimeoutMinutes } from "@shared/constants/autoLock";
+import { ThemePreference } from "@shared/constants/theme";
 
 export interface TokenToAdd {
   domain: string;
@@ -278,6 +279,10 @@ export interface SignOutMessage extends BaseMessage {
   type: SERVICE_TYPES.SIGN_OUT;
 }
 
+export interface ResetWalletMessage extends BaseMessage {
+  type: SERVICE_TYPES.RESET_WALLET;
+}
+
 export interface SaveAllowListMessage extends BaseMessage {
   type: SERVICE_TYPES.SAVE_ALLOWLIST;
   networkName: string;
@@ -418,6 +423,8 @@ export interface GetIsAccountMismatchMessage extends BaseMessage {
 
 export interface ChangeAssetVisibilityMessage extends BaseMessage {
   type: SERVICE_TYPES.CHANGE_ASSET_VISIBILITY;
+  publicKey: string;
+  network: string;
   assetVisibility: {
     issuer: IssuerKey;
     visibility: AssetVisibility;
@@ -426,6 +433,21 @@ export interface ChangeAssetVisibilityMessage extends BaseMessage {
 
 export interface GetHiddenAssetsMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_HIDDEN_ASSETS;
+  publicKey: string;
+  network: string;
+}
+
+export interface GetEthenaLaunchBannerDismissedMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_ETHENA_LAUNCH_BANNER_DISMISSED;
+}
+
+export interface DismissEthenaLaunchBannerMessage extends BaseMessage {
+  type: SERVICE_TYPES.DISMISS_ETHENA_LAUNCH_BANNER;
+}
+
+export interface SaveThemePreferenceMessage extends BaseMessage {
+  type: SERVICE_TYPES.SAVE_THEME_PREFERENCE;
+  themePreference: ThemePreference;
 }
 
 export interface GetRecentProtocolsMessage extends BaseMessage {
@@ -457,6 +479,14 @@ export interface DismissEarnIntroMessage extends BaseMessage {
   type: SERVICE_TYPES.DISMISS_EARN_INTRO;
 }
 
+export interface ClaimRebrandAnnouncementMessage extends BaseMessage {
+  type: SERVICE_TYPES.CLAIM_REBRAND_ANNOUNCEMENT;
+}
+
+export interface ClaimEthenaLaunchPromoMessage extends BaseMessage {
+  type: SERVICE_TYPES.CLAIM_ETHENA_LAUNCH_PROMO;
+}
+
 export interface GetBlockaidDebugOverrideMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_BLOCKAID_DEBUG_OVERRIDE;
 }
@@ -476,6 +506,8 @@ export interface GetCollectiblesMessage extends BaseMessage {
 
 export interface ChangeCollectibleVisibilityMessage extends BaseMessage {
   type: SERVICE_TYPES.CHANGE_COLLECTIBLE_VISIBILITY;
+  publicKey: string;
+  network: string;
   collectibleVisibility: {
     collectible: CollectibleKey;
     visibility: AssetVisibility;
@@ -484,6 +516,8 @@ export interface ChangeCollectibleVisibilityMessage extends BaseMessage {
 
 export interface GetHiddenCollectiblesMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_HIDDEN_COLLECTIBLES;
+  publicKey: string;
+  network: string;
 }
 
 export interface MarkQueueActiveMessage extends BaseMessage {
@@ -547,6 +581,7 @@ export type ServiceMessageRequest =
   | LoadRecentAddressesMessage
   | LoadLastAccountUsedMessage
   | SignOutMessage
+  | ResetWalletMessage
   | SaveAllowListMessage
   | SaveSettingsMessage
   | SaveExperimentalFeaturesMessage
@@ -573,6 +608,9 @@ export type ServiceMessageRequest =
   | GetIsAccountMismatchMessage
   | ChangeAssetVisibilityMessage
   | GetHiddenAssetsMessage
+  | GetEthenaLaunchBannerDismissedMessage
+  | DismissEthenaLaunchBannerMessage
+  | SaveThemePreferenceMessage
   | GetRecentProtocolsMessage
   | AddRecentProtocolMessage
   | ClearRecentProtocolsMessage
@@ -580,6 +618,8 @@ export type ServiceMessageRequest =
   | DismissDiscoverWelcomeMessage
   | GetEarnIntroSeenMessage
   | DismissEarnIntroMessage
+  | ClaimRebrandAnnouncementMessage
+  | ClaimEthenaLaunchPromoMessage
   | GetBlockaidDebugOverrideMessage
   | AddCollectibleMessage
   | GetCollectiblesMessage

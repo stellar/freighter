@@ -218,4 +218,98 @@ describe("Account Creator View", () => {
       expect(mockShowBackup).toHaveBeenCalled();
     });
   });
+
+  it("warns before replacing an existing wallet", async () => {
+    const createAccountSpy = jest
+      .spyOn(internalApi, "createAccount")
+      .mockResolvedValue({
+        publicKey: "",
+        allAccounts: [],
+        hasPrivateKey: false,
+      });
+    // The spy is shared with "creates account" above, which makes the same
+    // call; clear it so the assertion below can only pass because of this test.
+    createAccountSpy.mockClear();
+    render(
+      <Wrapper
+        routes={[ROUTES.welcome]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: TEST_PUBLIC_KEY,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <AccountCreator />
+      </Wrapper>,
+    );
+
+    await waitFor(() => screen.getByTestId("account-creator-view"));
+    expect(
+      screen.getByText(
+        "You are overwriting an existing account. You will permanently lose access to the account currently stored in Varial.",
+      ),
+    ).toBeInTheDocument();
+
+    fireEvent.change(screen.getByTestId("account-creator-password-input"), {
+      target: { value: "Password" },
+    });
+    fireEvent.change(
+      screen.getByTestId("account-creator-confirm-password-input"),
+      { target: { value: "Password" } },
+    );
+    await userEvent.click(
+      screen.getByTestId("account-creator-termsOfUse-input"),
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("account-creator-submit")).not.toBeDisabled(),
+    );
+    await userEvent.click(screen.getByTestId("account-creator-submit"));
+
+    // Going ahead replaces the stored wallet; applicationState says one exists.
+    await waitFor(() =>
+      expect(createAccountSpy).toHaveBeenCalledWith({
+        password: "Password",
+        isOverwritingAccount: true,
+      }),
+    );
+  });
+
+  it("still warns when the user left onboarding unfinished", async () => {
+    jest.spyOn(ApiInternal, "loadAccount").mockResolvedValueOnce({
+      hasPrivateKey: false,
+      publicKey: "",
+      applicationState: APPLICATION_STATE.PASSWORD_CREATED,
+      allAccounts: [],
+      bipPath: "",
+      tokenIdList: [],
+    } as any);
+    render(
+      <Wrapper
+        routes={[ROUTES.welcome]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "",
+            allAccounts: [],
+          },
+        }}
+      >
+        <AccountCreator />
+      </Wrapper>,
+    );
+
+    expect(
+      await screen.findByText(
+        "You previously did not complete onboarding. You will permanently lose access to the account you started to create in Varial.",
+      ),
+    ).toBeInTheDocument();
+  });
 });

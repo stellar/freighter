@@ -20,6 +20,7 @@ import {
   recoverAccount as recoverAccountService,
   confirmPassword as confirmPasswordService,
   signOut as signOutService,
+  resetWallet as resetWalletService,
   addTokenId as addTokenIdService,
   migrateAccounts as migrateAccountsService,
   getIsAccountMismatch as getIsAccountMismatchService,
@@ -35,7 +36,13 @@ import {
 import { WalletType } from "@shared/constants/hardwareWallet";
 
 import { AppState } from "popup/App";
-import { METRICS_DATA } from "constants/localStorageTypes";
+import {
+  ACCOUNT_FUNDING_RECORDS_ID,
+  FUNDED_ACCOUNTS_REFRESHED_AT_ID,
+  FUNDED_ACCOUNTS_REFRESH_LEASE_ID,
+  METRICS_DATA,
+  METRICS_USER_ID,
+} from "constants/localStorageTypes";
 import { MetricsData } from "helpers/metrics";
 import i18n from "popup/helpers/localizationConfig";
 
@@ -382,9 +389,13 @@ export const confirmPassword = createAsyncThunk<
 });
 
 const storeAccountMetricsData = (publicKey: string, allAccounts: Account[]) => {
-  const metricsData: MetricsData = JSON.parse(
-    localStorage.getItem(METRICS_DATA) || "{}",
-  );
+  // Build a new object, not a merge into the stored one. Thus each write
+  // drops fields that the code no longer uses.
+  const metricsData: MetricsData = {
+    accountType: AccountType.FREIGHTER,
+    hwExists: false,
+    importedExists: false,
+  };
 
   let accountType = AccountType.FREIGHTER;
   allAccounts.forEach((acc: Account) => {
@@ -432,6 +443,32 @@ export const signOut = createAsyncThunk<
   }
 
   return res?.applicationState;
+});
+
+export const resetWallet = createAsyncThunk<
+  void,
+  undefined,
+  { rejectValue: ErrorMessage }
+>("auth/resetWallet", async (_, thunkApi) => {
+  const res = await resetWalletService();
+
+  if (res.error) {
+    return thunkApi.rejectWithValue({ errorMessage: res.error });
+  }
+
+  // The erased wallet's per-account analytics flags live in page storage,
+  // which the background can't reach. Clear them so they don't carry over
+  // to the next wallet. That includes the analytics user id: once the wallet
+  // has been unlocked it is derived from the recovery phrase, so keeping it
+  // would report the Welcome screen and the next wallet's onboarding under
+  // the erased wallet's identity until the next wallet is first unlocked.
+  // With no id stored, the Welcome tab's getUserId() creates a random one.
+  localStorage.removeItem(METRICS_DATA);
+  localStorage.removeItem(METRICS_USER_ID);
+  localStorage.removeItem(ACCOUNT_FUNDING_RECORDS_ID);
+  localStorage.removeItem(FUNDED_ACCOUNTS_REFRESHED_AT_ID);
+  localStorage.removeItem(FUNDED_ACCOUNTS_REFRESH_LEASE_ID);
+  return undefined;
 });
 
 export const addTokenId = createAsyncThunk<
@@ -735,7 +772,7 @@ const authSlice = createSlice({
     });
     builder.addCase(makeAccountActive.rejected, (state, action) => {
       const {
-        message = i18n.t("Freighter was unable to switch to this account"),
+        message = i18n.t("Varial was unable to switch to this account"),
       } = action.error;
 
       return {
@@ -756,7 +793,7 @@ const authSlice = createSlice({
     });
     builder.addCase(updateAccountName.rejected, (state, action) => {
       const {
-        message = i18n.t("Freighter was unable update this account’s name"),
+        message = i18n.t("Varial was unable to update this account’s name"),
       } = action.error;
 
       return {
@@ -959,7 +996,9 @@ export const accountNameSelector = createSelector(
   publicKeySelector,
   allAccountsSelector,
   (publicKey, allAccounts) => {
-    const { name } = allAccounts.find(
+    // Tolerates an account saved without its list, so a screen that names the
+    // account (the Send and Swap reviews do) never fails on it.
+    const { name } = (allAccounts || []).find(
       ({ publicKey: accountPublicKey }) => accountPublicKey === publicKey,
     ) || { publicKey: "", name: "" };
 

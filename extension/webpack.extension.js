@@ -84,7 +84,12 @@ const prodConfig = (
                 ns: ["translation"],
                 output: "src/popup/locales/$LOCALE/$NAMESPACE.json",
                 sort: true,
+                // i18next-parser replaced `useKeysAsDefaultValue` with
+                // `defaultValue`; the old name is silently ignored, which
+                // wrote every new key as "" and rendered blank labels in the
+                // UI. Keep both so the intent survives either version.
                 useKeysAsDefaultValue: true,
+                defaultValue: (_locale, _ns, key) => key,
                 keepRemoved: true,
                 removeUnusedKeys: false,
                 keySeparator: false,

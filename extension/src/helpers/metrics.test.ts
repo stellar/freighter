@@ -17,9 +17,6 @@ jest.mock("popup/ducks/settings", () => ({
   settingsDataSharingSelector: jest.fn(() => true),
   settingsNetworkDetailsSelector: jest.fn(() => ({ network: "TESTNET" })),
 }));
-jest.mock("popup/ducks/cache", () => ({
-  balancesSelector: jest.fn(() => ({})),
-}));
 jest.mock("helpers/experimentClient", () => ({
   initExperimentClient: jest.fn(),
 }));
@@ -43,9 +40,14 @@ import {
   resolveSurface,
   buildCommonContext,
   deriveIdentifyTraits,
-  storeBalanceMetricData,
   initAmplitude,
   emitScreenViewed,
+  emitMetric,
+  getFundingRecord,
+  getFundingRecordKey,
+  getFundedAccountCount,
+  saveFundingRecord,
+  storeAccountMetricsData,
 } from "helpers/metrics";
 import { isSidebarMode } from "popup/helpers/isSidebarMode";
 import browser from "webextension-polyfill";
@@ -54,10 +56,11 @@ import {
   allAccountsSelector,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { balancesSelector } from "popup/ducks/cache";
-import { METRICS_DATA } from "constants/localStorageTypes";
+import {
+  ACCOUNT_FUNDING_RECORDS_ID,
+  METRICS_DATA,
+} from "constants/localStorageTypes";
 import { AccountType } from "@shared/api/types";
-import { truncatedPublicKey } from "helpers/stellar";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 describe("getAccountIdHash", () => {
@@ -126,9 +129,6 @@ describe("buildCommonContext (four-bucket property model)", () => {
     (allAccountsSelector as unknown as jest.Mock).mockReturnValue([
       { publicKey: PUBLIC_KEY, name: "Imported", imported: true },
     ]);
-    (balancesSelector as unknown as jest.Mock).mockReturnValue({
-      TESTNET: { [PUBLIC_KEY]: { isFunded: true } },
-    });
     // A deliberately *stale* metricsData cache (wrong type) — proves the
     // account_type resolution no longer trusts it.
     localStorage.setItem(
@@ -137,16 +137,12 @@ describe("buildCommonContext (four-bucket property model)", () => {
         accountType: AccountType.FREIGHTER,
         hwExists: false,
         importedExists: true,
-        hwFunded: false,
-        importedFunded: true,
-        freighterFunded: false,
-        unfundedFreighterAccounts: [],
       }),
     );
   });
 
-  it("stamps schema_version '2'", () => {
-    expect(buildCommonContext({} as never).schema_version).toBe("2");
+  it("stamps schema_version '4'", () => {
+    expect(buildCommonContext({} as never).schema_version).toBe("4");
   });
 
   it("emits the reshaped event-level bucket", () => {
@@ -154,7 +150,6 @@ describe("buildCommonContext (four-bucket property model)", () => {
     expect(ctx).toMatchObject({
       network: "TESTNET",
       account_type: "imported_secret_key",
-      account_funded: true,
       is_hardware_account: false,
       account_id_hash:
         "f56f6f2c6cf1b9388e3495dfab96f0c55ec5d217f481b2ae45d11b46145c44ef",
@@ -162,36 +157,10 @@ describe("buildCommonContext (four-bucket property model)", () => {
     expect(ctx.surface).toBeDefined();
   });
 
-  it("derives account_funded from the active account's cached balance entry, not the sticky metricsData flag", () => {
-    // metricsData says this account type has never been funded, but the
-    // balances cache has a funded entry for the *active* key — the cache
-    // must win. This is the fix for the sticky-per-type inaccuracy.
-    localStorage.setItem(
-      METRICS_DATA,
-      JSON.stringify({
-        accountType: AccountType.IMPORTED,
-        hwExists: false,
-        importedExists: true,
-        hwFunded: false,
-        importedFunded: false,
-        freighterFunded: false,
-        unfundedFreighterAccounts: [],
-      }),
+  it("does not emit account_funded", () => {
+    expect(buildCommonContext({} as never)).not.toHaveProperty(
+      "account_funded",
     );
-    (balancesSelector as unknown as jest.Mock).mockReturnValue({
-      TESTNET: { [PUBLIC_KEY]: { isFunded: true } },
-    });
-    expect(buildCommonContext({} as never)).toMatchObject({
-      account_funded: true,
-    });
-  });
-
-  it("omits account_funded when there is no cached balances entry for the active key", () => {
-    (balancesSelector as unknown as jest.Mock).mockReturnValue({});
-    const ctx = buildCommonContext({} as never);
-    expect(ctx).not.toHaveProperty("account_funded");
-    // Other active-account fields are still present.
-    expect(ctx).toMatchObject({ account_type: "imported_secret_key" });
   });
 
   it("drops SDK-supplied and legacy fields", () => {
@@ -209,10 +178,9 @@ describe("buildCommonContext (four-bucket property model)", () => {
     const ctx = buildCommonContext({} as never);
     expect(ctx).not.toHaveProperty("account_id_hash");
     expect(ctx).not.toHaveProperty("account_type");
-    expect(ctx).not.toHaveProperty("account_funded");
     expect(ctx).not.toHaveProperty("is_hardware_account");
     // non-account context is still present
-    expect(ctx).toMatchObject({ schema_version: "2", network: "TESTNET" });
+    expect(ctx).toMatchObject({ schema_version: "4", network: "TESTNET" });
     expect(ctx.surface).toBeDefined();
   });
 
@@ -225,13 +193,9 @@ describe("buildCommonContext (four-bucket property model)", () => {
         hardwareWalletType: "Ledger",
       },
     ]);
-    (balancesSelector as unknown as jest.Mock).mockReturnValue({
-      TESTNET: { [PUBLIC_KEY]: { isFunded: true } },
-    });
     expect(buildCommonContext({} as never)).toMatchObject({
       account_type: "hardware",
       is_hardware_account: true,
-      account_funded: true,
     });
   });
 
@@ -261,7 +225,6 @@ describe("buildCommonContext (four-bucket property model)", () => {
     expect(ctx).not.toHaveProperty("is_hardware_account");
     // The active-key-derived fields are still emitted.
     expect(ctx).toHaveProperty("account_id_hash");
-    expect(ctx).toMatchObject({ account_funded: true });
   });
 });
 
@@ -276,6 +239,7 @@ describe("deriveIdentifyTraits", () => {
       wallet_count: 3,
       has_hardware_wallet: true,
       has_imported_account: true,
+      funded_account_count: 0,
     });
   });
 
@@ -284,6 +248,7 @@ describe("deriveIdentifyTraits", () => {
       wallet_count: 0,
       has_hardware_wallet: false,
       has_imported_account: false,
+      funded_account_count: 0,
     });
   });
 
@@ -322,45 +287,181 @@ describe("deriveIdentifyTraits", () => {
   });
 });
 
-describe("storeBalanceMetricData (privacy)", () => {
-  const PUBLIC_KEY = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
+describe("funding records", () => {
+  const KEY_A = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
+  const KEY_B = "GBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB";
+  const KEY_C = "GCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC";
 
   beforeEach(() => {
     jest.clearAllMocks();
     localStorage.clear();
-    (settingsNetworkDetailsSelector as unknown as jest.Mock).mockReturnValue({
-      network: "TESTNET",
+  });
+
+  it("keys a record by network and account_id_hash, without the G address", () => {
+    saveFundingRecord("PUBLIC", KEY_A, { status: "unfunded", funded: false });
+    const raw = localStorage.getItem(ACCOUNT_FUNDING_RECORDS_ID)!;
+    expect(raw).not.toContain(KEY_A);
+    expect(raw).not.toContain(KEY_A.slice(0, 10));
+    expect(JSON.parse(raw)).toEqual({
+      [`PUBLIC:${getAccountIdHash(KEY_A)}`]: {
+        status: "unfunded",
+        funded: false,
+      },
     });
-    (publicKeySelector as unknown as jest.Mock).mockReturnValue(PUBLIC_KEY);
+    expect(getFundingRecordKey("PUBLIC", KEY_A)).toBe(
+      `PUBLIC:${getAccountIdHash(KEY_A)}`,
+    );
+    expect(getFundingRecord("PUBLIC", KEY_A)).toEqual({
+      status: "unfunded",
+      funded: false,
+    });
+    expect(getFundingRecord("TESTNET", KEY_A)).toBeUndefined();
+  });
+
+  it("drops fields that the code no longer uses on the next metricsData write (VT-17)", () => {
+    // Fields of the removed account.first_funded detector. No code names
+    // them. storeAccountMetricsData writes a new object, so they go away.
     localStorage.setItem(
       METRICS_DATA,
       JSON.stringify({
         accountType: AccountType.FREIGHTER,
         hwExists: false,
         importedExists: false,
-        hwFunded: false,
+        hwFunded: true,
         importedFunded: false,
-        freighterFunded: false,
-        unfundedFreighterAccounts: [truncatedPublicKey(PUBLIC_KEY)],
+        freighterFunded: true,
+        unfundedFreighterAccounts: ["GAAA…AWHF"],
       }),
+    );
+    storeAccountMetricsData(KEY_A, [
+      { publicKey: KEY_A, name: "A", imported: false },
+    ] as never);
+    expect(JSON.parse(localStorage.getItem(METRICS_DATA)!)).toEqual({
+      accountType: AccountType.FREIGHTER,
+      hwExists: false,
+      importedExists: false,
+    });
+  });
+
+  it("keeps the funding records when metricsData is written", () => {
+    saveFundingRecord("PUBLIC", KEY_A, { funded: true });
+    storeAccountMetricsData(KEY_A, [
+      { publicKey: KEY_A, name: "A", imported: false },
+    ] as never);
+    expect(getFundingRecord("PUBLIC", KEY_A)).toEqual({ funded: true });
+  });
+
+  it("counts own accounts with funded: true on PUBLIC only (VT-24, VT-28)", () => {
+    const accounts = [
+      { publicKey: KEY_A },
+      { publicKey: KEY_B },
+      { publicKey: KEY_C },
+    ] as never;
+    const records = {
+      [getFundingRecordKey("PUBLIC", KEY_A)]: { funded: true },
+      [getFundingRecordKey("PUBLIC", KEY_B)]: {
+        status: "funded" as const,
+        funded: false,
+      },
+      // A testnet record does not count.
+      [getFundingRecordKey("TESTNET", KEY_C)]: { funded: true },
+    };
+    expect(getFundedAccountCount(accounts, records)).toBe(1);
+    // A removed account does not count.
+    expect(
+      getFundedAccountCount([{ publicKey: KEY_B }] as never, records),
+    ).toBe(0);
+  });
+
+  it("adds funded_account_count to the Identify traits", () => {
+    const accounts = [{ publicKey: KEY_A }, { publicKey: KEY_B }] as never;
+    expect(
+      deriveIdentifyTraits(accounts, {
+        [getFundingRecordKey("PUBLIC", KEY_A)]: { funded: true },
+        [getFundingRecordKey("PUBLIC", KEY_B)]: { funded: true },
+      }).funded_account_count,
+    ).toBe(2);
+  });
+});
+
+describe("syncIdentifyTraits funded_account_count (VT-25, VT-26)", () => {
+  const KEY_A = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
+
+  it("sends a changed count one time, and an unchanged count never", async () => {
+    let mod: typeof import("helpers/metrics");
+    let settingsMod: { settingsDataSharingSelector: jest.Mock };
+    let amp: typeof amplitude;
+    jest.isolateModules(() => {
+      mod = require("helpers/metrics");
+      settingsMod = require("popup/ducks/settings");
+      amp = require("@amplitude/analytics-browser");
+    });
+    localStorage.clear();
+    const accounts = [{ publicKey: KEY_A }] as never;
+    settingsMod!.settingsDataSharingSelector.mockReturnValue(true);
+    await mod!.initAmplitude();
+    const identify = amp!.identify as jest.Mock;
+    const identifySet = jest.fn();
+    (amp!.Identify as unknown as jest.Mock).mockImplementation(() => ({
+      set: identifySet,
+    }));
+
+    identify.mockClear();
+    mod!.syncIdentifyTraits(accounts);
+    expect(identify).toHaveBeenCalledTimes(1);
+    expect(identifySet).toHaveBeenCalledWith("funded_account_count", 0);
+
+    // Unchanged: no new Identify.
+    mod!.syncIdentifyTraits(accounts);
+    expect(identify).toHaveBeenCalledTimes(1);
+
+    // Changed: one Identify with the new count.
+    mod!.saveFundingRecord("PUBLIC", KEY_A, { funded: true });
+    identifySet.mockClear();
+    mod!.syncIdentifyTraits(accounts);
+    expect(identify).toHaveBeenCalledTimes(2);
+    expect(identifySet).toHaveBeenCalledWith("funded_account_count", 1);
+
+    // Analytics disabled: no Identify. Enabled again: the next sync sends
+    // the current count.
+    mod!.saveFundingRecord("PUBLIC", KEY_A, { funded: false });
+    settingsMod!.settingsDataSharingSelector.mockReturnValue(false);
+    mod!.syncIdentifyTraits(accounts);
+    expect(identify).toHaveBeenCalledTimes(2);
+    settingsMod!.settingsDataSharingSelector.mockReturnValue(true);
+    identifySet.mockClear();
+    mod!.syncIdentifyTraits(accounts);
+    expect(identify).toHaveBeenCalledTimes(3);
+    expect(identifySet).toHaveBeenCalledWith("funded_account_count", 0);
+  });
+});
+
+describe("emitMetric return value", () => {
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    await initAmplitude();
+  });
+
+  it("returns true when it sends the event", () => {
+    const { settingsDataSharingSelector } = jest.requireMock(
+      "popup/ducks/settings",
+    );
+    settingsDataSharingSelector.mockReturnValue(true);
+    expect(emitMetric(METRIC_NAMES.accountFunded)).toBe(true);
+    expect(amplitude.track).toHaveBeenCalledWith(
+      "account.funded",
+      expect.any(Object),
     );
   });
 
-  it("emits freighterAccountFunded with account_id_hash and never a raw/truncated publicKey", () => {
-    // Ensure emitMetric's `!hasInitialized` guard doesn't short-circuit before
-    // the amplitude.track call this test inspects.
-    initAmplitude();
-    storeBalanceMetricData(PUBLIC_KEY, true);
-
-    expect(amplitude.track).toHaveBeenCalledWith(
-      METRIC_NAMES.accountFirstFunded,
-      expect.objectContaining({
-        account_id_hash: getAccountIdHash(PUBLIC_KEY),
-      }),
+  it("returns false when data sharing is off", () => {
+    const { settingsDataSharingSelector } = jest.requireMock(
+      "popup/ducks/settings",
     );
-
-    const [, body] = (amplitude.track as jest.Mock).mock.calls[0];
-    expect(body).not.toHaveProperty("publicKey");
+    settingsDataSharingSelector.mockReturnValue(false);
+    expect(emitMetric(METRIC_NAMES.accountFunded)).toBe(false);
+    expect(amplitude.track).not.toHaveBeenCalled();
+    settingsDataSharingSelector.mockReturnValue(true);
   });
 });
 
@@ -439,6 +540,33 @@ describe("consent hydration (startup)", () => {
     expect(track!.mock.calls.filter((c) => c[0] === "app.opened")).toHaveLength(
       1,
     );
+  });
+
+  it("sends preferred_theme once consent hydrates to allowed", async () => {
+    let mod: typeof import("helpers/metrics");
+    let store: { subscribe: jest.Mock };
+    let settingsMod: { settingsDataSharingSelector: jest.Mock };
+    let sdk: typeof amplitude;
+    jest.isolateModules(() => {
+      mod = require("helpers/metrics");
+      store = require("popup/App").store;
+      settingsMod = require("popup/ducks/settings");
+      sdk = require("@amplitude/analytics-browser");
+    });
+    const set = jest.fn();
+    (sdk!.Identify as unknown as jest.Mock).mockImplementation(() => ({ set }));
+
+    settingsMod!.settingsDataSharingSelector.mockReturnValue(false);
+    store!.subscribe.mockClear();
+    await mod!.initAmplitude();
+    expect(set).not.toHaveBeenCalledWith("preferred_theme", expect.anything());
+
+    settingsMod!.settingsDataSharingSelector.mockReturnValue(true);
+    const subCb =
+      store!.subscribe.mock.calls[store!.subscribe.mock.calls.length - 1][0];
+    subCb();
+
+    expect(set).toHaveBeenCalledWith("preferred_theme", "system");
   });
 
   it("does not send or cache Identify while data-sharing is disallowed, then sends once allowed", async () => {
@@ -524,7 +652,7 @@ describe("emitScreenViewed (screen.viewed consolidation)", () => {
     expect(body).toMatchObject({
       screen_name: "send_payment_amount",
       flow: "send",
-      schema_version: "2",
+      schema_version: "4",
     });
     // surface comes from the Slice-A common context (getSurface()).
     expect(body.surface).toBeDefined();
@@ -610,8 +738,103 @@ describe("app.opened", () => {
     expect(call![1]).toMatchObject({
       connection_type: "wifi",
       effective_type: "4g",
-      schema_version: "2",
+      schema_version: "4",
     });
     expect(call![1].surface).toBeDefined();
+  });
+});
+
+describe("color_scheme common property (#18)", () => {
+  afterEach(() => {
+    document.body.className = "";
+  });
+
+  it("stamps the rendered scheme from the body class", () => {
+    document.body.className = "sds-theme-light";
+    expect(buildCommonContext({} as never).color_scheme).toBe("light");
+
+    document.body.className = "sds-theme-dark";
+    expect(buildCommonContext({} as never).color_scheme).toBe("dark");
+  });
+
+  it("defaults to light when no theme class is applied yet", () => {
+    document.body.className = "";
+    expect(buildCommonContext({} as never).color_scheme).toBe("light");
+  });
+});
+
+describe("syncPreferredThemeTrait", () => {
+  const load = () => {
+    let mod: typeof import("helpers/metrics");
+    let settingsMod: { settingsDataSharingSelector: jest.Mock };
+    let sdk: typeof amplitude;
+    jest.isolateModules(() => {
+      mod = require("helpers/metrics");
+      settingsMod = require("popup/ducks/settings");
+      sdk = require("@amplitude/analytics-browser");
+    });
+    return { mod: mod!, settingsMod: settingsMod!, sdk: sdk! };
+  };
+
+  it("sets preferred_theme once per change", async () => {
+    const { mod, settingsMod, sdk } = load();
+    settingsMod.settingsDataSharingSelector.mockReturnValue(true);
+    await mod.initAmplitude();
+    (sdk.identify as jest.Mock).mockClear();
+    const set = jest.fn();
+    (sdk.Identify as unknown as jest.Mock).mockImplementation(() => ({ set }));
+
+    mod.syncPreferredThemeTrait("dark");
+    mod.syncPreferredThemeTrait("dark");
+    expect(sdk.identify).toHaveBeenCalledTimes(1);
+    expect(set).toHaveBeenCalledWith("preferred_theme", "dark");
+
+    mod.syncPreferredThemeTrait("system");
+    expect(sdk.identify).toHaveBeenCalledTimes(2);
+  });
+
+  it("re-sends a value this page already sent when forced, since another page may have changed the shared profile", async () => {
+    const { mod, settingsMod, sdk } = load();
+    settingsMod.settingsDataSharingSelector.mockReturnValue(true);
+    await mod.initAmplitude();
+    (sdk.identify as jest.Mock).mockClear();
+    const set = jest.fn();
+    (sdk.Identify as unknown as jest.Mock).mockImplementation(() => ({ set }));
+
+    // initAmplitude already sent "system". Suppose another page then sent
+    // "dark", which this page can't see: an unforced repeat is skipped...
+    mod.syncPreferredThemeTrait("system");
+    expect(sdk.identify).not.toHaveBeenCalled();
+
+    // ...while a forced one restores the profile.
+    mod.syncPreferredThemeTrait("system", { force: true });
+    expect(sdk.identify).toHaveBeenCalledTimes(1);
+    expect(set).toHaveBeenCalledWith("preferred_theme", "system");
+  });
+
+  it("still respects consent when forced", async () => {
+    const { mod, settingsMod, sdk } = load();
+    settingsMod.settingsDataSharingSelector.mockReturnValue(true);
+    await mod.initAmplitude();
+    (sdk.identify as jest.Mock).mockClear();
+
+    settingsMod.settingsDataSharingSelector.mockReturnValue(false);
+    mod.syncPreferredThemeTrait("dark", { force: true });
+    expect(sdk.identify).not.toHaveBeenCalled();
+  });
+
+  it("sends nothing while data sharing is off, then sends once allowed", async () => {
+    const { mod, settingsMod, sdk } = load();
+    settingsMod.settingsDataSharingSelector.mockReturnValue(true);
+    await mod.initAmplitude();
+    (sdk.identify as jest.Mock).mockClear();
+
+    settingsMod.settingsDataSharingSelector.mockReturnValue(false);
+    mod.syncPreferredThemeTrait("light");
+    expect(sdk.identify).not.toHaveBeenCalled();
+
+    settingsMod.settingsDataSharingSelector.mockReturnValue(true);
+    mod.syncPreferredThemeTrait("light");
+    expect(sdk.identify).toHaveBeenCalledTimes(1);
   });
 });
