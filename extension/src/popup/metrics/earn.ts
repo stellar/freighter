@@ -1,8 +1,11 @@
 import { emitMetric } from "helpers/metrics";
 import { AssetIdentity, FailureCategory } from "helpers/usdVolume";
-import { EarnSource, NotEnoughVariant } from "popup/constants/earn";
+import {
+  EarnSource,
+  NotEnoughVariant,
+  PoolDetailsTab,
+} from "popup/constants/earn";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { PoolDetailsTab } from "popup/components/earn/PositionDetailsSheet/Tabs";
 
 /**
  * Emitters for the Earn deposit funnel.
@@ -40,15 +43,14 @@ const depositVolumeProps = (volume: EarnDepositVolume) => ({
 export type EarnFundingAction = "buy" | "swap" | "transfer";
 
 /**
- * Where the pool sheet was opened from. Deliberately NOT `EarnSource`: "About
- * pool" opens this sheet but can never start a deposit, so folding it into the
- * deposit-attribution vocabulary would put a non-deposit value in a dimension
- * that exists to attribute deposits.
+ * Where a pool's details were opened from: the deposit screen's pool card, or
+ * a supplied token on a pool's position screen (whose screen carries the pool's
+ * Overview). Deliberately NOT `EarnSource`, which attributes deposits; opening
+ * details is not one.
  */
 export const POOL_DETAILS_SOURCE = {
   EARN_AMOUNT: "earn_amount",
   POSITION_ROW: "position_row",
-  ABOUT_POOL: "about_pool",
 } as const;
 
 export type PoolDetailsSource =

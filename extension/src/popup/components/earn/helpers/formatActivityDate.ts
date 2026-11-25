@@ -1,0 +1,20 @@
+/**
+ * The date on an Activity row, in the app's language: "Aug 28" within the
+ * current year, "Aug 28, 2025" outside it, where the day alone is ambiguous.
+ */
+export const formatActivityDate = (
+  occurredAt: string,
+  language: string,
+  now: Date = new Date(),
+): string => {
+  const date = new Date(occurredAt);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toLocaleDateString(language, {
+    month: "short",
+    day: "numeric",
+    ...(date.getFullYear() === now.getFullYear() ? {} : { year: "numeric" }),
+  });
+};

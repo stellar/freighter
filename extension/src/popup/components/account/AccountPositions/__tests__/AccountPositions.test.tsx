@@ -5,6 +5,12 @@ import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { BlendCatalogPool } from "@shared/api/types/blend";
 import { AccountPositions } from "popup/components/account/AccountPositions";
 import { TEST_PUBLIC_KEY, Wrapper } from "popup/__testHelpers__";
+import { Account, BASE_FEE, Networks, TransactionBuilder } from "stellar-sdk";
+import {
+  BlendRequestType,
+  buildBlendRequestScVal,
+  buildBlendSubmitOp,
+} from "@shared/helpers/soroban/blend";
 
 const POOL_ID = "CAJJZSGMMM3PD7N33TAPHGBUGTB43OC73HVIK2L2G6BNGGGYOSSYBXBD";
 const USDC_SAC = "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75";
@@ -115,7 +121,9 @@ describe("AccountPositions", () => {
     renderTab({ isLoading: true });
 
     expect(screen.getByTestId("account-positions-loader")).toBeInTheDocument();
-    expect(screen.queryByText("No positions yet")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("account-positions-empty"),
+    ).not.toBeInTheDocument();
   });
 
   it("shows an error rather than claiming the account has none", () => {
@@ -124,13 +132,16 @@ describe("AccountPositions", () => {
     renderTab({ hasError: true });
 
     expect(screen.getByTestId("account-positions-error")).toBeInTheDocument();
-    expect(screen.queryByText("No positions yet")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("account-positions-empty"),
+    ).not.toBeInTheDocument();
   });
 
   it("shows the empty state once a request lands with nothing", () => {
     renderTab({ positions: noPositions });
 
-    expect(screen.getByText("No positions yet")).toBeInTheDocument();
+    expect(screen.getByTestId("account-positions-empty")).toBeInTheDocument();
+    expect(screen.getByText("Start earning")).toBeInTheDocument();
   });
 
   it("promises a dollar figure when the account holds depositable tokens", () => {
@@ -191,23 +202,170 @@ describe("AccountPositions", () => {
     expect(screen.queryByTestId("position-row-USDC")).not.toBeInTheDocument();
   });
 
-  it("opens My position when a pool card is tapped", async () => {
+  it("opens the pool's screen when a pool card is tapped", async () => {
     renderTab({ positions: twoAssetPositions, pools: [pool] });
 
     fireEvent.click(screen.getByTestId(`pool-card-${POOL_ID}`));
 
-    expect(await screen.findByTestId("my-position-sheet")).toBeInTheDocument();
+    expect(
+      await screen.findByTestId("pool-position-screen"),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("position-row-USDC")).toBeInTheDocument();
   });
 
-  it("closes My position from its X without leaving the tab", async () => {
+  it("closes the pool's screen from its back arrow without leaving the tab", async () => {
     renderTab({ positions: twoAssetPositions, pools: [pool] });
 
     fireEvent.click(screen.getByTestId(`pool-card-${POOL_ID}`));
-    fireEvent.click(await screen.findByTestId("my-position-close"));
+    await screen.findByTestId("pool-position-screen");
+    fireEvent.click(screen.getByTestId("BackButton"));
 
     await waitFor(() =>
-      expect(screen.queryByTestId("my-position-sheet")).not.toBeInTheDocument(),
+      expect(
+        screen.queryByTestId("pool-position-screen"),
+      ).not.toBeInTheDocument(),
     );
     expect(screen.getByTestId(`pool-card-${POOL_ID}`)).toBeInTheDocument();
   });
+
+  it("opens a supplied token's screen over the pool's, on Your position", async () => {
+    renderTab({ positions: twoAssetPositions, pools: [pool] });
+
+    fireEvent.click(screen.getByTestId(`pool-card-${POOL_ID}`));
+    fireEvent.click(await screen.findByTestId("position-row-USDC"));
+
+    expect(
+      await screen.findByTestId("token-position-screen"),
+    ).toBeInTheDocument();
+    // Principal and interest: 500.12 = 500.00 deposited + 0.12 earned.
+    expect(
+      screen.getByTestId("earn-position-deposit-usd-USDC"),
+    ).toHaveTextContent("$500.00");
+    expect(
+      screen.getByTestId("earn-position-earnings-usd-USDC"),
+    ).toHaveTextContent("+$0.12");
+    expect(screen.getByTestId("position-tab-your_position")).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+  });
+
+  it("switches to Overview, with the pool's links", async () => {
+    renderTab({ positions: twoAssetPositions, pools: [pool] });
+
+    fireEvent.click(screen.getByTestId(`pool-card-${POOL_ID}`));
+    fireEvent.click(await screen.findByTestId("position-row-USDC"));
+    fireEvent.click(await screen.findByTestId("position-tab-overview"));
+
+    expect(screen.getByTestId("token-position-overview")).toBeInTheDocument();
+    expect(screen.getByTestId("token-position-blend-link")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("token-position-explorer-link"),
+    ).toBeInTheDocument();
+  });
+
+  describe("depositing", () => {
+    const flagOn = {
+      remoteConfig: { earn_deposit: true, isInitialized: true },
+    };
+
+    it("deposits into the token's own pool from its screen", async () => {
+      const onDeposit = jest.fn();
+      renderTab({
+        positions: twoAssetPositions,
+        pools: [pool],
+        onDeposit,
+        state: flagOn,
+      });
+
+      fireEvent.click(screen.getByTestId(`pool-card-${POOL_ID}`));
+      fireEvent.click(await screen.findByTestId("position-row-USDC"));
+      fireEvent.click(await screen.findByTestId("token-position-deposit"));
+
+      expect(onDeposit).toHaveBeenCalledWith(
+        expect.objectContaining({ assetId: USDC_SAC, poolId: POOL_ID }),
+        pool,
+      );
+    });
+
+    it("ends the list with a Deposit button into Earn", () => {
+      renderTab({ positions: twoAssetPositions, pools: [pool], state: flagOn });
+
+      expect(screen.getByTestId("positions-deposit-btn")).toHaveAttribute(
+        "href",
+        expect.stringContaining("source=positions_pill"),
+      );
+    });
+
+    it("offers neither Deposit with the flag off", async () => {
+      renderTab({ positions: twoAssetPositions, pools: [pool] });
+
+      expect(
+        screen.queryByTestId("positions-deposit-btn"),
+      ).not.toBeInTheDocument();
+      fireEvent.click(screen.getByTestId(`pool-card-${POOL_ID}`));
+      fireEvent.click(await screen.findByTestId("position-row-USDC"));
+      await screen.findByTestId("token-position-screen");
+      expect(
+        screen.queryByTestId("token-position-deposit"),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it("lists the token's deposits from the history Home already loaded", async () => {
+    const operation = {
+      id: "9",
+      type: "invoke_host_function",
+      transaction_successful: true,
+      created_at: "2026-08-28T12:00:00Z",
+      transaction_hash: "hash-9",
+      transaction_attr: {
+        envelope_xdr: depositEnvelope(USDC_SAC, "5000000000"),
+      },
+      asset_balance_changes: [],
+    };
+    renderTab({
+      positions: twoAssetPositions,
+      pools: [pool],
+      state: {
+        auth: { publicKey: TEST_PUBLIC_KEY },
+        cache: {
+          historyData: { PUBLIC: { [TEST_PUBLIC_KEY]: [operation] } },
+        },
+      },
+    });
+
+    fireEvent.click(screen.getByTestId(`pool-card-${POOL_ID}`));
+    fireEvent.click(await screen.findByTestId("position-row-USDC"));
+
+    const rows = await screen.findAllByTestId("position-activity-row");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toHaveTextContent("+500.00 USDC");
+  });
 });
+
+/** A deposit envelope for `submit` on POOL_ID, as History joins it. */
+function depositEnvelope(assetId: string, amount: string) {
+  return new TransactionBuilder(new Account(TEST_PUBLIC_KEY, "1"), {
+    fee: BASE_FEE,
+    networkPassphrase: Networks.PUBLIC,
+  })
+    .addOperation(
+      buildBlendSubmitOp({
+        poolId: POOL_ID,
+        publicKey: TEST_PUBLIC_KEY,
+        requests: [
+          buildBlendRequestScVal({
+            assetId,
+            amount,
+            requestType: BlendRequestType.SupplyCollateral,
+            networkPassphrase: Networks.PUBLIC,
+          }),
+        ],
+        networkPassphrase: Networks.PUBLIC,
+      }),
+    )
+    .setTimeout(30)
+    .build()
+    .toXDR();
+}

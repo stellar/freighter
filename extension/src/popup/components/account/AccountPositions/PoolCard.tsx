@@ -1,5 +1,4 @@
 import React from "react";
-import { Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { PoolPosition } from "@shared/api/types/blend";
@@ -8,8 +7,11 @@ import {
   formatAccountUsd,
   formatRate,
 } from "popup/components/earn/helpers/formatPoolStats";
+import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
 import { getPoolPositionSummary } from "popup/components/earn/helpers/poolPositionSummary";
 import { NO_FIAT_VALUE } from "popup/helpers/formatters";
+
+import { formatGainBadge } from "./positionFigures";
 
 interface PoolCardProps {
   position: PoolPosition;
@@ -17,54 +19,58 @@ interface PoolCardProps {
 }
 
 /**
- * One pool on the Positions tab.
- *
- * Pool-shaped rather than token-shaped: the multi-pool design lists pools, so a
- * second pool is one more entry in the caller's map rather than a re-layout.
- * The supplied tokens live one level down, inside My position.
+ * One pool the account supplies to, on the Positions tab (Figma Varial
+ * 4470:111628): the pool and its provider, what the account holds there, its
+ * gain on principal, and the pool's net APY.
  */
 export const PoolCard = ({ position, onClick }: PoolCardProps) => {
   const { t } = useTranslation();
   const summary = getPoolPositionSummary(position);
+  const gain = formatGainBadge(summary.gainPercent);
 
   return (
     <button
       type="button"
-      className="PositionsPoolCard"
+      className="PoolCard"
       onClick={onClick}
       data-testid={`pool-card-${position.id}`}
     >
-      <PoolIcon />
-      <div className="PositionsPoolCard__body">
-        <Text as="div" size="sm" addlClassName="PositionsPoolCard__identity">
-          {position.name || t("Blend pool")}
-          <span className="PositionsPoolCard__protocol">{` · ${t("Blend")}`}</span>
-        </Text>
-        <div className="PositionsPoolCard__figures">
+      <span className="PoolCard__accent" aria-hidden="true" />
+      <span className="PoolCard__icon">
+        <PoolIcon size={40} />
+      </span>
+      <span className="PoolCard__body">
+        <span className="PoolCard__name">
+          <span className="PoolCard__pool">
+            {formatPoolName(position.name, t)}
+          </span>
+          {/* Blend's name, not copy: the same in every language. */}
+          <span className="PoolCard__provider">· Blend</span>
+        </span>
+        <span className="PoolCard__value">
           <span
-            className="PositionsPoolCard__value"
+            className="PoolCard__total"
             data-testid={`pool-card-value-${position.id}`}
           >
             {formatAccountUsd(summary.totalUsd)}
           </span>
+          {/* Unknown is "--", never zero or a silently missing badge. */}
           <span
-            className="PositionsPoolCard__gain"
+            className={`PoolCard__gain${gain ? "" : " PoolCard__gain--unknown"}`}
             data-testid={`pool-card-gain-${position.id}`}
           >
-            {summary.gainPercent === null
-              ? NO_FIAT_VALUE
-              : `+${formatRate(summary.gainPercent)}`}
+            {gain ?? NO_FIAT_VALUE}
           </span>
-        </div>
-        <div
-          className="PositionsPoolCard__apy"
+        </span>
+        <span
+          className="PoolCard__apy"
           data-testid={`pool-card-apy-${position.id}`}
         >
           {summary.apy === null
             ? NO_FIAT_VALUE
-            : t("{{rate}} APY", { rate: formatRate(summary.apy) })}
-        </div>
-      </div>
+            : t("{{rate}} Net APY", { rate: formatRate(summary.apy) })}
+        </span>
+      </span>
     </button>
   );
 };

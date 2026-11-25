@@ -1,0 +1,101 @@
+@use "../../../styles/utils.scss" as *;
+
+// Figma: Varial 4470:113064 (light), 4478:118152 (dark).
+.PositionActivity {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(8px);
+
+  &__title {
+    @include text(xs, medium);
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(12px);
+    padding: pxToRem(12px) 0;
+  }
+
+  // The token at 28px on a 32px disc in the surface color, with the protocol's
+  // mark badged at the bottom left on a 16px disc of the same color. The discs
+  // are the design's cut-outs; drawn in CSS so they follow the theme.
+  &__icon {
+    position: relative;
+    flex: none;
+    width: pxToRem(32px);
+    height: pxToRem(32px);
+    border-radius: 50%;
+    background-color: var(--sds-clr-gray-01);
+
+    &__token {
+      position: absolute;
+      inset: pxToRem(2px);
+      display: flex;
+    }
+
+    &__badge {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      display: flex;
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+      border-radius: 50%;
+      background-color: var(--sds-clr-gray-01);
+
+      .PoolIcon {
+        border-radius: pxToRem(4px);
+      }
+    }
+  }
+
+  &__main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: pxToRem(2px);
+    min-width: 0;
+  }
+
+  &__figures {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: pxToRem(2px);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  &__label {
+    @include text(sm, medium);
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__amount {
+    @include text(sm, medium);
+    color: var(--sds-clr-gray-11);
+
+    &--positive {
+      color: var(--sds-clr-green-11);
+    }
+  }
+
+  &__site,
+  &__date {
+    @include text(xs, medium);
+    color: var(--sds-clr-gray-11);
+  }
+}
+
+// Scoped under the block so it outranks a host screen's own token-icon size.
+.PositionActivity .PositionActivity__icon__token .AccountAssets__asset--logo {
+  @include asset-logo-size(28);
+  margin: 0;
+}

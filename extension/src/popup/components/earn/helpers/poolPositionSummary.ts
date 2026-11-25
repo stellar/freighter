@@ -17,6 +17,25 @@ export interface PoolPositionSummary {
 }
 
 /**
+ * Interest as a share of principal (total minus interest). Null when either
+ * figure is unknown. A position that is entirely accrued interest has no
+ * principal to measure against, so the ratio is null there too, not infinite.
+ */
+export const getGainPercent = (
+  totalUsd: number | null,
+  interestUsd: number | null,
+): number | null => {
+  if (totalUsd === null || interestUsd === null) {
+    return null;
+  }
+  const principal = new BigNumber(totalUsd).minus(interestUsd);
+  if (principal.lte(0)) {
+    return null;
+  }
+  return new BigNumber(interestUsd).dividedBy(principal).toNumber();
+};
+
+/**
  * The pool-level figures behind a Positions pool card and the My position
  * header.
  *
@@ -60,18 +79,7 @@ export const getPoolPositionSummary = (
         return sum + row.interestEarnedUsd;
       }, 0);
 
-  const gainPercent = (() => {
-    if (totalUsd === null || interestUsd === null) {
-      return null;
-    }
-    const principal = new BigNumber(totalUsd).minus(interestUsd);
-    // A position that is entirely accrued interest has no principal to measure
-    // against; the ratio is undefined, not infinite.
-    if (principal.lte(0)) {
-      return null;
-    }
-    return new BigNumber(interestUsd).dividedBy(principal).toNumber();
-  })();
+  const gainPercent = getGainPercent(totalUsd, interestUsd);
 
   return {
     totalUsd,

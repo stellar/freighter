@@ -11,6 +11,9 @@ export const EARN_PREFILL_KEY = "prefill";
 
 export const EARN_PREFILL_QUERY = `?${EARN_PREFILL_KEY}=1`;
 
+/** The two tabs of a supplied token's position screen. */
+export type PoolDetailsTab = "your_position" | "overview";
+
 /** Did this Earn entry arrive prefilled? Takes a `location.search`. */
 export const isEarnPrefillSearch = (search: string) =>
   new URLSearchParams(search).get(EARN_PREFILL_KEY) === "1";
@@ -27,7 +30,7 @@ export const EARN_SOURCE = {
   HOME: "home",
   POSITION_ROW: "position_row",
   POSITIONS_EMPTY: "positions_empty",
-  /** The Positions tab's floating Deposit pill (FloatingAddButton). */
+  /** The Positions tab's Deposit button, under the pool cards. */
   POSITIONS_PILL: "positions_pill",
 } as const;
 

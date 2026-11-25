@@ -74,7 +74,14 @@ export const projectAnnualEarnings = ({
     }
 
     const balance = getBalanceByKey(option.assetId, balances, networkDetails);
-    if (!balance || new BigNumber(balance.total).lte(0)) {
+    // What could actually be deposited: XLM's `total` includes the minimum
+    // balance the account must keep, which no deposit can use.
+    const spendable = !balance
+      ? null
+      : "available" in balance && balance.available
+        ? balance.available
+        : balance.total;
+    if (!spendable || new BigNumber(spendable).lte(0)) {
       return;
     }
 
@@ -95,7 +102,7 @@ export const projectAnnualEarnings = ({
 
     counted += 1;
     total = total.plus(
-      new BigNumber(balance.total).multipliedBy(price).multipliedBy(apy),
+      new BigNumber(spendable).multipliedBy(price).multipliedBy(apy),
     );
   });
 

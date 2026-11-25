@@ -26,7 +26,7 @@ const position = (over: Record<string, unknown> = {}) =>
   ({
     protocol: "blend",
     id: "CAJJ",
-    name: "Fixed Pool v2",
+    name: "Fixed v2.1 Pool",
     netUsd: 1284.32,
     suppliedUsd: 1284.32,
     borrowedUsd: 0,
@@ -47,7 +47,7 @@ describe("PoolCard", () => {
     renderCard();
 
     expect(screen.getByTestId("pool-card-CAJJ")).toHaveTextContent(
-      "Fixed Pool v2",
+      "Fixed v2.1 Pool",
     );
     expect(screen.getByTestId("pool-card-value-CAJJ")).toHaveTextContent(
       "$1,284.32",
@@ -60,13 +60,11 @@ describe("PoolCard", () => {
       "2.53%",
     );
     // react-i18next's t() is mocked in this test env to echo its key
-    // untouched (config/jest/setupTests.tsx) rather than interpolate --
-    // matches how the sibling PositionRow test asserts this same
-    // "{{rate}} APY" pattern (AccountPositions.test.tsx). formatRate's own
-    // tests cover the actual "10.23%" formatting; this proves the
-    // available-rate branch is taken.
+    // untouched (config/jest/setupTests.tsx) rather than interpolate.
+    // formatRate's own tests cover the actual "10.23%" formatting; this proves
+    // the available-rate branch is taken.
     expect(screen.getByTestId("pool-card-apy-CAJJ")).toHaveTextContent(
-      "{{rate}} APY",
+      "{{rate}} Net APY",
     );
   });
 

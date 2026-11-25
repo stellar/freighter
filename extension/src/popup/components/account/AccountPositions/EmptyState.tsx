@@ -13,6 +13,8 @@ import { navigateTo } from "popup/helpers/navigate";
 import { formatRate } from "popup/components/earn/helpers/formatPoolStats";
 import { formatAmount } from "popup/helpers/formatters";
 
+import { SparkleIcon } from "./PositionIcons";
+
 interface EmptyStateProps {
   /** Annual projection in USD, or null when there is nothing to total. */
   projectedUsd: string | null;
@@ -23,17 +25,15 @@ interface EmptyStateProps {
 }
 
 /**
- * Shown once the positions request lands with nothing.
+ * The Positions tab with nothing supplied (Figma Varial 4464:110306).
  *
- * The card promises a dollar figure when the account actually holds something
- * depositable, and the ceiling rate when it does not — a new account has no
- * balance to project from, so "$0.00/year" would read as a rejection rather
- * than an invitation. With neither figure known, the card is omitted entirely
- * rather than rendering blank.
+ * "Earn up to" is what the account's own depositable tokens would earn in a
+ * year at each token's best rate (`projectAnnualEarnings`). With nothing
+ * depositable held it falls back to the best rate on offer, and with neither
+ * figure known the row is left out.
  *
- * The CTA's navigation lives here, in one place, rather than behind a prop —
- * so the `source` query param the deposit funnel attributes back to this CTA
- * only needed one call site to change.
+ * The CTA follows the same flag and network gate as every entry into Earn.
+ * With it off the card stays: it is informational, not an offer (R11).
  */
 export const EmptyState = ({
   projectedUsd,
@@ -49,44 +49,48 @@ export const EmptyState = ({
   const hasProjection = projectedUsd !== null || bestApy !== null;
 
   return (
-    <div
-      className="AccountPositions__empty"
-      data-testid="account-positions-empty"
-    >
-      <div className="AccountPositions__empty__title">
-        {t("No positions yet")}
-      </div>
-      <div className="AccountPositions__empty__subtitle">
-        {t(
-          "Put your crypto to work and earn rewards while keeping track of your positions.",
-        )}
-      </div>
-
-      {hasProjection && (
-        <div
-          className="AccountPositions__empty__projection"
-          data-testid="account-positions-projection"
-        >
-          <div className="AccountPositions__empty__projection__label">
-            {t("You could earn up to")}
-          </div>
-          <div className="AccountPositions__empty__projection__value">
-            <span className="AccountPositions__empty__projection__figure">
-              {projectedUsd !== null
-                ? `$${formatAmount(projectedUsd)}`
-                : formatRate(bestApy)}
-            </span>
-            {t("/year on your tokens")}
+    <div className="PositionsEmpty" data-testid="account-positions-empty">
+      <div className="PositionsEmpty__card">
+        <div className="PositionsEmpty__icon">
+          <SparkleIcon />
+        </div>
+        <div className="PositionsEmpty__copy">
+          <div className="PositionsEmpty__title">{t("Start earning")}</div>
+          <div className="PositionsEmpty__subtitle">
+            {t(
+              "Put your tokens to work and earn rewards while keeping track of your positions.",
+            )}
           </div>
         </div>
-      )}
 
-      {canDeposit && (
-        <div className="AccountPositions__empty__cta">
+        {hasProjection && (
+          <div
+            className="PositionsEmpty__projection"
+            data-testid="account-positions-projection"
+          >
+            <div className="PositionsEmpty__projection__label">
+              {t("Earn up to")}
+            </div>
+            <div className="PositionsEmpty__projection__value">
+              <span className="PositionsEmpty__projection__figure">
+                {`${
+                  projectedUsd !== null
+                    ? `$${formatAmount(projectedUsd)}`
+                    : formatRate(bestApy)
+                } /`}
+              </span>
+              <span className="PositionsEmpty__projection__unit">
+                {t("year on your tokens")}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {canDeposit && (
           <Button
             type="button"
             variant="secondary"
-            size="lg"
+            size="md"
             isRounded
             onClick={() => {
               onStartEarning();
@@ -100,8 +104,8 @@ export const EmptyState = ({
           >
             {t("Start Earning")}
           </Button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
