@@ -219,9 +219,14 @@ test("a supplied token shows its position, activity and pool links", async ({
 
   await page.getByTestId("account-tab-positions").click();
   await page.getByTestId(`pool-card-${POOL_ID}`).click();
+  // The pool's screen sums every token; a token's screen is named for it.
+  const headerTitle = (text: string) =>
+    page.getByTestId("AppHeaderPageTitle").filter({ hasText: text });
+  await expect(headerTitle("Position details")).toBeVisible();
   await page.getByTestId("position-row-USDC").click();
 
   await expect(page.getByTestId("token-position-screen")).toBeVisible();
+  await expect(headerTitle("USDC position")).toBeVisible();
   // Principal: the balance less the interest it earned ($500.12 - $0.12).
   await expect(page.getByTestId("earn-position-deposit-usd-USDC")).toHaveText(
     "$500.00",

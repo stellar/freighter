@@ -20,6 +20,7 @@
   "{{rate}} Net APY": "{{rate}} Net APY",
   "{{rate}}% APY": "{{rate}}% APY",
   "{{rate}}% APY*": "{{rate}}% APY*",
+  "{{tokenCode}} position": "{{tokenCode}} position",
   "{{walletType}} logo": "{{walletType}} logo",
   "* All Stellar accounts must maintain a minimum balance of lumens.": "* All Stellar accounts must maintain a minimum balance of lumens.",
   "*APY is variable and subject to change.": "*APY is variable and subject to change.",

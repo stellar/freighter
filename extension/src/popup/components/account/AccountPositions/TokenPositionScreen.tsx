@@ -121,7 +121,7 @@ export const TokenPositionScreen = ({
   return (
     <View>
       <SubviewHeader
-        title={t("Position details")}
+        title={t("{{tokenCode}} position", { tokenCode: row.code })}
         customBackIcon={<Icon.X />}
         customBackAction={onClose}
       />

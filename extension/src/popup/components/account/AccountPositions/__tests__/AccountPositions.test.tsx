@@ -237,6 +237,9 @@ describe("AccountPositions", () => {
     expect(
       await screen.findByTestId("token-position-screen"),
     ).toBeInTheDocument();
+    // The pool's screen is "Position details"; a token's is named for it
+    // ("USDC position"). The i18n mock returns keys uninterpolated.
+    expect(screen.getByText("{{tokenCode}} position")).toBeInTheDocument();
     // Principal and interest: 500.12 = 500.00 deposited + 0.12 earned.
     expect(
       screen.getByTestId("earn-position-deposit-usd-USDC"),
