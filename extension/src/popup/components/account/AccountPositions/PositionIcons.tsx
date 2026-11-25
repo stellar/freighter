@@ -1,51 +1,10 @@
 import React from "react";
 
 /**
- * The empty state's sparkle (Figma Varial 4464:110306, "Group 19"). Inlined
- * with `currentColor` rather than shipped as the exported file, whose fill is
- * light-theme only: the colour comes from the stylesheet, so dark mode gets
- * its own. Path and drop shadow as exported.
- */
-export const SparkleIcon = () => (
-  <svg
-    className="PositionIcons__sparkle"
-    width="29.6829"
-    height="30.8411"
-    viewBox="0 0 29.6829 30.8411"
-    fill="none"
-    aria-hidden="true"
-  >
-    <g filter="url(#positions-sparkle-shadow)">
-      <path
-        d="M14.4379 1.39305C14.5244 1.08035 15.0299 1.08035 15.1201 1.39305C16.6594 6.72897 20.1015 10.1509 25.4464 11.6587C25.7596 11.747 25.7626 12.2525 25.4504 12.3409C20.1233 13.8487 16.7215 17.2706 15.245 22.6065C15.1585 22.9192 14.653 22.9192 14.5628 22.6065C13.0235 17.2706 9.58143 13.8487 4.23654 12.3409C3.92332 12.2525 3.92034 11.747 4.23253 11.6587C9.55966 10.1509 12.9615 6.72897 14.4379 1.39305Z"
-        fill="currentColor"
-      />
-    </g>
-    <defs>
-      <filter
-        id="positions-sparkle-shadow"
-        x="0"
-        y="0"
-        width="29.6829"
-        height="30.8411"
-        filterUnits="userSpaceOnUse"
-        colorInterpolationFilters="sRGB"
-      >
-        <feDropShadow
-          dx="0"
-          dy="4"
-          stdDeviation="2"
-          floodColor="currentColor"
-          floodOpacity="0.25"
-        />
-      </filter>
-    </defs>
-  </svg>
-);
-
-/**
  * The leaf badged onto the token in "Your earnings" (Figma Varial 4470:113055,
- * "earn"). Inlined with `currentColor` for the same reason as SparkleIcon.
+ * "earn"). Inlined with `currentColor` rather than shipped as the exported
+ * file, whose stroke is light-theme only: the colour comes from the
+ * stylesheet, so dark mode gets its own. Path as exported.
  */
 export const EarnLeafIcon = () => (
   <svg

@@ -30,62 +30,22 @@
     height: 100%;
     width: 100%;
   }
+
+  // The empty card brings its own spacing (HomeEmptyState), and starts right
+  // under the tab row, as the Tokens and Collectibles ones do.
+  &--empty {
+    padding-top: 0;
+  }
 }
 
-// The empty card sits 16px from the popup's edges, 8px wider than the pane's
-// padding. It stays inside the pane's padding box, so nothing scrolls sideways.
-.AccountPositions:has(.PositionsEmpty) {
-  margin: 0 pxToRem(-8px);
-}
-
+// The "Earn up to" row inside Home's empty card (HomeEmptyState).
 .PositionsEmpty {
-  &__card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: pxToRem(12px);
-    padding: pxToRem(12px) pxToRem(32px);
-    border-radius: pxToRem(24px);
-    background-color: var(--sds-clr-gray-02);
-  }
-
-  &__icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: pxToRem(40px);
-    height: pxToRem(40px);
-    border-radius: 50%;
-    background-color: var(--sds-clr-lilac-03);
-    color: var(--sds-clr-lilac-06);
-  }
-
-  &__copy {
-    display: flex;
-    flex-direction: column;
-    gap: pxToRem(4px);
-    text-align: center;
-  }
-
-  &__title {
-    @include text(sm, semi-bold);
-    color: var(--sds-clr-gray-12);
-  }
-
-  &__subtitle {
-    @include text(xs);
-    color: var(--sds-clr-gray-11);
-  }
-
   &__projection {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: pxToRem(4px);
-    width: 100%;
     padding: pxToRem(8px) pxToRem(16px);
-    border-top: 1px solid var(--sds-clr-gray-06);
-    border-bottom: 1px solid var(--sds-clr-gray-06);
 
     &__label {
       @include text(xs, medium);
@@ -110,11 +70,11 @@
   }
 }
 
-.PositionIcons__sparkle {
-  display: block;
-  width: pxToRem(24px);
-  height: pxToRem(24px);
-  overflow: visible;
+// Like the card's fill, the row's rules are light-only: the dark frame
+// (4478:117375) draws neither.
+.sds-theme-light .PositionsEmpty__projection {
+  border-top: 1px solid var(--sds-clr-gray-06);
+  border-bottom: 1px solid var(--sds-clr-gray-06);
 }
 
 .PositionPoolCard {

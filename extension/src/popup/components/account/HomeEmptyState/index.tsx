@@ -9,6 +9,8 @@ import "./styles.scss";
 interface HomeEmptyStateProps {
   title: string;
   description: string;
+  /** A row under the description, as Positions' "Earn up to" figure. */
+  details?: React.ReactNode;
   /** The action at the bottom of the card. */
   children?: React.ReactNode;
   /** The collectibles card pads its sides 32px rather than 24px. */
@@ -24,6 +26,7 @@ interface HomeEmptyStateProps {
 export const HomeEmptyState = ({
   title,
   description,
+  details,
   children,
   isWide = false,
   "data-testid": dataTestId,
@@ -52,6 +55,7 @@ export const HomeEmptyState = ({
       <div className="HomeEmptyState__text">
         <div className="HomeEmptyState__title">{title}</div>
         <div className="HomeEmptyState__description">{description}</div>
+        {details && <div className="HomeEmptyState__details">{details}</div>}
       </div>
     </div>
     {children}

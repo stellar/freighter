@@ -10,10 +10,9 @@ import { EARN_SOURCE, EARN_SOURCE_KEY } from "popup/constants/earn";
 import { earnDepositSelector } from "popup/ducks/remoteConfig";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { navigateTo } from "popup/helpers/navigate";
+import { HomeEmptyState } from "popup/components/account/HomeEmptyState";
 import { formatRate } from "popup/components/earn/helpers/formatPoolStats";
 import { formatAmount } from "popup/helpers/formatters";
-
-import { SparkleIcon } from "./PositionIcons";
 
 interface EmptyStateProps {
   /** Annual projection in USD, or null when there is nothing to total. */
@@ -25,7 +24,8 @@ interface EmptyStateProps {
 }
 
 /**
- * The Positions tab with nothing supplied (Figma Varial 4464:110306).
+ * The Positions tab with nothing supplied (Figma Varial 4464:110306): Home's
+ * empty card, as Tokens and Collectibles show theirs, with an "Earn up to" row.
  *
  * "Earn up to" is what the account's own depositable tokens would earn in a
  * year at each token's best rate (`projectAnnualEarnings`). With nothing
@@ -49,21 +49,14 @@ export const EmptyState = ({
   const hasProjection = projectedUsd !== null || bestApy !== null;
 
   return (
-    <div className="PositionsEmpty" data-testid="account-positions-empty">
-      <div className="PositionsEmpty__card">
-        <div className="PositionsEmpty__icon">
-          <SparkleIcon />
-        </div>
-        <div className="PositionsEmpty__copy">
-          <div className="PositionsEmpty__title">{t("Start earning")}</div>
-          <div className="PositionsEmpty__subtitle">
-            {t(
-              "Put your tokens to work and earn rewards while keeping track of your positions.",
-            )}
-          </div>
-        </div>
-
-        {hasProjection && (
+    <HomeEmptyState
+      title={t("Start earning")}
+      description={t(
+        "Put your tokens to work and earn rewards while keeping track of your positions.",
+      )}
+      isWide
+      details={
+        hasProjection && (
           <div
             className="PositionsEmpty__projection"
             data-testid="account-positions-projection"
@@ -84,28 +77,29 @@ export const EmptyState = ({
               </span>
             </div>
           </div>
-        )}
-
-        {canDeposit && (
-          <Button
-            type="button"
-            variant="secondary"
-            size="md"
-            isRounded
-            onClick={() => {
-              onStartEarning();
-              navigateTo(
-                ROUTES.earn,
-                navigate,
-                `?${EARN_SOURCE_KEY}=${EARN_SOURCE.POSITIONS_EMPTY}`,
-              );
-            }}
-            data-testid="account-positions-start-earning"
-          >
-            {t("Start Earning")}
-          </Button>
-        )}
-      </div>
-    </div>
+        )
+      }
+      data-testid="account-positions-empty"
+    >
+      {canDeposit && (
+        <Button
+          type="button"
+          variant="secondary"
+          size="md"
+          isRounded
+          onClick={() => {
+            onStartEarning();
+            navigateTo(
+              ROUTES.earn,
+              navigate,
+              `?${EARN_SOURCE_KEY}=${EARN_SOURCE.POSITIONS_EMPTY}`,
+            );
+          }}
+          data-testid="account-positions-start-earning"
+        >
+          {t("Start Earning")}
+        </Button>
+      )}
+    </HomeEmptyState>
   );
 };

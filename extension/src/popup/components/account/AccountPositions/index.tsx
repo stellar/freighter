@@ -173,7 +173,10 @@ export const AccountPositions = ({
 
   if (!poolPositions.length) {
     return (
-      <div className="AccountPositions" data-testid="account-positions">
+      <div
+        className="AccountPositions AccountPositions--empty"
+        data-testid="account-positions"
+      >
         <EmptyState
           projectedUsd={projectedUsd}
           bestApy={bestApy}
