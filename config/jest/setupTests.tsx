@@ -92,8 +92,11 @@ jest.mock("helpers/metrics", () => ({
   metricsMiddleware: jest.fn(
     () => () => (next: any) => (action: any) => next(action),
   ),
-  storeBalanceMetricData: () => {},
   storeAccountMetricsData: () => {},
+  syncIdentifyTraits: () => {},
+  FUNDING_NETWORK: "PUBLIC",
+  getFundingRecord: () => undefined,
+  saveFundingRecord: () => {},
   reconcileAnalyticsUserId: jest.fn().mockResolvedValue(undefined),
   resetAnalyticsUserIdReconciliation: jest.fn(),
   getAnalyticsDebugInfo: () => ({

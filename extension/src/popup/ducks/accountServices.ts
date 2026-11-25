@@ -36,7 +36,13 @@ import {
 import { WalletType } from "@shared/constants/hardwareWallet";
 
 import { AppState } from "popup/App";
-import { METRICS_DATA, METRICS_USER_ID } from "constants/localStorageTypes";
+import {
+  ACCOUNT_FUNDING_RECORDS_ID,
+  FUNDED_ACCOUNTS_REFRESHED_AT_ID,
+  FUNDED_ACCOUNTS_REFRESH_LEASE_ID,
+  METRICS_DATA,
+  METRICS_USER_ID,
+} from "constants/localStorageTypes";
 import { MetricsData } from "helpers/metrics";
 import i18n from "popup/helpers/localizationConfig";
 
@@ -383,9 +389,13 @@ export const confirmPassword = createAsyncThunk<
 });
 
 const storeAccountMetricsData = (publicKey: string, allAccounts: Account[]) => {
-  const metricsData: MetricsData = JSON.parse(
-    localStorage.getItem(METRICS_DATA) || "{}",
-  );
+  // Build a new object, not a merge into the stored one. Thus each write
+  // drops fields that the code no longer uses.
+  const metricsData: MetricsData = {
+    accountType: AccountType.FREIGHTER,
+    hwExists: false,
+    importedExists: false,
+  };
 
   let accountType = AccountType.FREIGHTER;
   allAccounts.forEach((acc: Account) => {
@@ -455,6 +465,9 @@ export const resetWallet = createAsyncThunk<
   // With no id stored, the Welcome tab's getUserId() creates a random one.
   localStorage.removeItem(METRICS_DATA);
   localStorage.removeItem(METRICS_USER_ID);
+  localStorage.removeItem(ACCOUNT_FUNDING_RECORDS_ID);
+  localStorage.removeItem(FUNDED_ACCOUNTS_REFRESHED_AT_ID);
+  localStorage.removeItem(FUNDED_ACCOUNTS_REFRESH_LEASE_ID);
   return undefined;
 });
 
