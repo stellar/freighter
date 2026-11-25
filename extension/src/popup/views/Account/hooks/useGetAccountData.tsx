@@ -25,8 +25,12 @@ import {
 } from "helpers/hooks/useGetAppData";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "popup/App";
+import { useDispatch, useStore } from "react-redux";
+import { AppDispatch, AppState } from "popup/App";
+import {
+  earnPositionsSelector,
+  waitForRemoteConfig,
+} from "popup/ducks/remoteConfig";
 import { makeAccountActive } from "popup/ducks/accountServices";
 import { changeNetwork, saveBackendSettingsAction } from "popup/ducks/settings";
 import { useGetTokenPrices } from "helpers/hooks/useGetTokenPrices";
@@ -103,6 +107,7 @@ function useGetAccountData(options: {
     useCache: true,
   });
   const { fetchData: fetchPositions } = useGetPositions({ useCache: true });
+  const store = useStore<AppState>();
 
   const fetchData = async ({
     useAppDataCache = true,
@@ -173,10 +178,20 @@ function useGetAccountData(options: {
       // to the critical path in front of the Blockaid rescan below. Only
       // fetched where Earn exists at all; landed once positions has resolved,
       // alongside the pools dispatch below.
-      const poolsRequest = isEarnSupportedNetwork(networkDetails)
-        ? getBlendPools({ networkDetails })
-        : null;
-      poolsRequest?.catch(() => {});
+      //
+      // The catalog and the earn options below back only the Positions tab, so
+      // both also wait on `earn_positions`: with it off, Home makes none of
+      // the tab's requests. Resolved once the flags settle, without holding up
+      // the requests started above.
+      const isPositionsEnabledRequest = isEarnSupportedNetwork(networkDetails)
+        ? waitForRemoteConfig(store).then(() =>
+            earnPositionsSelector(store.getState()),
+          )
+        : Promise.resolve(false);
+      const poolsRequest = isPositionsEnabledRequest.then((isEnabled) =>
+        isEnabled ? getBlendPools({ networkDetails }) : null,
+      );
+      poolsRequest.catch(() => {});
 
       // let's fetch *just* the balances (without Blockaid scan results) to quickly be able to show the user their balances
       const balancesResult = await fetchBalances(
@@ -254,20 +269,21 @@ function useGetAccountData(options: {
       // earnOptions, only ever STARTED once we know it applies -- neither sits
       // in front of the Blockaid rescan below.
       let earnOptionsRequest: Promise<BlendEarnAssetOption[]> | null = null;
-      if (isEarnSupportedNetwork(networkDetails)) {
+      if (await isPositionsEnabledRequest) {
         // Unlike earnOptions below, fetched regardless of whether the account
         // has positions -- it backs the pool-details sheet a Positions row
         // opens, so it is needed precisely when positions exist, not only
         // when they don't. By the time this await runs, poolsRequest has had
         // the whole balances/collectibles/positions round trip to resolve, so
         // this rarely waits at all.
-        if (poolsRequest) {
-          try {
-            payload.pools = await poolsRequest;
+        try {
+          const pools = await poolsRequest;
+          if (pools) {
+            payload.pools = pools;
             dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
-          } catch (error) {
-            captureException(`Error fetching pools on Account - ${error}`);
           }
+        } catch (error) {
+          captureException(`Error fetching pools on Account - ${error}`);
         }
 
         // Only the empty state needs the catalog, and only to price its

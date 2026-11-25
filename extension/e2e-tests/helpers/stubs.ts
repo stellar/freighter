@@ -3928,9 +3928,12 @@ export const stubEarnSimulateTx = async (page: Page) => {
 };
 
 /**
- * Pins the `earn_deposit` Amplitude flag on, so the Earn specs don't depend on
- * the flag's default or on the real Experiment endpoint. Call it BEFORE
- * `loginToTestAccount`.
+ * Pins the given Amplitude boolean flags on or off, so the specs don't depend
+ * on a flag's build default (dev builds, e2e's included, default the Earn
+ * flags on) or on the real Experiment endpoint. Call it once, BEFORE
+ * `loginToTestAccount`, with every flag the spec cares about: each call
+ * answers the whole flags request, so a second call would shadow the first.
+ * Flags left out keep their build defaults.
  *
  * A route cannot do this: neither `page.route` nor `context.route` sees the
  * test page's own flags request, the same blind spot `stubSacViaInitScript`
@@ -3939,9 +3942,18 @@ export const stubEarnSimulateTx = async (page: Page) => {
  * runs before the bundle, so the SDK, which binds `fetch` when its module
  * loads, picks up this wrapper. It answers only the flags request.
  */
-export const stubEarnDepositFlag = async (context: BrowserContext) => {
-  await context.addInitScript(() => {
+export const stubAmplitudeFlags = async (
+  context: BrowserContext,
+  flags: Record<string, boolean>,
+) => {
+  await context.addInitScript((flagValues: Record<string, boolean>) => {
     const origFetch = window.fetch.bind(window);
+    const variants = Object.fromEntries(
+      Object.entries(flagValues).map(([name, isOn]) => {
+        const value = isOn ? "on" : "off";
+        return [name, { key: value, value }];
+      }),
+    );
     window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
       const url =
         typeof input === "string"
@@ -3951,19 +3963,20 @@ export const stubEarnDepositFlag = async (context: BrowserContext) => {
             : input.url;
       if (url.includes("/sdk/v2/vardata")) {
         return Promise.resolve(
-          new Response(
-            JSON.stringify({ earn_deposit: { key: "on", value: "on" } }),
-            {
-              status: 200,
-              headers: { "Content-Type": "application/json" },
-            },
-          ),
+          new Response(JSON.stringify(variants), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
         );
       }
       return origFetch(input, init);
     };
-  });
+  }, flags);
 };
+
+/** Pins the `earn_deposit` flag on; see `stubAmplitudeFlags`. */
+export const stubEarnDepositFlag = (context: BrowserContext) =>
+  stubAmplitudeFlags(context, { earn_deposit: true });
 
 /**
  * Stubs the three Blend endpoints the Earn flow reads.

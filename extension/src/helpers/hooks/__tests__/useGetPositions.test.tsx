@@ -7,7 +7,11 @@ import {
   FUTURENET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import { useGetPositions } from "helpers/hooks/useGetPositions";
-import { TEST_PUBLIC_KEY, Wrapper } from "popup/__testHelpers__";
+import {
+  TEST_PUBLIC_KEY,
+  TEST_REMOTE_CONFIG,
+  Wrapper,
+} from "popup/__testHelpers__";
 
 jest.mock("@shared/api/helpers/blend", () => ({
   getBlendPositions: jest.fn(),
@@ -24,7 +28,22 @@ const positions = {
   backstop: [],
 };
 
+const POSITIONS_ON = { ...TEST_REMOTE_CONFIG, earn_positions: true };
+
 const wrapper = ({ children }: { children: React.ReactNode }) => (
+  <Wrapper
+    state={{ cache: { positionsData: {} }, remoteConfig: POSITIONS_ON }}
+    routes={["/"]}
+  >
+    {children}
+  </Wrapper>
+);
+
+const wrapperWithPositionsOff = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => (
   <Wrapper state={{ cache: { positionsData: {} } }} routes={["/"]}>
     {children}
   </Wrapper>
@@ -44,6 +63,7 @@ const wrapperWithCachedEntry =
             },
           },
         },
+        remoteConfig: POSITIONS_ON,
       }}
       routes={["/"]}
     >
@@ -54,6 +74,26 @@ const wrapperWithCachedEntry =
 beforeEach(() => mockedGet.mockReset());
 
 describe("useGetPositions", () => {
+  // The tab is hidden, and the production backend may not serve positions yet.
+  it("resolves empty without a request while earn_positions is off", async () => {
+    const { result } = renderHook(() => useGetPositions({ useCache: false }), {
+      wrapper: wrapperWithPositionsOff,
+    });
+
+    let returned;
+    await act(async () => {
+      returned = await result.current.fetchData({
+        publicKey: TEST_PUBLIC_KEY,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      });
+    });
+
+    expect(mockedGet).not.toHaveBeenCalled();
+    expect(returned).toEqual(
+      expect.objectContaining({ address: TEST_PUBLIC_KEY, positions: [] }),
+    );
+  });
+
   it("fetches and returns the account's positions", async () => {
     mockedGet.mockResolvedValue(positions);
     const { result } = renderHook(() => useGetPositions({ useCache: false }), {

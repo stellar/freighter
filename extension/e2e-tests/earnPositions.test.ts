@@ -41,8 +41,8 @@
  * BLEND_FIXED_POOL_IDS entry, so the Positions tab and its screens are
  * reachable straight after login — see earnDeposit.test.ts's network-gating
  * test for the same reasoning, and @shared/constants/blend for the map
- * itself. The deposit entry points need the `earn_deposit` flag, which
- * stubEarnDepositFlag pins on before login.
+ * itself. The tab needs the `earn_positions` flag and its deposit entry points
+ * the `earn_deposit` flag; stubAmplitudeFlags pins them on before login.
  *
  * testid index:
  *  - account-tab-positions            AccountTabs/index.tsx
@@ -82,7 +82,7 @@ import {
   positionsFixture,
   stubAccountHistoryWith,
   stubBlendEarn,
-  stubEarnDepositFlag,
+  stubAmplitudeFlags,
 } from "./helpers/stubs";
 
 const POOL_ID = BLEND_FIXED_POOL_IDS[NETWORKS.PUBLIC]!;
@@ -97,7 +97,10 @@ test("Positions tab shows the empty state and enters Earn", async ({
 }) => {
   test.slow();
 
-  await stubEarnDepositFlag(context);
+  await stubAmplitudeFlags(context, {
+    earn_positions: true,
+    earn_deposit: true,
+  });
   await loginToTestAccount({
     page,
     extensionId,
@@ -127,6 +130,11 @@ test("a pool card opens its position screen", async ({
   context,
 }) => {
   test.slow();
+  // Deposit off: the tab's deposit entries must stay hidden.
+  await stubAmplitudeFlags(context, {
+    earn_positions: true,
+    earn_deposit: false,
+  });
 
   await loginToTestAccount({
     page,
@@ -137,6 +145,8 @@ test("a pool card opens its position screen", async ({
   });
 
   await page.getByTestId("account-tab-positions").click();
+  await expect(page.getByTestId(`pool-card-${POOL_ID}`)).toBeVisible();
+  await expect(page.getByTestId("positions-deposit-btn")).toHaveCount(0);
   await page.getByTestId(`pool-card-${POOL_ID}`).click();
 
   const screen = page.getByTestId("pool-position-screen");
@@ -159,7 +169,10 @@ test("the Deposit pill enters Earn with its source", async ({
 }) => {
   test.slow();
 
-  await stubEarnDepositFlag(context);
+  await stubAmplitudeFlags(context, {
+    earn_positions: true,
+    earn_deposit: true,
+  });
   await loginToTestAccount({
     page,
     extensionId,
@@ -184,6 +197,11 @@ test("a supplied token shows its position, activity and pool links", async ({
   context,
 }) => {
   test.slow();
+  // Deposit off: the tab's deposit entries must stay hidden.
+  await stubAmplitudeFlags(context, {
+    earn_positions: true,
+    earn_deposit: false,
+  });
 
   await loginToTestAccount({
     page,
@@ -226,6 +244,7 @@ test("a supplied token shows its position, activity and pool links", async ({
   await page.getByTestId("position-row-USDC").click();
 
   await expect(page.getByTestId("token-position-screen")).toBeVisible();
+  await expect(page.getByTestId("token-position-deposit")).toHaveCount(0);
   await expect(headerTitle("USDC position")).toBeVisible();
   // Principal: the balance less the interest it earned ($500.12 - $0.12).
   await expect(page.getByTestId("earn-position-deposit-usd-USDC")).toHaveText(
@@ -261,7 +280,10 @@ test("Deposit from a token's position lands on the amount screen prefilled", asy
 }) => {
   test.slow();
 
-  await stubEarnDepositFlag(context);
+  await stubAmplitudeFlags(context, {
+    earn_positions: true,
+    earn_deposit: true,
+  });
   await loginToTestAccount({
     page,
     extensionId,
@@ -280,4 +302,45 @@ test("Deposit from a token's position lands on the amount screen prefilled", asy
     "USDC",
   );
   await expect(page).toHaveURL(/source=position_row/);
+});
+
+// ---------------------------------------------------------------------------
+// 6. The tab waits on its flag
+// ---------------------------------------------------------------------------
+test("the Positions tab stays hidden while earn_positions is off", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+
+  // Deposit on, Positions off: Home keeps its Earn tile but not the tab.
+  await stubAmplitudeFlags(context, {
+    earn_positions: false,
+    earn_deposit: true,
+  });
+  let positionsRequests = 0;
+  await loginToTestAccount({
+    page,
+    extensionId,
+    context,
+    stubOverrides: async () => {
+      // The background fetches positions, so only a context route sees it.
+      // Registered after stubAllExternalApis' positions route, it counts and
+      // then hands the request on to it.
+      await context.route("**/accounts/positions**", (route) => {
+        positionsRequests += 1;
+        return route.fallback();
+      });
+      // Home loaded before this route existed; load it again through it.
+      await page.reload();
+    },
+  });
+
+  // Balances land after the positions request would have gone out: both wait
+  // on the flags, and positions starts first.
+  await expect(page.getByTestId("account-assets")).toBeVisible();
+  await expect(page.getByTestId("account-tab-tokens")).toBeVisible();
+  await expect(page.getByTestId("account-tab-positions")).toHaveCount(0);
+  expect(positionsRequests).toBe(0);
 });

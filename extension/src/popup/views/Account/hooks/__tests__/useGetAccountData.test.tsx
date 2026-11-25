@@ -8,7 +8,11 @@ import { AccountPositions } from "@shared/api/types/blend";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 
-import { makeDummyStore, TEST_PUBLIC_KEY } from "popup/__testHelpers__";
+import {
+  makeDummyStore,
+  TEST_PUBLIC_KEY,
+  TEST_REMOTE_CONFIG,
+} from "popup/__testHelpers__";
 
 import * as GetAppDataHooks from "helpers/hooks/useGetAppData";
 import * as GetBalancesHooks from "helpers/hooks/useGetBalances";
@@ -94,8 +98,12 @@ jest.spyOn(GetTokenPricesHooks, "useGetTokenPrices").mockReturnValue({
   fetchData: () => Promise.resolve({ tokenPrices: {} }) as any,
 } as any);
 
-jest.spyOn(BlendHelpers, "getBlendPools").mockResolvedValue([]);
-jest.spyOn(BlendHelpers, "getBlendEarnOptions").mockResolvedValue([]);
+const getPoolsSpy = jest
+  .spyOn(BlendHelpers, "getBlendPools")
+  .mockResolvedValue([]);
+const getEarnOptionsSpy = jest
+  .spyOn(BlendHelpers, "getBlendEarnOptions")
+  .mockResolvedValue([]);
 
 jest.spyOn(ApiInternal, "loadBackendSettings").mockResolvedValue({
   isSorobanPublicEnabled: true,
@@ -104,7 +112,23 @@ jest.spyOn(ApiInternal, "loadBackendSettings").mockResolvedValue({
 } as any);
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
-  <Provider store={makeDummyStore({})}>{children}</Provider>
+  <Provider
+    store={makeDummyStore({
+      remoteConfig: { ...TEST_REMOTE_CONFIG, earn_positions: true },
+    })}
+  >
+    {children}
+  </Provider>
+);
+
+const wrapperWithPositionsOff = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => (
+  <Provider store={makeDummyStore({ remoteConfig: TEST_REMOTE_CONFIG })}>
+    {children}
+  </Provider>
 );
 
 describe("useGetAccountData", () => {
@@ -135,5 +159,35 @@ describe("useGetAccountData", () => {
 
     expect(resolved.isScanAppended).toBe(true);
     expect(resolved.balances).toEqual(SCANNED_BALANCES);
+  });
+
+  it("fetches the Positions tab's pool catalog and earn options", async () => {
+    const { result } = renderHook(
+      () => useGetAccountData({ showHidden: false, includeIcons: false }),
+      { wrapper },
+    );
+
+    await act(async () => {
+      await result.current.fetchData({ useAppDataCache: false });
+    });
+
+    expect(getPoolsSpy).toHaveBeenCalledTimes(1);
+    expect(getEarnOptionsSpy).toHaveBeenCalledTimes(1);
+  });
+
+  // With the tab hidden, Home makes none of its requests.
+  it("skips the pool catalog and earn options while earn_positions is off", async () => {
+    const { result } = renderHook(
+      () => useGetAccountData({ showHidden: false, includeIcons: false }),
+      { wrapper: wrapperWithPositionsOff },
+    );
+
+    await act(async () => {
+      await result.current.fetchData({ useAppDataCache: false });
+    });
+
+    expect(getPoolsSpy).not.toHaveBeenCalled();
+    expect(getEarnOptionsSpy).not.toHaveBeenCalled();
+    expect((result.current.state.data as any).pools).toEqual([]);
   });
 });

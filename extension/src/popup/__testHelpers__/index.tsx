@@ -55,6 +55,18 @@ let testStore: ReturnType<typeof makeDummyStore> | null = null;
 
 export const getTestStore = () => testStore;
 
+/** Loaded flags with every kill switch off: the Wrapper's default. Spread it
+ *  to turn one on, e.g. `{ ...TEST_REMOTE_CONFIG, earn_positions: true }`. */
+export const TEST_REMOTE_CONFIG = {
+  isInitialized: true,
+  use_balances_v2: false,
+  use_token_price_history: false,
+  earn_deposit: false,
+  earn_positions: false,
+  maintenance_banner: { enabled: false, payload: undefined },
+  maintenance_screen: { enabled: false, payload: undefined },
+};
+
 export const Wrapper: React.FunctionComponent<any> = ({
   children,
   state,
@@ -72,14 +84,7 @@ export const Wrapper: React.FunctionComponent<any> = ({
     },
     transactionSubmission: transactionSubmissionInitialState,
     // Loaded so balance fetches don't wait forever; kill switches stay off.
-    remoteConfig: {
-      isInitialized: true,
-      use_balances_v2: false,
-      use_token_price_history: false,
-      earn_deposit: false,
-      maintenance_banner: { enabled: false, payload: undefined },
-      maintenance_screen: { enabled: false, payload: undefined },
-    },
+    remoteConfig: TEST_REMOTE_CONFIG,
     ...state,
   });
   testStore = store;

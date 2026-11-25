@@ -31,6 +31,7 @@ const ON_VARIANT_VALUES = ["on", "true", "enabled", "yes"];
 const BOOLEAN_FLAGS = [
   "use_balances_v2",
   "earn_deposit",
+  "earn_positions",
   "use_token_price_history",
 ] as const;
 
@@ -95,6 +96,10 @@ const initialState: RemoteConfigState = {
   // Earn's entry point on Home. OFF in production until Amplitude turns it on;
   // ON in dev builds, which usually run without Amplitude's keys.
   earn_deposit: DEV_EXTENSION,
+  // Home's Positions tab, and the requests behind it. OFF in production until
+  // Amplitude turns it on, once the backend serves positions there; ON in dev
+  // builds, like `earn_deposit`.
+  earn_positions: DEV_EXTENSION,
   // Token price-history chart on AssetDetail. Ships ON — a kill switch, not
   // launch choreography (§11 of the token-price-graphs design).
   use_token_price_history: true,
@@ -265,6 +270,13 @@ export const tokenPriceHistoryEnabledSelector = killSwitchSelector(
  * answered.
  */
 export const earnDepositSelector = killSwitchSelector("earn_deposit");
+
+/**
+ * Whether Home shows the Positions tab and fetches what backs it: off in
+ * production until Amplitude turns it on, on in dev builds. Read fail-closed,
+ * like `earn_deposit`, so the tab never flashes in before the flags settle.
+ */
+export const earnPositionsSelector = killSwitchSelector("earn_positions");
 
 /**
  * Returns true once the Experiment flags have been fetched (or failed).

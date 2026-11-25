@@ -47,6 +47,7 @@ import {
   TEST_CANONICAL,
   TEST_PUBLIC_KEY,
   TEST_USDC_CANONICAL,
+  TEST_REMOTE_CONFIG,
   getTestStore,
 } from "../../__testHelpers__";
 import { fetchFeatureFlags } from "popup/ducks/remoteConfig";
@@ -1875,6 +1876,55 @@ describe("Account view", () => {
   // see the failure -- the view-level `hasError` has to reach
   // AccountPositions too, or the Positions tab falls through to its empty
   // state instead.
+  // Off until the production backend serves positions.
+  it("hides the Positions tab while earn_positions is off", async () => {
+    jest.spyOn(AccountDataHooks, "useGetAccountData").mockReturnValue({
+      state: {
+        state: RequestState.ERROR,
+        data: null,
+        error: new Error("boom"),
+      },
+      fetchData: jest.fn(),
+      refreshAppData: jest.fn(),
+      refreshBalances: jest.fn(),
+    });
+
+    render(
+      <Wrapper
+        routes={[`${ROUTES.account}?tab=positions`]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: TEST_PUBLIC_KEY,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <ActiveTabProvider>
+          <Account />
+        </ActiveTabProvider>
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("account-view")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByTestId("account-tab-positions")).toBeNull();
+    // Even a `?tab=positions` link lands on Tokens, with no Positions content.
+    await waitFor(() => {
+      expect(screen.getByTestId("account-tab-tokens")).toHaveClass(
+        "AccountTabs__tab-item--active",
+      );
+    });
+    expect(screen.queryByTestId("account-positions")).toBeNull();
+  });
+
   it("shows the positions error state rather than 'no positions' when the account fetch fails", async () => {
     const accountDataSpy = jest
       .spyOn(AccountDataHooks, "useGetAccountData")
@@ -1903,6 +1953,7 @@ describe("Account view", () => {
             networkDetails: MAINNET_NETWORK_DETAILS,
             networksList: DEFAULT_NETWORKS,
           },
+          remoteConfig: { ...TEST_REMOTE_CONFIG, earn_positions: true },
         }}
       >
         {/* Router supplies this in the app; without it the Positions tab

@@ -27,6 +27,7 @@ import {
   saveSelectedAssetApy,
   saveSelectedAssetId,
 } from "popup/ducks/earn";
+import { earnPositionsSelector } from "popup/ducks/remoteConfig";
 import { closeWindow, navigateTo, openTab } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { useSwapTopTokensPrewarm } from "popup/helpers/useSwapTopTokensPrewarm";
@@ -88,18 +89,19 @@ export const Account = () => {
   const reduxPublicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { activeTab, setActiveTab } = useContext(AccountTabsContext);
+  const isPositionsEnabled = useSelector(earnPositionsSelector);
+  const canShowPositions =
+    isPositionsEnabled && isEarnSupportedNetwork(networkDetails);
 
-  // The Positions button is hidden where Earn is unsupported. Switching networks
-  // while that tab is active would otherwise leave the pane on screen with no
-  // button to switch away from it.
+  // The Positions button is hidden while its flag is off and where Earn is
+  // unsupported. Switching networks while that tab is active, or a `?tab=`
+  // link to it, would otherwise leave the pane on screen with no button to
+  // switch away from it.
   useEffect(() => {
-    if (
-      activeTab === TabsList.POSITIONS &&
-      !isEarnSupportedNetwork(networkDetails)
-    ) {
+    if (activeTab === TabsList.POSITIONS && !canShowPositions) {
       setActiveTab(TabsList.TOKENS);
     }
-  }, [activeTab, networkDetails, setActiveTab]);
+  }, [activeTab, canShowPositions, setActiveTab]);
 
   const isFullscreenModeEnabled = isFullscreenMode();
   const {
@@ -457,24 +459,28 @@ export const Account = () => {
                 )
               ),
               <div data-testid="account-positions-pane">
-                <AccountPositions
-                  positions={resolvedData?.positions ?? null}
-                  isLoading={!!resolvedData && !resolvedData.hasLoadedPositions}
-                  // A failed account fetch (hasError) discards `resolvedData`
-                  // entirely (see helpers/request.ts), so hasPositionsError
-                  // alone would never see it -- and AccountPositions would
-                  // fall through to its empty state, telling the account it
-                  // holds nothing when the truth is "unknown". A position is
-                  // money; see that component's own file comment.
-                  hasError={hasError || !!resolvedData?.hasPositionsError}
-                  assetIcons={resolvedIcons}
-                  networkDetails={networkDetails}
-                  projectedUsd={projection.usd}
-                  bestApy={projection.bestApy}
-                  onStartEarning={trackPositionsEmptyCtaSelected}
-                  pools={resolvedData?.pools ?? []}
-                  onDeposit={onDepositFromPosition}
-                />
+                {canShowPositions && (
+                  <AccountPositions
+                    positions={resolvedData?.positions ?? null}
+                    isLoading={
+                      !!resolvedData && !resolvedData.hasLoadedPositions
+                    }
+                    // A failed account fetch (hasError) discards `resolvedData`
+                    // entirely (see helpers/request.ts), so hasPositionsError
+                    // alone would never see it -- and AccountPositions would
+                    // fall through to its empty state, telling the account it
+                    // holds nothing when the truth is "unknown". A position is
+                    // money; see that component's own file comment.
+                    hasError={hasError || !!resolvedData?.hasPositionsError}
+                    assetIcons={resolvedIcons}
+                    networkDetails={networkDetails}
+                    projectedUsd={projection.usd}
+                    bestApy={projection.bestApy}
+                    onStartEarning={trackPositionsEmptyCtaSelected}
+                    pools={resolvedData?.pools ?? []}
+                    onDeposit={onDepositFromPosition}
+                  />
+                )}
               </div>,
               <div data-testid="account-collectibles">
                 <AccountCollectibles
