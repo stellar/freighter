@@ -4,11 +4,12 @@
 // (pool screen), 4470:113013 / 4470:113073 (token screen). Dark frames:
 // 4478:117375, 4478:117874, 4478:117952, 4478:118152, 4478:118267.
 
+// The Home pane already pads 24px each side, as the Tokens tab relies on.
 .AccountPositions {
   display: flex;
   flex-direction: column;
   gap: pxToRem(12px);
-  padding: pxToRem(8px) pxToRem(24px) 0;
+  padding-top: pxToRem(8px);
 
   &__loader {
     display: flex;
@@ -31,9 +32,10 @@
   }
 }
 
-// The empty state sits 16px from the edges rather than the list's 24px.
+// The empty card sits 16px from the popup's edges, 8px wider than the pane's
+// padding. It stays inside the pane's padding box, so nothing scrolls sideways.
 .AccountPositions:has(.PositionsEmpty) {
-  padding: 0 pxToRem(16px);
+  margin: 0 pxToRem(-8px);
 }
 
 .PositionsEmpty {
@@ -115,7 +117,7 @@
   overflow: visible;
 }
 
-.PoolCard {
+.PositionPoolCard {
   position: relative;
   display: flex;
   align-items: center;

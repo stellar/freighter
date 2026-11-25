@@ -31,39 +31,39 @@ export const PoolCard = ({ position, onClick }: PoolCardProps) => {
   return (
     <button
       type="button"
-      className="PoolCard"
+      className="PositionPoolCard"
       onClick={onClick}
       data-testid={`pool-card-${position.id}`}
     >
-      <span className="PoolCard__accent" aria-hidden="true" />
-      <span className="PoolCard__icon">
+      <span className="PositionPoolCard__accent" aria-hidden="true" />
+      <span className="PositionPoolCard__icon">
         <PoolIcon size={40} />
       </span>
-      <span className="PoolCard__body">
-        <span className="PoolCard__name">
-          <span className="PoolCard__pool">
+      <span className="PositionPoolCard__body">
+        <span className="PositionPoolCard__name">
+          <span className="PositionPoolCard__pool">
             {formatPoolName(position.name, t)}
           </span>
           {/* Blend's name, not copy: the same in every language. */}
-          <span className="PoolCard__provider">· Blend</span>
+          <span className="PositionPoolCard__provider">· Blend</span>
         </span>
-        <span className="PoolCard__value">
+        <span className="PositionPoolCard__value">
           <span
-            className="PoolCard__total"
+            className="PositionPoolCard__total"
             data-testid={`pool-card-value-${position.id}`}
           >
             {formatAccountUsd(summary.totalUsd)}
           </span>
           {/* Unknown is "--", never zero or a silently missing badge. */}
           <span
-            className={`PoolCard__gain${gain ? "" : " PoolCard__gain--unknown"}`}
+            className={`PositionPoolCard__gain${gain ? "" : " PositionPoolCard__gain--unknown"}`}
             data-testid={`pool-card-gain-${position.id}`}
           >
             {gain ?? NO_FIAT_VALUE}
           </span>
         </span>
         <span
-          className="PoolCard__apy"
+          className="PositionPoolCard__apy"
           data-testid={`pool-card-apy-${position.id}`}
         >
           {summary.apy === null
