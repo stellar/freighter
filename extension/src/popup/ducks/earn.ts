@@ -15,6 +15,29 @@ import { EARN_SOURCE, EarnSource } from "popup/constants/earn";
  * What lands here is what must survive `resetSubmission()` or has no equivalent
  * field there.
  */
+/**
+ * A deposit that has landed on the ledger but may not be in Positions yet.
+ *
+ * Positions come from an indexer that trails the ledger by a few seconds, so a
+ * read straight after the deposit can still return the old amount. Home keeps
+ * re-reading until the deposited reserve holds at least `minTokens`.
+ */
+export interface AwaitedDeposit {
+  publicKey: string;
+  network: string;
+  poolId: string;
+  /** The reserve's contract address (its SAC), as Positions rows carry it. */
+  assetId: string;
+  /**
+   * The least the reserve must hold once the deposit shows, in display units:
+   * the position before it plus half the deposit. Half, because interest only
+   * adds to the amount, while a full-amount bar could miss by a rounding unit.
+   */
+  minTokens: string;
+  /** Epoch ms after which Home stops waiting and leaves it to the 30s poll. */
+  expiresAt: number;
+}
+
 export interface EarnState {
   /** Catalog entry for the allowlisted pool; null until the fetch resolves. */
   pool: BlendCatalogPool | null;
@@ -75,6 +98,12 @@ export interface EarnState {
    * been reviewed.
    */
   reviewedAmount: string | null;
+  /**
+   * Set when a deposit lands, cleared by Home once Positions show it or the
+   * wait expires. Survives `resetEarn()`: the flow resets as it closes, which is
+   * exactly when Home starts waiting.
+   */
+  awaitedDeposit: AwaitedDeposit | null;
 }
 
 export const initialState: EarnState = {
@@ -87,6 +116,7 @@ export const initialState: EarnState = {
   didSwapInFlow: false,
   source: EARN_SOURCE.HOME,
   reviewedAmount: null,
+  awaitedDeposit: null,
 };
 
 const earnSlice = createSlice({
@@ -120,14 +150,19 @@ const earnSlice = createSlice({
     saveReviewedAmount: (state, action: { payload: string | null }) => {
       state.reviewedAmount = action.payload;
     },
+    saveAwaitedDeposit: (state, action: { payload: AwaitedDeposit | null }) => {
+      state.awaitedDeposit = action.payload;
+    },
     /**
-     * Resets everything except `hasSeenIntro` — that flag is persisted in the
-     * background store and re-reading it on every flow entry would reintroduce
-     * the interstitial flash it exists to prevent.
+     * Resets everything except `hasSeenIntro` and `awaitedDeposit`.
+     * `hasSeenIntro` is persisted in the background store, and re-reading it on
+     * every flow entry would reintroduce the interstitial flash it exists to
+     * prevent. `awaitedDeposit` belongs to Home from the moment it is set.
      */
     resetEarn: (state) => ({
       ...initialState,
       hasSeenIntro: state.hasSeenIntro,
+      awaitedDeposit: state.awaitedDeposit,
     }),
   },
 });
@@ -142,9 +177,12 @@ export const {
   setDidSwapInFlow,
   saveEarnSource,
   saveReviewedAmount,
+  saveAwaitedDeposit,
   resetEarn,
 } = earnSlice.actions;
 
 export const { reducer } = earnSlice;
 
 export const earnSelector = (state: { earn: EarnState }) => state.earn;
+export const awaitedDepositSelector = (state: { earn: EarnState }) =>
+  state.earn.awaitedDeposit;

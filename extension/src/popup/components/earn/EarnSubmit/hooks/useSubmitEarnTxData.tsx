@@ -37,13 +37,13 @@ import {
   SigningSource,
 } from "popup/metrics/signing";
 import { useGetBalances } from "helpers/hooks/useGetBalances";
-import { useGetPositions } from "helpers/hooks/useGetPositions";
 import {
   signFreighterSorobanTransaction,
   submitFreighterSorobanTransaction,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
-import { earnSelector } from "popup/ducks/earn";
+import { earnSelector, saveAwaitedDeposit } from "popup/ducks/earn";
+import { AWAITED_DEPOSIT_MS } from "popup/components/earn/helpers/awaitedDeposit";
 
 interface SubmitEarnTxData {
   status: "success";
@@ -112,7 +112,8 @@ export function useSubmitEarnTxData({
   const allTokenPricesCache = useSelector(tokenPricesSelector);
   // Read directly rather than added as a prop, so EarnSubmit itself needs no
   // change to hand it through.
-  const { source } = useSelector(earnSelector);
+  const { source, selectedAssetId, currentPositionTokens } =
+    useSelector(earnSelector);
   const [state, dispatch] = useReducer(
     reducer<SubmitEarnTxData, unknown>,
     initialState,
@@ -121,9 +122,6 @@ export function useSubmitEarnTxData({
     showHidden: false,
     includeIcons: false,
   });
-  // Bypasses the cache: Home reloads positions from it, so a cached read here
-  // would leave the pre-deposit position on screen until the next 30s poll.
-  const { fetchData: fetchPositions } = useGetPositions({ useCache: false });
 
   const trackDepositFailed = (
     error: ErrorMessage | undefined,
@@ -255,29 +253,37 @@ export function useSubmitEarnTxData({
         volume,
       });
 
-      // The deposit moved funds from the account into the pool, so refresh
-      // both sides; Home reads them back from the cache these fetches write.
-      // The submit returns once the deposit is in a ledger, so they see it.
-      // Both run at once and neither failure affects the deposit itself: each
-      // is caught and logged here, since the fetches throw, and reaching the
-      // outer catch would leave a confirmed deposit on the in-flight screen.
-      await Promise.all([
-        fetchBalances(
+      // Positions trail the ledger (see AwaitedDeposit), so rather than read
+      // them once now, too early, tell Home what to wait for.
+      reduxDispatch(
+        saveAwaitedDeposit({
+          publicKey,
+          network: networkDetails.network,
+          poolId,
+          assetId: selectedAssetId,
+          minTokens: new BigNumber(currentPositionTokens)
+            .plus(new BigNumber(amount).dividedBy(2))
+            .toString(),
+          expiresAt: Date.now() + AWAITED_DEPOSIT_MS,
+        }),
+      );
+
+      // The deposit moved funds out of the account, so refresh balances. A
+      // failure here does not affect the deposit itself, so it is caught here
+      // and logged: the fetch throws, and reaching the outer catch would leave
+      // a confirmed deposit on the in-flight screen.
+      try {
+        await fetchBalances(
           publicKey,
           isMainnet(networkDetails),
           networkDetails,
           false,
-        ).catch((error) => {
-          captureException(
-            `Failed to fetch balances after earn deposit - ${error} ${networkDetails.network}`,
-          );
-        }),
-        fetchPositions({ publicKey, networkDetails }).catch((error) => {
-          captureException(
-            `Failed to fetch positions after earn deposit - ${error} ${networkDetails.network}`,
-          );
-        }),
-      ]);
+        );
+      } catch (error) {
+        captureException(
+          `Failed to fetch balances after earn deposit - ${error} ${networkDetails.network}`,
+        );
+      }
 
       const payload: SubmitEarnTxData = { status: "success" };
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });

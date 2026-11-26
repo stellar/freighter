@@ -15,6 +15,7 @@ import { RequestState } from "constants/request";
 import { EarnSubmit } from "popup/components/earn/EarnSubmit";
 import { useSubmitEarnTxData } from "popup/components/earn/EarnSubmit/hooks/useSubmitEarnTxData";
 import { EarnSource } from "popup/constants/earn";
+import * as EarnDuck from "popup/ducks/earn";
 import { initialState as earnInitialState } from "popup/ducks/earn";
 import {
   initialState as transactionSubmissionInitialState,
@@ -37,7 +38,6 @@ const SOFTWARE_SIGNED_XDR = "AAAA-signed-in-page";
 const mockSignSoroban = jest.fn();
 const mockGetTokenPrices = jest.fn();
 const mockFetchBalances = jest.fn().mockResolvedValue({ balances: {} });
-const mockFetchPositions = jest.fn().mockResolvedValue({ positions: [] });
 
 jest.mock("@shared/api/internal", () => ({
   ...jest.requireActual("@shared/api/internal"),
@@ -49,11 +49,6 @@ jest.mock("@shared/api/internal", () => ({
 jest.mock("helpers/hooks/useGetBalances", () => ({
   ...jest.requireActual("helpers/hooks/useGetBalances"),
   useGetBalances: () => ({ fetchData: mockFetchBalances }),
-}));
-
-jest.mock("helpers/hooks/useGetPositions", () => ({
-  ...jest.requireActual("helpers/hooks/useGetPositions"),
-  useGetPositions: () => ({ fetchData: mockFetchPositions }),
 }));
 
 jest.mock("helpers/metrics", () => ({
@@ -152,6 +147,8 @@ const makeState = ({
   earn: {
     ...earnInitialState,
     pool: { id: POOL_ID },
+    selectedAssetId: "CUSDC",
+    currentPositionTokens: "100",
     lastSubmitFailed,
     source,
     reviewedAmount,
@@ -451,9 +448,11 @@ describe("useSubmitEarnTxData", () => {
     expect(result.current.state.state).toBe(RequestState.SUCCESS);
   });
 
-  // Home reloads both from the cache, so the deposit's success must have
-  // refreshed them, or the old position shows until the next poll.
-  it("refreshes balances and positions once the deposit lands", async () => {
+  // Positions trail the ledger, so the deposit hands Home what to wait for
+  // rather than reading them itself: the position before it (100) plus half
+  // the 0.5 deposited.
+  it("tells Home which deposit to wait for once it lands", async () => {
+    const saveAwaitedDeposit = jest.spyOn(EarnDuck, "saveAwaitedDeposit");
     mockFetch.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ status: "PENDING", hash: "abc123" }),
@@ -464,19 +463,19 @@ describe("useSubmitEarnTxData", () => {
       await result.current.fetchData();
     });
 
-    expect(mockFetchBalances).toHaveBeenCalledWith(
-      TEST_PUBLIC_KEY,
-      false,
-      TESTNET_NETWORK_DETAILS,
-      false,
-    );
-    expect(mockFetchPositions).toHaveBeenCalledWith({
+    expect(saveAwaitedDeposit).toHaveBeenCalledWith({
       publicKey: TEST_PUBLIC_KEY,
-      networkDetails: TESTNET_NETWORK_DETAILS,
+      network: TESTNET_NETWORK_DETAILS.network,
+      poolId: POOL_ID,
+      assetId: "CUSDC",
+      minTokens: "100.25",
+      expiresAt: expect.any(Number),
     });
+    expect(mockFetchBalances).toHaveBeenCalled();
   });
 
-  it("refreshes nothing when the network rejects the deposit", async () => {
+  it("leaves Home nothing to wait for when the network rejects the deposit", async () => {
+    const saveAwaitedDeposit = jest.spyOn(EarnDuck, "saveAwaitedDeposit");
     mockFetch.mockResolvedValue({
       ok: false,
       json: () => Promise.resolve({ extras: { result_codes: {} } }),
@@ -487,24 +486,8 @@ describe("useSubmitEarnTxData", () => {
       await result.current.fetchData();
     });
 
+    expect(saveAwaitedDeposit).not.toHaveBeenCalled();
     expect(mockFetchBalances).not.toHaveBeenCalled();
-    expect(mockFetchPositions).not.toHaveBeenCalled();
-  });
-
-  it("reports a success state when the positions refresh after it fails", async () => {
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ status: "PENDING", hash: "abc123" }),
-    });
-    mockFetchPositions.mockRejectedValueOnce(new Error("backend down"));
-    const { result } = renderSubmitHook("AAAA-unsigned");
-
-    await act(async () => {
-      await result.current.fetchData();
-    });
-
-    expect(mockFetchPositions).toHaveBeenCalled();
-    expect(result.current.state.state).toBe(RequestState.SUCCESS);
   });
 
   // The balance fetch throws on failure. The deposit has already landed, so

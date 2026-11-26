@@ -1,10 +1,17 @@
 import React from "react";
 import { Provider } from "react-redux";
-import { renderHook, act } from "@testing-library/react";
+import { renderHook, act, waitFor } from "@testing-library/react";
 
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { AccountPositions } from "@shared/api/types/blend";
+import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
+import { NETWORKS } from "@shared/constants/stellar";
+import {
+  AwaitedDeposit,
+  initialState as earnInitialState,
+} from "popup/ducks/earn";
+import { AWAITED_DEPOSIT_POLL_MS } from "popup/components/earn/helpers/awaitedDeposit";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 
@@ -88,9 +95,10 @@ jest.spyOn(GetCollectiblesHooks, "useGetCollectibles").mockReturnValue({
 // Zero positions (not an error) is the exact population the regression
 // affects: it is what makes `earnOptionsRequest` non-null, which is what
 // lands a dispatch after the mainnet rescan block.
+const mockFetchPositions = jest.fn(() => Promise.resolve(ZERO_POSITIONS));
 jest.spyOn(GetPositionsHooks, "useGetPositions").mockReturnValue({
   state: {} as any,
-  fetchData: () => Promise.resolve(ZERO_POSITIONS),
+  fetchData: mockFetchPositions,
 } as any);
 
 jest.spyOn(GetTokenPricesHooks, "useGetTokenPrices").mockReturnValue({
@@ -131,9 +139,150 @@ const wrapperWithPositionsOff = ({
   </Provider>
 );
 
+const POOL_ID = BLEND_FIXED_POOL_IDS[NETWORKS.PUBLIC]!;
+
+/** The account holding `tokens` USDC (7 decimals) in the pool. */
+const holding = (tokens: string): AccountPositions => ({
+  ...ZERO_POSITIONS,
+  positions: [
+    {
+      protocol: "blend",
+      id: POOL_ID,
+      name: "Fixed",
+      netUsd: null,
+      suppliedUsd: null,
+      borrowedUsd: null,
+      netApy: null,
+      blend: {
+        supply: [
+          {
+            assetId: "CUSDC",
+            symbol: "USDC",
+            name: null,
+            decimals: 7,
+            suppliedTokens: "0",
+            collateralTokens: tokens,
+            totalTokens: tokens,
+            usdValue: null,
+            apy: null,
+            emissionsApr: null,
+            interestEarned: "0",
+            interestEarnedUsd: null,
+            claimableBlnd: "0",
+            claimableUsd: null,
+            priceUsd: null,
+          },
+        ],
+        borrow: [],
+      },
+    },
+  ],
+});
+
+const AWAITED: AwaitedDeposit = {
+  publicKey: TEST_PUBLIC_KEY,
+  network: MAINNET_NETWORK_DETAILS.network,
+  poolId: POOL_ID,
+  assetId: "CUSDC",
+  // 100 held before, 50 deposited: shows once the reserve holds 125+.
+  minTokens: "125",
+  expiresAt: Number.MAX_SAFE_INTEGER,
+};
+
+const storeAwaiting = (awaitedDeposit: AwaitedDeposit) =>
+  makeDummyStore({
+    remoteConfig: { ...TEST_REMOTE_CONFIG, positions_enabled: true },
+    earn: { ...earnInitialState, awaitedDeposit },
+  });
+
+const renderAwaiting = (store: ReturnType<typeof storeAwaiting>) =>
+  renderHook(
+    () => useGetAccountData({ showHidden: false, includeIcons: false }),
+    {
+      wrapper: ({ children }: { children: React.ReactNode }) => (
+        <Provider store={store}>{children}</Provider>
+      ),
+    },
+  );
+
 describe("useGetAccountData", () => {
   afterEach(() => {
     jest.clearAllMocks();
+    jest.useRealTimers();
+    // Back to zero positions: an override would leak into later tests.
+    mockFetchPositions.mockReset();
+    mockFetchPositions.mockImplementation(() =>
+      Promise.resolve(ZERO_POSITIONS),
+    );
+  });
+
+  describe("after a deposit", () => {
+    // Home's load reads the cached, pre-deposit positions; the indexer
+    // catches up a few seconds later.
+    it("re-reads Positions until the deposit shows, then stops", async () => {
+      jest.useFakeTimers();
+      mockFetchPositions
+        .mockResolvedValueOnce(holding("1000000000")) // load: 100, cached
+        .mockResolvedValueOnce(holding("1000000000")) // not indexed yet
+        .mockResolvedValueOnce(holding("1500000000")); // 150: it shows
+      const store = storeAwaiting(AWAITED);
+      const { result } = renderAwaiting(store);
+
+      await act(async () => {
+        await result.current.fetchData({ useAppDataCache: false });
+      });
+      await waitFor(() => expect(mockFetchPositions).toHaveBeenCalledTimes(2));
+
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(AWAITED_DEPOSIT_POLL_MS);
+      });
+
+      await waitFor(() =>
+        expect(store.getState().earn.awaitedDeposit).toBeNull(),
+      );
+      expect(
+        (result.current.state.data as any).positions.positions[0].blend
+          .supply[0].totalTokens,
+      ).toBe("1500000000");
+      // Every read after the load bypasses the cache.
+      expect(mockFetchPositions).toHaveBeenLastCalledWith(
+        expect.objectContaining({ useCache: false }),
+      );
+
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(AWAITED_DEPOSIT_POLL_MS * 3);
+      });
+      expect(mockFetchPositions).toHaveBeenCalledTimes(3);
+    });
+
+    // Past its wait, a deposit still gets one fresh read in place of the
+    // cached copy; the 30s poll takes over after that.
+    it("reads once more and stops when the wait has expired", async () => {
+      mockFetchPositions.mockResolvedValue(holding("1000000000"));
+      const store = storeAwaiting({ ...AWAITED, expiresAt: 0 });
+      const { result } = renderAwaiting(store);
+
+      await act(async () => {
+        await result.current.fetchData({ useAppDataCache: false });
+      });
+
+      await waitFor(() =>
+        expect(store.getState().earn.awaitedDeposit).toBeNull(),
+      );
+      expect(mockFetchPositions).toHaveBeenCalledTimes(2);
+    });
+
+    it("leaves another account's deposit alone", async () => {
+      const store = storeAwaiting({ ...AWAITED, publicKey: "GOTHER" });
+      const { result } = renderAwaiting(store);
+
+      await act(async () => {
+        await result.current.fetchData({ useAppDataCache: false });
+      });
+
+      expect(mockFetchPositions).toHaveBeenCalledTimes(1);
+      expect(store.getState().earn.awaitedDeposit).not.toBeNull();
+    });
   });
 
   // Regression: I3 moved the earnOptions landing to after the mainnet

@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import { captureException } from "@sentry/browser";
 
 import { RequestState } from "constants/request";
@@ -25,13 +25,18 @@ import {
 } from "helpers/hooks/useGetAppData";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { useDispatch, useStore } from "react-redux";
+import { useDispatch, useSelector, useStore } from "react-redux";
 import { AppDispatch, AppState } from "popup/App";
 import {
   positionsEnabledSelector,
   waitForRemoteConfig,
 } from "popup/ducks/remoteConfig";
 import { makeAccountActive } from "popup/ducks/accountServices";
+import { awaitedDepositSelector, saveAwaitedDeposit } from "popup/ducks/earn";
+import {
+  AWAITED_DEPOSIT_POLL_MS,
+  hasDepositLanded,
+} from "popup/components/earn/helpers/awaitedDeposit";
 import { changeNetwork, saveBackendSettingsAction } from "popup/ducks/settings";
 import { useGetTokenPrices } from "helpers/hooks/useGetTokenPrices";
 import { loadBackendSettings } from "@shared/api/internal";
@@ -108,6 +113,11 @@ function useGetAccountData(options: {
   });
   const { fetchData: fetchPositions } = useGetPositions({ useCache: true });
   const store = useStore<AppState>();
+  const awaitedDeposit = useSelector(awaitedDepositSelector);
+  // The effect below outlives several renders; it reads the data it merges
+  // into from here, so its own dependencies need not include it.
+  const latestDataRef = useRef(state.data);
+  latestDataRef.current = state.data;
 
   const fetchData = async ({
     useAppDataCache = true,
@@ -422,6 +432,77 @@ function useGetAccountData(options: {
       captureException(`Error refreshing balances on Account - ${error}`);
     }
   };
+
+  // Once Home has loaded this account's positions, follow a deposit until
+  // Positions show it. Positions trail the ledger by a few seconds (see
+  // AwaitedDeposit), so the read at load, from the cache or from the network,
+  // can still be missing it. Re-read every few seconds, putting each read on
+  // screen, until the deposit shows or the wait expires; the 30s poll carries
+  // on from there. Always reads at least once, even after the wait expired:
+  // that read is what replaces the pre-deposit copy Home loaded from the cache.
+  const loadedAccount =
+    state.data?.type === AppDataType.RESOLVED && state.data.hasLoadedPositions
+      ? `${state.data.networkDetails.network}:${state.data.publicKey}`
+      : null;
+
+  useEffect(() => {
+    if (
+      !awaitedDeposit ||
+      loadedAccount !== `${awaitedDeposit.network}:${awaitedDeposit.publicKey}`
+    ) {
+      return undefined;
+    }
+
+    let isCancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const check = async () => {
+      const data = latestDataRef.current;
+      if (!data || data.type !== AppDataType.RESOLVED) {
+        return;
+      }
+      try {
+        const positions = await fetchPositions({
+          publicKey: data.publicKey,
+          networkDetails: data.networkDetails,
+          useCache: false,
+        });
+        const latest = latestDataRef.current;
+        if (
+          isCancelled ||
+          latest?.type !== AppDataType.RESOLVED ||
+          latest.publicKey !== awaitedDeposit.publicKey ||
+          latest.networkDetails.network !== awaitedDeposit.network
+        ) {
+          return;
+        }
+        dispatch({
+          type: "FETCH_DATA_SUCCESS",
+          payload: { ...latest, positions, hasPositionsError: false },
+        });
+        if (hasDepositLanded(positions, awaitedDeposit)) {
+          reduxDispatch(saveAwaitedDeposit(null));
+          return;
+        }
+      } catch {
+        // `fetchPositions` has reported it; the next read may well succeed.
+        if (isCancelled) {
+          return;
+        }
+      }
+      if (Date.now() >= awaitedDeposit.expiresAt) {
+        reduxDispatch(saveAwaitedDeposit(null));
+        return;
+      }
+      timer = setTimeout(check, AWAITED_DEPOSIT_POLL_MS);
+    };
+
+    check();
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
+  }, [awaitedDeposit, loadedAccount, fetchPositions, reduxDispatch]);
 
   useEffect(() => {
     if (!state.data || state.data.type === AppDataType.REROUTE || !_isMainnet) {

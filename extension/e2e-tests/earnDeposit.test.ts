@@ -10,6 +10,8 @@
  *     on USDC, and its X returns to the picker
  *  5. Held-token happy path: Max bounces off the fee guard, then a smaller
  *     amount -> review -> confirm -> Deposit complete
+ *  5b. After Done, Positions show the deposit as soon as the indexer has it,
+ *     well before the 30s poll, and stop re-reading once they do
  *  6. Pool details sheet, including its Backstop row
  *  7. Earn tile hidden on a custom network with no allowlisted pool
  *
@@ -66,11 +68,17 @@ import { test, expect } from "./test-fixtures";
 import { Page } from "@playwright/test";
 import { loginToTestAccount, switchToMainnet } from "./helpers/login";
 import { expectHomeReady, goToSettings } from "./helpers/network";
+import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
+import { NETWORKS } from "@shared/constants/stellar";
 import {
+  positionsFixture,
+  TEST_ACCOUNT_PUBLIC_KEY,
   stubBlendEarn,
   stubEarnDepositFlag,
   stubEarnSimulateTx,
 } from "./helpers/stubs";
+
+const POOL_ID = BLEND_FIXED_POOL_IDS[NETWORKS.PUBLIC]!;
 
 /** Home -> Earn, through the first-run interstitial. */
 async function openEarnFlow(page: Page) {
@@ -319,6 +327,85 @@ test("depositing a held token reaches the success screen", async ({
     timeout: 30000,
   });
   await expect(page.getByText("Deposit complete")).toBeVisible();
+});
+
+// ---------------------------------------------------------------------------
+// 5b. Positions catch up with a deposit the indexer has not reached yet
+// ---------------------------------------------------------------------------
+test("a deposit shows in Positions once the indexer has it", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+
+  // Positions come from an indexer that trails the ledger, so after the
+  // deposit lands they keep answering with the old state for a couple of
+  // reads. No position before, the XLM one after.
+  let isDeposited = false;
+  let readsSinceDeposit = 0;
+  const INDEXER_LAG_READS = 2;
+
+  await stubEarnDepositFlag(context);
+  await loginToTestAccount({
+    page,
+    extensionId,
+    context,
+    stubOverrides: async () => {
+      await stubBlendEarn(page, context);
+      await stubEarnSimulateTx(page);
+      // Registered after stubBlendEarn's, so it wins the match.
+      await context.route("**/accounts/positions**", async (route) => {
+        if (isDeposited) {
+          readsSinceDeposit += 1;
+        }
+        const hasIndexed = isDeposited && readsSinceDeposit > INDEXER_LAG_READS;
+        await route.fulfill({
+          json: {
+            data: hasIndexed
+              ? positionsFixture({ assets: ["XLM"] })
+              : [
+                  {
+                    address: TEST_ACCOUNT_PUBLIC_KEY,
+                    total_value_usd: null,
+                    net_apy: null,
+                    positions: [],
+                    backstop: [],
+                  },
+                ],
+          },
+        });
+      });
+    },
+  });
+  await switchToMainnet(page);
+  await openEarnFlow(page);
+
+  await page.getByTestId("earn-token-row-XLM").click();
+  await page
+    .getByTestId("earn-amount")
+    .getByTestId("send-amount-amount-input")
+    .fill("100");
+  await page.getByTestId("earn-amount-btn-continue").click();
+  await expect(page.getByTestId("earn-review")).toBeVisible();
+  await page.getByTestId("earn-review-confirm").click();
+  await expect(page.getByTestId("earn-submit-done")).toBeVisible({
+    timeout: 30000,
+  });
+  isDeposited = true;
+  await page.getByTestId("earn-submit-done").click();
+
+  // Home loads the cached, pre-deposit positions, then keeps re-reading until
+  // the deposit shows. Well inside the 30s poll, which this must not rely on.
+  await page.getByTestId("account-tab-positions").click();
+  await expect(page.getByTestId(`pool-card-${POOL_ID}`)).toBeVisible({
+    timeout: 12000,
+  });
+  expect(readsSinceDeposit).toBe(INDEXER_LAG_READS + 1);
+
+  // Once it shows, the re-reading stops.
+  await page.waitForTimeout(7000);
+  expect(readsSinceDeposit).toBe(INDEXER_LAG_READS + 1);
 });
 
 // ---------------------------------------------------------------------------
