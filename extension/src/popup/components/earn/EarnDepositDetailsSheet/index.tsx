@@ -47,7 +47,16 @@ interface EarnDepositDetailsSheetProps {
   occurredAt?: string;
   networkDetails: NetworkDetails;
   onClose: () => void;
+  /**
+   * Called when Transaction details or View on stellar.expert is tapped, for
+   * the caller's telemetry. Position Activity passes it; the deposit flow
+   * does not.
+   */
+  onAction?: (action: EarnDetailsAction) => void;
 }
+
+/** What can be tapped inside the sheet. */
+export type EarnDetailsAction = "transaction_details" | "explorer";
 
 /**
  * A deposit's or withdrawal's own record (Figma Varial 4478:115461 and
@@ -77,6 +86,7 @@ export const EarnDepositDetailsSheet = ({
   occurredAt,
   networkDetails,
   onClose,
+  onAction,
 }: EarnDepositDetailsSheetProps) => {
   const isWithdraw = type === "withdraw";
   // Deposits keep the ids they always had.
@@ -147,9 +157,10 @@ export const EarnDepositDetailsSheet = ({
       isRounded
       icon={<Icon.LinkExternal01 />}
       iconPosition="right"
-      onClick={() =>
-        openTab(`${getStellarExpertUrl(networkDetails)}/tx/${transactionHash}`)
-      }
+      onClick={() => {
+        onAction?.("explorer");
+        openTab(`${getStellarExpertUrl(networkDetails)}/tx/${transactionHash}`);
+      }}
       data-testid={`${testIdPrefix}-details-explorer`}
     >
       {t("View on stellar.expert")}
@@ -237,7 +248,10 @@ export const EarnDepositDetailsSheet = ({
         {transaction && (
           <TransactionDetailsButton
             testId={`${testIdPrefix}-details-btn`}
-            onClick={() => setIsOnDetailsPane(true)}
+            onClick={() => {
+              onAction?.("transaction_details");
+              setIsOnDetailsPane(true);
+            }}
           />
         )}
       </div>

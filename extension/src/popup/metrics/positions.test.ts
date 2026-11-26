@@ -2,6 +2,8 @@ import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import {
   trackPoolSelected,
+  trackPositionActivityDetailsActionSelected,
+  trackPositionActivityRowSelected,
   trackPositionRowSelected,
   trackPositionsEmptyCtaSelected,
 } from "popup/metrics/positions";
@@ -32,6 +34,46 @@ describe("positions metrics", () => {
       protocol: "blend",
       asset_code: "USDC",
     });
+  });
+
+  it("reports an Activity row tap with what it was", () => {
+    trackPositionActivityRowSelected({
+      poolId: "CAJJ",
+      protocol: "blend",
+      assetCode: "USDC",
+      activityType: "withdraw",
+    });
+
+    expect(mocked).toHaveBeenCalledWith(
+      METRIC_NAMES.positionActivityRowSelected,
+      {
+        pool_id: "CAJJ",
+        protocol: "blend",
+        asset_code: "USDC",
+        activity_type: "withdraw",
+      },
+    );
+  });
+
+  it("reports an action taken in an Activity row's details sheet", () => {
+    trackPositionActivityDetailsActionSelected({
+      poolId: "CAJJ",
+      protocol: "blend",
+      assetCode: "USDC",
+      activityType: "deposit",
+      action: "explorer",
+    });
+
+    expect(mocked).toHaveBeenCalledWith(
+      METRIC_NAMES.positionActivityDetailsActionSelected,
+      {
+        pool_id: "CAJJ",
+        protocol: "blend",
+        asset_code: "USDC",
+        activity_type: "deposit",
+        action: "explorer",
+      },
+    );
   });
 
   it("reports the empty state's CTA", () => {

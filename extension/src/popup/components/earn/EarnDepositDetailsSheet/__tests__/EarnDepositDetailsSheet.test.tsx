@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import {
   Account,
   Asset,
@@ -16,6 +16,10 @@ import { Wrapper } from "popup/__testHelpers__";
 
 jest.mock("@shared/api/helpers/stellarSdkServer", () => ({
   stellarSdkServer: jest.fn(),
+}));
+jest.mock("popup/helpers/navigate", () => ({
+  ...jest.requireActual("popup/helpers/navigate"),
+  openTab: jest.fn(),
 }));
 
 const source = Keypair.random().publicKey();
@@ -127,5 +131,24 @@ describe("EarnDepositDetailsSheet", () => {
       ).toBeInTheDocument(),
     );
     expect(screen.queryByTestId("earn-deposit-details-btn")).toBeNull();
+  });
+
+  it("tells the caller which action was tapped", () => {
+    const onAction = jest.fn();
+    renderSheet({ xdr: ENVELOPE, onAction });
+
+    fireEvent.click(screen.getByTestId("earn-deposit-details-explorer"));
+    expect(onAction).toHaveBeenLastCalledWith("explorer");
+
+    fireEvent.click(screen.getByTestId("earn-deposit-details-btn"));
+    expect(onAction).toHaveBeenLastCalledWith("transaction_details");
+  });
+
+  it("works without an action callback, as the deposit flow opens it", () => {
+    renderSheet({ xdr: ENVELOPE });
+
+    expect(() =>
+      fireEvent.click(screen.getByTestId("earn-deposit-details-btn")),
+    ).not.toThrow();
   });
 });

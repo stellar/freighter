@@ -90,6 +90,14 @@ export const METRIC_NAMES = {
   positionPoolSelected: "positions.pool_selected",
   positionRowSelected: "positions.row_selected",
   positionsEmptyCtaSelected: "positions.empty_cta_selected",
+  // A deposit or withdrawal in a token position's Activity list was tapped,
+  // opening its details sheet.
+  positionActivityRowSelected: "positions.activity_row_selected",
+  // Inside that details sheet: Transaction details or View on stellar.expert.
+  // The deposit flow's own success screen opens the same sheet and does not
+  // emit this; it is Activity-only.
+  positionActivityDetailsActionSelected:
+    "positions.activity_details_action_selected",
 
   // -- Collectibles --------------------------------------------------------
   collectibleSendCompleted: "collectible_send.completed",

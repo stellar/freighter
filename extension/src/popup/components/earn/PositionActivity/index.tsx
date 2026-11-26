@@ -15,6 +15,10 @@ import { SlideupModal } from "popup/components/SlideupModal";
 import { formatActivityDate } from "popup/components/earn/helpers/formatActivityDate";
 import { formatEarnAmount } from "popup/components/earn/helpers/formatEarnAmount";
 import {
+  trackPositionActivityDetailsActionSelected,
+  trackPositionActivityRowSelected,
+} from "popup/metrics/positions";
+import {
   PositionActivityItem,
   PositionActivityType,
 } from "popup/components/earn/helpers/positionActivity";
@@ -116,6 +120,14 @@ export const PositionActivity = ({
   const toTokens = (item: PositionActivityItem) =>
     new BigNumber(item.amount).shiftedBy(-decimals).toFixed();
 
+  // What every Activity event reports about the row it came from.
+  const eventProps = (item: PositionActivityItem) => ({
+    poolId,
+    protocol: item.protocol,
+    assetCode: code,
+    activityType: item.type,
+  });
+
   return (
     <div className="PositionActivity" data-testid="position-activity">
       <div className="PositionActivity__title">{t("Activity")}</div>
@@ -134,7 +146,13 @@ export const PositionActivity = ({
               key={item.id}
               data-testid="position-activity-row"
               {...(kind.detailsType
-                ? { type: "button" as const, onClick: () => setSelected(item) }
+                ? {
+                    type: "button" as const,
+                    onClick: () => {
+                      trackPositionActivityRowSelected(eventProps(item));
+                      setSelected(item);
+                    },
+                  }
                 : {})}
             >
               <div className="PositionActivity__icon">
@@ -195,6 +213,12 @@ export const PositionActivity = ({
             occurredAt={selected.occurredAt}
             networkDetails={networkDetails}
             onClose={() => setSelected(null)}
+            onAction={(action) =>
+              trackPositionActivityDetailsActionSelected({
+                ...eventProps(selected),
+                action,
+              })
+            }
           />
         ) : (
           <></>

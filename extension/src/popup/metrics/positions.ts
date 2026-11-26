@@ -48,3 +48,41 @@ export const trackPositionRowSelected = ({
 export const trackPositionsEmptyCtaSelected = () => {
   emitMetric(METRIC_NAMES.positionsEmptyCtaSelected, {});
 };
+
+/** What an Activity row says happened: "deposit", "withdraw", or a newer type. */
+interface ActivityEventProps {
+  poolId: string;
+  protocol: string;
+  assetCode: string;
+  activityType: string;
+}
+
+const activityProps = ({
+  poolId,
+  protocol,
+  assetCode,
+  activityType,
+}: ActivityEventProps) => ({
+  pool_id: poolId,
+  protocol,
+  asset_code: assetCode,
+  activity_type: activityType,
+});
+
+/** An Activity row was tapped, opening its details sheet. */
+export const trackPositionActivityRowSelected = (props: ActivityEventProps) => {
+  emitMetric(METRIC_NAMES.positionActivityRowSelected, activityProps(props));
+};
+
+/** What was tapped inside an Activity row's details sheet. */
+export type ActivityDetailsAction = "transaction_details" | "explorer";
+
+export const trackPositionActivityDetailsActionSelected = ({
+  action,
+  ...props
+}: ActivityEventProps & { action: ActivityDetailsAction }) => {
+  emitMetric(METRIC_NAMES.positionActivityDetailsActionSelected, {
+    ...activityProps(props),
+    action,
+  });
+};

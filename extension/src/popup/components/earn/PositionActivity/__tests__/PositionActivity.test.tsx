@@ -9,6 +9,10 @@ import {
   PositionActivityType,
 } from "popup/components/earn/helpers/positionActivity";
 import { usePositionActivity } from "popup/components/earn/PositionActivity/hooks/usePositionActivity";
+import {
+  trackPositionActivityDetailsActionSelected,
+  trackPositionActivityRowSelected,
+} from "popup/metrics/positions";
 import { Wrapper } from "popup/__testHelpers__";
 
 jest.mock(
@@ -17,6 +21,14 @@ jest.mock(
 );
 jest.mock("@shared/api/helpers/stellarSdkServer", () => ({
   stellarSdkServer: jest.fn(),
+}));
+jest.mock("popup/metrics/positions", () => ({
+  trackPositionActivityRowSelected: jest.fn(),
+  trackPositionActivityDetailsActionSelected: jest.fn(),
+}));
+jest.mock("popup/helpers/navigate", () => ({
+  ...jest.requireActual("popup/helpers/navigate"),
+  openTab: jest.fn(),
 }));
 
 const item = (over: Partial<PositionActivityItem>): PositionActivityItem => ({
@@ -61,6 +73,7 @@ const renderList = () =>
 
 describe("PositionActivity", () => {
   beforeEach(() => {
+    jest.clearAllMocks();
     (usePositionActivity as jest.Mock).mockReturnValue(ITEMS);
     // Horizon never answers: the sheet's own tests cover what it brings.
     (stellarSdkServer as jest.Mock).mockReturnValue({
@@ -109,5 +122,41 @@ describe("PositionActivity", () => {
     fireEvent.click(generic);
     expect(screen.queryByTestId("earn-deposit-details")).toBeNull();
     expect(screen.queryByTestId("earn-withdraw-details")).toBeNull();
+  });
+
+  it("reports a row tap with what the row was", () => {
+    renderList();
+
+    fireEvent.click(screen.getAllByTestId("position-activity-row")[0]);
+
+    expect(trackPositionActivityRowSelected).toHaveBeenCalledWith({
+      poolId: "CPOOL",
+      protocol: "blend",
+      assetCode: "USDC",
+      activityType: PositionActivityType.WITHDRAW,
+    });
+  });
+
+  it("reports nothing for a row it cannot open", () => {
+    renderList();
+
+    fireEvent.click(screen.getAllByTestId("position-activity-row")[2]);
+
+    expect(trackPositionActivityRowSelected).not.toHaveBeenCalled();
+  });
+
+  it("reports the details sheet's explorer link for that row", () => {
+    renderList();
+
+    fireEvent.click(screen.getAllByTestId("position-activity-row")[1]);
+    fireEvent.click(screen.getByTestId("earn-deposit-details-explorer"));
+
+    expect(trackPositionActivityDetailsActionSelected).toHaveBeenCalledWith({
+      poolId: "CPOOL",
+      protocol: "blend",
+      assetCode: "USDC",
+      activityType: PositionActivityType.DEPOSIT,
+      action: "explorer",
+    });
   });
 });
