@@ -55,6 +55,8 @@
     &__value {
       display: flex;
       align-items: center;
+      // The space after "/": a flex item drops trailing whitespace.
+      gap: pxToRem(4px);
       white-space: nowrap;
     }
 
