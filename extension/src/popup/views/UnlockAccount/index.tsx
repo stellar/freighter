@@ -17,12 +17,7 @@ import {
   confirmPassword,
   hasPrivateKeySelector,
 } from "popup/ducks/accountServices";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { isEthenaLaunchNetwork } from "popup/helpers/ethenaLaunch";
-import {
-  claimEthenaLaunchPromo,
-  claimRebrandAnnouncement,
-} from "@shared/api/internal";
+import { claimRebrandAnnouncement } from "@shared/api/internal";
 
 import { ForgotPasswordSheet } from "./ForgotPasswordSheet";
 
@@ -45,9 +40,6 @@ export const UnlockAccount = () => {
   const dispatch = useDispatch<AppDispatch>();
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
   const authError = useSelector(authErrorSelector);
-  const isLaunchNetwork = isEthenaLaunchNetwork(
-    useSelector(settingsNetworkDetailsSelector),
-  );
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   // Track the initial auth state so we don't auto-navigate if the
   // component happens to mount while the wallet is already unlocked
@@ -79,12 +71,6 @@ export const UnlockAccount = () => {
     // Wallets that pre-date the rebrand get the one-time announcement before
     // their destination. The background hands it out once, so of several
     // surfaces unlocked by the same broadcast only the first shows it.
-    //
-    // Wallets that pre-date the Ethena launch build get its one-time promo
-    // the same way, but only on the way Home and only on Mainnet: a dApp
-    // request isn't held up for it, its tokens are Mainnet's, and at most one
-    // takeover plays per unlock. Either way the promo stays owed until a
-    // later unlock claims it.
     const continueToDestination = async () => {
       let shouldShowAnnouncement = false;
       try {
@@ -101,28 +87,11 @@ export const UnlockAccount = () => {
         return;
       }
 
-      let shouldShowLaunchPromo = false;
-      if (destination === ROUTES.account && isLaunchNetwork) {
-        try {
-          shouldShowLaunchPromo = await claimEthenaLaunchPromo();
-        } catch {
-          // Fail closed: a messaging failure skips the promo.
-        }
-      }
-
-      if (shouldShowLaunchPromo) {
-        navigate(ROUTES.ethenaLaunch, {
-          replace: true,
-          state: { destination: target },
-        });
-        return;
-      }
-
       navigate(target, { replace: true });
     };
 
     void continueToDestination();
-  }, [hasPrivateKey, destination, queryParams, navigate, isLaunchNetwork]);
+  }, [hasPrivateKey, destination, queryParams, navigate]);
 
   return (
     <React.Fragment>
