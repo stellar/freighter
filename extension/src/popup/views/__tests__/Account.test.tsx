@@ -624,7 +624,7 @@ describe("Account view", () => {
     };
     const getIconFromTokenListSpy = jest.spyOn(
       GetIconFromTokenList,
-      "getIconFromTokenLists",
+      "findTokenListIcon",
     );
     const getIconUrlFromIssuerSpy = jest
       .spyOn(GetIconUrlFromIssuer, "getIconUrlFromIssuer")

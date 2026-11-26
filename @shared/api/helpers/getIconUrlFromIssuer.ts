@@ -33,11 +33,15 @@ export const getIconUrlFromIssuer = async ({
   code,
   networkDetails,
   homeDomain,
+  cache = true,
 }: {
   key: string;
   code: string;
   networkDetails: NetworkDetails;
   homeDomain?: string;
+  // false for dApp-driven lookups (sign flow, add token): a page can name any
+  // issuer before the user approves anything, so those urls must not persist.
+  cache?: boolean;
 }) => {
   let iconUrl = "";
 
@@ -99,12 +103,19 @@ export const getIconUrlFromIssuer = async ({
         /* We found the currency listing in the toml. 3. Get the image url from it */
         iconUrl = image;
         /* And also save into the cache to prevent having to do this process again */
-        await sendMessageToBackground({
-          activePublicKey: null,
-          assetCanonical: `${code}:${key}`,
-          iconUrl,
-          type: SERVICE_TYPES.CACHE_ASSET_ICON,
-        });
+        if (cache) {
+          try {
+            await sendMessageToBackground({
+              activePublicKey: null,
+              assetCanonical: `${code}:${key}`,
+              iconUrl,
+              type: SERVICE_TYPES.CACHE_ASSET_ICON,
+            });
+          } catch (e) {
+            // A failed write (e.g. storage quota) must not fail the lookup.
+            console.error(e);
+          }
+        }
         break;
       }
     }

@@ -95,7 +95,7 @@ import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getLedgerKeyAccounts } from "./helpers/getLedgerKeyAccounts";
 import { redactErrorBody } from "./helpers/redactErrorBody";
 import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
-import { getIconFromTokenLists } from "./helpers/getIconFromTokenList";
+import { findTokenListIcon } from "./helpers/getIconFromTokenList";
 import { mapAccountBalancesV2 } from "./helpers/mapAccountBalancesV2";
 import { addBlockaidScanResults } from "./helpers/addBlockaidScanResults";
 import { injectLocalTokenBalances } from "./helpers/injectLocalTokenBalances";
@@ -1598,6 +1598,30 @@ export const getAssetIconCache = async ({
   we'll store it in the background's storage and then use this cache for future lookups.
 */
 
+/**
+ * Persists a token-list icon found on a cache miss, so cache-only
+ * `getAssetIcons` calls (no lists passed) can serve it. Not awaited: the
+ * lookup must not wait on one message per listed asset.
+ */
+const persistTokenListIcon = async ({
+  canonical,
+  icon,
+}: {
+  canonical: string;
+  icon: string;
+}) => {
+  try {
+    await sendMessageToBackground({
+      activePublicKey: null,
+      assetCanonical: canonical,
+      iconUrl: icon,
+      type: SERVICE_TYPES.CACHE_ASSET_ICON,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 export const getAssetIcons = async ({
   balances,
   networkDetails,
@@ -1622,7 +1646,6 @@ export const getAssetIcons = async ({
     const balanceValues = Object.values(balances);
 
     for (let i = 0; i < balanceValues.length; i++) {
-      let icon = "";
       const { token, contractId } = balanceValues[i];
       if (token && "issuer" in token) {
         const {
@@ -1630,7 +1653,7 @@ export const getAssetIcons = async ({
           code,
         } = token;
 
-        let canonical = getCanonicalFromAsset(code, key);
+        const canonical = getCanonicalFromAsset(code, key);
         const cachedIcon = cachedIcons[canonical];
         if (cachedIcon) {
           assetIcons[canonical] = cachedIcon;
@@ -1648,26 +1671,26 @@ export const getAssetIcons = async ({
           continue;
         }
 
-        if (!icon) {
-          // if we don't have the icon, we try to get it from the token lists
-          const tokenListIcon = await getIconFromTokenLists({
-            issuerId: key,
-            contractId,
-            code,
-            assetsListsData,
+        const tokenListIcon = findTokenListIcon({
+          issuerId: key,
+          contractId,
+          code,
+          assetsListsData,
+        });
+        if (tokenListIcon.icon && tokenListIcon.canonicalAsset) {
+          assetIcons[tokenListIcon.canonicalAsset] = tokenListIcon.icon;
+          void persistTokenListIcon({
+            canonical: tokenListIcon.canonicalAsset,
+            icon: tokenListIcon.icon,
           });
-          if (tokenListIcon.icon && tokenListIcon.canonicalAsset) {
-            icon = tokenListIcon.icon;
-            canonical = tokenListIcon.canonicalAsset;
-          } else {
-            // if we still don't have the icon, we try to get it from the issuer,
-            // aggregate the missing icons and we'll fetch all the domains at once
-            domainsToFetch.push({ key, code });
-          }
+          continue;
         }
 
-        // we assign null here if we checked all sources and still don't have the icon
-        assetIcons[canonical] = icon || null;
+        // not in the cache or the lists: try the issuer toml. Aggregate the
+        // missing icons and fetch all the domains at once below.
+        domainsToFetch.push({ key, code });
+        // null until the toml fetch below fills it in
+        assetIcons[canonical] = null;
       }
     }
   }
@@ -1690,7 +1713,7 @@ export const getAssetIcons = async ({
       continue;
     }
 
-    const tokenListIcon = await getIconFromTokenLists({
+    const tokenListIcon = findTokenListIcon({
       issuerId: isContractId(key) ? undefined : key,
       contractId: isContractId(key) ? key : undefined,
       code,
@@ -1698,7 +1721,11 @@ export const getAssetIcons = async ({
     });
     if (tokenListIcon.icon) {
       assetIcons[canonical] = tokenListIcon.icon;
-    } else if (!isContractId(key)) {
+      void persistTokenListIcon({ canonical, icon: tokenListIcon.icon });
+      continue;
+    }
+
+    if (!isContractId(key)) {
       domainsToFetch.push({ key, code });
     } else {
       assetIcons[canonical] = null;

@@ -17,6 +17,7 @@ import {
   KEY_ID_LIST,
   REBRAND_ANNOUNCEMENT_STATUS_ID,
   ETHENA_LAUNCH_PROMO_STATUS_ID,
+  CACHED_ASSET_ICONS_ID,
 } from "constants/localStorageTypes";
 import { REBRAND_ANNOUNCEMENT_STATUS } from "constants/rebrandAnnouncement";
 import { ETHENA_LAUNCH_PROMO_STATUS } from "constants/ethenaLaunchPromo";
@@ -31,7 +32,12 @@ import {
   SOROBAN_RPC_URLS,
 } from "@shared/constants/stellar";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
-import { dataStorageAccess, browserLocalStorage } from "./dataStorageAccess";
+import {
+  dataStorageAccess,
+  browserLocalStorage,
+  DataStorageAccess,
+} from "./dataStorageAccess";
+import { boundAssetIconMap } from "./assetIconCache";
 
 // Session Storage Feature Flag - turn on when storage.session is supported
 export const SESSION_STORAGE_ENABLED = true;
@@ -427,6 +433,32 @@ export const markEthenaLaunchPromoEligibility = async () => {
   );
 };
 
+/**
+ * Brings an icon map written before cacheAssetIcon validated and capped its
+ * entries under the same bound. Only the write path enforces it, and a wallet
+ * whose held assets are all cached never writes.
+ */
+export const migrateAssetIconCache = async (
+  localStore: DataStorageAccess = dataStorageAccess(browserLocalStorage),
+) => {
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (shouldRunMigration({ storageVersion, migrationVersion: "5.53.0" })) {
+    try {
+      const stored = (await localStore.getItem(CACHED_ASSET_ICONS_ID)) || {};
+      await localStore.setItem(
+        CACHED_ASSET_ICONS_ID,
+        boundAssetIconMap(stored),
+      );
+      await migrateDataStorageVersion("5.53.0", localStore);
+    } catch (error) {
+      // Version not bumped, so the next onInstalled retries it, until a
+      // later migration moves STORAGE_VERSION past 5.53.0.
+      console.error(error);
+    }
+  }
+};
+
 export const versionedMigration = async () => {
   // sequentially call migrations in order to enforce smooth schema upgrades
 
@@ -442,12 +474,14 @@ export const versionedMigration = async () => {
   await removeStellarExpertData();
   await migrateAllowlistToKeyNetworkSchema();
   await migratePubnetRpcUrl();
+  await migrateAssetIconCache();
 };
 
 // Updates storage version
-export const migrateDataStorageVersion = async (version: string) => {
-  const localStore = dataStorageAccess(browserLocalStorage);
-
+export const migrateDataStorageVersion = async (
+  version: string,
+  localStore: DataStorageAccess = dataStorageAccess(browserLocalStorage),
+) => {
   // This value should be manually updated when a new schema change is made
   await localStore.setItem(STORAGE_VERSION, version);
 };
