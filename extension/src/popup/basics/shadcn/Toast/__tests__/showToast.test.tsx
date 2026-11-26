@@ -23,6 +23,15 @@ describe("showToast", () => {
     );
   });
 
+  it("passes a duration through to sonner", () => {
+    const customSpy = jest.spyOn(toast, "custom");
+    const render = () => <div>timed</div>;
+
+    showToast(render, { duration: 2000 });
+
+    expect(customSpy).toHaveBeenCalledWith(render, { duration: 2000 });
+  });
+
   it("gives each toast a fresh id", () => {
     const first = showToast(() => <div>first</div>);
     const second = showToast(() => <div>second</div>);

@@ -198,8 +198,23 @@ test("theme picker pins light/dark, syncs open pages, and returns to system", as
   await expect(page.getByTestId("themeOption-system")).toBeChecked();
 
   // Pin dark while the device is light; a device change must not override it.
+  await page.evaluate(() => {
+    const w = window as unknown as { viewTransitions: number };
+    w.viewTransitions = 0;
+    const start = document.startViewTransition.bind(document);
+    document.startViewTransition = (update) => {
+      w.viewTransitions += 1;
+      return start(update);
+    };
+  });
   await page.getByText("Dark", { exact: true }).click();
   await expect(body).toHaveClass(/sds-theme-dark/);
+  await expect(page.getByRole("status")).toHaveText("Theme preference updated");
+  expect(
+    await page.evaluate(
+      () => (window as unknown as { viewTransitions: number }).viewTransitions,
+    ),
+  ).toBe(1);
   await page.emulateMedia({ colorScheme: "light" });
   await expect(body).toHaveClass(/sds-theme-dark/);
 

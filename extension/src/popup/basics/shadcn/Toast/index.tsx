@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Toaster as SonnerToaster, toast } from "sonner";
+import { ExternalToast, Toaster as SonnerToaster, toast } from "sonner";
 import { Icon } from "@stellar/design-system";
 
 import "./styles.scss";
@@ -36,9 +36,20 @@ function Toaster({ ...props }: React.ComponentProps<typeof SonnerToaster>) {
  * never stack. Each call gets a fresh id; a stable id can stop the toast
  * from rendering once an earlier one with that id has been dismissed.
  */
-const showToast = (render: (id: string | number) => React.ReactElement) => {
+const showToast = (
+  render: (id: string | number) => React.ReactElement,
+  options?: Pick<ExternalToast, "duration">,
+) => {
   toast.dismiss();
-  return toast.custom(render);
+  return toast.custom(render, options);
 };
 
-export { Toaster, showToast };
+/** Filled, centered success toast body, for showToast. */
+const SuccessToast = ({ title }: { title: string }) => (
+  <div className="SuccessToast" role="status">
+    <Icon.CheckCircle />
+    <span>{title}</span>
+  </div>
+);
+
+export { Toaster, showToast, SuccessToast };
