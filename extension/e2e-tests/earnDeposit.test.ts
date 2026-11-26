@@ -11,7 +11,8 @@
  *  5. Held-token happy path: Max bounces off the fee guard, then a smaller
  *     amount -> review -> confirm -> Deposit complete
  *  5b. After Done, Positions show the deposit as soon as the indexer has it,
- *     well before the 30s poll, and stop re-reading once they do
+ *     well before the 30s poll, stop re-reading once they do, and keep it
+ *     shown while the rest of Home's load lands
  *  6. Pool details sheet, including its Backstop row
  *  7. Earn tile hidden on a custom network with no allowlisted pool
  *
@@ -65,7 +66,7 @@
  */
 
 import { test, expect } from "./test-fixtures";
-import { Page } from "@playwright/test";
+import { BrowserContext, Page } from "@playwright/test";
 import { loginToTestAccount, switchToMainnet } from "./helpers/login";
 import { expectHomeReady, goToSettings } from "./helpers/network";
 import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
@@ -332,19 +333,29 @@ test("depositing a held token reaches the success screen", async ({
 // ---------------------------------------------------------------------------
 // 5b. Positions catch up with a deposit the indexer has not reached yet
 // ---------------------------------------------------------------------------
-test("a deposit shows in Positions once the indexer has it", async ({
+
+/**
+ * Deposits 100 XLM and returns to Home's Positions tab, with positions served
+ * the way an indexer that trails the ledger serves them: the old state (no
+ * position) for `lagReads` reads after the deposit lands, the XLM one after.
+ * `scanDelayMs` holds back Home's Blockaid-scanned balances read, which lands
+ * after its positions, by that much once the deposit is done.
+ */
+const depositAndOpenPositions = async ({
   page,
   extensionId,
   context,
+  lagReads,
+  scanDelayMs = 0,
+}: {
+  page: Page;
+  extensionId: string;
+  context: BrowserContext;
+  lagReads: number;
+  scanDelayMs?: number;
 }) => {
-  test.slow();
-
-  // Positions come from an indexer that trails the ledger, so after the
-  // deposit lands they keep answering with the old state for a couple of
-  // reads. No position before, the XLM one after.
   let isDeposited = false;
   let readsSinceDeposit = 0;
-  const INDEXER_LAG_READS = 2;
 
   await stubEarnDepositFlag(context);
   await loginToTestAccount({
@@ -359,7 +370,7 @@ test("a deposit shows in Positions once the indexer has it", async ({
         if (isDeposited) {
           readsSinceDeposit += 1;
         }
-        const hasIndexed = isDeposited && readsSinceDeposit > INDEXER_LAG_READS;
+        const hasIndexed = isDeposited && readsSinceDeposit > lagReads;
         await route.fulfill({
           json: {
             data: hasIndexed
@@ -375,6 +386,18 @@ test("a deposit shows in Positions once the indexer has it", async ({
                 ],
           },
         });
+      });
+      // Registered after the shared balances stub, so it runs first and hands
+      // the request on to it.
+      await page.route("**/account-balances/**", async (route) => {
+        const isScanned = !route
+          .request()
+          .url()
+          .includes("should_skip_scan=true");
+        if (isDeposited && isScanned && scanDelayMs) {
+          await new Promise((resolve) => setTimeout(resolve, scanDelayMs));
+        }
+        await route.fallback();
       });
     },
   });
@@ -394,18 +417,61 @@ test("a deposit shows in Positions once the indexer has it", async ({
   });
   isDeposited = true;
   await page.getByTestId("earn-submit-done").click();
+  await page.getByTestId("account-tab-positions").click();
+
+  return { readsSinceDeposit: () => readsSinceDeposit };
+};
+
+test("a deposit shows in Positions once the indexer has it", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  const lagReads = 2;
+  const { readsSinceDeposit } = await depositAndOpenPositions({
+    page,
+    extensionId,
+    context,
+    lagReads,
+  });
 
   // Home loads the cached, pre-deposit positions, then keeps re-reading until
   // the deposit shows. Well inside the 30s poll, which this must not rely on.
-  await page.getByTestId("account-tab-positions").click();
   await expect(page.getByTestId(`pool-card-${POOL_ID}`)).toBeVisible({
     timeout: 12000,
   });
-  expect(readsSinceDeposit).toBe(INDEXER_LAG_READS + 1);
+  expect(readsSinceDeposit()).toBe(lagReads + 1);
 
   // Once it shows, the re-reading stops.
   await page.waitForTimeout(7000);
-  expect(readsSinceDeposit).toBe(INDEXER_LAG_READS + 1);
+  expect(readsSinceDeposit()).toBe(lagReads + 1);
+});
+
+// Home's load goes on writing after its positions land: the scanned balances
+// read takes seconds. That write must not put back the positions it loaded
+// from the cache once a newer read has shown the deposit.
+test("a deposit that shows in Positions stays shown", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  const scanDelayMs = 4000;
+  await depositAndOpenPositions({
+    page,
+    extensionId,
+    context,
+    lagReads: 0,
+    scanDelayMs,
+  });
+
+  const poolCard = page.getByTestId(`pool-card-${POOL_ID}`);
+  await expect(poolCard).toBeVisible({ timeout: 12000 });
+
+  // Past the scanned balances landing, the card is still there.
+  await page.waitForTimeout(scanDelayMs + 3000);
+  await expect(poolCard).toBeVisible();
 });
 
 // ---------------------------------------------------------------------------

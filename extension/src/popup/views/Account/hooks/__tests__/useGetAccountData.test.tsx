@@ -76,15 +76,17 @@ jest.spyOn(GetAppDataHooks, "useGetAppData").mockReturnValue({
 // The 5th positional arg (`shouldSkipScan`) is exactly what separates Home's
 // first, quick balances read from the later Blockaid-scanned one -- see
 // `useGetAccountData.tsx`'s two `fetchBalances` call sites.
+const fetchBalancesByScan = (
+  _publicKey: string,
+  _isMainnetNetwork: boolean,
+  _networkDetails: unknown,
+  _useCache?: boolean,
+  shouldSkipScan?: boolean,
+) => Promise.resolve(shouldSkipScan ? UNSCANNED_BALANCES : SCANNED_BALANCES);
+const mockFetchBalances = jest.fn(fetchBalancesByScan);
 jest.spyOn(GetBalancesHooks, "useGetBalances").mockReturnValue({
   state: {} as any,
-  fetchData: (
-    _publicKey: string,
-    _isMainnetNetwork: boolean,
-    _networkDetails: unknown,
-    _useCache?: boolean,
-    shouldSkipScan?: boolean,
-  ) => Promise.resolve(shouldSkipScan ? UNSCANNED_BALANCES : SCANNED_BALANCES),
+  fetchData: mockFetchBalances,
 } as any);
 
 jest.spyOn(GetCollectiblesHooks, "useGetCollectibles").mockReturnValue({
@@ -214,6 +216,8 @@ describe("useGetAccountData", () => {
     mockFetchPositions.mockImplementation(() =>
       Promise.resolve(ZERO_POSITIONS),
     );
+    mockFetchBalances.mockReset();
+    mockFetchBalances.mockImplementation(fetchBalancesByScan);
   });
 
   describe("after a deposit", () => {
@@ -282,6 +286,53 @@ describe("useGetAccountData", () => {
 
       expect(mockFetchPositions).toHaveBeenCalledTimes(1);
       expect(store.getState().earn.awaitedDeposit).not.toBeNull();
+    });
+
+    // The load goes on writing after its positions land, and its scanned
+    // balances take seconds. Their write must not put back the pre-deposit
+    // positions the load read from the cache once a newer read has shown
+    // the deposit.
+    it("keeps the deposit shown when the load's slower writes land", async () => {
+      let finishScan: () => void = () => undefined;
+      mockFetchBalances.mockImplementation(
+        (
+          _publicKey: string,
+          _isMainnetNetwork: boolean,
+          _networkDetails: unknown,
+          _useCache?: boolean,
+          shouldSkipScan?: boolean,
+        ) =>
+          shouldSkipScan
+            ? Promise.resolve(UNSCANNED_BALANCES)
+            : new Promise((resolve) => {
+                finishScan = () => resolve(SCANNED_BALANCES);
+              }),
+      );
+      mockFetchPositions
+        .mockResolvedValueOnce(holding("1000000000")) // load: 100, cached
+        .mockResolvedValueOnce(holding("1500000000")); // indexed: 150
+      const store = storeAwaiting(AWAITED);
+      const { result } = renderAwaiting(store);
+      const heldTokens = () =>
+        (result.current.state.data as any).positions.positions[0].blend
+          .supply[0].totalTokens;
+
+      let load: Promise<unknown> = Promise.resolve();
+      act(() => {
+        load = result.current.fetchData({ useAppDataCache: false });
+      });
+      await waitFor(() =>
+        expect(store.getState().earn.awaitedDeposit).toBeNull(),
+      );
+      expect(heldTokens()).toBe("1500000000");
+
+      await act(async () => {
+        finishScan();
+        await load;
+      });
+
+      expect((result.current.state.data as any).isScanAppended).toBe(true);
+      expect(heldTokens()).toBe("1500000000");
     });
   });
 

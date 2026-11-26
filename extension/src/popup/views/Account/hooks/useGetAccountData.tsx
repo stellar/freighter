@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { captureException } from "@sentry/browser";
 
 import { RequestState } from "constants/request";
@@ -8,7 +8,10 @@ import {
   FetchCollectiblesResult,
   useGetCollectibles,
 } from "helpers/hooks/useGetCollectibles";
-import { useGetPositions } from "helpers/hooks/useGetPositions";
+import {
+  FetchPositionsParams,
+  useGetPositions,
+} from "helpers/hooks/useGetPositions";
 import { isMainnet } from "helpers/stellar";
 import { AllowList, ApiTokenPrices } from "@shared/api/types";
 import { getBlendEarnOptions, getBlendPools } from "@shared/api/helpers/blend";
@@ -119,6 +122,54 @@ function useGetAccountData(options: {
   const latestDataRef = useRef(state.data);
   latestDataRef.current = state.data;
 
+  // Several readers write positions here, and they overlap: Home's load, the
+  // 30s poll and the deposit follow-up below. Each writes a whole copy of the
+  // data, so a slow writer could put back older positions than a faster one
+  // already showed; the load's Blockaid-scanned balances take seconds, and
+  // their write carried the positions the load read from the cache before
+  // the deposit. So every positions read is numbered when it starts, and
+  // every write carries the positions of the read that started last.
+  const positionsReadCountRef = useRef(0);
+  const newestPositionsRef = useRef<{
+    account: string;
+    readNumber: number;
+    positions: AccountPositions;
+  } | null>(null);
+
+  const readPositions = useCallback(
+    async (params: FetchPositionsParams) => {
+      positionsReadCountRef.current += 1;
+      const readNumber = positionsReadCountRef.current;
+      const positions = await fetchPositions(params);
+      const account = `${params.networkDetails.network}:${params.publicKey}`;
+      const newest = newestPositionsRef.current;
+      if (
+        !newest ||
+        newest.account !== account ||
+        readNumber > newest.readNumber
+      ) {
+        newestPositionsRef.current = { account, readNumber, positions };
+      }
+      return positions;
+    },
+    [fetchPositions],
+  );
+
+  const dispatchData = useCallback((payload: AccountData) => {
+    const newest = newestPositionsRef.current;
+    const isSameAccount =
+      payload.type === AppDataType.RESOLVED &&
+      newest?.account ===
+        `${payload.networkDetails.network}:${payload.publicKey}`;
+    dispatch({
+      type: "FETCH_DATA_SUCCESS",
+      payload:
+        isSameAccount && payload.hasLoadedPositions && newest
+          ? { ...payload, positions: newest.positions }
+          : payload,
+    });
+  }, []);
+
   const fetchData = async ({
     useAppDataCache = true,
     updatedAppData,
@@ -147,7 +198,7 @@ function useGetAccountData(options: {
       }
 
       if (appData.type === AppDataType.REROUTE) {
-        dispatch({ type: "FETCH_DATA_SUCCESS", payload: appData });
+        dispatchData(appData);
         return appData;
       }
 
@@ -171,7 +222,7 @@ function useGetAccountData(options: {
       // `useCache` mirrors the balances call just below: an account/network
       // switch (`shouldForceBalancesRefresh`) must not serve the previous
       // account's cached positions.
-      const positionsRequest = fetchPositions({
+      const positionsRequest = readPositions({
         publicKey,
         networkDetails,
         useCache: !shouldForceBalancesRefresh,
@@ -249,7 +300,7 @@ function useGetAccountData(options: {
         }
       }
 
-      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      dispatchData(payload);
 
       const { error: collectiblesError, ...collectibles } =
         await collectiblesRequest;
@@ -260,7 +311,7 @@ function useGetAccountData(options: {
       // mutating it changes what a later render reads but schedules no render of
       // its own. Without this the Collectibles tab kept waiting on a result that
       // had already arrived until some unrelated dispatch happened to land.
-      dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
+      dispatchData({ ...payload });
 
       try {
         payload.positions = await positionsRequest;
@@ -273,7 +324,7 @@ function useGetAccountData(options: {
       payload.hasLoadedPositions = true;
       // Dispatched rather than only assigned, for the reason spelled out on the
       // collectibles dispatch above: the reducer holds this very object.
-      dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
+      dispatchData({ ...payload });
 
       // Landed here (not yet awaited when it was started, above) and, for
       // earnOptions, only ever STARTED once we know it applies -- neither sits
@@ -290,7 +341,7 @@ function useGetAccountData(options: {
           const pools = await poolsRequest;
           if (pools) {
             payload.pools = pools;
-            dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
+            dispatchData({ ...payload });
           }
         } catch (error) {
           captureException(`Error fetching pools on Account - ${error}`);
@@ -328,7 +379,7 @@ function useGetAccountData(options: {
           // revert these two fields right after the scan lands.
           payload.balances = balancesResult as AccountBalances;
           payload.isScanAppended = true;
-          dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
+          dispatchData({ ...payload });
         } catch (e) {
           captureException(`Error fetching scanned balances on Account - ${e}`);
         }
@@ -337,7 +388,7 @@ function useGetAccountData(options: {
       if (earnOptionsRequest) {
         try {
           payload.earnOptions = await earnOptionsRequest;
-          dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
+          dispatchData({ ...payload });
         } catch (error) {
           // The card degrades to hidden; nothing else depends on this.
           captureException(`Error fetching earn options on Account - ${error}`);
@@ -377,7 +428,7 @@ function useGetAccountData(options: {
         networkDetails,
         applicationState,
       } as ResolvedAccountData;
-      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      dispatchData(payload);
       return payload;
     } catch (error) {
       captureException(`Error loading refresh app data on Account - ${error}`);
@@ -417,14 +468,11 @@ function useGetAccountData(options: {
         throw new Error(balancesResult.message);
       }
 
-      dispatch({
-        type: "FETCH_DATA_SUCCESS",
-        payload: {
-          ...resolvedData,
-          balances: balancesResult,
-          isScanAppended: true,
-        } as ResolvedAccountData,
-      });
+      dispatchData({
+        ...resolvedData,
+        balances: balancesResult,
+        isScanAppended: true,
+      } as ResolvedAccountData);
     } catch (error) {
       // Deliberately not FETCH_DATA_ERROR: a background refresh that fails has
       // to leave the good data on screen rather than swap it for the error
@@ -462,7 +510,7 @@ function useGetAccountData(options: {
         return;
       }
       try {
-        const positions = await fetchPositions({
+        const positions = await readPositions({
           publicKey: data.publicKey,
           networkDetails: data.networkDetails,
           useCache: false,
@@ -476,10 +524,7 @@ function useGetAccountData(options: {
         ) {
           return;
         }
-        dispatch({
-          type: "FETCH_DATA_SUCCESS",
-          payload: { ...latest, positions, hasPositionsError: false },
-        });
+        dispatchData({ ...latest, positions, hasPositionsError: false });
         if (hasDepositLanded(positions, awaitedDeposit)) {
           reduxDispatch(saveAwaitedDeposit(null));
           return;
@@ -502,7 +547,13 @@ function useGetAccountData(options: {
       isCancelled = true;
       clearTimeout(timer);
     };
-  }, [awaitedDeposit, loadedAccount, fetchPositions, reduxDispatch]);
+  }, [
+    awaitedDeposit,
+    loadedAccount,
+    readPositions,
+    dispatchData,
+    reduxDispatch,
+  ]);
 
   useEffect(() => {
     if (!state.data || state.data.type === AppDataType.REROUTE || !_isMainnet) {
@@ -522,7 +573,7 @@ function useGetAccountData(options: {
           ...state.data,
           tokenPrices: fetchedTokenPrices.tokenPrices,
         } as AccountData;
-        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+        dispatchData(payload);
       } catch (error) {
         captureException(`Error refreshing token prices on Account - ${error}`);
       }
@@ -555,7 +606,7 @@ function useGetAccountData(options: {
         try {
           // Unlike the initial load, this must hit the network every tick —
           // the whole point of the interval is a fresh read.
-          refreshedPositions = await fetchPositions({
+          refreshedPositions = await readPositions({
             publicKey,
             networkDetails,
             useCache: false,
@@ -578,13 +629,13 @@ function useGetAccountData(options: {
           // unconditionally, since there is nothing prior to fall back to.
           hasPositionsError: refreshedPositionsError && !resolvedData.positions,
         } as AccountData;
-        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+        dispatchData(payload);
       } catch (error) {
         captureException(`Error refreshing balances on Account - ${error}`);
       }
     }, 30000);
     return () => clearInterval(interval);
-  }, [_isMainnet, state.data, fetchBalances, fetchPositions]);
+  }, [_isMainnet, state.data, fetchBalances, readPositions, dispatchData]);
 
   return {
     state,
