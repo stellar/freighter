@@ -37,6 +37,7 @@ const SOFTWARE_SIGNED_XDR = "AAAA-signed-in-page";
 const mockSignSoroban = jest.fn();
 const mockGetTokenPrices = jest.fn();
 const mockFetchBalances = jest.fn().mockResolvedValue({ balances: {} });
+const mockFetchPositions = jest.fn().mockResolvedValue({ positions: [] });
 
 jest.mock("@shared/api/internal", () => ({
   ...jest.requireActual("@shared/api/internal"),
@@ -48,6 +49,11 @@ jest.mock("@shared/api/internal", () => ({
 jest.mock("helpers/hooks/useGetBalances", () => ({
   ...jest.requireActual("helpers/hooks/useGetBalances"),
   useGetBalances: () => ({ fetchData: mockFetchBalances }),
+}));
+
+jest.mock("helpers/hooks/useGetPositions", () => ({
+  ...jest.requireActual("helpers/hooks/useGetPositions"),
+  useGetPositions: () => ({ fetchData: mockFetchPositions }),
 }));
 
 jest.mock("helpers/metrics", () => ({
@@ -442,6 +448,62 @@ describe("useSubmitEarnTxData", () => {
       await result.current.fetchData();
     });
 
+    expect(result.current.state.state).toBe(RequestState.SUCCESS);
+  });
+
+  // Home reloads both from the cache, so the deposit's success must have
+  // refreshed them, or the old position shows until the next poll.
+  it("refreshes balances and positions once the deposit lands", async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ status: "PENDING", hash: "abc123" }),
+    });
+    const { result } = renderSubmitHook("AAAA-unsigned");
+
+    await act(async () => {
+      await result.current.fetchData();
+    });
+
+    expect(mockFetchBalances).toHaveBeenCalledWith(
+      TEST_PUBLIC_KEY,
+      false,
+      TESTNET_NETWORK_DETAILS,
+      false,
+    );
+    expect(mockFetchPositions).toHaveBeenCalledWith({
+      publicKey: TEST_PUBLIC_KEY,
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+  });
+
+  it("refreshes nothing when the network rejects the deposit", async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      json: () => Promise.resolve({ extras: { result_codes: {} } }),
+    });
+    const { result } = renderSubmitHook("AAAA-unsigned");
+
+    await act(async () => {
+      await result.current.fetchData();
+    });
+
+    expect(mockFetchBalances).not.toHaveBeenCalled();
+    expect(mockFetchPositions).not.toHaveBeenCalled();
+  });
+
+  it("reports a success state when the positions refresh after it fails", async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ status: "PENDING", hash: "abc123" }),
+    });
+    mockFetchPositions.mockRejectedValueOnce(new Error("backend down"));
+    const { result } = renderSubmitHook("AAAA-unsigned");
+
+    await act(async () => {
+      await result.current.fetchData();
+    });
+
+    expect(mockFetchPositions).toHaveBeenCalled();
     expect(result.current.state.state).toBe(RequestState.SUCCESS);
   });
 
