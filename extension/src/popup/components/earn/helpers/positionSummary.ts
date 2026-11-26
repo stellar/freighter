@@ -179,15 +179,15 @@ export const getPositionSummary = ({
   const deposits = rows.map((row) => toDepositRow(row, networkDetails));
   const earnings = rows.map((row) => toEarningsRow(row, networkDetails));
 
-  const depositUsd = deposits.reduce<BigNumber | null>((sum, row) => {
-    if (row.usd === null || sum === null) {
-      return null;
-    }
-    return sum.plus(row.usd);
-  }, new BigNumber(0));
-
+  // Projected on the whole balance, not the principal the deposits card shows:
+  // Blend accrues interest into the supplied balance itself, so interest
+  // already earned earns too. Projecting on principal would understate the
+  // estimate by exactly the gain shown above it.
   const { monthly, yearly } = projectEarnings({
-    depositUsd: depositUsd === null ? null : depositUsd.toFixed(),
+    depositUsd:
+      currentBalanceUsd === null
+        ? null
+        : new BigNumber(currentBalanceUsd).toFixed(),
     apy,
   });
 

@@ -112,8 +112,30 @@ describe("getPositionSummary", () => {
   it("projects once from the scoped balance and rate", () => {
     const result = summary(USDC_SAC);
 
-    expect(result.estYearlyUsd).toBe("84.70");
+    // 500.12 x 0.1694, and a twelfth of it.
+    expect(result.estYearlyUsd).toBe("84.72");
     expect(result.estMonthlyUsd).toBe("7.06");
+  });
+
+  it("projects on the whole balance, interest included, not on principal", () => {
+    // Blend accrues interest into the supplied balance, so earned interest
+    // earns too: $1,020 at 10% is $102 a year, not the $100 principal earns.
+    const result = summary(USDC_SAC, [
+      { ...usdcSupply, usdValue: 1020, interestEarnedUsd: 20, apy: 0.1 },
+    ]);
+
+    expect(result.deposits[0].usd).toBeCloseTo(1000);
+    expect(result.estYearlyUsd).toBe("102.00");
+    expect(result.estMonthlyUsd).toBe("8.50");
+  });
+
+  it("still projects when only the interest is unpriced", () => {
+    const result = summary(USDC_SAC, [
+      { ...usdcSupply, interestEarnedUsd: null },
+    ]);
+
+    expect(result.deposits[0].usd).toBeNull();
+    expect(result.estYearlyUsd).toBe("84.72");
   });
 
   it("keeps projections null when the rate is unavailable", () => {
