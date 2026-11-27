@@ -49,10 +49,6 @@
   flex-direction: column;
   gap: pxToRem(16);
 
-  p {
-    margin: 0;
-  }
-
   &__summary {
     display: flex;
     flex-direction: column;
