@@ -36,6 +36,15 @@ describe("Earn funnel metrics", () => {
     jest.clearAllMocks();
   });
 
+  it("tags every earn event with its protocol", () => {
+    trackEarnPoolDetailsOpened({ poolId: POOL_ID });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnPoolDetailsOpened,
+      expect.objectContaining({ protocol: "blend" }),
+    );
+  });
+
   it("reports the token selection with its pool and rate", () => {
     trackEarnTokenSelected({
       assetCode: "USDC",
@@ -46,6 +55,7 @@ describe("Earn funnel metrics", () => {
     expect(mockEmitMetric).toHaveBeenCalledWith(
       METRIC_NAMES.earnTokenSelected,
       {
+        protocol: "blend",
         asset_code: "USDC",
         pool_id: POOL_ID,
         apy: 0.1694,
@@ -59,6 +69,7 @@ describe("Earn funnel metrics", () => {
     expect(mockEmitMetric).toHaveBeenCalledWith(
       METRIC_NAMES.earnTokenSelected,
       {
+        protocol: "blend",
         asset_code: "EURC",
         pool_id: POOL_ID,
         apy: null,
@@ -74,7 +85,11 @@ describe("Earn funnel metrics", () => {
 
     expect(mockEmitMetric).toHaveBeenCalledWith(
       METRIC_NAMES.earnBalanceInsufficientShown,
-      { asset_code: "EURC", variant: "swap-or-transfer" },
+      {
+        protocol: "blend",
+        asset_code: "EURC",
+        variant: "swap-or-transfer",
+      },
     );
   });
 
@@ -85,7 +100,11 @@ describe("Earn funnel metrics", () => {
 
       expect(mockEmitMetric).toHaveBeenCalledWith(
         METRIC_NAMES.earnFundingActionSelected,
-        { asset_code: "USDC", action },
+        {
+          protocol: "blend",
+          asset_code: "USDC",
+          action,
+        },
       );
     },
   );
@@ -96,7 +115,11 @@ describe("Earn funnel metrics", () => {
     trackEarnXlmFeeInsufficientShown({ assetCode: "USDC", reason: "no_xlm" });
     expect(mockEmitMetric).toHaveBeenCalledWith(
       METRIC_NAMES.earnXlmFeeInsufficientShown,
-      { asset_code: "USDC", reason: "no_xlm" },
+      {
+        protocol: "blend",
+        asset_code: "USDC",
+        reason: "no_xlm",
+      },
     );
 
     trackEarnXlmFeeInsufficientShown({
@@ -105,7 +128,11 @@ describe("Earn funnel metrics", () => {
     });
     expect(mockEmitMetric).toHaveBeenCalledWith(
       METRIC_NAMES.earnXlmFeeInsufficientShown,
-      { asset_code: "XLM", reason: "fee_not_covered" },
+      {
+        protocol: "blend",
+        asset_code: "XLM",
+        reason: "fee_not_covered",
+      },
     );
   });
 
@@ -117,7 +144,11 @@ describe("Earn funnel metrics", () => {
 
     expect(mockEmitMetric).toHaveBeenCalledWith(
       METRIC_NAMES.earnSimulationFailed,
-      { asset_code: "XLM", reason_code: "simulation failed" },
+      {
+        protocol: "blend",
+        asset_code: "XLM",
+        reason_code: "simulation failed",
+      },
     );
   });
 
@@ -126,7 +157,10 @@ describe("Earn funnel metrics", () => {
 
     expect(mockEmitMetric).toHaveBeenCalledWith(
       METRIC_NAMES.earnPoolDetailsOpened,
-      { pool_id: POOL_ID },
+      {
+        protocol: "blend",
+        pool_id: POOL_ID,
+      },
     );
   });
 
@@ -135,7 +169,11 @@ describe("Earn funnel metrics", () => {
 
     expect(mockEmitMetric).toHaveBeenCalledWith(
       METRIC_NAMES.earnMaxAmountSelected,
-      { asset_code: "XLM", percent: 100 },
+      {
+        protocol: "blend",
+        asset_code: "XLM",
+        percent: 100,
+      },
     );
   });
 
@@ -153,7 +191,11 @@ describe("Earn funnel metrics", () => {
 
     expect(mockEmitMetric).toHaveBeenCalledWith(
       METRIC_NAMES.earnDepositDismissed,
-      { asset_code: "USDC", pool_id: POOL_ID },
+      {
+        protocol: "blend",
+        asset_code: "USDC",
+        pool_id: POOL_ID,
+      },
     );
   });
 
@@ -168,6 +210,7 @@ describe("Earn funnel metrics", () => {
     expect(mockEmitMetric).toHaveBeenCalledWith(
       METRIC_NAMES.earnDepositCompleted,
       {
+        protocol: "blend",
         asset_code: "USDC",
         pool_id: POOL_ID,
         apy: 0.1694,
@@ -190,6 +233,7 @@ describe("Earn funnel metrics", () => {
       "pool_id",
       "apy",
       "via_swap",
+      "protocol",
     ]);
   });
 
@@ -203,6 +247,7 @@ describe("Earn funnel metrics", () => {
     expect(mockEmitMetric).toHaveBeenCalledWith(
       METRIC_NAMES.earnDepositFailed,
       {
+        protocol: "blend",
         asset_code: "USDC",
         pool_id: POOL_ID,
         reason_code: "op_underfunded",
@@ -242,6 +287,7 @@ describe("Earn deposit volume", () => {
     expect(mockEmitMetric).toHaveBeenCalledWith(
       METRIC_NAMES.earnDepositCompleted,
       {
+        protocol: "blend",
         asset_code: "USDC",
         asset_issuer: USDC_ISSUER,
         asset_type: "classic",
@@ -269,6 +315,7 @@ describe("Earn deposit volume", () => {
     expect(mockEmitMetric).toHaveBeenCalledWith(
       METRIC_NAMES.earnDepositFailed,
       {
+        protocol: "blend",
         asset_code: "USDC",
         asset_issuer: USDC_ISSUER,
         asset_type: "classic",

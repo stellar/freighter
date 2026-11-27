@@ -4,6 +4,19 @@ import { NotEnoughVariant } from "popup/constants/earn";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 /**
+ * The protocol every `earn.*` event is about, so a dashboard can split Earn by
+ * provider. Blend is the only one today; once a second provider exists this
+ * comes from the pool the flow chose.
+ */
+export const EARN_PROTOCOL = "blend";
+
+/** Emits an `earn.*` event, tagged with its protocol. */
+const emitEarnMetric = (
+  name: Parameters<typeof emitMetric>[0],
+  props: Record<string, unknown>,
+) => emitMetric(name, { ...props, protocol: EARN_PROTOCOL });
+
+/**
  * Emitters for the Earn deposit funnel.
  *
  * Kept in one module — the way `send.ts` holds the Send flow's trackers — so the
@@ -47,7 +60,7 @@ export const trackEarnTokenSelected = ({
   poolId: string;
   apy: number | null;
 }) => {
-  emitMetric(METRIC_NAMES.earnTokenSelected, {
+  emitEarnMetric(METRIC_NAMES.earnTokenSelected, {
     asset_code: assetCode,
     pool_id: poolId,
     apy,
@@ -66,7 +79,7 @@ export const trackEarnBalanceInsufficientShown = ({
   assetCode: string;
   variant: NotEnoughVariant;
 }) => {
-  emitMetric(METRIC_NAMES.earnBalanceInsufficientShown, {
+  emitEarnMetric(METRIC_NAMES.earnBalanceInsufficientShown, {
     asset_code: assetCode,
     variant,
   });
@@ -84,7 +97,7 @@ export const trackEarnFundingActionSelected = ({
   assetCode: string;
   action: EarnFundingAction;
 }) => {
-  emitMetric(METRIC_NAMES.earnFundingActionSelected, {
+  emitEarnMetric(METRIC_NAMES.earnFundingActionSelected, {
     asset_code: assetCode,
     action,
   });
@@ -105,7 +118,7 @@ export const trackEarnXlmFeeInsufficientShown = ({
   assetCode: string;
   reason: "no_xlm" | "fee_not_covered";
 }) => {
-  emitMetric(METRIC_NAMES.earnXlmFeeInsufficientShown, {
+  emitEarnMetric(METRIC_NAMES.earnXlmFeeInsufficientShown, {
     asset_code: assetCode,
     reason,
   });
@@ -118,7 +131,7 @@ export const trackEarnSimulationFailed = ({
   assetCode: string;
   reasonCode: string;
 }) => {
-  emitMetric(METRIC_NAMES.earnSimulationFailed, {
+  emitEarnMetric(METRIC_NAMES.earnSimulationFailed, {
     asset_code: assetCode,
     reason_code: reasonCode,
   });
@@ -137,7 +150,7 @@ export const trackEarnSimulationFailed = ({
  */
 /** The pool card on the amount screen was tapped for the pool's details. */
 export const trackEarnPoolDetailsOpened = ({ poolId }: { poolId: string }) => {
-  emitMetric(METRIC_NAMES.earnPoolDetailsOpened, { pool_id: poolId });
+  emitEarnMetric(METRIC_NAMES.earnPoolDetailsOpened, { pool_id: poolId });
 };
 
 export const trackEarnPercentAmountSelected = ({
@@ -151,7 +164,7 @@ export const trackEarnPercentAmountSelected = ({
     return;
   }
 
-  emitMetric(METRIC_NAMES.earnMaxAmountSelected, {
+  emitEarnMetric(METRIC_NAMES.earnMaxAmountSelected, {
     asset_code: assetCode,
     percent,
   });
@@ -175,7 +188,7 @@ export const trackEarnDepositDismissed = ({
   assetCode: string;
   poolId: string;
 }) => {
-  emitMetric(METRIC_NAMES.earnDepositDismissed, {
+  emitEarnMetric(METRIC_NAMES.earnDepositDismissed, {
     asset_code: assetCode,
     pool_id: poolId,
   });
@@ -195,7 +208,7 @@ export const trackEarnDepositCompleted = ({
   viaSwap: boolean;
   volume?: EarnDepositVolume;
 }) => {
-  emitMetric(METRIC_NAMES.earnDepositCompleted, {
+  emitEarnMetric(METRIC_NAMES.earnDepositCompleted, {
     asset_code: assetCode,
     pool_id: poolId,
     apy,
@@ -223,7 +236,7 @@ export const trackEarnDepositFailed = ({
   reasonCode: string;
   volume?: EarnDepositVolume & { failureCategory: FailureCategory };
 }) => {
-  emitMetric(METRIC_NAMES.earnDepositFailed, {
+  emitEarnMetric(METRIC_NAMES.earnDepositFailed, {
     asset_code: assetCode,
     pool_id: poolId,
     reason_code: reasonCode,
