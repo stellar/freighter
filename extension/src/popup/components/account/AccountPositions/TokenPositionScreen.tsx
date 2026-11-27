@@ -10,6 +10,7 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
 import { PositionActivity } from "popup/components/earn/PositionActivity";
+import { PoolPausedBanner } from "popup/components/earn/PoolPausedBanner";
 import { formatProjection } from "popup/components/earn/EarnReview/helpers/projectEarnings";
 import {
   formatAccountUsd,
@@ -42,6 +43,11 @@ interface TokenPositionScreenProps {
   networkDetails: NetworkDetails;
   /** Deposit is offered (flag and network); otherwise the footer is empty. */
   canDeposit: boolean;
+  /**
+   * The pool is frozen or still being set up: Deposit stays in view but
+   * disabled, under a banner that says why. Only read where Deposit is offered.
+   */
+  isDepositPaused?: boolean;
   onClose: () => void;
   onDeposit: () => void;
   /** Fires on a tap that changes the tab, never on mount. */
@@ -94,6 +100,7 @@ export const TokenPositionScreen = ({
   assetIcons,
   networkDetails,
   canDeposit,
+  isDepositPaused = false,
   onClose,
   onDeposit,
   onTabChange,
@@ -135,6 +142,7 @@ export const TokenPositionScreen = ({
               isFullWidth
               isRounded
               onClick={onDeposit}
+              disabled={isDepositPaused}
               data-testid="token-position-deposit"
             >
               {t("Deposit")}
@@ -161,6 +169,10 @@ export const TokenPositionScreen = ({
               {gain ?? NO_FIAT_VALUE}
             </div>
           </div>
+
+          {canDeposit && isDepositPaused && (
+            <PoolPausedBanner poolName={position.name} />
+          )}
 
           <PositionTabs
             active={tab}

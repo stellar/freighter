@@ -336,6 +336,38 @@ describe("AccountPositions", () => {
       ).not.toBeInTheDocument();
     });
 
+    it("keeps Deposit in view but disabled, under a banner, while the pool is paused", async () => {
+      renderTab({
+        positions: twoAssetPositions,
+        pools: [{ ...pool, status: "FROZEN" }],
+        state: flagOn,
+      });
+
+      fireEvent.click(screen.getByTestId(`pool-card-${POOL_ID}`));
+      fireEvent.click(await screen.findByTestId("position-row-USDC"));
+
+      expect(
+        await screen.findByTestId("earn-pool-paused-banner"),
+      ).toBeInTheDocument();
+      expect(screen.getByTestId("token-position-deposit")).toBeDisabled();
+    });
+
+    it("says nothing about pausing on a pool Earn doesn't offer", async () => {
+      renderTab({
+        positions: withSupply([supply()], OTHER_POOL_ID),
+        pools: [{ ...pool, id: OTHER_POOL_ID, status: "FROZEN" }],
+        state: flagOn,
+      });
+
+      fireEvent.click(screen.getByTestId(`pool-card-${OTHER_POOL_ID}`));
+      fireEvent.click(await screen.findByTestId("position-row-USDC"));
+      await screen.findByTestId("token-position-screen");
+
+      expect(
+        screen.queryByTestId("earn-pool-paused-banner"),
+      ).not.toBeInTheDocument();
+    });
+
     it("ends the list with a Deposit button into Earn", () => {
       renderTab({ positions: twoAssetPositions, pools: [pool], state: flagOn });
 

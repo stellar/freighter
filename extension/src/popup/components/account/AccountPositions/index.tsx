@@ -37,6 +37,7 @@ import {
   trackPoolSelected,
   trackPositionRowSelected,
 } from "popup/metrics/positions";
+import { isPoolDepositPaused } from "popup/components/earn/helpers/poolStatus";
 import { PoolCard } from "./PoolCard";
 import { EmptyState } from "./EmptyState";
 import { PoolPositionScreen } from "./PoolPositionScreen";
@@ -279,6 +280,7 @@ export const AccountPositions = ({
                     Boolean(selectedPool) &&
                     selectedPosition.id === getBlendPoolId(networkDetails)
                   }
+                  isDepositPaused={isPoolDepositPaused(selectedPool)}
                   onClose={() => setSelectedAssetId(null)}
                   onDeposit={() => {
                     if (selectedPool) {
