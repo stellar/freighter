@@ -18,16 +18,29 @@ updates:
     # being younger than 7 days. Note: security updates ignore cooldown.
     cooldown:
       default-days: 7
+    # Do not open version-update PRs for major bumps -- they are almost always
+    # breaking-change migrations that don't belong in routine currency churn.
+    # Minor/patch currency is unaffected and still opens PRs.
+    #
+    # Per GitHub docs an `ignore` update-type applies to version updates only,
+    # so Dependabot SECURITY updates are still created for major bumps when a
+    # vulnerability requires one.
+    #
+    # NOT the same as freighter-mobile, despite an earlier version of this
+    # comment saying so. That repo has no dependabot.yml at all, which disables
+    # version updates entirely and leaves only security updates -- it is
+    # security-only by omission rather than by choice. This config deliberately
+    # keeps minor/patch version updates; only majors are dropped.
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
     groups:
       minor-and-patch:
         applies-to: version-updates
         update-types:
           - "patch"
           - "minor"
-      major:
-        applies-to: version-updates
-        update-types:
-          - "major"
       security:
         applies-to: security-updates
         patterns:
