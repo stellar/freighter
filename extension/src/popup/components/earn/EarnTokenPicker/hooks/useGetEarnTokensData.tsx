@@ -78,19 +78,6 @@ export interface ResolvedEarnTokens {
 export type EarnTokens = NeedsReRoute | ResolvedEarnTokens;
 
 /**
- * The earn headline is supply interest plus BLND emissions.
- *
- * A null `supplyApy` means no fresh oracle price, so the whole rate is unknown.
- * A null `emissionsSupplyApr` means the stream exists but cannot be priced —
- * treated as zero here, which understates rather than blanking an otherwise
- * known rate. The screen's "APY may change" footnote covers the gap.
- */
-const headlineApy = (
-  supplyApy: number | null,
-  emissionsSupplyApr: number | null,
-) => (supplyApy === null ? null : supplyApy + (emissionsSupplyApr ?? 0));
-
-/**
  * Splits the pool's reserves into the picker's two sections. Each row takes its
  * icon from the session's icon cache; rows still without one get it looked up
  * after the list shows.
@@ -195,7 +182,12 @@ const buildEarnRows = ({
       decimals: option.decimals ?? CLASSIC_ASSET_DECIMALS,
       total: total ? total.toFixed() : "0",
       hasTrustline: Boolean(balance),
-      apy: headlineApy(offer.supplyApy, offer.emissionsSupplyApr),
+      // Supply interest only. BLND emissions (`emissionsSupplyApr`) are left
+      // out on purpose: Blend's own app shows them apart from the interest
+      // rate, and not at all for v2.1 pools, whose emissions can't be claimed
+      // yet. Showing them would take a component of their own. Null means no
+      // fresh oracle price: unknown, not zero.
+      apy: offer.supplyApy,
       poolId: offer.id,
     };
 
