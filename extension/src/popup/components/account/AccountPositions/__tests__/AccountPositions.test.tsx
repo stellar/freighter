@@ -1,7 +1,8 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
-import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import { MAINNET_NETWORK_DETAILS, NETWORKS } from "@shared/constants/stellar";
+import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
 import { BlendCatalogPool } from "@shared/api/types/blend";
 import { AccountPositions } from "popup/components/account/AccountPositions";
 import { TEST_PUBLIC_KEY, Wrapper } from "popup/__testHelpers__";
@@ -12,7 +13,10 @@ import {
   buildBlendSubmitOp,
 } from "@shared/helpers/soroban/blend";
 
-const POOL_ID = "CAJJZSGMMM3PD7N33TAPHGBUGTB43OC73HVIK2L2G6BNGGGYOSSYBXBD";
+// The pool Earn deposits into, and another pool the account supplies to.
+const POOL_ID = BLEND_FIXED_POOL_IDS[NETWORKS.PUBLIC]!;
+const OTHER_POOL_ID =
+  "CAJJZSGMMM3PD7N33TAPHGBUGTB43OC73HVIK2L2G6BNGGGYOSSYBXBD";
 const USDC_SAC = "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75";
 const XLM_SAC = "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA";
 
@@ -35,7 +39,7 @@ const supply = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-const withSupply = (rows: unknown[]) =>
+const withSupply = (rows: unknown[], poolId = POOL_ID) =>
   ({
     address: TEST_PUBLIC_KEY,
     totalValueUsd: 620.16,
@@ -43,7 +47,7 @@ const withSupply = (rows: unknown[]) =>
     positions: [
       {
         protocol: "blend",
-        id: POOL_ID,
+        id: poolId,
         name: "Fixed Pool v2",
         netUsd: 620.16,
         suppliedUsd: 620.16,
@@ -313,6 +317,23 @@ describe("AccountPositions", () => {
         expect.objectContaining({ assetId: USDC_SAC, poolId: POOL_ID }),
         pool,
       );
+    });
+
+    it("offers no Deposit on a token in a pool Earn doesn't deposit into", async () => {
+      // The deposit is built for Earn's own pool, whatever the flow is
+      // prefilled with; offering it here would name one pool and fund another.
+      renderTab({
+        positions: withSupply([supply()], OTHER_POOL_ID),
+        pools: [{ ...pool, id: OTHER_POOL_ID }],
+        state: flagOn,
+      });
+
+      fireEvent.click(screen.getByTestId(`pool-card-${OTHER_POOL_ID}`));
+      fireEvent.click(await screen.findByTestId("position-row-USDC"));
+      await screen.findByTestId("token-position-screen");
+      expect(
+        screen.queryByTestId("token-position-deposit"),
+      ).not.toBeInTheDocument();
     });
 
     it("ends the list with a Deposit button into Earn", () => {

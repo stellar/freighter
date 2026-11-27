@@ -8,7 +8,10 @@ import {
   BlendCatalogPool,
 } from "@shared/api/types/blend";
 import { AssetIcons } from "@shared/api/types";
-import { isEarnSupportedNetwork } from "@shared/constants/blend";
+import {
+  getBlendPoolId,
+  isEarnSupportedNetwork,
+} from "@shared/constants/blend";
 import { NetworkDetails } from "@shared/constants/stellar";
 
 import {
@@ -267,8 +270,15 @@ export const AccountPositions = ({
                   row={selectedRow}
                   assetIcons={assetIcons}
                   networkDetails={networkDetails}
-                  // Depositing prefills the pool, so it needs its catalog entry.
-                  canDeposit={canDeposit && Boolean(selectedPool)}
+                  // Depositing prefills the pool, so it needs its catalog
+                  // entry, and only the pool Earn deposits into qualifies:
+                  // the deposit is built for that pool alone, so offering it
+                  // on another pool's token would name one pool and fund another.
+                  canDeposit={
+                    canDeposit &&
+                    Boolean(selectedPool) &&
+                    selectedPosition.id === getBlendPoolId(networkDetails)
+                  }
                   onClose={() => setSelectedAssetId(null)}
                   onDeposit={() => {
                     if (selectedPool) {

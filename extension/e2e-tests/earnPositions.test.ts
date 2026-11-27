@@ -76,7 +76,7 @@ import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
 import { NETWORKS } from "@shared/constants/stellar";
 
 import { test, expect } from "./test-fixtures";
-import { loginToTestAccount } from "./helpers/login";
+import { loginToTestAccount, switchToMainnet } from "./helpers/login";
 import {
   blendActivityHistory,
   positionsFixture,
@@ -318,6 +318,9 @@ test("Deposit from a token's position lands on the amount screen prefilled", asy
     stubOverrides: () =>
       stubBlendEarn(page, context, { positions: positionsFixture() }),
   });
+  // Deposit is offered only on the pool Earn deposits into, which is the
+  // network's own Fixed pool; the fixture's position is in Mainnet's.
+  await switchToMainnet(page);
 
   await page.getByTestId("account-tab-positions").click();
   await page.getByTestId(`pool-card-${POOL_ID}`).click();
