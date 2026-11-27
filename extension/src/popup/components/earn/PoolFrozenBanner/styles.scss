@@ -4,7 +4,7 @@
 // The SDS amber scale carries the design's warning tokens exactly
 // (background/secondary #fff9ed, border/primary #ffd386, text/primary
 // #ad5700) and their dark-theme pairs.
-.PoolPausedBanner {
+.PoolFrozenBanner {
   display: flex;
   flex-direction: column;
   gap: pxToRem(12);
@@ -44,7 +44,7 @@
 
 // Figma: Varial 4878:106729, the "Why can't I withdraw?" sheet. Its header,
 // grey body copy and "Got it" button are InfoBottomSheet's.
-.PoolPausedSheet {
+.PoolFrozenSheet {
   display: flex;
   flex-direction: column;
   gap: pxToRem(16);

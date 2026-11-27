@@ -23,12 +23,16 @@ import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 import { isNativeContract } from "@shared/helpers/assetIdentity";
 import { transactionDataSelector } from "popup/ducks/transactionSubmission";
 import { getAvailableBalance } from "popup/helpers/soroban";
-import { trackEarnBalanceInsufficientShown } from "popup/metrics/earn";
 import {
-  PoolPausedBanner,
-  PoolPausedSheet,
-} from "popup/components/earn/PoolPausedBanner";
-import { isPoolDepositPaused } from "popup/components/earn/helpers/poolStatus";
+  POOL_FROZEN_INFO_SOURCE,
+  trackEarnBalanceInsufficientShown,
+  trackEarnPoolFrozenInfoOpened,
+} from "popup/metrics/earn";
+import {
+  PoolFrozenBanner,
+  PoolFrozenSheet,
+} from "popup/components/earn/PoolFrozenBanner";
+import { isPoolFrozen } from "popup/components/earn/helpers/poolStatus";
 
 import { NotEnoughTokenSheet } from "./NotEnoughTokenSheet";
 import {
@@ -169,7 +173,7 @@ export const EarnTokenPicker = ({
   const [notEnoughToken, setNotEnoughToken] = useState<EarnTokenOption | null>(
     null,
   );
-  const [isPausedSheetOpen, setIsPausedSheetOpen] = useState(false);
+  const [isFrozenSheetOpen, setIsFrozenSheetOpen] = useState(false);
 
   useEffect(() => {
     // The first load lists what Home already fetched; the refresh after a swap
@@ -306,18 +310,29 @@ export const EarnTokenPicker = ({
     : null;
 
   const hasHeld = data.held.length > 0;
-  const isPaused = isPoolDepositPaused(data.pool);
+  const isFrozen = isPoolFrozen(data.pool);
 
   return (
     <>
       <PickerShell onClose={onClose} data-testid="earn-token-picker">
         <DepositInto pool={data.pool} networkDetails={data.networkDetails} />
 
-        {/* A paused pool offers nothing to pick; the backend already leaves
+        {/* A frozen pool offers nothing to pick; the backend already leaves
             it out of the options, so without this the list would read as
             "no supported assets in your wallet". */}
-        {isPaused ? (
-          <PoolPausedBanner onOpen={() => setIsPausedSheetOpen(true)} />
+        {isFrozen ? (
+          <PoolFrozenBanner
+            onOpen={() => {
+              setIsFrozenSheetOpen(true);
+              if (data.pool) {
+                trackEarnPoolFrozenInfoOpened({
+                  poolId: data.pool.id,
+                  poolStatus: data.pool.status,
+                  source: POOL_FROZEN_INFO_SOURCE.EARN_SELECT_TOKEN,
+                });
+              }
+            }}
+          />
         ) : (
           <div className="EarnTokenPicker__sections">
             {hasHeld ? (
@@ -341,16 +356,16 @@ export const EarnTokenPicker = ({
         )}
 
         {/* Pairs with the asterisk on each rate, so it goes with them. */}
-        {!isPaused && (
+        {!isFrozen && (
           <div className="EarnTokenPicker__disclaimer">
             {t("*APY is variable and subject to change.")}
           </div>
         )}
       </PickerShell>
 
-      <PoolPausedSheet
-        isOpen={isPausedSheetOpen}
-        onClose={() => setIsPausedSheetOpen(false)}
+      <PoolFrozenSheet
+        isOpen={isFrozenSheetOpen}
+        onClose={() => setIsFrozenSheetOpen(false)}
         poolName={data.pool?.name ?? null}
       />
 

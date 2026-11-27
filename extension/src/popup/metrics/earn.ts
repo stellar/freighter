@@ -51,6 +51,17 @@ const depositVolumeProps = (volume: EarnDepositVolume) => ({
 /** Which remedy the user chose on the "Not enough X" sheet. */
 export type EarnFundingAction = "buy" | "swap" | "transfer";
 
+/**
+ * The screen whose frozen-pool banner opened the "Why can't I deposit?"
+ * sheet, named like the flow's screens: the token picker.
+ */
+export const POOL_FROZEN_INFO_SOURCE = {
+  EARN_SELECT_TOKEN: "earn_select_token",
+} as const;
+
+export type PoolFrozenInfoSource =
+  (typeof POOL_FROZEN_INFO_SOURCE)[keyof typeof POOL_FROZEN_INFO_SOURCE];
+
 export const trackEarnTokenSelected = ({
   assetCode,
   poolId,
@@ -151,6 +162,27 @@ export const trackEarnSimulationFailed = ({
 /** The pool card on the amount screen was tapped for the pool's details. */
 export const trackEarnPoolDetailsOpened = ({ poolId }: { poolId: string }) => {
   emitEarnMetric(METRIC_NAMES.earnPoolDetailsOpened, { pool_id: poolId });
+};
+
+/**
+ * A frozen pool's banner was tapped, opening the sheet that explains why it
+ * takes no deposits. `poolStatus` tells an admin freeze from a draining
+ * backstop (or a pool still in setup).
+ */
+export const trackEarnPoolFrozenInfoOpened = ({
+  poolId,
+  poolStatus,
+  source,
+}: {
+  poolId: string;
+  poolStatus: string | null;
+  source: PoolFrozenInfoSource;
+}) => {
+  emitEarnMetric(METRIC_NAMES.earnPoolFrozenInfoOpened, {
+    pool_id: poolId,
+    pool_status: poolStatus,
+    source,
+  });
 };
 
 export const trackEarnPercentAmountSelected = ({

@@ -59,6 +59,10 @@ export const METRIC_NAMES = {
   // The swap inside Earn reports the regular swap events, tagged
   // `source: "earn"` (popup/metrics/swap.ts).
   earnPoolDetailsOpened: "earn.pool_details_opened",
+  // The "Why can't I deposit?" sheet was opened from a frozen pool's banner.
+  // `pool_status` is the backend status (ADMIN_FROZEN | FROZEN | SETUP);
+  // `source` is the screen the banner was on.
+  earnPoolFrozenInfoOpened: "earn.pool_frozen_info_opened",
   // The Max tap on the amount screen, and only that tap — the 25/50/75
   // shortcuts emit nothing, matching Send, Swap and mobile (RFC #2883, D5).
   // `percent` is always 100; it is kept for payload symmetry with mobile.

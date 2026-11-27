@@ -5,17 +5,19 @@ import { BlendCatalogPool } from "@shared/api/types/blend";
  * frozen because its backstop is draining (5), and still being set up (6).
  * On ice (2, 3) stops only borrowing. Withdrawals and repayments stay open in
  * every status (pool `require_action_allowed`).
+ *
+ * Blend's own app calls all three "frozen", and so does Earn. Setup should not
+ * reach a user in practice, since Earn only lists pools already set up.
  */
-const PAUSES_DEPOSITS = new Set(["ADMIN_FROZEN", "FROZEN", "SETUP"]);
+const FROZEN_STATUSES = new Set(["ADMIN_FROZEN", "FROZEN", "SETUP"]);
 
 /**
- * Whether the pool is known to be taking no deposits. Blend's own app treats
- * these statuses as one "frozen" state, and so does Earn.
+ * Whether the pool is known to be frozen, taking no deposits.
  *
  * A pool with no status yet (null until the indexer has its config) or no
- * catalog entry at all is unknown rather than paused, and reads as false:
- * the banner says something definite, so it waits for a definite status.
+ * catalog entry at all is unknown rather than frozen, and reads as false: the
+ * banner says something definite, so it waits for a definite status.
  */
-export const isPoolDepositPaused = (
+export const isPoolFrozen = (
   pool: BlendCatalogPool | null | undefined,
-): boolean => PAUSES_DEPOSITS.has(pool?.status ?? "");
+): boolean => FROZEN_STATUSES.has(pool?.status ?? "");

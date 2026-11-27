@@ -1,11 +1,13 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { RequestState } from "constants/request";
+import { emitMetric } from "helpers/metrics";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { Wrapper } from "popup/__testHelpers__";
 import { EarnTokenPicker } from "popup/components/earn/EarnTokenPicker";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 let mockState: { state: RequestState; data: unknown; error: unknown };
 
@@ -15,6 +17,11 @@ jest.mock(
     useGetEarnTokensData: () => ({ state: mockState, fetchData: jest.fn() }),
   }),
 );
+
+jest.mock("helpers/metrics", () => ({
+  ...jest.requireActual("helpers/metrics"),
+  emitMetric: jest.fn(),
+}));
 
 jest.mock("popup/helpers/useNetworkFees", () => ({
   useNetworkFees: () => ({ recommendedFee: "0.00001" }),
@@ -70,7 +77,7 @@ describe("EarnTokenPicker's Deposit into chip", () => {
     );
   });
 
-  it("shows the paused banner instead of an empty list when the pool takes no deposits", () => {
+  it("shows the frozen banner instead of an empty list when the pool takes no deposits", () => {
     mockState = {
       state: RequestState.SUCCESS,
       error: null,
@@ -92,10 +99,24 @@ describe("EarnTokenPicker's Deposit into chip", () => {
 
     renderPicker();
 
-    expect(screen.getByTestId("earn-pool-paused-banner")).toBeInTheDocument();
+    expect(screen.getByTestId("earn-pool-frozen-banner")).toBeInTheDocument();
     expect(screen.queryByTestId("earn-token-empty")).not.toBeInTheDocument();
     expect(
       screen.queryByText("*APY is variable and subject to change."),
     ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("earn-pool-frozen-banner"));
+
+    expect(
+      screen.getByTestId("earn-pool-frozen-sheet").closest(".SlideupModal"),
+    ).toHaveClass("open");
+    expect(emitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnPoolFrozenInfoOpened,
+      expect.objectContaining({
+        pool_id: "C123",
+        pool_status: "FROZEN",
+        source: "earn_select_token",
+      }),
+    );
   });
 });
