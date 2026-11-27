@@ -69,9 +69,8 @@ export const PoolCard = ({ position, onClick }: PoolCardProps) => {
           className="PositionPoolCard__apy"
           data-testid={`pool-card-apy-${position.id}`}
         >
-          {summary.apy === null
-            ? NO_FIAT_VALUE
-            : t("{{rate}} Net APY", { rate: formatRate(summary.apy) })}
+          {/* Unknown reads "-- Net APY", as the token rows read "-- APY". */}
+          {t("{{rate}} Net APY", { rate: formatRate(summary.apy) })}
         </span>
       </span>
     </button>

@@ -115,11 +115,13 @@ describe("PoolCard", () => {
     );
   });
 
-  it("renders the rate line as a bare -- when the APY is unavailable, not '-- APY'", () => {
+  it("keeps the rate's label when the APY is unavailable, as the token rows do", () => {
     renderCard({ position: position({ netApy: null }) });
 
-    const apy = screen.getByTestId("pool-card-apy-CAJJ");
-    expect(apy).toHaveTextContent("--");
-    expect(apy).not.toHaveTextContent("APY");
+    // t() echoes its key here (see above); formatRate(null) is "--", covered
+    // by formatRate's own tests, so this reads "-- Net APY" in the app.
+    expect(screen.getByTestId("pool-card-apy-CAJJ")).toHaveTextContent(
+      /^\{\{rate\}\} Net APY$/,
+    );
   });
 });
