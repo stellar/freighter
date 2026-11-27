@@ -24,7 +24,10 @@ import { isNativeContract } from "@shared/helpers/assetIdentity";
 import { transactionDataSelector } from "popup/ducks/transactionSubmission";
 import { getAvailableBalance } from "popup/helpers/soroban";
 import { trackEarnBalanceInsufficientShown } from "popup/metrics/earn";
-import { PoolPausedBanner } from "popup/components/earn/PoolPausedBanner";
+import {
+  PoolPausedBanner,
+  PoolPausedSheet,
+} from "popup/components/earn/PoolPausedBanner";
 import { isPoolDepositPaused } from "popup/components/earn/helpers/poolStatus";
 
 import { NotEnoughTokenSheet } from "./NotEnoughTokenSheet";
@@ -166,6 +169,7 @@ export const EarnTokenPicker = ({
   const [notEnoughToken, setNotEnoughToken] = useState<EarnTokenOption | null>(
     null,
   );
+  const [isPausedSheetOpen, setIsPausedSheetOpen] = useState(false);
 
   useEffect(() => {
     // The first load lists what Home already fetched; the refresh after a swap
@@ -313,7 +317,7 @@ export const EarnTokenPicker = ({
             it out of the options, so without this the list would read as
             "no supported assets in your wallet". */}
         {isPaused ? (
-          <PoolPausedBanner poolName={data.pool?.name ?? null} />
+          <PoolPausedBanner onOpen={() => setIsPausedSheetOpen(true)} />
         ) : (
           <div className="EarnTokenPicker__sections">
             {hasHeld ? (
@@ -343,6 +347,12 @@ export const EarnTokenPicker = ({
           </div>
         )}
       </PickerShell>
+
+      <PoolPausedSheet
+        isOpen={isPausedSheetOpen}
+        onClose={() => setIsPausedSheetOpen(false)}
+        poolName={data.pool?.name ?? null}
+      />
 
       <SlideupModal
         isModalOpen={Boolean(notEnoughToken)}
