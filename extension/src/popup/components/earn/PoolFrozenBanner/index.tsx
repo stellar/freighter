@@ -77,7 +77,7 @@ export const PoolFrozenSheet = ({
       <div className="PoolFrozenSheet">
         <div>
           {t(
-            "This pool is frozen, which means it isn’t accepting new deposits. Blend pools are frozen to protect the funds already in them.",
+            "This pool is frozen, which means it isn’t accepting new deposits for now.",
           )}
         </div>
         <div className="PoolFrozenSheet__summary">

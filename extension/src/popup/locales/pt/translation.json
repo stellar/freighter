@@ -795,7 +795,7 @@
   "This is not a valid contract id.": "Este não é um ID de contrato válido.",
   "This message is too large for your Ledger to display. Ask the site for a shorter message.": "Esta mensagem é grande demais para o seu Ledger exibir. Peça ao site uma mensagem mais curta.",
   "This pool is frozen, so it isn’t accepting new deposits right now.": "Este pool está congelado, então não está aceitando novos depósitos no momento.",
-  "This pool is frozen, which means it isn’t accepting new deposits. Blend pools are frozen to protect the funds already in them.": "Este pool está congelado, o que significa que não está aceitando novos depósitos. Pools da Blend são congelados para proteger os fundos que já estão neles.",
+  "This pool is frozen, which means it isn’t accepting new deposits for now.": "Este pool está congelado, o que significa que não está aceitando novos depósitos por enquanto.",
   "This site does not appear safe for the following reasons": "Este site não parece seguro pelos seguintes motivos",
   "This site has been flagged with potential concerns": "Este site foi sinalizado com possíveis preocupações",
   "This site was flagged as malicious": "Este site foi marcado como malicioso",
