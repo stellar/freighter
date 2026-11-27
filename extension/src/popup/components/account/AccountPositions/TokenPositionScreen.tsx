@@ -10,7 +10,10 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
 import { PositionActivity } from "popup/components/earn/PositionActivity";
-import { PoolPausedBanner } from "popup/components/earn/PoolPausedBanner";
+import {
+  PoolPausedBanner,
+  PoolPausedSheet,
+} from "popup/components/earn/PoolPausedBanner";
 import { formatProjection } from "popup/components/earn/EarnReview/helpers/projectEarnings";
 import {
   formatAccountUsd,
@@ -107,6 +110,7 @@ export const TokenPositionScreen = ({
 }: TokenPositionScreenProps) => {
   const { t } = useTranslation();
   const [tab, setTab] = useState<PoolDetailsTab>("your_position");
+  const [isPausedSheetOpen, setIsPausedSheetOpen] = useState(false);
   const summary = getPositionSummary({
     position,
     focusedAssetId: row.assetId,
@@ -171,7 +175,14 @@ export const TokenPositionScreen = ({
           </div>
 
           {canDeposit && isDepositPaused && (
-            <PoolPausedBanner poolName={position.name} />
+            <>
+              <PoolPausedBanner onOpen={() => setIsPausedSheetOpen(true)} />
+              <PoolPausedSheet
+                isOpen={isPausedSheetOpen}
+                onClose={() => setIsPausedSheetOpen(false)}
+                poolName={position.name}
+              />
+            </>
           )}
 
           <PositionTabs
