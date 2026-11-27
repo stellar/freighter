@@ -179,6 +179,24 @@ describe("EarnAmount position lookup", () => {
     );
   });
 
+  it("builds the deposit for the pool the flow chose, the one Review names", async () => {
+    (getBlendSuppliedTokens as jest.Mock).mockResolvedValue(RAW_POSITION);
+    const { simulate } = UseSimulateEarnDeposit.useSimulateEarnDeposit();
+
+    renderAmount();
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("earn-amount-btn-continue"));
+    });
+
+    expect(simulate).toHaveBeenCalledWith(
+      expect.objectContaining({ poolId: POOL_ID, assetId: USDC_SAC }),
+    );
+    expect(getBlendSuppliedTokens).toHaveBeenCalledWith(
+      expect.objectContaining({ poolId: POOL_ID }),
+    );
+  });
+
   it("still opens review when the position lookup fails, falling back to zero", async () => {
     (getBlendSuppliedTokens as jest.Mock).mockRejectedValue(
       new Error("positions 500"),

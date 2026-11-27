@@ -4,7 +4,6 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { getSdk } from "@shared/helpers/stellar";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { simulateTransaction } from "@shared/api/internal";
-import { getBlendPoolId } from "@shared/constants/blend";
 import {
   BlendRequestType,
   buildBlendRequestScVal,
@@ -54,6 +53,12 @@ export const getSimulateTxFailureReason = (reply: string): string => {
 
 interface BuildAndSimulateBlendDepositParams {
   publicKey: string;
+  /**
+   * The pool to deposit into: the one the flow chose and shows on Review,
+   * never re-derived here, so the transaction can't fund a pool other than
+   * the one the user was shown.
+   */
+  poolId: string;
   /** The reserve's asset contract address (a SAC for every current reserve). */
   assetId: string;
   /** Human-readable amount, e.g. "500.00". */
@@ -78,6 +83,7 @@ interface BuildAndSimulateBlendDepositParams {
  */
 export const buildAndSimulateBlendDeposit = async ({
   publicKey,
+  poolId,
   assetId,
   amount,
   decimals,
@@ -88,7 +94,6 @@ export const buildAndSimulateBlendDeposit = async ({
   preparedTransaction: string;
   simulationResponse: SorobanRpc.Api.SimulateTransactionSuccessResponse;
 }> => {
-  const poolId = getBlendPoolId(networkDetails);
   if (!poolId) {
     throw new Error(i18n.t("Earn is not supported on this network"));
   }
