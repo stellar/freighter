@@ -319,9 +319,9 @@ describe("AccountPositions", () => {
       );
     });
 
-    it("offers no Deposit on a token in a pool Earn doesn't deposit into", async () => {
-      // The deposit is built for Earn's own pool, whatever the flow is
-      // prefilled with; offering it here would name one pool and fund another.
+    it("offers no Deposit on a token in a pool Earn doesn't offer", async () => {
+      // Earn deposits only into its own vetted pool; the picker lists no
+      // other, so this entry must not open one either.
       renderTab({
         positions: withSupply([supply()], OTHER_POOL_ID),
         pools: [{ ...pool, id: OTHER_POOL_ID }],

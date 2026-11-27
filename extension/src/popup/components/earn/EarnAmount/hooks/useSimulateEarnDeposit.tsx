@@ -17,6 +17,8 @@ const scanUrlstub = "internal";
 
 interface SimulateEarnDepositParams {
   publicKey: string;
+  /** The pool the flow chose; the deposit is built for it. */
+  poolId: string;
   /** The reserve's asset contract address. */
   assetId: string;
   amount: string;

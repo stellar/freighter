@@ -400,6 +400,8 @@ export const EarnAmount = ({
       const [simulation, position] = await Promise.all([
         simulate({
           publicKey: data.publicKey,
+          // The pool Review names, the same one the "before" balance reads.
+          poolId: destination,
           assetId: selectedAssetId,
           amount: amountToReview,
           decimals,

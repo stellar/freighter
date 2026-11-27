@@ -537,6 +537,7 @@ describe("useSubmitEarnTxData", () => {
 
       expect(mockGetTokenPrices.mock.calls[0][0]).toEqual([USDC]);
       expect(emittedProps(METRIC_NAMES.earnDepositCompleted)).toEqual({
+        protocol: "blend",
         asset_code: "USDC",
         asset_issuer: USDC_ISSUER,
         asset_type: "classic",
@@ -572,6 +573,7 @@ describe("useSubmitEarnTxData", () => {
       await submitDeposit();
 
       expect(emittedProps(METRIC_NAMES.earnDepositFailed)).toEqual({
+        protocol: "blend",
         asset_code: "USDC",
         asset_issuer: USDC_ISSUER,
         asset_type: "classic",

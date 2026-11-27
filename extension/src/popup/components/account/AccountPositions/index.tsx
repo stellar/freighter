@@ -271,9 +271,9 @@ export const AccountPositions = ({
                   assetIcons={assetIcons}
                   networkDetails={networkDetails}
                   // Depositing prefills the pool, so it needs its catalog
-                  // entry, and only the pool Earn deposits into qualifies:
-                  // the deposit is built for that pool alone, so offering it
-                  // on another pool's token would name one pool and fund another.
+                  // entry, and only the pool Earn offers qualifies: the token
+                  // picker lists that one pool alone, so this entry must not
+                  // open deposits into a pool the flow hasn't vetted.
                   canDeposit={
                     canDeposit &&
                     Boolean(selectedPool) &&
