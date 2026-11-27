@@ -16,7 +16,6 @@ import {
   getCatalogIconKey,
   resolveEarnAssetIcons,
 } from "popup/components/earn/helpers/earnAssetIcons";
-import { headlineApy } from "popup/components/earn/helpers/formatPoolStats";
 import { AppDispatch } from "popup/App";
 import { settingsSelector } from "popup/ducks/settings";
 import {

@@ -54,6 +54,13 @@ describe("getBestEarnApy", () => {
     ).toBeCloseTo(0.1694);
   });
 
+  it("rates on supply interest alone, leaving emissions out", () => {
+    const withEmissions = option(USDC_SAC, [0.1], "USDC");
+    withEmissions.pools[0].emissionsSupplyApr = 0.05;
+
+    expect(getBestEarnApy([withEmissions])).toBe(0.1);
+  });
+
   it("returns null when the option has no pools at all", () => {
     // Empty `pools` exercises the reduce's own initial value, not the
     // pool.supplyApy === null skip branch below -- see that test instead.

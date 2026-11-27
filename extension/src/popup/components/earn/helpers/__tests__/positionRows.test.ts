@@ -76,7 +76,7 @@ describe("toPositionTokenRows", () => {
     expect(row.protocol).toBe("blend");
   });
 
-  it("adds emissions to the headline rate", () => {
+  it("rates a row on supply interest alone, leaving emissions out", () => {
     const [row] = toPositionTokenRows({
       positions: accountPositions([
         supplyRow({ apy: 0.1, emissionsApr: 0.05 }),
@@ -84,7 +84,7 @@ describe("toPositionTokenRows", () => {
       networkDetails,
     });
 
-    expect(row.apy).toBeCloseTo(0.15);
+    expect(row.apy).toBe(0.1);
   });
 
   it("keeps an unavailable rate null rather than treating it as zero", () => {

@@ -5,7 +5,6 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
 
 import { getCatalogAssetIdentity } from "./earnAssetIcons";
-import { headlineApy } from "./formatPoolStats";
 
 /** One row on the Positions tab. */
 export interface PositionTokenRow {
@@ -19,7 +18,7 @@ export interface PositionTokenRow {
   /** Display units, already scaled by `decimals`. */
   suppliedTokens: string;
   suppliedUsd: number | null;
-  /** Headline rate as a decimal fraction; null when genuinely unknown. */
+  /** Supply interest rate, without emissions; null when genuinely unknown. */
   apy: number | null;
   interestEarnedUsd: number | null;
 }
@@ -60,8 +59,8 @@ const toRow = ({
       .dividedBy(new BigNumber(10).pow(decimals))
       .toFixed(),
     suppliedUsd: row.usdValue,
-    // headlineApy: the null-is-not-zero exception -- see formatPoolStats.ts.
-    apy: headlineApy(row.apy, row.emissionsApr),
+    // Interest only: BLND emissions are left out, as everywhere in Earn.
+    apy: row.apy,
     interestEarnedUsd: row.interestEarnedUsd,
   };
 };

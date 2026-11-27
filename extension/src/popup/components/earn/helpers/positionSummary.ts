@@ -6,7 +6,6 @@ import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
 import { projectEarnings } from "popup/components/earn/EarnReview/helpers/projectEarnings";
 
 import { getCatalogAssetIdentity } from "./earnAssetIcons";
-import { headlineApy } from "./formatPoolStats";
 
 export interface PositionAssetRow {
   assetId: string;
@@ -20,7 +19,7 @@ export interface PositionAssetRow {
 
 export interface PositionSummary {
   currentBalanceUsd: number | null;
-  /** Headline rate: apy + emissions. */
+  /** Supply interest rate, without BLND emissions. */
   apy: number | null;
   deposits: PositionAssetRow[];
   earnings: PositionAssetRow[];
@@ -173,8 +172,8 @@ export const getPositionSummary = ({
   const rows = resolveRows({ position, focusedAssetId });
 
   const currentBalanceUsd = rows[0]?.usdValue ?? null;
-  // headlineApy: the null-is-not-zero exception -- see formatPoolStats.ts.
-  const apy = headlineApy(rows[0]?.apy ?? null, rows[0]?.emissionsApr ?? null);
+  // Interest only: BLND emissions are left out, as everywhere in Earn.
+  const apy = rows[0]?.apy ?? null;
 
   const deposits = rows.map((row) => toDepositRow(row, networkDetails));
   const earnings = rows.map((row) => toEarningsRow(row, networkDetails));
