@@ -69,4 +69,33 @@ describe("EarnTokenPicker's Deposit into chip", () => {
       "Blend · Fixed v2.1 Pool",
     );
   });
+
+  it("shows the paused banner instead of an empty list when the pool takes no deposits", () => {
+    mockState = {
+      state: RequestState.SUCCESS,
+      error: null,
+      data: {
+        type: AppDataType.RESOLVED,
+        publicKey: "G123",
+        networkDetails: TESTNET_NETWORK_DETAILS,
+        balances: { balances: [] },
+        held: [],
+        supported: [],
+        pool: {
+          id: "C123",
+          name: "Fixed v2.1 Pool",
+          status: "FROZEN",
+          reserves: [],
+        },
+      },
+    };
+
+    renderPicker();
+
+    expect(screen.getByTestId("earn-pool-paused-banner")).toBeInTheDocument();
+    expect(screen.queryByTestId("earn-token-empty")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("*APY is variable and subject to change."),
+    ).not.toBeInTheDocument();
+  });
 });

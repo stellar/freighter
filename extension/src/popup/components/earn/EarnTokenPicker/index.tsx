@@ -24,6 +24,8 @@ import { isNativeContract } from "@shared/helpers/assetIdentity";
 import { transactionDataSelector } from "popup/ducks/transactionSubmission";
 import { getAvailableBalance } from "popup/helpers/soroban";
 import { trackEarnBalanceInsufficientShown } from "popup/metrics/earn";
+import { PoolPausedBanner } from "popup/components/earn/PoolPausedBanner";
+import { isPoolDepositPaused } from "popup/components/earn/helpers/poolStatus";
 
 import { NotEnoughTokenSheet } from "./NotEnoughTokenSheet";
 import {
@@ -300,36 +302,46 @@ export const EarnTokenPicker = ({
     : null;
 
   const hasHeld = data.held.length > 0;
+  const isPaused = isPoolDepositPaused(data.pool);
 
   return (
     <>
       <PickerShell onClose={onClose} data-testid="earn-token-picker">
         <DepositInto pool={data.pool} networkDetails={data.networkDetails} />
 
-        <div className="EarnTokenPicker__sections">
-          {hasHeld ? (
-            renderSection(t("In your wallet"), data.held, true)
-          ) : (
-            <div
-              className="EarnTokenPicker__empty"
-              data-testid="earn-token-empty"
-            >
-              <Text as="div" size="md" weight="medium">
-                {t("No supported assets in your wallet")}
-              </Text>
-              <div className="EarnTokenPicker__empty-body">
-                {t("Add a supported asset to start earning.")}
+        {/* A paused pool offers nothing to pick; the backend already leaves
+            it out of the options, so without this the list would read as
+            "no supported assets in your wallet". */}
+        {isPaused ? (
+          <PoolPausedBanner poolName={data.pool?.name ?? null} />
+        ) : (
+          <div className="EarnTokenPicker__sections">
+            {hasHeld ? (
+              renderSection(t("In your wallet"), data.held, true)
+            ) : (
+              <div
+                className="EarnTokenPicker__empty"
+                data-testid="earn-token-empty"
+              >
+                <Text as="div" size="md" weight="medium">
+                  {t("No supported assets in your wallet")}
+                </Text>
+                <div className="EarnTokenPicker__empty-body">
+                  {t("Add a supported asset to start earning.")}
+                </div>
               </div>
-            </div>
-          )}
-          {data.supported.length > 0 &&
-            renderSection(t("Supported tokens"), data.supported, false)}
-        </div>
+            )}
+            {data.supported.length > 0 &&
+              renderSection(t("Supported tokens"), data.supported, false)}
+          </div>
+        )}
 
-        {/* Pairs with the asterisk on each rate. */}
-        <div className="EarnTokenPicker__disclaimer">
-          {t("*APY is variable and subject to change.")}
-        </div>
+        {/* Pairs with the asterisk on each rate, so it goes with them. */}
+        {!isPaused && (
+          <div className="EarnTokenPicker__disclaimer">
+            {t("*APY is variable and subject to change.")}
+          </div>
+        )}
       </PickerShell>
 
       <SlideupModal

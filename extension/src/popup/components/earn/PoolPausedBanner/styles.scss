@@ -1,0 +1,76 @@
+@use "../../../styles/utils.scss" as *;
+
+// Figma: Varial 4878:106535, the "Withdrawals temporarily unavailable" card.
+// The SDS amber scale carries the design's warning tokens exactly
+// (background/secondary #fff9ed, border/primary #ffd386, text/primary
+// #ad5700) and their dark-theme pairs.
+.PoolPausedBanner {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(12);
+  width: 100%;
+  padding: pxToRem(12) pxToRem(16);
+  border: 1px solid var(--sds-clr-amber-06);
+  border-radius: pxToRem(16);
+  background: var(--sds-clr-amber-02);
+  text-align: left;
+  cursor: pointer;
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(8);
+    @include text(sm, medium);
+    color: var(--sds-clr-amber-11);
+
+    svg {
+      flex-shrink: 0;
+      width: pxToRem(16);
+      height: pxToRem(16);
+      stroke: currentColor;
+    }
+  }
+
+  &__body {
+    @include text(sm, regular);
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__link {
+    @include text(sm, semi-bold);
+    color: var(--sds-clr-amber-11);
+  }
+}
+
+// Figma: Varial 4878:106729, the "Why can't I withdraw?" sheet. Its header,
+// grey body copy and "Got it" button are InfoBottomSheet's.
+.PoolPausedSheet {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(16);
+
+  p {
+    margin: 0;
+  }
+
+  &__summary {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8);
+    padding: pxToRem(16);
+    border-radius: pxToRem(16);
+    background: var(--sds-clr-gray-03);
+  }
+
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    gap: pxToRem(12);
+  }
+
+  &__value {
+    color: var(--sds-clr-gray-12);
+    font-weight: var(--sds-fw-semi-bold);
+    text-align: right;
+  }
+}
