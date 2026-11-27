@@ -183,7 +183,12 @@ const buildEarnRows = ({
       decimals: option.decimals ?? CLASSIC_ASSET_DECIMALS,
       total: total ? total.toFixed() : "0",
       hasTrustline: Boolean(balance),
-      apy: headlineApy(offer.supplyApy, offer.emissionsSupplyApr),
+      // Supply interest only. BLND emissions (`emissionsSupplyApr`) are left
+      // out on purpose: Blend's own app shows them apart from the interest
+      // rate, and not at all for v2.1 pools, whose emissions can't be claimed
+      // yet. Showing them would take a component of their own. Null means no
+      // fresh oracle price: unknown, not zero.
+      apy: offer.supplyApy,
       poolId: offer.id,
     };
 

@@ -170,6 +170,32 @@ describe("useGetEarnTokensData", () => {
     expect(result.current.state.state).toBe(RequestState.SUCCESS);
   });
 
+  it("rates each token on supply interest alone, leaving emissions out", async () => {
+    mockGetBlendEarnOptions.mockResolvedValue([
+      { ...earnOptions[0], pools: [{ ...offer, emissionsSupplyApr: 0.05 }] },
+    ]);
+    const { result } = renderData();
+
+    await act(() => result.current.fetchData(true));
+
+    expect(resolvedData(result).held).toEqual([
+      expect.objectContaining({ code: "XLM", apy: 0.1 }),
+    ]);
+  });
+
+  it("keeps an unpriced rate unknown, not zero", async () => {
+    mockGetBlendEarnOptions.mockResolvedValue([
+      { ...earnOptions[0], pools: [{ ...offer, supplyApy: null }] },
+    ]);
+    const { result } = renderData();
+
+    await act(() => result.current.fetchData(true));
+
+    expect(resolvedData(result).held).toEqual([
+      expect.objectContaining({ code: "XLM", apy: null }),
+    ]);
+  });
+
   it("lists a token the user has hidden as held, at its balance", async () => {
     mockFetchBalances.mockResolvedValue({
       ...balancesOf(xlmBalance),
