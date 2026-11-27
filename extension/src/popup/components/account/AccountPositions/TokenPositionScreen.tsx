@@ -11,9 +11,9 @@ import { AssetIcon } from "popup/components/account/AccountAssets";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
 import { PositionActivity } from "popup/components/earn/PositionActivity";
 import {
-  PoolPausedBanner,
-  PoolPausedSheet,
-} from "popup/components/earn/PoolPausedBanner";
+  PoolFrozenBanner,
+  PoolFrozenSheet,
+} from "popup/components/earn/PoolFrozenBanner";
 import { formatProjection } from "popup/components/earn/EarnReview/helpers/projectEarnings";
 import {
   formatAccountUsd,
@@ -47,14 +47,16 @@ interface TokenPositionScreenProps {
   /** Deposit is offered (flag and network); otherwise the footer is empty. */
   canDeposit: boolean;
   /**
-   * The pool is frozen or still being set up: Deposit stays in view but
-   * disabled, under a banner that says why. Only read where Deposit is offered.
+   * The pool is frozen: Deposit stays in view but disabled, under a banner
+   * that says why. Only read where Deposit is offered.
    */
-  isDepositPaused?: boolean;
+  isPoolFrozen?: boolean;
   onClose: () => void;
   onDeposit: () => void;
   /** Fires on a tap that changes the tab, never on mount. */
   onTabChange: (tab: PoolDetailsTab) => void;
+  /** Fires when the frozen banner's tap opens its sheet. */
+  onFrozenInfoOpen?: () => void;
 }
 
 /** A section's small grey heading over its content. */
@@ -103,14 +105,15 @@ export const TokenPositionScreen = ({
   assetIcons,
   networkDetails,
   canDeposit,
-  isDepositPaused = false,
+  isPoolFrozen = false,
   onClose,
   onDeposit,
   onTabChange,
+  onFrozenInfoOpen,
 }: TokenPositionScreenProps) => {
   const { t } = useTranslation();
   const [tab, setTab] = useState<PoolDetailsTab>("your_position");
-  const [isPausedSheetOpen, setIsPausedSheetOpen] = useState(false);
+  const [isFrozenSheetOpen, setIsFrozenSheetOpen] = useState(false);
   const summary = getPositionSummary({
     position,
     focusedAssetId: row.assetId,
@@ -146,7 +149,7 @@ export const TokenPositionScreen = ({
               isFullWidth
               isRounded
               onClick={onDeposit}
-              disabled={isDepositPaused}
+              disabled={isPoolFrozen}
               data-testid="token-position-deposit"
             >
               {t("Deposit")}
@@ -174,12 +177,17 @@ export const TokenPositionScreen = ({
             </div>
           </div>
 
-          {canDeposit && isDepositPaused && (
+          {canDeposit && isPoolFrozen && (
             <>
-              <PoolPausedBanner onOpen={() => setIsPausedSheetOpen(true)} />
-              <PoolPausedSheet
-                isOpen={isPausedSheetOpen}
-                onClose={() => setIsPausedSheetOpen(false)}
+              <PoolFrozenBanner
+                onOpen={() => {
+                  setIsFrozenSheetOpen(true);
+                  onFrozenInfoOpen?.();
+                }}
+              />
+              <PoolFrozenSheet
+                isOpen={isFrozenSheetOpen}
+                onClose={() => setIsFrozenSheetOpen(false)}
                 poolName={position.name}
               />
             </>

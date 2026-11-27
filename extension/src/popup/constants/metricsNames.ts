@@ -64,6 +64,10 @@ export const METRIC_NAMES = {
   // never for a tap on the tab already active — either would inflate the count
   // with no-ops and make "did anyone open Overview?" unanswerable.
   earnPoolDetailsTabSelected: "earn.pool_details_tab_selected",
+  // The "Why can't I deposit?" sheet was opened from a frozen pool's banner.
+  // `pool_status` is the backend status (ADMIN_FROZEN | FROZEN | SETUP);
+  // `source` is the screen the banner was on.
+  earnPoolFrozenInfoOpened: "earn.pool_frozen_info_opened",
   // The Max tap on the amount screen, and only that tap — the 25/50/75
   // shortcuts emit nothing, matching Send, Swap and mobile (RFC #2883, D5).
   // `percent` is always 100; it is kept for payload symmetry with mobile.

@@ -6,6 +6,8 @@ import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
 import { BlendCatalogPool } from "@shared/api/types/blend";
 import { AccountPositions } from "popup/components/account/AccountPositions";
 import { TEST_PUBLIC_KEY, Wrapper } from "popup/__testHelpers__";
+import { emitMetric } from "helpers/metrics";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { Account, BASE_FEE, Networks, TransactionBuilder } from "stellar-sdk";
 import {
   BlendRequestType,
@@ -115,6 +117,11 @@ const renderTab = (
     </Wrapper>,
   );
 };
+
+jest.mock("helpers/metrics", () => ({
+  ...jest.requireActual("helpers/metrics"),
+  emitMetric: jest.fn(),
+}));
 
 describe("AccountPositions", () => {
   beforeEach(() => {
@@ -336,7 +343,7 @@ describe("AccountPositions", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("keeps Deposit in view but disabled, under a banner, while the pool is paused", async () => {
+    it("keeps Deposit in view but disabled, under a banner, while the pool is frozen", async () => {
       renderTab({
         positions: twoAssetPositions,
         pools: [{ ...pool, status: "FROZEN" }],
@@ -347,12 +354,26 @@ describe("AccountPositions", () => {
       fireEvent.click(await screen.findByTestId("position-row-USDC"));
 
       expect(
-        await screen.findByTestId("earn-pool-paused-banner"),
+        await screen.findByTestId("earn-pool-frozen-banner"),
       ).toBeInTheDocument();
       expect(screen.getByTestId("token-position-deposit")).toBeDisabled();
+
+      fireEvent.click(screen.getByTestId("earn-pool-frozen-banner"));
+
+      expect(
+        screen.getByTestId("earn-pool-frozen-sheet").closest(".SlideupModal"),
+      ).toHaveClass("open");
+      expect(emitMetric).toHaveBeenCalledWith(
+        METRIC_NAMES.earnPoolFrozenInfoOpened,
+        expect.objectContaining({
+          pool_id: POOL_ID,
+          pool_status: "FROZEN",
+          source: "position_row",
+        }),
+      );
     });
 
-    it("says nothing about pausing on a pool Earn doesn't offer", async () => {
+    it("says nothing about freezing on a pool Earn doesn't offer", async () => {
       renderTab({
         positions: withSupply([supply()], OTHER_POOL_ID),
         pools: [{ ...pool, id: OTHER_POOL_ID, status: "FROZEN" }],
@@ -364,7 +385,7 @@ describe("AccountPositions", () => {
       await screen.findByTestId("token-position-screen");
 
       expect(
-        screen.queryByTestId("earn-pool-paused-banner"),
+        screen.queryByTestId("earn-pool-frozen-banner"),
       ).not.toBeInTheDocument();
     });
 

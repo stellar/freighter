@@ -30,14 +30,16 @@ import { ROUTES } from "popup/constants/routes";
 import { earnDepositSelector } from "popup/ducks/remoteConfig";
 import {
   POOL_DETAILS_SOURCE,
+  POOL_FROZEN_INFO_SOURCE,
   trackEarnPoolDetailsOpened,
   trackEarnPoolDetailsTabSelected,
+  trackEarnPoolFrozenInfoOpened,
 } from "popup/metrics/earn";
 import {
   trackPoolSelected,
   trackPositionRowSelected,
 } from "popup/metrics/positions";
-import { isPoolDepositPaused } from "popup/components/earn/helpers/poolStatus";
+import { isPoolFrozen } from "popup/components/earn/helpers/poolStatus";
 import { PoolCard } from "./PoolCard";
 import { EmptyState } from "./EmptyState";
 import { PoolPositionScreen } from "./PoolPositionScreen";
@@ -280,7 +282,7 @@ export const AccountPositions = ({
                     Boolean(selectedPool) &&
                     selectedPosition.id === getBlendPoolId(networkDetails)
                   }
-                  isDepositPaused={isPoolDepositPaused(selectedPool)}
+                  isPoolFrozen={isPoolFrozen(selectedPool)}
                   onClose={() => setSelectedAssetId(null)}
                   onDeposit={() => {
                     if (selectedPool) {
@@ -294,6 +296,15 @@ export const AccountPositions = ({
                       source: POOL_DETAILS_SOURCE.POSITION_ROW,
                     })
                   }
+                  onFrozenInfoOpen={() => {
+                    if (selectedPool) {
+                      trackEarnPoolFrozenInfoOpened({
+                        poolId: selectedPool.id,
+                        poolStatus: selectedPool.status,
+                        source: POOL_FROZEN_INFO_SOURCE.POSITION_ROW,
+                      });
+                    }
+                  }}
                 />
               )}
             </SheetContent>

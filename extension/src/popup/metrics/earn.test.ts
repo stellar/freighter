@@ -19,9 +19,11 @@ import {
   trackEarnPercentAmountSelected,
   trackEarnPoolDetailsOpened,
   trackEarnPoolDetailsTabSelected,
+  trackEarnPoolFrozenInfoOpened,
   trackEarnSimulationFailed,
   trackEarnTokenSelected,
   trackEarnXlmFeeInsufficientShown,
+  POOL_FROZEN_INFO_SOURCE,
 } from "./earn";
 
 jest.mock("helpers/metrics", () => ({
@@ -186,6 +188,24 @@ describe("Earn funnel metrics", () => {
     expect(mockEmitMetric).toHaveBeenCalledWith(
       METRIC_NAMES.earnPoolDetailsOpened,
       { protocol: "blend", pool_id: POOL_ID, source: "earn_amount" },
+    );
+  });
+
+  it("reports which frozen pool's sheet opened, its status and screen", () => {
+    trackEarnPoolFrozenInfoOpened({
+      poolId: POOL_ID,
+      poolStatus: "FROZEN",
+      source: POOL_FROZEN_INFO_SOURCE.EARN_SELECT_TOKEN,
+    });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnPoolFrozenInfoOpened,
+      {
+        protocol: "blend",
+        pool_id: POOL_ID,
+        pool_status: "FROZEN",
+        source: "earn_select_token",
+      },
     );
   });
 
