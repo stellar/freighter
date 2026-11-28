@@ -3855,13 +3855,15 @@ const EARN_PREPARED_TX_XDR =
  * fixture was made) rather than the shared stub's token 100 stroops, so the
  * post-simulation fee guard is exercised at a realistic magnitude.
  */
+export const EARN_SIMULATED_RESOURCE_FEE_STROOPS = "546395";
+
 export const stubEarnSimulateTx = async (page: Page) => {
   await page.route("**/simulate-tx**", async (route) => {
     await route.fulfill({
       json: {
         preparedTransaction: EARN_PREPARED_TX_XDR,
         simulationResponse: {
-          minResourceFee: "546395",
+          minResourceFee: EARN_SIMULATED_RESOURCE_FEE_STROOPS,
           cost: {
             cpuInsns: "2000000",
             memBytes: "5000",

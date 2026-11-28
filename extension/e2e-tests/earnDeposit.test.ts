@@ -8,8 +8,8 @@
  *     and the Receive sheet it opens in place
  *  4. "Not enough X" sheet — USDC (buy + swap + transfer); Buy opens Add Funds
  *     on USDC, and its X returns to the picker
- *  5. Held-token happy path: Max bounces off the fee guard, then a smaller
- *     amount -> review -> confirm -> Deposit complete
+ *  5. Held-token happy path: a typed amount short of the fee is left to the
+ *     user, Max is lowered by the fee -> review -> confirm -> Deposit complete
  *  6. Pool details sheet, including its Backstop row
  *  7. Earn tile hidden on a custom network with no allowlisted pool
  *
@@ -57,11 +57,13 @@
  * Execution: `yarn test:e2e e2e-tests/earnDeposit.test.ts` from repo root.
  */
 
+import BigNumber from "bignumber.js";
 import { test, expect } from "./test-fixtures";
 import { Page } from "@playwright/test";
 import { loginToTestAccount, switchToMainnet } from "./helpers/login";
 import { expectHomeReady, goToSettings } from "./helpers/network";
 import {
+  EARN_SIMULATED_RESOURCE_FEE_STROOPS,
   stubBlendEarn,
   stubEarnDepositFlag,
   stubEarnSimulateTx,
@@ -281,11 +283,21 @@ test("depositing a held token reaches the success screen", async ({
   // The CTA stays disabled until there is an amount to review.
   await expect(page.getByTestId("earn-amount-btn-continue")).toBeDisabled();
 
-  // Max deliberately offers the whole spendable balance — nothing is held back
-  // for the Soroban resource fee, which is only knowable after simulation. So
-  // Max on XLM is expected to bounce off the post-simulation guard rather than
-  // open Review, and the CTA handler is where that check runs.
+  // Max offers the whole spendable balance: nothing is held back for the
+  // Soroban resource fee, which is only known after simulation.
+  const amountInput = page
+    .getByTestId("earn-amount")
+    .getByTestId("send-amount-amount-input");
   await page.getByTestId("SendAmountSetMax").click();
+  const maxAmount = new BigNumber(
+    (await amountInput.inputValue()).replace(/,/g, ""),
+  );
+  const resourceFee = new BigNumber(
+    EARN_SIMULATED_RESOURCE_FEE_STROOPS,
+  ).shiftedBy(-7);
+
+  // A typed amount that leaves too little for the fee is the user's to lower.
+  await amountInput.fill(maxAmount.minus("0.01").toFixed());
   await expect(page.getByTestId("earn-amount-btn-continue")).toBeEnabled();
   await page.getByTestId("earn-amount-btn-continue").click();
 
@@ -294,17 +306,20 @@ test("depositing a held token reaches the success screen", async ({
   ).toBeVisible();
   await expect(page.getByTestId("earn-review")).toBeHidden();
 
-  // Reduce to an amount that leaves room for the fee and the deposit proceeds.
-  await page
-    .getByTestId("earn-amount")
-    .getByTestId("send-amount-amount-input")
-    .fill("100");
+  // Max is lowered by the measured fee instead, and Review opens on that.
+  await page.getByTestId("SendAmountSetMax").click();
   await expect(page.getByTestId("earn-amount-btn-continue")).toBeEnabled();
   await page.getByTestId("earn-amount-btn-continue").click();
 
   const review = page.getByTestId("earn-review");
   await expect(review).toBeVisible();
   await expect(review).toContainText("You are depositing");
+  const fittedAmount = maxAmount.minus(resourceFee).toFixed();
+  const reviewedAmount =
+    (await page.getByTestId("earn-review-amount").textContent()) ?? "";
+  expect(reviewedAmount.replace(/,/g, "")).toContain(`${fittedAmount} XLM`);
+  // The field says it too.
+  expect((await amountInput.inputValue()).replace(/,/g, "")).toBe(fittedAmount);
   await expect(page.getByTestId("earn-review-position")).toBeVisible();
 
   await page.getByTestId("earn-review-confirm").click();
