@@ -65,7 +65,11 @@ export interface ResolvedEarnTokens {
   publicKey: string;
   networkDetails: NetworkDetails;
   balances: AccountBalances;
-  /** Pool-supported assets the account holds — the "In your wallet" section. */
+  /**
+   * Pool-supported assets the account has a balance of — the "In your wallet"
+   * section, except XLM with none of it spendable, which the picker lists with
+   * the rest.
+   */
   held: EarnTokenOption[];
   /**
    * Pool-supported assets at zero — the second section, headed "Other supported
