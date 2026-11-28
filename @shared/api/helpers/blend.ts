@@ -170,9 +170,9 @@ const mapPoolPosition = (position: ApiPoolPosition): PoolPosition => ({
   suppliedUsd: position.supplied_usd ?? null,
   borrowedUsd: position.borrowed_usd ?? null,
   netApy: position.net_apy ?? null,
-  // Left undefined rather than defaulted to empty arrays: absent detail and
-  // "detail present but holding nothing" are different states, and the sheet
-  // renders them differently.
+  // Left undefined rather than defaulted to empty arrays: absent detail is
+  // unknown, while detail holding nothing is a pool the account has left
+  // (see holdsTokens).
   blend: position.blend
     ? {
         supply: (position.blend.supply || []).map(mapSupplyRow),
@@ -222,18 +222,6 @@ export const getBlendPools = async ({
   return (data.pools || []).map(mapCatalogPool);
 };
 
-/**
- * Every Blend position the account holds, across every pool the indexer tracks.
- *
- * Powers the Home Positions tab and the pool sheet's "Your position" panel. This
- * is the full payload behind the narrow `getBlendSuppliedTokens` below, which
- * exists only because it predates this client — see the design doc's Deferred
- * work for retiring it.
- *
- * The endpoint is a batch keyed by address; we always ask for one and unwrap it.
- * An account unknown to the indexer still gets an entry with empty `positions`,
- * so an empty result is a legitimate answer rather than an error.
- */
 /** An account with no positions: what a missing entry, or a gated read, returns. */
 export const emptyAccountPositions = (address: string): AccountPositions => ({
   address,
@@ -243,6 +231,30 @@ export const emptyAccountPositions = (address: string): AccountPositions => ({
   backstop: [],
 });
 
+/**
+ * Whether a pool still holds any of the account's tokens. The indexer keeps a
+ * pool the account has fully left, to carry the earnings it realized there,
+ * and the backend drops its emptied rows but not the pool, so it arrives with
+ * nothing supplied and nothing borrowed. A pool with no detail at all is kept:
+ * what it holds is unknown, not nothing.
+ */
+const holdsTokens = (position: PoolPosition) =>
+  !position.blend ||
+  position.blend.supply.length > 0 ||
+  position.blend.borrow.length > 0;
+
+/**
+ * Every Blend position the account holds, across every pool the indexer tracks,
+ * leaving out the pools it has fully left.
+ *
+ * Powers the Home Positions tab. This is the full payload behind the narrow
+ * `getBlendSuppliedTokens` below, which exists only because it predates this
+ * client — see the design doc's Deferred work for retiring it.
+ *
+ * The endpoint is a batch keyed by address; we always ask for one and unwrap it.
+ * An account unknown to the indexer still gets an entry with empty `positions`,
+ * so an empty result is a legitimate answer rather than an error.
+ */
 export const getBlendPositions = async ({
   publicKey,
   networkDetails,
@@ -266,7 +278,7 @@ export const getBlendPositions = async ({
     address: entry.address,
     totalValueUsd: entry.total_value_usd ?? null,
     netApy: entry.net_apy ?? null,
-    positions: (entry.positions || []).map(mapPoolPosition),
+    positions: (entry.positions || []).map(mapPoolPosition).filter(holdsTokens),
     backstop: (entry.backstop || []).map(mapBackstopRow),
   };
 };

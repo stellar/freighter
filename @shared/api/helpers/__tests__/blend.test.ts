@@ -489,7 +489,6 @@ describe("getBlendPositions", () => {
                 supplied_usd: null,
                 borrowed_usd: null,
                 net_apy: null,
-                blend: { supply: [], borrow: [] },
               },
             ],
             backstop: [],
@@ -502,6 +501,73 @@ describe("getBlendPositions", () => {
 
     expect(result.totalValueUsd).toBeNull();
     expect(result.positions[0].netApy).toBeNull();
+  });
+
+  // The indexer keeps a pool the account has fully left, to carry what it
+  // earned there, and the backend sends it with its emptied rows dropped.
+  it("leaves out a pool the account has fully left", async () => {
+    mockedSend.mockResolvedValue({
+      status: 200,
+      body: {
+        data: [
+          {
+            address: PUBLIC_KEY,
+            positions: [
+              {
+                protocol: "blend",
+                id: "CLEFTPOOL",
+                supplied_usd: 0,
+                blend: { supply: [], borrow: [] },
+              },
+              {
+                protocol: "blend",
+                id: POOL_ID,
+                blend: {
+                  supply: [{ asset_id: USDC_SAC, total_tokens: "100" }],
+                  borrow: [],
+                },
+              },
+              {
+                protocol: "blend",
+                id: "CBORROWPOOL",
+                blend: {
+                  supply: [],
+                  borrow: [{ asset_id: USDC_SAC, borrowed_tokens: "50" }],
+                },
+              },
+            ],
+            backstop: [],
+          },
+        ],
+      },
+    });
+
+    const result = await call();
+
+    expect(result.positions.map((position) => position.id)).toEqual([
+      POOL_ID,
+      "CBORROWPOOL",
+    ]);
+  });
+
+  it("keeps a pool with no detail, whose contents are unknown", async () => {
+    mockedSend.mockResolvedValue({
+      status: 200,
+      body: {
+        data: [
+          {
+            address: PUBLIC_KEY,
+            positions: [{ protocol: "blend", id: POOL_ID }],
+            backstop: [],
+          },
+        ],
+      },
+    });
+
+    const result = await call();
+
+    expect(result.positions).toHaveLength(1);
+    expect(result.positions[0].blend).toBeUndefined();
   });
 
   it("returns an empty result when the batch carries no entry for the address", async () => {
