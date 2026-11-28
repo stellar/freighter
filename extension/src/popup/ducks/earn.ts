@@ -154,6 +154,19 @@ const earnSlice = createSlice({
       state.awaitedDeposit = action.payload;
     },
     /**
+     * Clears what a deposit attempt leaves behind: its failure banner, its
+     * swap, the amount it reviewed and the position it fetched. Earn runs it as
+     * it opens, because only its X button runs `resetEarn`, and other ways
+     * out (Buy, for one) would carry these into the next visit. The pool and
+     * token are left alone: whatever opens the amount screen sets them.
+     */
+    resetEarnAttempt: (state) => {
+      state.currentPositionTokens = initialState.currentPositionTokens;
+      state.lastSubmitFailed = initialState.lastSubmitFailed;
+      state.didSwapInFlow = initialState.didSwapInFlow;
+      state.reviewedAmount = initialState.reviewedAmount;
+    },
+    /**
      * Resets everything except `hasSeenIntro` and `awaitedDeposit`.
      * `hasSeenIntro` is persisted in the background store, and re-reading it on
      * every flow entry would reintroduce the interstitial flash it exists to
@@ -178,6 +191,7 @@ export const {
   saveEarnSource,
   saveReviewedAmount,
   saveAwaitedDeposit,
+  resetEarnAttempt,
   resetEarn,
 } = earnSlice.actions;
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import BigNumber from "bignumber.js";
 import { Icon, IconButton, Loader, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -259,17 +260,29 @@ export const EarnTokenPicker = ({
   };
 
   // XLM's total includes the minimum balance the account can't spend, so its
-  // held row shows what the deposit screen will offer, worked out as that
-  // screen's "available" is, as on mobile. Other tokens show their balance.
-  const getRowAmount = (option: EarnTokenOption, isHeld: boolean) =>
-    isHeld &&
+  // row shows what the deposit screen will offer, worked out as that screen's
+  // "available" is, as on mobile. Other tokens show their balance.
+  const spendableXlm = getAvailableBalance({
+    assetCanonical: "native",
+    balances: data.balances.balances,
+    recommendedFee: transactionFee || recommendedFee,
+  });
+  const getRowAmount = (option: EarnTokenOption) =>
     isNativeContract(option.assetId, data.networkDetails.networkPassphrase)
-      ? getAvailableBalance({
-          assetCanonical: "native",
-          balances: data.balances.balances,
-          recommendedFee: transactionFee || recommendedFee,
-        })
+      ? spendableXlm
       : option.total;
+
+  // Held is what can be deposited, not what is in the wallet. XLM that is all
+  // minimum balance goes with the tokens the account has none of, whose tap
+  // offers ways to get more, instead of opening an amount screen that can't
+  // go on.
+  const canDeposit = (option: EarnTokenOption) =>
+    new BigNumber(getRowAmount(option)).gt(0);
+  const held = data.held.filter(canDeposit);
+  const supported = [
+    ...data.held.filter((option) => !canDeposit(option)),
+    ...data.supported,
+  ];
 
   const renderRow = (option: EarnTokenOption, isHeld: boolean) => (
     <BalanceRow
@@ -277,7 +290,7 @@ export const EarnTokenPicker = ({
       code={option.code}
       issuerKey={option.issuer}
       iconUrl={option.iconUrl}
-      amount={`${formatAmount(getRowAmount(option, isHeld))} ${option.code}`}
+      amount={`${formatAmount(getRowAmount(option))} ${option.code}`}
       rightSlot={<ApyBadge apy={option.apy} code={option.code} />}
       onClick={() =>
         isHeld ? onSelect(option, data) : openNotEnoughSheet(option)
@@ -309,7 +322,7 @@ export const EarnTokenPicker = ({
     ? resolveNotEnoughVariant(notEnoughOption)
     : null;
 
-  const hasHeld = data.held.length > 0;
+  const hasHeld = held.length > 0;
   const isFrozen = isPoolFrozen(data.pool);
 
   return (
@@ -336,7 +349,7 @@ export const EarnTokenPicker = ({
         ) : (
           <div className="EarnTokenPicker__sections">
             {hasHeld ? (
-              renderSection(t("In your wallet"), data.held, true)
+              renderSection(t("In your wallet"), held, true)
             ) : (
               <div
                 className="EarnTokenPicker__empty"
@@ -350,8 +363,8 @@ export const EarnTokenPicker = ({
                 </div>
               </div>
             )}
-            {data.supported.length > 0 &&
-              renderSection(t("Supported tokens"), data.supported, false)}
+            {supported.length > 0 &&
+              renderSection(t("Supported tokens"), supported, false)}
           </div>
         )}
 

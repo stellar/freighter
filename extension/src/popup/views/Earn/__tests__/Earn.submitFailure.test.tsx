@@ -6,7 +6,10 @@ import { ActionStatus } from "@shared/api/types";
 import { TESTNET_NETWORK_DETAILS, NETWORKS } from "@shared/constants/stellar";
 import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
 import { Earn } from "popup/views/Earn";
-import { initialState as earnInitialState } from "popup/ducks/earn";
+import {
+  initialState as earnInitialState,
+  setEarnSubmitFailed,
+} from "popup/ducks/earn";
 import {
   initialState as transactionSubmissionInitialState,
   submitFreighterSorobanTransaction,
@@ -195,6 +198,7 @@ describe("Earn deposit failure", () => {
     await waitFor(() =>
       expect(screen.queryByTestId("stub-deposit-terminal")).toBeNull(),
     );
+    expect(getTestStore()!.getState().earn.lastSubmitFailed).toBe(true);
     expect(mockDepositMounts).toHaveBeenCalledTimes(1);
     // Not this view's event to emit: the deposit step's own failures come from
     // useSubmitEarnTxData, whose continuation survives the user closing the
@@ -207,10 +211,10 @@ describe("Earn deposit failure", () => {
     expect(trackEarnDepositFailed).not.toHaveBeenCalled();
   });
 
-  it("emits the failure for a rejection that never reached the terminal", async () => {
-    // A device-rejected signature at the review sheet: the flow is still on the
-    // amount step, so no submit hook exists to own the event and this view emits
-    // it. The split by step is what keeps the two from double counting.
+  it("ignores a failure from a deposit this visit didn't submit", async () => {
+    // Closing the in-flight screen doesn't stop the deposit, so it can fail
+    // after Earn has been opened again. This visit has only picked a token: the
+    // failure is the earlier visit's, whose submit hook reports it.
     renderEarn();
     await userEvent.click(screen.getByTestId("stub-pick-token"));
 
@@ -224,17 +228,21 @@ describe("Earn deposit failure", () => {
             signedXDR: "AAAA-prepared",
             networkDetails: TESTNET_NETWORK_DETAILS,
           },
-          { errorMessage: "User declined access" },
+          { errorMessage: "tx_bad_auth" },
         ),
       );
     });
 
     await waitFor(() =>
-      expect(trackEarnDepositFailed).toHaveBeenCalledTimes(1),
+      expect(
+        getTestStore()!.getState().transactionSubmission.submitStatus,
+      ).toBe(ActionStatus.IDLE),
     );
-    expect(trackEarnDepositFailed).toHaveBeenCalledWith(
-      expect.objectContaining({ reasonCode: "User declined access" }),
-    );
+    expect(getTestStore()!.getState().earn.lastSubmitFailed).toBe(false);
+    expect(trackEarnDepositFailed).not.toHaveBeenCalled();
+    // Still on the amount screen, with no terminal brought up for it.
+    expect(screen.getByTestId("stub-confirm-amount")).toBeDefined();
+    expect(mockDepositMounts).not.toHaveBeenCalled();
   });
 
   it("ignores an error status left behind by a previous flow", async () => {
@@ -297,6 +305,66 @@ describe("Earn deposit failure", () => {
 
     expect(await screen.findByTestId("stub-deposit-terminal")).toBeDefined();
     expect(mockDepositMounts).toHaveBeenCalledTimes(2);
+
+    // And the retry's own failure is handled like the first one.
+    act(() => {
+      // The real amount screen clears the banner as it retries; the stub
+      // doesn't.
+      getTestStore()!.dispatch(setEarnSubmitFailed(false));
+      getTestStore()!.dispatch(
+        submitFreighterSorobanTransaction.rejected(
+          null,
+          "req-2",
+          {
+            publicKey: TEST_PUBLIC_KEY,
+            signedXDR: "AAAA-prepared",
+            networkDetails: TESTNET_NETWORK_DETAILS,
+          },
+          { errorMessage: "tx_bad_auth" },
+        ),
+      );
+    });
+
+    await waitFor(() =>
+      expect(screen.queryByTestId("stub-deposit-terminal")).toBeNull(),
+    );
+    expect(getTestStore()!.getState().earn.lastSubmitFailed).toBe(true);
+  });
+
+  it("starts a visit without what the last one left behind", async () => {
+    // Leaving through Buy skips closeEarnFlow, so the last visit's failure
+    // banner, swap, reviewed amount and position are still in the store.
+    render(
+      <Wrapper
+        routes={["/earn"]}
+        state={{
+          auth: { allAccounts: [TEST_PUBLIC_KEY], publicKey: TEST_PUBLIC_KEY },
+          settings: { networkDetails: TESTNET_NETWORK_DETAILS },
+          transactionSubmission: transactionSubmissionInitialState,
+          earn: {
+            ...earnInitialState,
+            hasSeenIntro: true,
+            selectedAssetId: USDC_SAC,
+            lastSubmitFailed: true,
+            didSwapInFlow: true,
+            reviewedAmount: "5",
+            currentPositionTokens: "100",
+          },
+        }}
+      >
+        <Earn />
+      </Wrapper>,
+    );
+
+    await screen.findByTestId("stub-pick-token");
+    const { earn } = getTestStore()!.getState();
+    expect(earn.lastSubmitFailed).toBe(false);
+    expect(earn.didSwapInFlow).toBe(false);
+    expect(earn.reviewedAmount).toBeNull();
+    expect(earn.currentPositionTokens).toBe("0");
+    // The selection is left to whatever opens the amount screen.
+    expect(earn.selectedAssetId).toBe(USDC_SAC);
+    expect(earn.hasSeenIntro).toBe(true);
   });
 });
 

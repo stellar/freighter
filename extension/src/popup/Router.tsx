@@ -41,7 +41,6 @@ import { SignTransaction } from "popup/views/SignTransaction";
 import { SignAuthEntry } from "popup/views/SignAuthEntry";
 import { UnlockAccount } from "popup/views/UnlockAccount";
 import { RebrandAnnouncement } from "popup/views/RebrandAnnouncement";
-import { EthenaLaunch } from "popup/views/EthenaLaunch";
 import { Welcome } from "popup/views/Welcome";
 import { DisplayBackupPhrase } from "popup/views/DisplayBackupPhrase";
 import { Debug } from "popup/views/Debug";
@@ -62,6 +61,7 @@ import { AddCollectibles } from "popup/views/AddCollectibles";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { Swap } from "popup/views/Swap";
 import { Earn } from "popup/views/Earn";
+import { EarnRoute } from "popup/views/Earn/EarnRoute";
 import { ManageNetwork } from "popup/views/ManageNetwork";
 import { LeaveFeedback } from "popup/views/LeaveFeedback";
 import { AccountMigration } from "popup/views/AccountMigration";
@@ -263,14 +263,6 @@ export const Router = () => (
           }
         ></Route>
         <Route
-          path={ROUTES.ethenaLaunch}
-          element={
-            <VerifiedAccountRoute>
-              <EthenaLaunch />
-            </VerifiedAccountRoute>
-          }
-        ></Route>
-        <Route
           path={ROUTES.mnemonicPhraseConfirmed}
           element={<FullscreenSuccessMessage />}
         ></Route>
@@ -305,8 +297,22 @@ export const Router = () => (
         ></Route>
         <Route path={ROUTES.swap} element={<Swap />}></Route>
         <Route path={`${ROUTES.swap}/*`} element={<Swap />}></Route>
-        <Route path={ROUTES.earn} element={<Earn />}></Route>
-        <Route path={`${ROUTES.earn}/*`} element={<Earn />}></Route>
+        <Route
+          path={ROUTES.earn}
+          element={
+            <EarnRoute>
+              <Earn />
+            </EarnRoute>
+          }
+        ></Route>
+        <Route
+          path={`${ROUTES.earn}/*`}
+          element={
+            <EarnRoute>
+              <Earn />
+            </EarnRoute>
+          }
+        ></Route>
         <Route
           path={`${ROUTES.manageNetwork}/*`}
           element={<ManageNetwork />}

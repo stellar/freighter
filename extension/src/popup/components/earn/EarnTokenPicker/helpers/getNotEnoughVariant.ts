@@ -30,10 +30,12 @@ export const isOnrampableAsset = (
  *
  * Only what is spendable counts, as on main Swap (`getAvailableBalance`): XLM
  * above the account's minimum balance and the swap's fee, and other classic
- * assets' balance. A target the account has no trustline for needs one opened
- * first, which locks another BASE_RESERVE of XLM whichever token is swapped,
- * so that target also needs more XLM headroom than the reserve — the line main
- * Swap draws before it shows its reserve sheet (`shouldShowXlmReservePreflight`).
+ * assets' balance. The fee is paid in XLM whatever is swapped, so without the
+ * XLM to pay it nothing counts. A target the account has no trustline for
+ * needs one opened first, which locks another BASE_RESERVE of XLM whichever
+ * token is swapped, so that target also needs more XLM headroom than the
+ * reserve — the line main Swap draws before it shows its reserve sheet
+ * (`shouldShowXlmReservePreflight`).
  *
  * Swap is classic-only — it builds a Horizon `pathPaymentStrictSend` and
  * rejects contract-ID assets outright — so a Soroban-only balance is not a
@@ -56,6 +58,17 @@ export const hasSwappableBalance = ({
   /** Whether the swap has to open a trustline for the target first. */
   requiresTrustline: boolean;
 }) => {
+  // Whatever is swapped, the swap's fee is paid in XLM, so nothing is
+  // swappable without the XLM above the minimum balance to pay it. XLM held
+  // only as that reserve can't even pay for a swap into more XLM.
+  const xlmAboveReserve = getAvailableBalance({
+    assetCanonical: "native",
+    balances,
+    recommendedFee: "0",
+  });
+  if (new BigNumber(xlmAboveReserve).lt(transactionFee)) {
+    return false;
+  }
   const spendableXlm = getAvailableBalance({
     assetCanonical: "native",
     balances,
