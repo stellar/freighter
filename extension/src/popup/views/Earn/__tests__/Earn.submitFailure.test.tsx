@@ -330,6 +330,42 @@ describe("Earn deposit failure", () => {
     );
     expect(getTestStore()!.getState().earn.lastSubmitFailed).toBe(true);
   });
+
+  it("starts a visit without what the last one left behind", async () => {
+    // Leaving through Buy skips closeEarnFlow, so the last visit's failure
+    // banner, swap, reviewed amount and position are still in the store.
+    render(
+      <Wrapper
+        routes={["/earn"]}
+        state={{
+          auth: { allAccounts: [TEST_PUBLIC_KEY], publicKey: TEST_PUBLIC_KEY },
+          settings: { networkDetails: TESTNET_NETWORK_DETAILS },
+          transactionSubmission: transactionSubmissionInitialState,
+          earn: {
+            ...earnInitialState,
+            hasSeenIntro: true,
+            selectedAssetId: USDC_SAC,
+            lastSubmitFailed: true,
+            didSwapInFlow: true,
+            reviewedAmount: "5",
+            currentPositionTokens: "100",
+          },
+        }}
+      >
+        <Earn />
+      </Wrapper>,
+    );
+
+    await screen.findByTestId("stub-pick-token");
+    const { earn } = getTestStore()!.getState();
+    expect(earn.lastSubmitFailed).toBe(false);
+    expect(earn.didSwapInFlow).toBe(false);
+    expect(earn.reviewedAmount).toBeNull();
+    expect(earn.currentPositionTokens).toBe("0");
+    // The selection is left to whatever opens the amount screen.
+    expect(earn.selectedAssetId).toBe(USDC_SAC);
+    expect(earn.hasSeenIntro).toBe(true);
+  });
 });
 
 describe("Earn swap failure", () => {

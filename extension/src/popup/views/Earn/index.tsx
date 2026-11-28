@@ -23,6 +23,7 @@ import {
 import {
   earnSelector,
   resetEarn,
+  resetEarnAttempt,
   saveCurrentPositionTokens,
   saveEarnPool,
   saveSelectedAssetApy,
@@ -122,8 +123,11 @@ export const Earn = () => {
     navigateTo(ROUTES.account, navigate);
   };
 
+  // Only the X button runs closeEarnFlow, so a visit left another way (Buy,
+  // for one) would otherwise hand its failure banner and its swap to this one.
   useEffect(() => {
     dispatch(resetSubmission());
+    dispatch(resetEarnAttempt());
   }, [dispatch]);
 
   useEffect(() => {
