@@ -9,6 +9,8 @@ import "./styles.scss";
 interface InlineAddButtonProps {
   label: string;
   route: ROUTES;
+  /** A query string for the route, e.g. "?source=positions_pill". */
+  search?: string;
   "data-testid"?: string;
 }
 
@@ -19,9 +21,14 @@ interface InlineAddButtonProps {
 export const InlineAddButton = ({
   label,
   route,
+  search,
   "data-testid": dataTestId,
 }: InlineAddButtonProps) => (
-  <Link className="InlineAddButton" to={route} data-testid={dataTestId}>
+  <Link
+    className="InlineAddButton"
+    to={search ? { pathname: route, search } : route}
+    data-testid={dataTestId}
+  >
     <Icon.Plus />
     <span>{label}</span>
   </Link>

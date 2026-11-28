@@ -54,6 +54,7 @@ import { emitScreenViewed } from "helpers/metrics";
 import { scrubStrKeys } from "helpers/stellarStrKey";
 import { InputType } from "helpers/transaction";
 import {
+  POOL_DETAILS_SOURCE,
   trackEarnPercentAmountSelected,
   trackEarnPoolDetailsOpened,
   trackEarnSimulationFailed,
@@ -726,7 +727,10 @@ export const EarnAmount = ({
               poolName={pool.name}
               apy={selectedAssetApy}
               onOpenDetails={() => {
-                trackEarnPoolDetailsOpened({ poolId: pool.id });
+                trackEarnPoolDetailsOpened({
+                  poolId: pool.id,
+                  source: POOL_DETAILS_SOURCE.EARN_AMOUNT,
+                });
                 setIsPoolSheetOpen(true);
               }}
             />

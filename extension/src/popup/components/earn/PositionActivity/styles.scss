@@ -1,0 +1,99 @@
+@use "../../../styles/utils.scss" as *;
+
+// Figma: Varial 4470:113064 (light), 4478:118152 (dark).
+// Laid out as a position screen Section (PositionParts), which draws its
+// "Activity" heading.
+.PositionActivity {
+  &__list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(12);
+    padding: pxToRem(12) 0;
+
+    // A deposit or withdrawal opens its details: a button, reset to the row.
+    &--tappable {
+      width: 100%;
+      border: none;
+      background: none;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+  }
+
+  // The token at 28px on a 32px disc in the surface color, with the protocol's
+  // mark badged at the bottom left on a 16px disc of the same color. The discs
+  // are the design's cut-outs; drawn in CSS so they follow the theme.
+  &__icon {
+    position: relative;
+    flex: none;
+    width: pxToRem(32);
+    height: pxToRem(32);
+    border-radius: 50%;
+    background-color: var(--sds-clr-gray-01);
+
+    &__token {
+      position: absolute;
+      inset: pxToRem(2);
+      display: flex;
+    }
+
+    &__badge {
+      @include corner-badge(16, left);
+      background-color: var(--sds-clr-gray-01);
+
+      .PoolIcon {
+        border-radius: pxToRem(4);
+      }
+    }
+  }
+
+  &__main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: pxToRem(2);
+    min-width: 0;
+  }
+
+  &__figures {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: pxToRem(2);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  &__label {
+    @include text(sm, medium);
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__amount {
+    @include text(sm, medium);
+    color: var(--sds-clr-gray-11);
+
+    &--positive {
+      color: var(--sds-clr-green-11);
+    }
+  }
+
+  &__site,
+  &__date {
+    @include text(xs, medium);
+    color: var(--sds-clr-gray-11);
+  }
+}
+
+// Scoped under the block so it outranks a host screen's own token-icon size.
+.PositionActivity .PositionActivity__icon__token .AccountAssets__asset--logo {
+  @include asset-logo-size(28);
+  margin: 0;
+}

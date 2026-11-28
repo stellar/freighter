@@ -70,6 +70,13 @@
     line-height: pxToRem(18px);
     font-weight: var(--sds-fw-regular);
   }
+
+  // Figma's Positions Empty: the row sits 8px under the description, the
+  // text's 4px gap plus this.
+  &__details {
+    width: 100%;
+    margin-top: pxToRem(4px);
+  }
 }
 
 // Figma paints the light card with this raw hex, not a token; the dark card

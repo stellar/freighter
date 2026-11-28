@@ -1,5 +1,6 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit";
 import { AccountBalancesInterface } from "@shared/api/types/backend-api";
+import { AccountPositions } from "@shared/api/types/blend";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { HistoryResponse } from "helpers/hooks/useGetHistory";
@@ -62,6 +63,12 @@ type SaveCollectionsPayload = {
   publicKey: PublicKey;
   networkDetails: NetworkDetails;
   collections: Collection[];
+};
+
+type SavePositionsPayload = {
+  publicKey: PublicKey;
+  networkDetails: NetworkDetails;
+  positions: AccountPositions;
 };
 
 type SavePopularTokensPayload = {
@@ -140,6 +147,12 @@ interface InitialState {
       ApiTokenStats & { updatedAt: number }
     >;
   };
+  positionsData: {
+    [network: string]: Record<
+      PublicKey,
+      AccountPositions & { updatedAt: number }
+    >;
+  };
 }
 
 const initialState: InitialState = {
@@ -154,6 +167,7 @@ const initialState: InitialState = {
   popularTokens: {},
   tokenPriceHistory: {},
   tokenStats: {},
+  positionsData: {},
 };
 
 const cacheSlice = createSlice({
@@ -171,6 +185,7 @@ const cacheSlice = createSlice({
       state.popularTokens = {};
       state.tokenPriceHistory = {};
       state.tokenStats = {};
+      state.positionsData = {};
     },
     saveBalancesForAccount(state, action: { payload: SaveBalancesPayload }) {
       state.balanceData = {
@@ -248,6 +263,18 @@ const cacheSlice = createSlice({
         [action.payload.networkDetails.network]: {
           ...(state.collections[action.payload.networkDetails.network] || {}),
           [action.payload.publicKey]: action.payload.collections,
+        },
+      };
+    },
+    savePositions(state, action: { payload: SavePositionsPayload }) {
+      state.positionsData = {
+        ...state.positionsData,
+        [action.payload.networkDetails.network]: {
+          ...(state.positionsData[action.payload.networkDetails.network] || {}),
+          [action.payload.publicKey]: {
+            ...action.payload.positions,
+            updatedAt: Date.now(),
+          },
         },
       };
     },
@@ -352,6 +379,8 @@ export const tokenPriceHistorySelector = (state: { cache: InitialState }) =>
   state.cache.tokenPriceHistory;
 export const tokenStatsSelector = (state: { cache: InitialState }) =>
   state.cache.tokenStats;
+export const positionsSelector = (state: { cache: InitialState }) =>
+  state.cache.positionsData;
 
 export const { reducer } = cacheSlice;
 export const {
@@ -369,4 +398,5 @@ export const {
   savePopularTokens,
   saveTokenPriceHistory,
   saveTokenStats,
+  savePositions,
 } = cacheSlice.actions;

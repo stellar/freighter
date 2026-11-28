@@ -1,6 +1,10 @@
 import { emitMetric } from "helpers/metrics";
 import { AssetIdentity, FailureCategory } from "helpers/usdVolume";
-import { NotEnoughVariant } from "popup/constants/earn";
+import {
+  EarnSource,
+  NotEnoughVariant,
+  PoolDetailsTab,
+} from "popup/constants/earn";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 /**
@@ -52,11 +56,27 @@ const depositVolumeProps = (volume: EarnDepositVolume) => ({
 export type EarnFundingAction = "buy" | "swap" | "transfer";
 
 /**
+ * Where a pool's details were opened from: the deposit screen's pool card, or
+ * a supplied token on a pool's position screen (whose screen carries the pool's
+ * Overview). Deliberately NOT `EarnSource`, which attributes deposits; opening
+ * details is not one.
+ */
+export const POOL_DETAILS_SOURCE = {
+  EARN_AMOUNT: "earn_amount",
+  POSITION_ROW: "position_row",
+} as const;
+
+export type PoolDetailsSource =
+  (typeof POOL_DETAILS_SOURCE)[keyof typeof POOL_DETAILS_SOURCE];
+
+/**
  * The screen whose frozen-pool banner opened the "Why can't I deposit?"
- * sheet, named like the flow's screens: the token picker.
+ * sheet: the token picker, or a supplied token's position screen (named as in
+ * `POOL_DETAILS_SOURCE`).
  */
 export const POOL_FROZEN_INFO_SOURCE = {
   EARN_SELECT_TOKEN: "earn_select_token",
+  POSITION_ROW: "position_row",
 } as const;
 
 export type PoolFrozenInfoSource =
@@ -115,6 +135,38 @@ export const trackEarnFundingActionSelected = ({
 };
 
 /**
+ * The pool details sheet opened, and which entry point opened it.
+ */
+export const trackEarnPoolDetailsOpened = ({
+  poolId,
+  source,
+}: {
+  poolId: string;
+  source: PoolDetailsSource;
+}) => {
+  emitEarnMetric(METRIC_NAMES.earnPoolDetailsOpened, {
+    pool_id: poolId,
+    source,
+  });
+};
+
+export const trackEarnPoolDetailsTabSelected = ({
+  poolId,
+  tab,
+  source,
+}: {
+  poolId: string;
+  tab: PoolDetailsTab;
+  source: PoolDetailsSource;
+}) => {
+  emitEarnMetric(METRIC_NAMES.earnPoolDetailsTabSelected, {
+    pool_id: poolId,
+    tab,
+    source,
+  });
+};
+
+/**
  * The deposit could not cover its own network fee. Two shapes, told apart by
  * `reason`: `no_xlm` is an account with no spendable XLM at all, which gets the
  * buy/swap sheet; `fee_not_covered` is an amount that leaves less XLM than the
@@ -149,22 +201,6 @@ export const trackEarnSimulationFailed = ({
 };
 
 /**
- * The Max tap on the amount screen. Called for every percentage shortcut, but
- * only 100 emits: a 25/50/75 tap is not a set-max, and an event named
- * `max_amount_selected` that also fires for partials makes anything keyed on
- * the name alone (dashboards, funnels, alerting) count partials as Max usage.
- *
- * Send and Swap gate identically (RFC #2883, D5) and so does mobile — the
- * max-amount action fires on the max tap only, on send, swap and earn alike.
- * If Earn ever needs partial-shortcut usage, add a separately named event
- * rather than widening this one.
- */
-/** The pool card on the amount screen was tapped for the pool's details. */
-export const trackEarnPoolDetailsOpened = ({ poolId }: { poolId: string }) => {
-  emitEarnMetric(METRIC_NAMES.earnPoolDetailsOpened, { pool_id: poolId });
-};
-
-/**
  * A frozen pool's banner was tapped, opening the sheet that explains why it
  * takes no deposits. `poolStatus` tells an admin freeze from a draining
  * backstop (or a pool still in setup).
@@ -185,6 +221,17 @@ export const trackEarnPoolFrozenInfoOpened = ({
   });
 };
 
+/**
+ * The Max tap on the amount screen. Called for every percentage shortcut, but
+ * only 100 emits: a 25/50/75 tap is not a set-max, and an event named
+ * `max_amount_selected` that also fires for partials makes anything keyed on
+ * the name alone (dashboards, funnels, alerting) count partials as Max usage.
+ *
+ * Send and Swap gate identically (RFC #2883, D5) and so does mobile — the
+ * max-amount action fires on the max tap only, on send, swap and earn alike.
+ * If Earn ever needs partial-shortcut usage, add a separately named event
+ * rather than widening this one.
+ */
 export const trackEarnPercentAmountSelected = ({
   assetCode,
   percent,
@@ -231,6 +278,7 @@ export const trackEarnDepositCompleted = ({
   poolId,
   apy,
   viaSwap,
+  source,
   volume,
 }: {
   assetCode: string;
@@ -238,6 +286,8 @@ export const trackEarnDepositCompleted = ({
   apy: number | null;
   /** The deposited balance was created by the swap branch in this same flow. */
   viaSwap: boolean;
+  /** Where the flow began — Home's Earn button or a Positions row/empty CTA. */
+  source: EarnSource;
   volume?: EarnDepositVolume;
 }) => {
   emitEarnMetric(METRIC_NAMES.earnDepositCompleted, {
@@ -245,6 +295,7 @@ export const trackEarnDepositCompleted = ({
     pool_id: poolId,
     apy,
     via_swap: viaSwap,
+    source,
     ...(volume ? depositVolumeProps(volume) : {}),
   });
 };
@@ -261,17 +312,21 @@ export const trackEarnDepositFailed = ({
   assetCode,
   poolId,
   reasonCode,
+  source,
   volume,
 }: {
   assetCode: string;
   poolId: string;
   reasonCode: string;
+  /** Where the flow began — Home's Earn button or a Positions row/empty CTA. */
+  source: EarnSource;
   volume?: EarnDepositVolume & { failureCategory: FailureCategory };
 }) => {
   emitEarnMetric(METRIC_NAMES.earnDepositFailed, {
     asset_code: assetCode,
     pool_id: poolId,
     reason_code: reasonCode,
+    source,
     ...(volume
       ? {
           ...depositVolumeProps(volume),

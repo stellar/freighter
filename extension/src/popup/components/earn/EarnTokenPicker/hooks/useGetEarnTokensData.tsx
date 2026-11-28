@@ -141,7 +141,8 @@ const buildEarnRows = ({
     });
 
     // A zero-balance reserve has no balance to take an issuer from; the
-    // catalog's `name` is the only other source. Without it the row can
+    // catalog is the only other source (a classic asset's canonical in
+    // `name`, or a contract token's own address). Without it the row can
     // build no icon key at all.
     const issuer = balanceIssuer || catalog.issuer;
 

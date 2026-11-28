@@ -58,7 +58,12 @@ export const METRIC_NAMES = {
   earnFundingActionSelected: "earn.funding_action_selected",
   // The swap inside Earn reports the regular swap events, tagged
   // `source: "earn"` (popup/metrics/swap.ts).
+  // The pool details sheet was opened, and which entry point opened it.
   earnPoolDetailsOpened: "earn.pool_details_opened",
+  // A tap that CHANGED the sheet's tab. Never emitted for the default tab, and
+  // never for a tap on the tab already active — either would inflate the count
+  // with no-ops and make "did anyone open Overview?" unanswerable.
+  earnPoolDetailsTabSelected: "earn.pool_details_tab_selected",
   // The "Why can't I deposit?" sheet was opened from a frozen pool's banner.
   // `pool_status` is the backend status (ADMIN_FROZEN | FROZEN | SETUP);
   // `source` is the screen the banner was on.
@@ -78,6 +83,25 @@ export const METRIC_NAMES = {
   // event for the same attempt normally still follows. Only closing the popup
   // outright loses the outcome.
   earnDepositDismissed: "earn.deposit_processing_dismissed",
+
+  // -- Positions -----------------------------------------------------------
+  // The Home tab listing the account's supplied pools. `earn.*` events cover
+  // what happens after one of these leads into the deposit flow; the `source`
+  // dimension on the deposit outcomes is what joins the two.
+  // A pool card on the Positions tab was tapped, opening that pool's position.
+  // Distinct from `positions.row_selected`, which is now one level deeper — the
+  // supplied-asset row inside it.
+  positionPoolSelected: "positions.pool_selected",
+  positionRowSelected: "positions.row_selected",
+  positionsEmptyCtaSelected: "positions.empty_cta_selected",
+  // A deposit or withdrawal in a token position's Activity list was tapped,
+  // opening its details sheet.
+  positionActivityRowSelected: "positions.activity_row_selected",
+  // Inside that details sheet: Transaction details or View on stellar.expert.
+  // The deposit flow's own success screen opens the same sheet and does not
+  // emit this; it is Activity-only.
+  positionActivityDetailsActionSelected:
+    "positions.activity_details_action_selected",
 
   // -- Collectibles --------------------------------------------------------
   collectibleSendCompleted: "collectible_send.completed",

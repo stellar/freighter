@@ -44,6 +44,9 @@ interface ViewAppHeaderProps {
   customBackAction?: () => void;
   customBackIcon?: React.ReactNode;
   isAccountHeader?: boolean;
+  children?: React.ReactNode;
+  /** Forwarded to the back button itself, not this header's own container. */
+  backButtonTestId?: string;
   /** Floats over the scrolling content on the Home-style fade, instead of
    * sitting above it in the flow. For the tab screens that scroll inside
    * their inset (History, Discover); Home pins its own with `isAccountHeader`. */
@@ -63,6 +66,7 @@ const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
   customBackAction,
   customBackIcon,
   isAccountHeader = false,
+  backButtonTestId,
   isFloating = false,
   isSolid = false,
   ...props
@@ -85,6 +89,7 @@ const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
           <BackButton
             customBackAction={customBackAction}
             customBackIcon={customBackIcon}
+            data-testid={backButtonTestId}
           />
         ) : null}
 

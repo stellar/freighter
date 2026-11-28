@@ -1,10 +1,14 @@
 import { BrowserContext, Page } from "@playwright/test";
 import {
   Account,
+  Address,
   Asset,
+  Contract,
   Networks,
   Operation,
   TransactionBuilder,
+  XdrLargeInt,
+  xdr,
 } from "stellar-sdk";
 import { USDC_TOKEN_ADDRESS, TEST_TOKEN_ADDRESS } from "./test-token";
 import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
@@ -3544,6 +3548,9 @@ export const stubAllExternalApis = async (
   // Collectibles
   await stubCollectibles(page, context);
 
+  // Blend positions — Home requests this on every load (see stubAccountPositions)
+  await stubAccountPositions(context);
+
   // Discover protocols
   await stubDiscoverProtocols(page);
 
@@ -3827,6 +3834,53 @@ export const stubVerifiedToken = async (
 };
 
 /**
+ * The deterministic test account's public key — derived from the mnemonic
+ * `loginToTestAccount` imports (login.ts's `TEST_ACCOUNT_WORDS`). Coincidentally
+ * the same string as `SAC_ISSUER` above; that constant exists for an unrelated
+ * reason (a stand-in SAC issuer for the AddToken tests), not because it names
+ * this account, so it is kept as its own symbol here rather than reused.
+ */
+export const TEST_ACCOUNT_PUBLIC_KEY =
+  "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY";
+
+/**
+ * Baseline positions response: a known account holding nothing.
+ *
+ * Home now requests positions on every load (`getBlendPositions`, called from
+ * `useGetAccountData`), so every suite that reaches Home needs this route
+ * stubbed or the request falls through to a real call against INDEXER_V2_URL.
+ * Registered from `stubAllExternalApis` for exactly that reason.
+ *
+ * Suites that need real positions call `stubBlendEarn` below, which registers
+ * this same `**\/accounts/positions**` pattern again, later — in Playwright a
+ * later-registered route wins the match, the same layering `stubEarnSimulateTx`
+ * relies on just below to override `stubBackendSimulateTx`'s `**\/simulate-tx**`
+ * route. `loginToTestAccount` runs `stubOverrides` after `stubAllExternalApis`,
+ * so `stubBlendEarn`'s positions always take over wherever a test opts in.
+ *
+ * `/accounts/positions` is a freighter-backend-v2 endpoint the background
+ * service worker fetches (see `stubBlendEarn`'s own comment below), so this
+ * must be registered on the BrowserContext — `page.route` would never see it.
+ */
+export const stubAccountPositions = async (context: BrowserContext) => {
+  await context.route("**/accounts/positions**", async (route) => {
+    await route.fulfill({
+      json: {
+        data: [
+          {
+            address: TEST_ACCOUNT_PUBLIC_KEY,
+            total_value_usd: null,
+            net_apy: null,
+            positions: [],
+            backstop: [],
+          },
+        ],
+      },
+    });
+  });
+};
+
+/**
  * A prepared Soroban envelope for `submit` on the mainnet Fixed v2.1 pool,
  * sourced by the e2e test account. Generated with the SDK rather than
  * hand-trimmed, so it round-trips through `TransactionBuilder.fromXDR` under
@@ -3876,9 +3930,12 @@ export const stubEarnSimulateTx = async (page: Page) => {
 };
 
 /**
- * Pins the `earn_deposit` Amplitude flag on, so the Earn specs don't depend on
- * the flag's default or on the real Experiment endpoint. Call it BEFORE
- * `loginToTestAccount`.
+ * Pins the given Amplitude boolean flags on or off, so the specs don't depend
+ * on a flag's build default (dev builds, e2e's included, default the Earn
+ * flags on) or on the real Experiment endpoint. Call it once, BEFORE
+ * `loginToTestAccount`, with every flag the spec cares about: each call
+ * answers the whole flags request, so a second call would shadow the first.
+ * Flags left out keep their build defaults.
  *
  * A route cannot do this: neither `page.route` nor `context.route` sees the
  * test page's own flags request, the same blind spot `stubSacViaInitScript`
@@ -3887,9 +3944,18 @@ export const stubEarnSimulateTx = async (page: Page) => {
  * runs before the bundle, so the SDK, which binds `fetch` when its module
  * loads, picks up this wrapper. It answers only the flags request.
  */
-export const stubEarnDepositFlag = async (context: BrowserContext) => {
-  await context.addInitScript(() => {
+export const stubAmplitudeFlags = async (
+  context: BrowserContext,
+  flags: Record<string, boolean>,
+) => {
+  await context.addInitScript((flagValues: Record<string, boolean>) => {
     const origFetch = window.fetch.bind(window);
+    const variants = Object.fromEntries(
+      Object.entries(flagValues).map(([name, isOn]) => {
+        const value = isOn ? "on" : "off";
+        return [name, { key: value, value }];
+      }),
+    );
     window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
       const url =
         typeof input === "string"
@@ -3899,19 +3965,20 @@ export const stubEarnDepositFlag = async (context: BrowserContext) => {
             : input.url;
       if (url.includes("/sdk/v2/vardata")) {
         return Promise.resolve(
-          new Response(
-            JSON.stringify({ earn_deposit: { key: "on", value: "on" } }),
-            {
-              status: 200,
-              headers: { "Content-Type": "application/json" },
-            },
-          ),
+          new Response(JSON.stringify(variants), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
         );
       }
       return origFetch(input, init);
     };
-  });
+  }, flags);
 };
+
+/** Pins the `earn_deposit` flag on; see `stubAmplitudeFlags`. */
+export const stubEarnDepositFlag = (context: BrowserContext) =>
+  stubAmplitudeFlags(context, { earn_deposit: true });
 
 /**
  * Stubs the three Blend endpoints the Earn flow reads.
@@ -3931,8 +3998,22 @@ export const stubEarnDepositFlag = async (context: BrowserContext) => {
  * `**\/accounts/**` in `stubHorizonAccounts`: that one only ever sees Horizon's
  * `loadAccount` from the popup, and this one only ever sees the service worker's
  * positions POST.
+ *
+ * Callers reach this through `loginToTestAccount`'s `stubOverrides`, which runs
+ * AFTER `page.goto` has already navigated to the popup — so `useRemoteConfig`'s
+ * one-shot `fetchFeatureFlags` (dispatched from `App.tsx` on mount) has, in
+ * practice, already fired and rejected (no real Amplitude deployment in test)
+ * before the `earn_deposit` vardata route below is even registered, leaving the
+ * flag at its default. A route registered after the fact never intercepts a
+ * request that was already sent. This mirrors exactly the timing
+ * `stubExperimentVariants` documents above for the maintenance-screen flags,
+ * and takes the same fix: reload once every route is in place so the popup
+ * remounts and refetches with the stub live. `loginToTestAccount` hasn't
+ * touched the DOM yet at this point (still the pre-"I already have a wallet"
+ * screen) so the reload is a no-op for wallet state.
  */
 export const stubBlendEarn = async (
+  page: Page,
   context: BrowserContext,
   {
     positions = [],
@@ -3968,7 +4049,11 @@ export const stubBlendEarn = async (
             {
               asset_id: USDC_SAC,
               symbol: "USDC",
-              name: "USD Coin",
+              // The backend passes the contract's own name() through, and a
+              // SAC's is its classic canonical. The client reads the issuer
+              // from it; a friendly name here would make USDC look like a
+              // contract token, which the live catalog never does.
+              name: "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
               decimals: 7,
               pools: [offer(0.1694)],
             },
@@ -3985,7 +4070,7 @@ export const stubBlendEarn = async (
             {
               asset_id: EURC_SAC,
               symbol: "EURC",
-              name: "Euro Coin",
+              name: "EURC:GDHU6WRG4IEQXM5NZ4BMPKOXHW76MZM4Y2IEMFDVXBSDP6SJY4ITNPP2",
               decimals: 7,
               pools: [offer(0.1059)],
             },
@@ -4068,6 +4153,231 @@ export const stubBlendEarn = async (
 
   await context.route("**/accounts/positions**", async (route) => {
     await route.fulfill({ json: { data: positions } });
+  });
+
+  // Every route above is context-scoped and therefore survives the reload.
+  // Force a fresh popup mount so `useRemoteConfig` re-dispatches
+  // `fetchFeatureFlags` and this time hits the `earn_deposit` stub instead of
+  // the real (unreachable) Amplitude endpoint it raced on the first load.
+  await page.reload({ waitUntil: "domcontentloaded" });
+};
+
+/**
+ * Wire-shaped `ApiAccountPositions[]`, for `stubBlendEarn`'s `positions`
+ * argument — one account entry holding a supplied position in the mainnet
+ * Fixed pool.
+ *
+ * Defaults to a single USDC row; pass `assets: ["USDC", "XLM"]` to add a
+ * second. Both assets share the same figures — nothing today's suite checks
+ * needs them to differ, and the specific numbers (`total_tokens: "5001223000"`,
+ * `usd_value: 500.12`, `apy: 0.1694`, `interest_earned: "1234000"`,
+ * `interest_earned_usd: 0.12`) are what let `earn-position-balance` assert a
+ * real "$500.12" instead of "--".
+ *
+ * Asset ids are the real mainnet SACs, the same discipline `stubBlendEarn`
+ * itself documents above: `getCatalogAssetIdentity` (and, on the deposit path,
+ * `getBalanceByKey`) resolve an asset by deriving its SAC, so a placeholder id
+ * would leave the row's code blank instead of "USDC"/"XLM". USDC's `name`
+ * matches `stubBlendEarn`'s own pools-catalog reserve so both endpoints agree
+ * on the same issuer; native XLM carries a null symbol AND a null name, again
+ * matching the live catalog and `stubBlendEarn`'s earn-options entry for it.
+ *
+ * `collateral_tokens` (not `supplied_tokens`) carries the balance: deposits use
+ * SupplyCollateral, per the comment on `getBlendSuppliedTokens` above.
+ */
+export const positionsFixture = ({
+  address = TEST_ACCOUNT_PUBLIC_KEY,
+  assets = ["USDC"],
+}: {
+  address?: string;
+  assets?: ("USDC" | "XLM")[];
+} = {}): unknown[] => {
+  const { XLM: XLM_SAC, USDC: USDC_SAC } = PUBLIC_SACS;
+  const POOL_ID = BLEND_FIXED_POOL_IDS[NETWORKS.PUBLIC]!;
+
+  const supplyRow = (assetCode: "USDC" | "XLM") => ({
+    asset_id: assetCode === "USDC" ? USDC_SAC : XLM_SAC,
+    symbol: assetCode === "USDC" ? "USDC" : null,
+    name:
+      assetCode === "USDC"
+        ? "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN"
+        : null,
+    decimals: 7,
+    supplied_tokens: "0",
+    collateral_tokens: "5001223000",
+    total_tokens: "5001223000",
+    usd_value: 500.12,
+    apy: 0.1694,
+    emissions_apr: null,
+    interest_earned: "1234000",
+    interest_earned_usd: 0.12,
+    claimable_blnd: "0",
+    claimable_usd: 0,
+    price_usd: assetCode === "USDC" ? 1 : 0.15,
+  });
+
+  const supply = assets.map(supplyRow);
+  const totalUsd = supply.reduce((sum, row) => sum + row.usd_value, 0);
+
+  return [
+    {
+      address,
+      total_value_usd: totalUsd,
+      net_apy: 0.1694,
+      positions: [
+        {
+          protocol: "blend",
+          id: POOL_ID,
+          name: "Fixed",
+          net_usd: totalUsd,
+          supplied_usd: totalUsd,
+          borrowed_usd: 0,
+          net_apy: 0.1694,
+          blend: {
+            supply,
+            borrow: [],
+          },
+        },
+      ],
+      backstop: [],
+    },
+  ];
+};
+
+/** One Blend deposit or withdraw, for `blendActivityHistory`. */
+export interface BlendActivityEvent {
+  id: string;
+  type: "deposit" | "withdraw";
+  assetCode: "USDC" | "XLM";
+  /** Whole tokens, as Horizon prints a balance change ("500.0000000"). */
+  amount: string;
+  createdAt: string;
+}
+
+/**
+ * `/account-history/` records for Blend `submit` calls on the mainnet Fixed
+ * pool, for `stubAccountHistoryWith`. Each carries a real transaction envelope,
+ * which is what a position's Activity list decodes (the request type picks
+ * deposit or withdraw), and the token transfer Horizon reports beside it.
+ *
+ * Deposits are SupplyCollateral and withdrawals WithdrawCollateral, as Freighter
+ * makes them. The pool and the token SACs match `positionsFixture`, so the rows
+ * land under that fixture's position.
+ */
+export const blendActivityHistory = ({
+  address = TEST_ACCOUNT_PUBLIC_KEY,
+  networkPassphrase = Networks.TESTNET,
+  events,
+}: {
+  address?: string;
+  networkPassphrase?: string;
+  events: BlendActivityEvent[];
+}): object[] => {
+  const POOL_ID = BLEND_FIXED_POOL_IDS[NETWORKS.PUBLIC]!;
+  const user = new Address(address).toScVal();
+
+  return events.map((event) => {
+    const assetId = PUBLIC_SACS[event.assetCode];
+    const request = xdr.ScVal.scvMap([
+      new xdr.ScMapEntry({
+        key: xdr.ScVal.scvSymbol("address"),
+        val: new Address(assetId).toScVal(),
+      }),
+      new xdr.ScMapEntry({
+        key: xdr.ScVal.scvSymbol("amount"),
+        val: new XdrLargeInt(
+          "i128",
+          Math.round(Number(event.amount) * 1e7).toString(),
+        ).toI128(),
+      }),
+      new xdr.ScMapEntry({
+        key: xdr.ScVal.scvSymbol("request_type"),
+        // Blend's SupplyCollateral and WithdrawCollateral.
+        val: xdr.ScVal.scvU32(event.type === "deposit" ? 2 : 3),
+      }),
+    ]);
+    const transaction = new TransactionBuilder(new Account(address, "1"), {
+      fee: "100",
+      networkPassphrase,
+    })
+      .addOperation(
+        new Contract(POOL_ID).call(
+          "submit",
+          user,
+          user,
+          user,
+          xdr.ScVal.scvVec([request]),
+        ),
+      )
+      .setTimeout(0)
+      .build();
+    const isDeposit = event.type === "deposit";
+
+    return {
+      id: event.id,
+      paging_token: event.id,
+      source_account: address,
+      type: "invoke_host_function",
+      type_i: 24,
+      created_at: event.createdAt,
+      // Through Buffer: hash() can be a plain Uint8Array here, whose
+      // toString ignores "hex" and joins the bytes with commas.
+      transaction_hash: Buffer.from(transaction.hash()).toString("hex"),
+      transaction_successful: true,
+      function: "HostFunctionTypeHostFunctionTypeInvokeContract",
+      asset_balance_changes: [
+        {
+          ...createAssetObject(
+            event.assetCode,
+            "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+          ),
+          type: "transfer",
+          from: isDeposit ? address : POOL_ID,
+          to: isDeposit ? POOL_ID : address,
+          amount: Number(event.amount).toFixed(7),
+        },
+      ],
+      transaction_attr: {
+        envelope_xdr: transaction.toEnvelope().toXDR("base64"),
+        memo: null,
+        fee_charged: "100",
+        operation_count: 1,
+      },
+    };
+  });
+};
+
+/**
+ * Answers Horizon's by-hash transaction reads for the given History records
+ * (as `blendActivityHistory` builds them), so an Activity row's details sheet
+ * gets the date, fee and envelope of the very transaction it lists. The sheet
+ * reads from the popup page, so a page route sees it. Other hashes fall through.
+ */
+export const stubHorizonTransactionsFor = async (
+  page: Page,
+  records: ReturnType<typeof blendActivityHistory>,
+) => {
+  const byHash = new Map(
+    records.map((record) => [record.transaction_hash, record]),
+  );
+  await page.route("**/transactions/*", async (route) => {
+    const hash = new URL(route.request().url()).pathname.split("/").pop();
+    const record = hash ? byHash.get(hash) : undefined;
+    if (!record) {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      json: {
+        id: hash,
+        hash,
+        successful: true,
+        created_at: record.created_at,
+        fee_charged: record.transaction_attr.fee_charged,
+        envelope_xdr: record.transaction_attr.envelope_xdr,
+        operation_count: 1,
+      },
+    });
   });
 };
 

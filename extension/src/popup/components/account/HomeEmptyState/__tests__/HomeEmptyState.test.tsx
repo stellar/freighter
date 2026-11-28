@@ -31,6 +31,23 @@ describe("HomeEmptyState", () => {
     expect(screen.getByTestId("card")).toHaveClass("HomeEmptyState--wide");
   });
 
+  // Positions' "Earn up to" row sits with the text, under the description.
+  it("renders details under the description", () => {
+    const { container } = render(
+      <HomeEmptyState title="t" description="d" details={<span>row</span>} />,
+    );
+
+    const text = container.querySelector(".HomeEmptyState__text");
+    expect(text?.lastElementChild).toHaveClass("HomeEmptyState__details");
+    expect(text?.lastElementChild).toHaveTextContent("row");
+  });
+
+  it("leaves the details slot out when there are none", () => {
+    const { container } = render(<HomeEmptyState title="t" description="d" />);
+
+    expect(container.querySelector(".HomeEmptyState__details")).toBeNull();
+  });
+
   // Both sparkles are in the DOM; the theme class on <body> picks one in CSS.
   it("carries the light and dark sparkle, hidden from screen readers", () => {
     const { container } = render(<HomeEmptyState title="t" description="d" />);

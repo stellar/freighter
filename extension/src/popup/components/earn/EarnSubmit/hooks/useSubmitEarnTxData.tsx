@@ -42,6 +42,8 @@ import {
   submitFreighterSorobanTransaction,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
+import { earnSelector, saveAwaitedDeposit } from "popup/ducks/earn";
+import { AWAITED_DEPOSIT_MS } from "popup/components/earn/helpers/awaitedDeposit";
 
 interface SubmitEarnTxData {
   status: "success";
@@ -108,6 +110,10 @@ export function useSubmitEarnTxData({
   const { transactionSimulation } = useSelector(transactionSubmissionSelector);
   const allBalancesCache = useSelector(balancesSelector);
   const allTokenPricesCache = useSelector(tokenPricesSelector);
+  // Read directly rather than added as a prop, so EarnSubmit itself needs no
+  // change to hand it through.
+  const { source, selectedAssetId, currentPositionTokens } =
+    useSelector(earnSelector);
   const [state, dispatch] = useReducer(
     reducer<SubmitEarnTxData, unknown>,
     initialState,
@@ -125,6 +131,7 @@ export function useSubmitEarnTxData({
       assetCode,
       poolId,
       reasonCode: getFailureReasonCode(error),
+      source,
       // The category reads result codes only, as payment.failed's does:
       // reason_code can fall back to the error's text.
       volume: volume && {
@@ -242,8 +249,24 @@ export function useSubmitEarnTxData({
         poolId,
         apy,
         viaSwap,
+        source,
         volume,
       });
+
+      // Positions trail the ledger (see AwaitedDeposit), so rather than read
+      // them once now, too early, tell Home what to wait for.
+      reduxDispatch(
+        saveAwaitedDeposit({
+          publicKey,
+          network: networkDetails.network,
+          poolId,
+          assetId: selectedAssetId,
+          minTokens: new BigNumber(currentPositionTokens)
+            .plus(new BigNumber(amount).dividedBy(2))
+            .toString(),
+          expiresAt: Date.now() + AWAITED_DEPOSIT_MS,
+        }),
+      );
 
       // The deposit moved funds out of the account, so refresh balances. A
       // failure here does not affect the deposit itself, so it is caught here

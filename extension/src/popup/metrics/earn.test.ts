@@ -18,6 +18,7 @@ import {
   trackEarnFundingActionSelected,
   trackEarnPercentAmountSelected,
   trackEarnPoolDetailsOpened,
+  trackEarnPoolDetailsTabSelected,
   trackEarnPoolFrozenInfoOpened,
   trackEarnSimulationFailed,
   trackEarnTokenSelected,
@@ -39,7 +40,7 @@ describe("Earn funnel metrics", () => {
   });
 
   it("tags every earn event with its protocol", () => {
-    trackEarnPoolDetailsOpened({ poolId: POOL_ID });
+    trackEarnPoolDetailsOpened({ poolId: POOL_ID, source: "earn_amount" });
 
     expect(mockEmitMetric).toHaveBeenCalledWith(
       METRIC_NAMES.earnPoolDetailsOpened,
@@ -111,6 +112,33 @@ describe("Earn funnel metrics", () => {
     },
   );
 
+  it("reports the pool details sheet opening with its source", () => {
+    trackEarnPoolDetailsOpened({ poolId: POOL_ID, source: "position_row" });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnPoolDetailsOpened,
+      { protocol: "blend", pool_id: POOL_ID, source: "position_row" },
+    );
+  });
+
+  it("reports a tab switch on the pool details sheet", () => {
+    trackEarnPoolDetailsTabSelected({
+      poolId: POOL_ID,
+      tab: "overview",
+      source: "position_row",
+    });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnPoolDetailsTabSelected,
+      {
+        protocol: "blend",
+        pool_id: POOL_ID,
+        tab: "overview",
+        source: "position_row",
+      },
+    );
+  });
+
   it("tells the two XLM-fee shortfalls apart", () => {
     // Same drop-off, different remedy: one account has no XLM at all and gets
     // the buy/swap sheet, the other allocated it all to the deposit.
@@ -154,15 +182,12 @@ describe("Earn funnel metrics", () => {
     );
   });
 
-  it("reports the pool details opened, with the pool", () => {
-    trackEarnPoolDetailsOpened({ poolId: POOL_ID });
+  it("reports the pool details opened from the amount screen", () => {
+    trackEarnPoolDetailsOpened({ poolId: POOL_ID, source: "earn_amount" });
 
     expect(mockEmitMetric).toHaveBeenCalledWith(
       METRIC_NAMES.earnPoolDetailsOpened,
-      {
-        protocol: "blend",
-        pool_id: POOL_ID,
-      },
+      { protocol: "blend", pool_id: POOL_ID, source: "earn_amount" },
     );
   });
 
@@ -225,6 +250,7 @@ describe("Earn funnel metrics", () => {
       poolId: POOL_ID,
       apy: 0.1694,
       viaSwap: true,
+      source: "position_row",
     });
 
     expect(mockEmitMetric).toHaveBeenCalledWith(
@@ -235,6 +261,7 @@ describe("Earn funnel metrics", () => {
         pool_id: POOL_ID,
         apy: 0.1694,
         via_swap: true,
+        source: "position_row",
       },
     );
   });
@@ -245,6 +272,7 @@ describe("Earn funnel metrics", () => {
       poolId: POOL_ID,
       apy: 0.1694,
       viaSwap: false,
+      source: "home",
     });
 
     const [, body] = mockEmitMetric.mock.calls[0];
@@ -253,6 +281,7 @@ describe("Earn funnel metrics", () => {
       "pool_id",
       "apy",
       "via_swap",
+      "source",
       "protocol",
     ]);
   });
@@ -262,6 +291,7 @@ describe("Earn funnel metrics", () => {
       assetCode: "USDC",
       poolId: POOL_ID,
       reasonCode: "op_underfunded",
+      source: "positions_empty",
     });
 
     expect(mockEmitMetric).toHaveBeenCalledWith(
@@ -271,6 +301,7 @@ describe("Earn funnel metrics", () => {
         asset_code: "USDC",
         pool_id: POOL_ID,
         reason_code: "op_underfunded",
+        source: "positions_empty",
       },
     );
   });
@@ -301,6 +332,7 @@ describe("Earn deposit volume", () => {
       poolId: POOL_ID,
       apy: 0.1694,
       viaSwap: false,
+      source: "home",
       volume,
     });
 
@@ -314,6 +346,7 @@ describe("Earn deposit volume", () => {
         pool_id: POOL_ID,
         apy: 0.1694,
         via_swap: false,
+        source: "home",
         amount: 10,
         amount_usd_status: "ok",
         amount_usd: 20,
@@ -329,6 +362,7 @@ describe("Earn deposit volume", () => {
       assetCode: "USDC",
       poolId: POOL_ID,
       reasonCode: "op_underfunded",
+      source: "home",
       volume: { ...volume, failureCategory: FailureCategory.BALANCE },
     });
 
@@ -341,6 +375,7 @@ describe("Earn deposit volume", () => {
         asset_type: "classic",
         pool_id: POOL_ID,
         reason_code: "op_underfunded",
+        source: "home",
         failure_category: "balance",
         amount: 10,
         amount_usd_status: "ok",
@@ -358,6 +393,7 @@ describe("Earn deposit volume", () => {
       poolId: POOL_ID,
       apy: 0.1694,
       viaSwap: false,
+      source: "home",
       volume: { ...volume, identity: { code: "XLM", type: AssetKind.NATIVE } },
     });
 

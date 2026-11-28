@@ -7,6 +7,7 @@ import {
   isRemoteConfigInitializedSelector,
   balancesV2Selector,
   earnDepositSelector,
+  positionsEnabledSelector,
   tokenPriceHistoryEnabledSelector,
   reducer,
 } from "../remoteConfig";
@@ -471,6 +472,56 @@ describe("remoteConfig selectors", () => {
 
       await store.dispatch(duck.fetchFeatureFlags());
       expect(duck.earnDepositSelector(store.getState())).toBe(true);
+    });
+  });
+
+  // Gates the Positions tab and its requests until the backend serves
+  // positions in production: the same shape as `earn_deposit`.
+  describe("positionsEnabledSelector", () => {
+    it("is false before the flags settle in a dev build", () => {
+      const store = makeStore();
+      expect(getState(store).positions_enabled).toBe(true);
+      expect(positionsEnabledSelector(store.getState())).toBe(false);
+    });
+
+    it("is false when the variant is off", async () => {
+      (getExperimentClient as jest.Mock).mockReturnValue(
+        makeClient({ positions_enabled: { value: "off" } }),
+      );
+
+      const store = makeStore();
+      await store.dispatch(fetchFeatureFlags());
+      expect(positionsEnabledSelector(store.getState())).toBe(false);
+    });
+
+    it("stays off in a production build until the variant turns it on", async () => {
+      let duck!: typeof import("../remoteConfig");
+      let experiment!: typeof import("helpers/experimentClient");
+      jest.isolateModules(() => {
+        jest.doMock("@shared/constants/services", () => ({
+          ...jest.requireActual("@shared/constants/services"),
+          DEV_EXTENSION: false,
+        }));
+        duck = require("../remoteConfig");
+        experiment = require("helpers/experimentClient");
+      });
+      const offStore = configureStore({
+        reducer: { remoteConfig: duck.reducer },
+      });
+      (experiment.getExperimentClient as jest.Mock).mockReturnValue(
+        makeClient(),
+      );
+      await offStore.dispatch(duck.fetchFeatureFlags());
+      expect(duck.positionsEnabledSelector(offStore.getState())).toBe(false);
+
+      const onStore = configureStore({
+        reducer: { remoteConfig: duck.reducer },
+      });
+      (experiment.getExperimentClient as jest.Mock).mockReturnValue(
+        makeClient({ positions_enabled: { value: "on" } }),
+      );
+      await onStore.dispatch(duck.fetchFeatureFlags());
+      expect(duck.positionsEnabledSelector(onStore.getState())).toBe(true);
     });
   });
 

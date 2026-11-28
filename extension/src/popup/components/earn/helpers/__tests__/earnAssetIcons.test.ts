@@ -1,4 +1,4 @@
-import { Asset, Networks } from "stellar-sdk";
+import { Asset, Networks, StrKey } from "stellar-sdk";
 
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -20,6 +20,8 @@ const USDC_ISSUER = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
 const networkDetails = {
   networkPassphrase: Networks.PUBLIC,
 } as NetworkDetails;
+// A contract token with no classic asset behind it (SEP-41).
+const FOO_CONTRACT = StrKey.encodeContract(Buffer.alloc(32, 7));
 
 describe("getCatalogIssuer", () => {
   it("reads the issuer out of the catalog's canonical", () => {
@@ -119,6 +121,48 @@ describe("getCatalogAssetIdentity", () => {
     expect(identity.canonical).toBe(`USDC:${USDC_ISSUER}`);
   });
 
+  // Freighter keys a contract token it holds as "CODE:CONTRACT"; one the
+  // account doesn't hold has to land on the same key to get its icon and price.
+  it("names a contract token by its own contract", () => {
+    expect(
+      getCatalogAssetIdentity({
+        symbol: "FOO",
+        name: "Foo Token",
+        assetId: FOO_CONTRACT,
+        networkDetails,
+      }),
+    ).toEqual({
+      code: "FOO",
+      issuer: FOO_CONTRACT,
+      canonical: `FOO:${FOO_CONTRACT}`,
+      isNative: false,
+    });
+  });
+
+  it("gives no contract issuer to a token reported without a name", () => {
+    // It could as well be a SAC whose canonical is missing.
+    const identity = getCatalogAssetIdentity({
+      symbol: "USDC",
+      name: null,
+      assetId: USDC_SAC,
+      networkDetails,
+    });
+    expect(identity.code).toBe("USDC");
+    expect(identity.issuer).toBeUndefined();
+    expect(identity.canonical).toBe("");
+  });
+
+  it("gives no contract issuer to a token without a code", () => {
+    const identity = getCatalogAssetIdentity({
+      symbol: null,
+      name: "Foo Token",
+      assetId: FOO_CONTRACT,
+      networkDetails,
+    });
+    expect(identity.issuer).toBeUndefined();
+    expect(identity.canonical).toBe("");
+  });
+
   it("leaves an unnameable asset without a code or key", () => {
     const identity = getCatalogAssetIdentity({
       symbol: null,
@@ -167,6 +211,23 @@ describe("resolveEarnAssetIcons", () => {
     });
 
     expect(icons).toEqual({ [`USDC:${USDC_ISSUER}`]: USDC_ICON });
+  });
+
+  it("looks a contract token up by its contract", async () => {
+    const icons = await resolveEarnAssetIcons({
+      assets: [{ code: "FOO", issuer: FOO_CONTRACT, assetId: FOO_CONTRACT }],
+      networkDetails,
+      cachedIcons: {},
+      assetsListsData: listsWith({
+        code: "FOO",
+        contract: FOO_CONTRACT,
+        icon: "https://example.com/foo.png",
+      }),
+    });
+
+    expect(icons).toEqual({
+      [`FOO:${FOO_CONTRACT}`]: "https://example.com/foo.png",
+    });
   });
 
   it("looks nothing up for native XLM, whose icon is bundled", async () => {

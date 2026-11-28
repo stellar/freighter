@@ -1,10 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
-import { STEPS } from "popup/constants/earn";
+import {
+  getEarnSourceFromSearch,
+  isEarnPrefillSearch,
+  STEPS,
+} from "popup/constants/earn";
 import { navigateTo } from "popup/helpers/navigate";
 import {
   ScreenByStep,
@@ -26,6 +30,7 @@ import {
   resetEarnAttempt,
   saveCurrentPositionTokens,
   saveEarnPool,
+  saveEarnSource,
   saveSelectedAssetApy,
   saveSelectedAssetId,
   setDidSwapInFlow,
@@ -74,19 +79,34 @@ const EARN_SCREEN_BY_STEP: ScreenByStep<STEPS> = {
 export const Earn = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
   const { hasSeenIntro, dismissIntro } = useEarnIntroSeen();
   const submission = useSelector(transactionSubmissionSelector);
   const { selectedAssetId } = useSelector(earnSelector);
   const tokenPrices = useSelector(tokenPricesSelector);
 
+  // Read once at mount: the view rewrites its own search when the swap branch
+  // opens and closes, so the flag is gone by the time any later render looks.
+  const isPrefilled = useRef(isEarnPrefillSearch(location.search)).current;
+  // Same reasoning as isPrefilled above, and it also self-corrects when the
+  // user leaves by browser-back without closeEarnFlow running its resetEarn().
+  const earnSource = useRef(getEarnSourceFromSearch(location.search)).current;
+
   // No step until the persisted intro flag has resolved: the flow opens on the
   // interstitial only once it is known to be unseen. Opening on either step
   // first would flash it — the intro for every returning user, or the picker
   // for a first visit — and report that screen's view ahead of the right one.
-  const [activeStep, setActiveStep] = useState<STEPS | null>(null);
+  // A prefilled entry from a position opens on the amount screen and skips the
+  // intro: the token and pool are already chosen.
+  const [activeStep, setActiveStep] = useState<STEPS | null>(
+    isPrefilled ? STEPS.AMOUNT : null,
+  );
   const [visitedSteps, setVisitedSteps] = useState<Record<STEPS, boolean>>(
-    () => ({}) as Record<STEPS, boolean>,
+    () =>
+      (isPrefilled
+        ? { [STEPS.CHOOSE_TOKEN]: true, [STEPS.AMOUNT]: true }
+        : {}) as Record<STEPS, boolean>,
   );
   const [enterAnim, setEnterAnim] = useState<EnterAnim>("from-bottom");
   // The picker stays mounted across the swap branch, and so does the deposit
@@ -123,12 +143,22 @@ export const Earn = () => {
     navigateTo(ROUTES.account, navigate);
   };
 
+  useEffect(() => {
+    dispatch(saveEarnSource(earnSource));
+  }, [dispatch, earnSource]);
+
   // Only the X button runs closeEarnFlow, so a visit left another way (Buy,
   // for one) would otherwise hand its failure banner and its swap to this one.
   useEffect(() => {
-    dispatch(resetSubmission());
     dispatch(resetEarnAttempt());
-  }, [dispatch]);
+    // A prefilled entry arrives with transactionData already populated by the
+    // caller, which resets the submission itself before setting it; resetting
+    // here would discard the asset and destination it just set.
+    if (isPrefilled) {
+      return;
+    }
+    dispatch(resetSubmission());
+  }, [dispatch, isPrefilled]);
 
   useEffect(() => {
     if (activeStep !== null || hasSeenIntro === null) {

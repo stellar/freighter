@@ -9,7 +9,7 @@ import {
 import { isSacContract } from "@shared/helpers/soroban/token";
 import { getCanonicalFromAsset, splitCanonical } from "@shared/helpers/stellar";
 import { DestinationTokenDetails } from "popup/ducks/transactionSubmission";
-import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
+import { CLASSIC_ASSET_DECIMALS, isContractId } from "popup/helpers/soroban";
 
 import { EarnTokenOption } from "../hooks/useGetEarnTokensData";
 
@@ -17,11 +17,12 @@ import { EarnTokenOption } from "../hooks/useGetEarnTokensData";
  * Resolves the canonical (`CODE:ISSUER`) and destination descriptor for a token
  * the user is about to swap into.
  *
- * A held token already carries its issuer, taken from the balance. A token the
- * account holds none of does not — the earn catalog identifies assets only by
- * contract address. For a SAC, the contract's own `name()` returns exactly the
- * canonical form (`USDC:GA5ZSEJY…`, or `native` for XLM), which is what
- * `isSacContract` already relies on to match a SAC to its classic asset.
+ * A classic issuer, taken from the balance or the catalog's canonical, names
+ * the asset outright. Without one — no issuer, or a contract as issuer — the
+ * contract is asked: for a SAC, its own `name()` returns exactly the canonical
+ * form (`USDC:GA5ZSEJY…`, or `native` for XLM), which is what `isSacContract`
+ * already relies on to match a SAC to its classic asset. A contract token's
+ * name is no canonical, so it is declined: Swap buys classic assets only.
  *
  * Returns null when the lookup fails, or when the asset found is not the one
  * the pool takes, so callers can decline to start a swap rather than send the
@@ -39,10 +40,15 @@ export const resolveSwapDestination = async ({
   canonical: string;
   details: DestinationTokenDetails;
 } | null> => {
-  let canonical = option.issuer
-    ? getCanonicalFromAsset(option.code, option.issuer)
+  // Only a classic issuer names the asset a swap can buy. A contract issuer
+  // is what a contract token gets, but also a SAC the catalog reported
+  // without its canonical, so the contract is asked instead.
+  const classicIssuer =
+    option.issuer && !isContractId(option.issuer) ? option.issuer : undefined;
+  let canonical = classicIssuer
+    ? getCanonicalFromAsset(option.code, classicIssuer)
     : "";
-  let issuer = option.issuer;
+  let issuer = classicIssuer;
 
   if (!canonical) {
     const tokenDetails = await getTokenDetails({

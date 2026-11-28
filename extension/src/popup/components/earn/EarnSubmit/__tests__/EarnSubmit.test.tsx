@@ -14,6 +14,8 @@ import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
 import { RequestState } from "constants/request";
 import { EarnSubmit } from "popup/components/earn/EarnSubmit";
 import { useSubmitEarnTxData } from "popup/components/earn/EarnSubmit/hooks/useSubmitEarnTxData";
+import { EarnSource } from "popup/constants/earn";
+import * as EarnDuck from "popup/ducks/earn";
 import { initialState as earnInitialState } from "popup/ducks/earn";
 import {
   initialState as transactionSubmissionInitialState,
@@ -109,12 +111,14 @@ const makeState = ({
   hardwareWalletType = WalletType.NONE,
   hwStatus = ShowOverlayStatus.IDLE,
   lastSubmitFailed = false,
+  source = earnInitialState.source,
   reviewedAmount = null,
 }: {
   xdr: string;
   hardwareWalletType?: WalletType;
   hwStatus?: ShowOverlayStatus;
   lastSubmitFailed?: boolean;
+  source?: EarnSource;
   reviewedAmount?: string | null;
 }) => ({
   auth: {
@@ -143,7 +147,10 @@ const makeState = ({
   earn: {
     ...earnInitialState,
     pool: { id: POOL_ID },
+    selectedAssetId: "CUSDC",
+    currentPositionTokens: "100",
     lastSubmitFailed,
+    source,
     reviewedAmount,
   },
 });
@@ -160,6 +167,7 @@ const renderSubmit = ({
   hardwareWalletType?: WalletType;
   hwStatus?: ShowOverlayStatus;
   lastSubmitFailed?: boolean;
+  source?: EarnSource;
   reviewedAmount?: string | null;
 }) =>
   render(
@@ -351,6 +359,20 @@ describe("EarnSubmit", () => {
     expect(submittedXdrs()).toEqual([]);
     expect(mockSignSoroban).not.toHaveBeenCalled();
   });
+
+  it("attributes a completed deposit to where the flow started", async () => {
+    // The submit hook is two screens and one resetSubmission() away from
+    // wherever the flow began, so it reads `source` off the earn slice rather
+    // than receiving it as a prop — see ducks/earn's `source` field.
+    renderSubmit({ xdr: "AAAA-unsigned", source: "position_row" });
+
+    await waitFor(() =>
+      expect(emitMetric).toHaveBeenCalledWith(
+        METRIC_NAMES.earnDepositCompleted,
+        expect.objectContaining({ source: "position_row" }),
+      ),
+    );
+  });
 });
 /**
  * The screen ands the hook's state together with redux `submitStatus`, and the
@@ -426,6 +448,48 @@ describe("useSubmitEarnTxData", () => {
     expect(result.current.state.state).toBe(RequestState.SUCCESS);
   });
 
+  // Positions trail the ledger, so the deposit hands Home what to wait for
+  // rather than reading them itself: the position before it (100) plus half
+  // the 0.5 deposited.
+  it("tells Home which deposit to wait for once it lands", async () => {
+    const saveAwaitedDeposit = jest.spyOn(EarnDuck, "saveAwaitedDeposit");
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ status: "PENDING", hash: "abc123" }),
+    });
+    const { result } = renderSubmitHook("AAAA-unsigned");
+
+    await act(async () => {
+      await result.current.fetchData();
+    });
+
+    expect(saveAwaitedDeposit).toHaveBeenCalledWith({
+      publicKey: TEST_PUBLIC_KEY,
+      network: TESTNET_NETWORK_DETAILS.network,
+      poolId: POOL_ID,
+      assetId: "CUSDC",
+      minTokens: "100.25",
+      expiresAt: expect.any(Number),
+    });
+    expect(mockFetchBalances).toHaveBeenCalled();
+  });
+
+  it("leaves Home nothing to wait for when the network rejects the deposit", async () => {
+    const saveAwaitedDeposit = jest.spyOn(EarnDuck, "saveAwaitedDeposit");
+    mockFetch.mockResolvedValue({
+      ok: false,
+      json: () => Promise.resolve({ extras: { result_codes: {} } }),
+    });
+    const { result } = renderSubmitHook("AAAA-unsigned");
+
+    await act(async () => {
+      await result.current.fetchData();
+    });
+
+    expect(saveAwaitedDeposit).not.toHaveBeenCalled();
+    expect(mockFetchBalances).not.toHaveBeenCalled();
+  });
+
   // The balance fetch throws on failure. The deposit has already landed, so
   // that must not turn into an error state, which would leave the success
   // screen waiting forever.
@@ -480,6 +544,7 @@ describe("useSubmitEarnTxData", () => {
         pool_id: POOL_ID,
         apy: 0.05,
         via_swap: false,
+        source: "home",
         amount: 0.5,
         amount_usd_status: "ok",
         amount_usd: 0.5,
@@ -515,6 +580,7 @@ describe("useSubmitEarnTxData", () => {
         pool_id: POOL_ID,
         reason_code: "op_underfunded",
         failure_category: "balance",
+        source: "home",
         amount: 0.5,
         amount_usd_status: "ok",
         amount_usd: 0.5,

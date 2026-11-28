@@ -21,8 +21,9 @@ export const getCatalogIssuer = (name?: string | null) => {
 };
 
 /**
- * The key an asset's icon is cached under. Icons are keyed by canonical, so an
- * asset with no resolvable issuer has no key and cannot carry an icon.
+ * The key an asset's icon is cached under. Icons are keyed by canonical
+ * ("CODE:ISSUER", or "CODE:CONTRACT" for a contract token), so an asset with no
+ * resolvable issuer has no key and cannot carry an icon.
  *
  * Native XLM is reported with a null symbol *and* a null name, so its contract
  * address is the only way to recognise it; its icon lives under "native".
@@ -53,6 +54,13 @@ export const getCatalogIconKey = ({
  * The code falls back through the reported symbol, the canonical's code half,
  * and finally "XLM" for the native SAC — which the catalog reports with a null
  * symbol and a null name, leaving its contract address as the only clue.
+ *
+ * The issuer is a classic asset's, read off its canonical. A token with no
+ * classic asset behind it (SEP-41) has its own contract as issuer, as the
+ * contract tokens an account holds do: "FOO:C…" is the canonical their
+ * balances, icons and prices are keyed by. Only a token that reports a name of
+ * its own qualifies; one reported with no name could as well be a SAC whose
+ * canonical is missing.
  */
 export const getCatalogAssetIdentity = ({
   symbol,
@@ -65,12 +73,19 @@ export const getCatalogAssetIdentity = ({
   assetId: string;
   networkDetails: NetworkDetails;
 }) => {
-  const issuer = getCatalogIssuer(name);
+  const classicIssuer = getCatalogIssuer(name);
   const isNative = isNativeContract(assetId, networkDetails.networkPassphrase);
   const code =
     symbol ||
-    (issuer ? splitCanonical(name!).code : "") ||
+    (classicIssuer ? splitCanonical(name!).code : "") ||
     (isNative ? "XLM" : "");
+  const isContractToken =
+    !classicIssuer &&
+    !isNative &&
+    Boolean(name) &&
+    Boolean(code) &&
+    StrKey.isValidContract(assetId);
+  const issuer = classicIssuer || (isContractToken ? assetId : undefined);
 
   return {
     code,

@@ -222,7 +222,7 @@ export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
             assetCode={srcAsset.code}
             assetIssuer={srcAsset.issuer}
             assetIcons={cachedIcons}
-            pool={pool}
+            poolName={pool?.name}
             transactionHash={transactionHash}
             xdr={xdr}
             networkDetails={networkDetails}

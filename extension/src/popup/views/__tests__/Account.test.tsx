@@ -17,6 +17,7 @@ import {
   TESTNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
   MAINNET_NETWORK_DETAILS,
+  FUTURENET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import { Balances } from "@shared/api/types/backend-api";
 import * as ApiInternal from "@shared/api/internal";
@@ -46,6 +47,7 @@ import {
   TEST_CANONICAL,
   TEST_PUBLIC_KEY,
   TEST_USDC_CANONICAL,
+  TEST_REMOTE_CONFIG,
   getTestStore,
 } from "../../__testHelpers__";
 import { fetchFeatureFlags } from "popup/ducks/remoteConfig";
@@ -56,7 +58,11 @@ import { DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES } from "@shared/constants/autoLock";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import * as AccountDataHooks from "../../views/Account/hooks/useGetAccountData";
 import { RequestState } from "helpers/hooks/fetchHookInterface";
-import { ActiveTabProvider } from "../Account/contexts/activeTabContext";
+import {
+  ActiveTabProvider,
+  AccountTabsContext,
+  TabsList,
+} from "../Account/contexts/activeTabContext";
 import { onAccountValue } from "helpers/accountFunding";
 import { useFundedAccountsRefresh } from "popup/helpers/useFundedAccountsRefresh";
 
@@ -1863,6 +1869,119 @@ describe("Account view", () => {
     // real browser instead; a unit assertion could not fail.
   });
 
+  // AccountPositions' own file comment states the invariant: "a position is
+  // money, so 'we could not load this' must never render as 'you have
+  // none'." A failed account fetch discards `resolvedData` entirely (see
+  // helpers/request.ts), so `resolvedData?.hasPositionsError` alone can never
+  // see the failure -- the view-level `hasError` has to reach
+  // AccountPositions too, or the Positions tab falls through to its empty
+  // state instead.
+  // Off until the production backend serves positions.
+  it("hides the Positions tab while positions_enabled is off", async () => {
+    jest.spyOn(AccountDataHooks, "useGetAccountData").mockReturnValue({
+      state: {
+        state: RequestState.ERROR,
+        data: null,
+        error: new Error("boom"),
+      },
+      fetchData: jest.fn(),
+      refreshAppData: jest.fn(),
+      refreshBalances: jest.fn(),
+    });
+
+    render(
+      <Wrapper
+        routes={[`${ROUTES.account}?tab=positions`]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: TEST_PUBLIC_KEY,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <ActiveTabProvider>
+          <Account />
+        </ActiveTabProvider>
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("account-view")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByTestId("account-tab-positions")).toBeNull();
+    // Even a `?tab=positions` link lands on Tokens, with no Positions content.
+    await waitFor(() => {
+      expect(screen.getByTestId("account-tab-tokens")).toHaveClass(
+        "AccountTabs__tab-item--active",
+      );
+    });
+    expect(screen.queryByTestId("account-positions")).toBeNull();
+  });
+
+  it("shows the positions error state rather than 'no positions' when the account fetch fails", async () => {
+    const accountDataSpy = jest
+      .spyOn(AccountDataHooks, "useGetAccountData")
+      .mockReturnValue({
+        state: {
+          state: RequestState.ERROR,
+          data: null,
+          error: new Error("boom"),
+        },
+        fetchData: jest.fn(),
+        refreshAppData: jest.fn(),
+        refreshBalances: jest.fn(),
+      });
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: TEST_PUBLIC_KEY,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+          remoteConfig: { ...TEST_REMOTE_CONFIG, positions_enabled: true },
+        }}
+      >
+        {/* Router supplies this in the app; without it the Positions tab
+            button has no working setActiveTab to switch onto. */}
+        <ActiveTabProvider>
+          <Account />
+        </ActiveTabProvider>
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("account-view")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId("account-tab-positions"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("account-positions-error")).toBeInTheDocument();
+    });
+
+    // Restored before asserting, as the ERROR-state test above does.
+    accountDataSpy.mockRestore();
+
+    expect(
+      screen.queryByTestId("account-positions-empty"),
+    ).not.toBeInTheDocument();
+  });
+
   // The Tokens tab dictates which button style the Collectibles tab uses, and
   // that decision lives in this view rather than in the components it feeds, so
   // it has to be pinned here: the component suites take it as a literal prop and
@@ -2207,6 +2326,74 @@ describe("Account view", () => {
       ).not.toBeInTheDocument();
       expect(listEndButtonTestIds()).toEqual([]);
     });
+  });
+
+  // Spec D14: switching to a network where Earn is unsupported while the
+  // Positions tab is active must not strand the user there -- the very
+  // button that tab needs to leave from is what just disappeared.
+  // `isEarnSupportedNetwork` is true only for PUBLIC and TESTNET, so
+  // Futurenet is what triggers this. Supplies `AccountTabsContext` directly,
+  // rather than `ActiveTabProvider` (which always starts on Tokens), so the
+  // guard's precondition -- already on Positions -- holds from the first
+  // render; the effect runs identically whether that became true on mount or
+  // from a later network switch, so this exercises the same branch either way.
+  it("resets from Positions to Tokens on an earn-unsupported network", async () => {
+    const accountDataSpy = jest
+      .spyOn(AccountDataHooks, "useGetAccountData")
+      .mockReturnValue({
+        state: {
+          state: RequestState.SUCCESS,
+          error: null,
+          data: {
+            type: AppDataType.RESOLVED,
+            publicKey: TEST_PUBLIC_KEY,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            networkDetails: FUTURENET_NETWORK_DETAILS,
+            allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+            isScanAppended: true,
+            collectibles: { collections: [] },
+            balances: { balances: [], isFunded: true, subentryCount: 0 },
+            tokenPrices: {},
+          },
+        },
+        fetchData: jest.fn(),
+        refreshAppData: jest.fn(),
+      } as any);
+
+    const setActiveTab = jest.fn();
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: TEST_PUBLIC_KEY,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: FUTURENET_NETWORK_DETAILS,
+            networksList: [...DEFAULT_NETWORKS, FUTURENET_NETWORK_DETAILS],
+          },
+        }}
+      >
+        <AccountTabsContext.Provider
+          value={{ activeTab: TabsList.POSITIONS, setActiveTab }}
+        >
+          <Account />
+        </AccountTabsContext.Provider>
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(setActiveTab).toHaveBeenCalledWith(TabsList.TOKENS);
+    });
+
+    // Restored before the next test: a failure after this point would
+    // otherwise leave useGetAccountData mocked for every later test in this
+    // file, exactly as it briefly did before this line was added.
+    accountDataSpy.mockRestore();
   });
 
   it("handles abandoned onboarding in password created step", async () => {

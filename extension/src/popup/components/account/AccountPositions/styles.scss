@@ -1,0 +1,400 @@
+@use "../../../styles/utils.scss" as *;
+
+// Figma: Varial 4464:110302 (empty), 4470:111628 (pool card), 4875:104953
+// (pool screen), 4470:113013 / 4470:113073 (token screen). Dark frames:
+// 4478:117375, 4478:117874, 4478:117952, 4478:118152, 4478:118267.
+
+// The Home pane already pads 24px each side, as the Tokens tab relies on.
+.AccountPositions {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(12);
+  padding-top: pxToRem(8);
+
+  &__loader {
+    display: flex;
+    justify-content: center;
+    padding: pxToRem(32) 0;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8);
+  }
+
+  // The pool and token screens: full-height sheets on the page color, as the
+  // Tokens tab's details are.
+  &__screen {
+    background: var(--sds-clr-base-00);
+    height: 100%;
+    width: 100%;
+  }
+
+  // The empty card brings its own spacing (HomeEmptyState), and starts right
+  // under the tab row, as the Tokens and Collectibles ones do.
+  &--empty {
+    padding-top: 0;
+  }
+}
+
+// The "Earn up to" row inside Home's empty card (HomeEmptyState).
+.PositionsEmpty {
+  &__projection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: pxToRem(4);
+    padding: pxToRem(8) pxToRem(16);
+
+    &__label {
+      @include text(xs, medium);
+      color: var(--sds-clr-gray-11);
+    }
+
+    &__value {
+      display: flex;
+      align-items: center;
+      // The space after "/": a flex item drops trailing whitespace.
+      gap: pxToRem(4);
+      white-space: nowrap;
+    }
+
+    &__figure {
+      @include text(sm, semi-bold);
+      color: var(--sds-clr-green-11);
+    }
+
+    &__unit {
+      @include text(xs, medium);
+      color: var(--sds-clr-gray-11);
+    }
+  }
+}
+
+// Like the card's fill, the row's rules are light-only: the dark frame
+// (4478:117375) draws neither.
+.sds-theme-light .PositionsEmpty__projection {
+  border-top: 1px solid var(--sds-clr-gray-06);
+  border-bottom: 1px solid var(--sds-clr-gray-06);
+}
+
+.PositionPoolCard {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: pxToRem(12);
+  width: 100%;
+  padding: pxToRem(8) pxToRem(16);
+  overflow: hidden;
+  border: none;
+  border-radius: pxToRem(8) pxToRem(16) pxToRem(16) pxToRem(8);
+  background-color: var(--sds-clr-gray-02);
+  text-align: left;
+  cursor: pointer;
+
+  &__accent {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: pxToRem(3);
+    background-color: var(--sds-clr-lilac-09);
+  }
+
+  &__icon {
+    display: flex;
+
+    .PoolIcon {
+      border-radius: pxToRem(7.6);
+    }
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__name {
+    display: flex;
+    align-items: baseline;
+    gap: pxToRem(2);
+    white-space: nowrap;
+  }
+
+  &__pool,
+  &__provider {
+    @include text(xs);
+  }
+
+  &__pool {
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__provider {
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__value {
+    display: flex;
+    align-items: center;
+  }
+
+  &__total {
+    @include text(sm, medium);
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__gain {
+    @include text(xs, semi-bold);
+    padding: pxToRem(2) pxToRem(4);
+    color: var(--sds-clr-green-11);
+
+    // Unknown, or a loss: grey, so a negative figure never reads as a gain.
+    &--unknown,
+    &--loss {
+      color: var(--sds-clr-gray-11);
+    }
+  }
+
+  &__apy {
+    @include text(xs, medium);
+    color: var(--sds-clr-gray-11);
+  }
+}
+
+.PositionTabs {
+  display: flex;
+  gap: pxToRem(4);
+  padding: pxToRem(4);
+  border-radius: pxToRem(1000);
+  background-color: var(--sds-clr-gray-02);
+
+  &__tab {
+    @include text(xs, semi-bold);
+    flex: 1;
+    padding: pxToRem(4) pxToRem(8);
+    border: none;
+    border-radius: pxToRem(1000);
+    background: none;
+    color: var(--sds-clr-gray-11);
+    cursor: pointer;
+
+    &--active {
+      background-color: var(--sds-clr-lilac-03);
+      color: var(--sds-clr-lilac-09);
+    }
+  }
+}
+
+.PositionScreen {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(16);
+  padding-bottom: pxToRem(24);
+
+  .AccountAssets__asset--logo {
+    @include asset-logo-size(32);
+    margin: 0;
+  }
+
+  &__identity {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: pxToRem(8);
+  }
+
+  &__provider {
+    @include text(sm, medium);
+    display: flex;
+    align-items: center;
+    gap: pxToRem(4);
+    padding: pxToRem(4) pxToRem(10);
+    border-radius: pxToRem(8);
+    background-color: var(--sds-clr-gray-03);
+    color: var(--sds-clr-gray-12);
+
+    .PoolIcon {
+      border-radius: pxToRem(4);
+    }
+  }
+
+  &__pool-name {
+    @include text(sm, medium);
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__figures {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: pxToRem(8);
+  }
+
+  &__token-mark {
+    display: flex;
+  }
+
+  // Figma's Display/XS: 24px on 32px, tracked in by 4%.
+  &__total {
+    font-size: pxToRem(24);
+    line-height: pxToRem(32);
+    font-weight: var(--sds-fw-regular);
+    letter-spacing: -0.04em;
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__gain {
+    @include text(sm, medium);
+    color: var(--sds-clr-green-11);
+
+    // Unknown, or a loss: grey, so a negative figure never reads as a gain.
+    &--unknown,
+    &--loss {
+      color: var(--sds-clr-gray-11);
+    }
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8);
+  }
+
+  &__section-title {
+    @include text(xs, medium);
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__card {
+    width: 100%;
+    padding: pxToRem(12) pxToRem(16);
+    border: none;
+    border-radius: pxToRem(16);
+    background-color: var(--sds-clr-gray-03);
+    text-align: left;
+  }
+
+  button.PositionScreen__card {
+    cursor: pointer;
+  }
+
+  &__token {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(12);
+
+    &__name {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    &__figures {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      text-align: right;
+      white-space: nowrap;
+    }
+  }
+
+  &__primary {
+    @include text(sm, medium);
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__positive {
+    @include text(sm, medium);
+    color: var(--sds-clr-green-11);
+
+    &--unknown,
+    &--loss {
+      color: var(--sds-clr-gray-11);
+    }
+  }
+
+  &__positive-small {
+    @include text(xs, medium);
+    color: var(--sds-clr-green-11);
+  }
+
+  &__secondary-small {
+    @include text(xs, medium);
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__earnings {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12);
+  }
+
+  // The token with the earn leaf badged at its bottom right, 12px on lilac.
+  &__earning-mark {
+    position: relative;
+    display: flex;
+    flex: none;
+
+    &__badge {
+      @include corner-badge(12, right, -2);
+      background-color: var(--sds-clr-lilac-03);
+      color: var(--sds-clr-lilac-09);
+    }
+  }
+
+  &__divider {
+    width: 100%;
+    height: 1px;
+    background-color: var(--sds-clr-gray-06);
+  }
+
+  &__overview {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(16);
+  }
+
+  &__body {
+    @include text(sm);
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__provider-row {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(12);
+
+    .PoolIcon {
+      border-radius: pxToRem(10);
+    }
+  }
+
+  &__links {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: pxToRem(12);
+  }
+
+  &__link {
+    @include text(sm, semi-bold);
+    display: flex;
+    align-items: center;
+    gap: pxToRem(4);
+    padding: pxToRem(6) pxToRem(10);
+    border: 1px solid var(--sds-clr-gray-06);
+    border-radius: pxToRem(100);
+    background: none;
+    color: var(--sds-clr-lilac-09);
+    cursor: pointer;
+
+    svg {
+      width: pxToRem(14);
+      height: pxToRem(14);
+    }
+  }
+}

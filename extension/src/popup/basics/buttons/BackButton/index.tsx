@@ -12,6 +12,7 @@ interface BackButtonProps {
   customButtonComponent?: React.ReactElement<
     React.ButtonHTMLAttributes<HTMLButtonElement>
   >;
+  "data-testid"?: string;
 }
 
 export const BackButton = ({
@@ -19,6 +20,7 @@ export const BackButton = ({
   customBackIcon,
   hasBackCopy,
   customButtonComponent,
+  "data-testid": dataTestId = "BackButton",
 }: BackButtonProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -39,7 +41,7 @@ export const BackButton = ({
   return (
     <div
       className={`BackButton ${hasBackCopy ? "BackButton--has-copy" : ""}`}
-      data-testid="BackButton"
+      data-testid={dataTestId}
       onClick={handleClick}
     >
       {customBackIcon || <Icon.ArrowLeft />}

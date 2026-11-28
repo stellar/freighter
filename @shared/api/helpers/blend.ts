@@ -4,17 +4,26 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { fetchBackendV2 } from "./fetchBackendV2";
 import { redactErrorBody } from "./redactErrorBody";
 import {
+  AccountPositions,
   ApiAccountPositions,
+  ApiBlendBackstopRow,
+  ApiBlendBorrowRow,
   ApiBlendCatalogPool,
   ApiBlendCatalogReserve,
   ApiBlendEarnAssetOption,
   ApiBlendEarnOptionsCatalog,
   ApiBlendEarnPool,
   ApiBlendPoolsCatalog,
+  ApiBlendSupplyRow,
+  ApiPoolPosition,
+  BlendBackstopRow,
+  BlendBorrowRow,
   BlendCatalogPool,
   BlendCatalogReserve,
   BlendEarnAssetOption,
   BlendEarnPool,
+  BlendSupplyRow,
+  PoolPosition,
 } from "../types/blend";
 
 /**
@@ -107,6 +116,71 @@ const mapCatalogPool = (pool: ApiBlendCatalogPool): BlendCatalogPool => ({
   reserves: (pool.reserves || []).map(mapCatalogReserve),
 });
 
+const mapSupplyRow = (row: ApiBlendSupplyRow): BlendSupplyRow => ({
+  assetId: row.asset_id,
+  symbol: row.symbol,
+  name: row.name,
+  decimals: row.decimals,
+  suppliedTokens: row.supplied_tokens,
+  collateralTokens: row.collateral_tokens,
+  totalTokens: row.total_tokens,
+  usdValue: row.usd_value,
+  apy: row.apy,
+  emissionsApr: row.emissions_apr,
+  interestEarned: row.interest_earned,
+  interestEarnedUsd: row.interest_earned_usd,
+  claimableBlnd: row.claimable_blnd,
+  claimableUsd: row.claimable_usd,
+  priceUsd: row.price_usd,
+});
+
+const mapBorrowRow = (row: ApiBlendBorrowRow): BlendBorrowRow => ({
+  assetId: row.asset_id,
+  symbol: row.symbol,
+  name: row.name,
+  decimals: row.decimals,
+  borrowedTokens: row.borrowed_tokens,
+  usdValue: row.usd_value,
+  apy: row.apy,
+  emissionsApr: row.emissions_apr,
+  priceUsd: row.price_usd,
+});
+
+const mapBackstopRow = (row: ApiBlendBackstopRow): BlendBackstopRow => ({
+  poolId: row.pool_id,
+  poolName: row.pool_name,
+  shares: row.shares,
+  lpTokens: row.lp_tokens,
+  usdValue: row.usd_value,
+  claimableBlnd: row.claimable_blnd,
+  claimableUsd: row.claimable_usd,
+  q4w: (row.q4w || []).map((entry) => ({
+    amount: entry.amount,
+    lpTokens: entry.lp_tokens,
+    usdValue: entry.usd_value,
+    expiration: entry.expiration,
+  })),
+});
+
+const mapPoolPosition = (position: ApiPoolPosition): PoolPosition => ({
+  protocol: position.protocol,
+  id: position.id,
+  name: position.name ?? null,
+  netUsd: position.net_usd ?? null,
+  suppliedUsd: position.supplied_usd ?? null,
+  borrowedUsd: position.borrowed_usd ?? null,
+  netApy: position.net_apy ?? null,
+  // Left undefined rather than defaulted to empty arrays: absent detail is
+  // unknown, while detail holding nothing is a pool the account has left
+  // (see holdsTokens).
+  blend: position.blend
+    ? {
+        supply: (position.blend.supply || []).map(mapSupplyRow),
+        borrow: (position.blend.borrow || []).map(mapBorrowRow),
+      }
+    : undefined,
+});
+
 /**
  * Assets that can be deposited into a Blend pool, with each pool's headline
  * rate. Already filtered by the backend's operator-curated allowlist, so on a
@@ -148,7 +222,72 @@ export const getBlendPools = async ({
   return (data.pools || []).map(mapCatalogPool);
 };
 
+/** An account with no positions: what a missing entry, or a gated read, returns. */
+export const emptyAccountPositions = (address: string): AccountPositions => ({
+  address,
+  totalValueUsd: null,
+  netApy: null,
+  positions: [],
+  backstop: [],
+});
+
 /**
+ * Whether a pool still holds any of the account's tokens. The indexer keeps a
+ * pool the account has fully left, to carry the earnings it realized there,
+ * and the backend drops its emptied rows but not the pool, so it arrives with
+ * nothing supplied and nothing borrowed. A pool with no detail at all is kept:
+ * what it holds is unknown, not nothing.
+ */
+const holdsTokens = (position: PoolPosition) =>
+  !position.blend ||
+  position.blend.supply.length > 0 ||
+  position.blend.borrow.length > 0;
+
+/**
+ * Every Blend position the account holds, across every pool the indexer tracks,
+ * leaving out the pools it has fully left.
+ *
+ * Powers the Home Positions tab. This is the full payload behind the narrow
+ * `getBlendSuppliedTokens` below, which exists only because it predates this
+ * client — see the design doc's Deferred work for retiring it.
+ *
+ * The endpoint is a batch keyed by address; we always ask for one and unwrap it.
+ * An account unknown to the indexer still gets an entry with empty `positions`,
+ * so an empty result is a legitimate answer rather than an error.
+ */
+export const getBlendPositions = async ({
+  publicKey,
+  networkDetails,
+}: {
+  publicKey: string;
+  networkDetails: NetworkDetails;
+}): Promise<AccountPositions> => {
+  const data = await fetchBlendData<ApiAccountPositions[]>({
+    method: "POST",
+    path: `/accounts/positions?network=${networkDetails.network}`,
+    body: JSON.stringify({ addresses: [publicKey] }),
+    label: "Blend positions",
+  });
+
+  const entry = data[0];
+  if (!entry) {
+    return emptyAccountPositions(publicKey);
+  }
+
+  return {
+    address: entry.address,
+    totalValueUsd: entry.total_value_usd ?? null,
+    netApy: entry.net_apy ?? null,
+    positions: (entry.positions || []).map(mapPoolPosition).filter(holdsTokens),
+    backstop: (entry.backstop || []).map(mapBackstopRow),
+  };
+};
+
+/**
+ * NOTE: superseded by `getBlendPositions` above, which returns this same payload
+ * in full. Kept while EarnAmount still calls it; see the design doc's Deferred
+ * work for the swap-over.
+ *
  * The account's existing supplied balance for one (pool, asset), in raw token
  * units. This is the "before" side of the Review screen's `0.00 -> 500.00`.
  *
