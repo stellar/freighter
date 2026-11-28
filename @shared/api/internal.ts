@@ -2892,10 +2892,18 @@ export const simulateTransaction = async (args: {
     }),
   };
   const res = await fetch(`${INDEXER_URL}/simulate-tx`, options);
-  const response = await res.json();
+  // The backend answers a rejected simulation with a 400 whose body is plain
+  // text (its error message, then the stack), so a failure is returned as
+  // that text: parsing it as JSON would throw, and the reason would be lost.
+  if (!res.ok) {
+    return {
+      ok: false,
+      response: await res.text(),
+    };
+  }
   return {
-    ok: res.ok,
-    response,
+    ok: true,
+    response: await res.json(),
   };
 };
 
@@ -3196,6 +3204,32 @@ export const dismissDiscoverWelcome = async (): Promise<boolean> => {
   }
 
   return !!hasSeenDiscoverWelcome;
+};
+
+export const getHasSeenEarnIntro = async (): Promise<boolean> => {
+  const { hasSeenEarnIntro, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.GET_EARN_INTRO_SEEN,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return !!hasSeenEarnIntro;
+};
+
+export const dismissEarnIntro = async (): Promise<boolean> => {
+  const { hasSeenEarnIntro, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.DISMISS_EARN_INTRO,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return !!hasSeenEarnIntro;
 };
 
 // True once per eligible wallet: the background flips pending to seen as it

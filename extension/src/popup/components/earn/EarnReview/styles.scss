@@ -1,0 +1,202 @@
+@use "../../../styles/utils.scss" as *;
+
+// Figma: Varial 4470:111414 "Review deposit". SheetLayout pads it and pins
+// its actions.
+.EarnReview {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(24);
+
+  &__blocks {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12);
+  }
+
+  &__group {
+    background: var(--sds-clr-gray-03);
+    border-radius: pxToRem(16);
+    padding: pxToRem(16);
+
+    &--rows {
+      padding: pxToRem(12) pxToRem(16);
+    }
+  }
+
+  &__group--deposit {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(16);
+  }
+
+  // Text/SM/500 in primary.
+  &__group-title {
+    @include text(sm, medium);
+    color: var(--sds-clr-gray-12);
+  }
+
+  // The token, an arrow under its icon, then the pool.
+  &__flow {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12);
+  }
+
+  &__asset {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(16);
+
+    // AssetIcon carries a 1rem right margin for the account's list rows; the
+    // row's own gap does the spacing here. The ring is the design's 1px border.
+    .AccountAssets__asset--logo {
+      margin-right: 0;
+
+      @include asset-logo-ring;
+    }
+  }
+
+  // Text/SM/500 in primary.
+  &__primary {
+    @include text(sm, medium);
+    color: var(--sds-clr-gray-12);
+  }
+
+  // Text/XS/500 in secondary.
+  &__secondary {
+    @include text(xs, medium);
+    color: var(--sds-clr-gray-11);
+  }
+
+  // A 16px arrow, centred under the 32px icons.
+  &__arrow {
+    display: flex;
+    justify-content: center;
+    width: pxToRem(32);
+    color: var(--sds-clr-gray-09);
+
+    svg {
+      width: pxToRem(16);
+      height: pxToRem(16);
+    }
+  }
+
+  // The "before" half of the position, de-emphasised so the resulting value
+  // reads as the answer.
+  &__before {
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(8);
+  }
+
+  // Wrapper around each action Button. SDS Button spreads incoming props after
+  // its own `className`, so a className passed to it replaces the base
+  // `Button Button--*` classes outright — hence the tone class lives here
+  // instead.
+  //
+  // The tones work by overriding the `--Button-color-*` custom properties the
+  // SDS variants are themselves built from, which keeps hover, focus and
+  // disabled states consistent without restating them. They must be declared
+  // on the `.Button` element rather than inherited from this wrapper: SDS sets
+  // those properties in `.Button--secondary` etc. on the button itself, and an
+  // element's own declaration beats a value inherited from an ancestor no
+  // matter how specific the ancestor's selector is.
+  &__action {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  // Filled Cancel for a suspicious / unable-to-scan verdict. Malicious uses the
+  // SDS `destructive` variant directly and needs no override; SDS has no amber
+  // variant, so this mirrors `destructive`'s token set in amber.
+  &__action--cancel-caution .Button {
+    --Button-color-text-default: var(--sds-clr-white);
+    --Button-color-icon-default: var(--sds-clr-white);
+    --Button-color-background-default: var(--sds-clr-amber-09);
+    --Button-color-border-default: var(--sds-clr-amber-09);
+    --Button-color-text-hover: var(--sds-clr-white);
+    --Button-color-icon-hover: var(--sds-clr-white);
+    --Button-color-background-hover: var(--sds-clr-amber-10);
+    --Button-color-border-hover: var(--sds-clr-amber-10);
+    --Button-color-text-active: var(--sds-clr-white);
+    --Button-color-icon-active: var(--sds-clr-white);
+    --Button-color-background-active: var(--sds-clr-amber-10);
+    --Button-color-border-active: var(--sds-clr-amber-10);
+    --Button-box-shadow-color: var(--sds-clr-amber-06);
+  }
+
+  // Outlined Confirm, in the severity color. Transparent fill against a
+  // severity border and label, so Cancel stays the visually recommended action.
+  &__action--confirm-malicious .Button {
+    --Button-color-text-default: var(--sds-clr-red-11);
+    --Button-color-icon-default: var(--sds-clr-red-11);
+    --Button-color-background-default: transparent;
+    --Button-color-border-default: var(--sds-clr-red-07);
+    --Button-color-text-hover: var(--sds-clr-red-11);
+    --Button-color-icon-hover: var(--sds-clr-red-11);
+    --Button-color-background-hover: var(--sds-clr-red-03);
+    --Button-color-border-hover: var(--sds-clr-red-08);
+    --Button-color-text-active: var(--sds-clr-red-11);
+    --Button-color-icon-active: var(--sds-clr-red-11);
+    --Button-color-background-active: var(--sds-clr-red-03);
+    --Button-color-border-active: var(--sds-clr-red-08);
+    --Button-box-shadow-color: var(--sds-clr-red-06);
+  }
+
+  &__action--confirm-caution .Button {
+    --Button-color-text-default: var(--sds-clr-amber-11);
+    --Button-color-icon-default: var(--sds-clr-amber-11);
+    --Button-color-background-default: transparent;
+    --Button-color-border-default: var(--sds-clr-amber-07);
+    --Button-color-text-hover: var(--sds-clr-amber-11);
+    --Button-color-icon-hover: var(--sds-clr-amber-11);
+    --Button-color-background-hover: var(--sds-clr-amber-03);
+    --Button-color-border-hover: var(--sds-clr-amber-08);
+    --Button-color-text-active: var(--sds-clr-amber-11);
+    --Button-color-icon-active: var(--sds-clr-amber-11);
+    --Button-color-background-active: var(--sds-clr-amber-03);
+    --Button-color-border-active: var(--sds-clr-amber-08);
+    --Button-box-shadow-color: var(--sds-clr-amber-06);
+  }
+
+  // Keeps the gear at its own width beside the stretching Cancel and Confirm.
+  &__settings {
+    flex: 0 0 auto;
+  }
+}
+
+// The Blockaid detail pane's actions, laid out like the Send and Swap review's
+// own Blockaid pane: a full-width Cancel over a text-weight proceed action.
+.EarnReview__blockaid-actions {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(8);
+}
+
+.EarnReview__text-action {
+  width: 100%;
+  border: none;
+  background: none;
+  font-family: var(--sds-ff-base);
+  @include text(sm, semi-bold);
+  padding: pxToRem(8) 0;
+  cursor: pointer;
+  text-align: center;
+
+  &--default {
+    color: var(--sds-clr-gray-09);
+  }
+
+  &--error {
+    color: var(--sds-clr-red-11);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}

@@ -15,6 +15,7 @@ import { SheetLayout } from "popup/components/SheetLayout";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+import { TransactionDetailsButton } from "popup/components/TransactionDetailsButton";
 import { View } from "popup/basics/layout/View";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { Summary } from "popup/views/SignTransaction/Preview/Summary";
@@ -327,13 +328,11 @@ export const ChangeTrustInternal = ({
             </div>
           </div>
         </div>
-        <div
+        <TransactionDetailsButton
           className="ChangeTrustInternal__TransactionDetailsBtn"
+          testId="change-trust-details-btn"
           onClick={() => setActivePaneIndex(paneConfig.detailsIndex)}
-        >
-          <Icon.List />
-          <span>{t("Transaction details")}</span>
-        </div>
+        />
       </div>
     </div>
   );

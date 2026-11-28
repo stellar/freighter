@@ -1,0 +1,91 @@
+@use "../../styles/utils.scss" as *;
+
+// Earn's compact take on the shared amount card and percentage pills, as the
+// deposit screen (Varial 4470:110993) and the swap sheet (4478:116498) draw
+// them: a lighter fill, 12/18 labels, a compact token pill and pills 12px
+// apart. The amount's size and the pills' fill differ between the two.
+// Include it in a rule that scopes it to Earn, so Send and Swap keep their own.
+@mixin compact-amount-card(
+  $amount-size,
+  $amount-line-height,
+  $amount-letter-spacing: null,
+  $pill-background: null
+) {
+  .AmountCard {
+    margin: 0;
+    background-color: var(--sds-clr-gray-02);
+  }
+
+  .AmountCard__sending-label {
+    gap: pxToRem(12);
+    @include text(xs, medium);
+  }
+
+  .AmountCard__lg {
+    font-size: pxToRem($amount-size);
+    line-height: pxToRem($amount-line-height);
+    font-weight: 600;
+    @if $amount-letter-spacing {
+      letter-spacing: pxToRem($amount-letter-spacing);
+    }
+  }
+
+  .AmountCard__asset-selector-inline {
+    min-height: pxToRem(28);
+    padding: pxToRem(4) pxToRem(8);
+
+    // AmountCard sizes its pill's logo with !important, so this has to too.
+    .AccountAssets__asset--logo {
+      width: pxToRem(16) !important;
+      height: pxToRem(16) !important;
+      min-width: pxToRem(16);
+      margin: 0;
+    }
+
+    > svg {
+      width: pxToRem(12);
+      height: pxToRem(12);
+      color: var(--sds-clr-gray-09);
+    }
+  }
+
+  .AmountCard__asset-code {
+    line-height: pxToRem(20);
+    font-weight: 600;
+  }
+
+  .AmountCard__balance-row {
+    margin-top: pxToRem(8);
+  }
+
+  .AmountCard__amount-price {
+    @include text(xs, medium);
+  }
+
+  .PercentageButtons {
+    gap: pxToRem(12);
+  }
+
+  .PercentageButtons__btn {
+    padding: pxToRem(6) pxToRem(10);
+    border-radius: pxToRem(100);
+    @if $pill-background {
+      background: $pill-background;
+    }
+    @include text(sm, semi-bold);
+  }
+}
+
+// The compact screens' header: 72px tall with the content right under it,
+// and the X or back arrow at the design's 24px in Text/Primary. Include it on
+// the element that holds the View's chrome variables.
+@mixin compact-view-header {
+  --View-header-height: #{pxToRem(72)};
+  --View-inset-padding-top: 0;
+
+  .View__header .BackButton svg {
+    width: pxToRem(24);
+    height: pxToRem(24);
+    color: var(--sds-clr-gray-12);
+  }
+}

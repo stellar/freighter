@@ -84,12 +84,17 @@
     justify-content: center;
   }
 
+  // A 16px down arrow, centred under the 32px icons, as on the deposit review.
   &__Divider {
     display: flex;
-    margin: pxToRem(16px) 0;
+    justify-content: center;
+    width: pxToRem(32px);
+    margin: pxToRem(12px) 0;
+    color: var(--sds-clr-gray-09);
+
     svg {
-      color: var(--sds-clr-gray-09);
-      margin-left: pxToRem(7px);
+      width: pxToRem(16px);
+      height: pxToRem(16px);
     }
   }
 
@@ -115,30 +120,25 @@
     flex-direction: column;
   }
 
-  // The purple "Transaction details" banner shown above the confirm buttons,
-  // opening the full operation breakdown in-flow.
-  // The purple "Transaction details" trigger above the confirm buttons, as on
-  // mobile, opening the full operation breakdown in-flow.
+  // The shared TransactionDetailsButton, 12px under the details card.
   &__TxDetailsBtn {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    padding: pxToRem(12px) pxToRem(16px);
     margin-top: pxToRem(12px);
-    border: 0;
-    border-radius: pxToRem(16px);
-    background-color: var(--sds-clr-gray-03);
-    color: var(--sds-clr-lilac-11);
-    font-size: pxToRem(14px);
-    cursor: pointer;
+  }
 
-    svg {
-      width: pxToRem(16px);
-      height: pxToRem(16px);
-      margin-right: pxToRem(8px);
-      // lilac-09 icon with lilac-11 text matches mobile's trigger
-      // (Icon themeColor resolves to the ramp's step 9 there)
-      color: var(--sds-clr-lilac-09);
+  // The Wallet row's value: the account's avatar, then its name.
+  &__Wallet {
+    &__Avatar {
+      display: flex;
+      flex: none;
+      width: pxToRem(20px);
+      height: pxToRem(20px);
+    }
+
+    &__Name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
 
@@ -223,6 +223,12 @@
 
         &--memo {
           min-width: 0;
+        }
+
+        &--wallet {
+          min-width: 0;
+          align-items: center;
+          gap: pxToRem(8px);
         }
 
         .CopyValue {

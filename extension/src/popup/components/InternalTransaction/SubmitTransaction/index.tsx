@@ -15,6 +15,7 @@ import { AssetIcon } from "popup/components/account/AccountAssets";
 import { EnterPassword } from "popup/components/EnterPassword";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { Loading } from "popup/components/Loading";
+import { TransactionStatus } from "popup/components/TransactionStatus";
 
 import { useGetSubmitAccountData } from "./hooks/useGetSubmitAccountData";
 import { useSubmitTxData } from "./hooks/useSubmitTxData";
@@ -45,11 +46,24 @@ import "./styles.scss";
 interface SendingTransactionProps {
   xdr: string;
   goBack: () => void;
+  /**
+   * Overrides what "Done" does on success. Defaults to navigating home and
+   * resetting the submission — correct for Send and Swap as routes, but wrong
+   * when this screen is embedded in another flow that owns its own exit.
+   */
+  onDone?: () => void;
+  /**
+   * Overrides the in-flight "Close" button, which otherwise closes the popup
+   * outright. An embedding flow needs to stay open and dismiss its own step.
+   */
+  onClose?: () => void;
 }
 
 export const SendingTransaction = ({
   xdr,
   goBack,
+  onDone,
+  onClose,
 }: SendingTransactionProps) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -198,6 +212,10 @@ export const SendingTransaction = ({
                     variant="tertiary"
                     onClick={(e) => {
                       e.preventDefault();
+                      if (onClose) {
+                        onClose();
+                        return;
+                      }
                       window.close();
                     }}
                   >
@@ -231,6 +249,10 @@ export const SendingTransaction = ({
                     variant="secondary"
                     onClick={(e) => {
                       e.preventDefault();
+                      if (onDone) {
+                        onDone();
+                        return;
+                      }
                       navigateTo(ROUTES.account, navigate);
                       setTimeout(() => {
                         dispatch(resetSimulation());
@@ -245,33 +267,14 @@ export const SendingTransaction = ({
             </div>
           }
         >
-          <div className="SendingTransaction">
-            <div className="SendingTransaction__Title">
-              {isLoading ? (
-                <>
-                  <Loader size="2rem" />
-                  <span>{isSwap ? t("Swapping") : t("Sending")}</span>
-                </>
-              ) : (
-                <>
-                  <Icon.CheckCircle className="SendingTransaction__Title__Success" />
-                  <span>{isSwap ? t("Swapped!") : t("Sent!")}</span>
-                </>
-              )}
-            </div>
-            <div className="SendingTransaction__Summary">
-              <div
-                className={`SendingTransaction__Summary__Assets ${isCollectible ? "SendingTransaction__Summary__Assets--collectible" : ""}`}
-              >
-                {isCollectible ? (
-                  <div className="SendingTransaction__Summary__Assets__Image">
-                    <CollectibleInfoImage
-                      image={collectibleData.image}
-                      name={collectibleData.name}
-                      isSmall
-                    />
-                  </div>
-                ) : (
+          {isSwap && dstAsset ? (
+            // Main Swap and the swap inside Earn, as Varial draws them
+            // (1523:157348/157365, 4478:117063/117082).
+            <div className="SendingTransaction SendingTransaction--swap">
+              <TransactionStatus
+                isPending={isLoading}
+                title={isLoading ? t("Swap in progress") : t("Swap complete")}
+                fromIcon={
                   <AssetIcon
                     assetIcons={assetIcons}
                     code={srcAsset.code}
@@ -279,11 +282,8 @@ export const SendingTransaction = ({
                     icon={assetIcon}
                     isSuspicious={false}
                   />
-                )}
-                <div className="SendingTransaction__Summary__Assets__Divider">
-                  <Icon.ChevronRightDouble />
-                </div>
-                {isSwap && dstAsset ? (
+                }
+                toIcon={
                   <AssetIcon
                     assetIcons={dstAssetIcons}
                     code={dstAsset.code}
@@ -291,74 +291,91 @@ export const SendingTransaction = ({
                     icon={dstAssetIcon}
                     isSuspicious={false}
                   />
+                }
+                amount={`${amount} ${srcAsset.code}`}
+                verb={isLoading ? t("to") : t("was swapped for")}
+                target={`${formatAmount(trimTrailingZeros(destinationAmount))} ${dstAsset.code}`}
+                captionTestId="swap-status-caption"
+              />
+            </div>
+          ) : (
+            <div className="SendingTransaction">
+              <div className="SendingTransaction__Title">
+                {isLoading ? (
+                  <>
+                    <Loader size="2rem" />
+                    <span>{t("Sending")}</span>
+                  </>
                 ) : (
-                  <IdenticonImg publicKey={destination} />
+                  <>
+                    <Icon.CheckCircle className="SendingTransaction__Title__Success" />
+                    <span>{t("Sent!")}</span>
+                  </>
                 )}
               </div>
-              <div className="SendingTransaction__Summary__Description">
-                {isLoading && (
-                  <>
-                    <span className="SendingTransaction__Summary__Description__Label">
-                      {summaryDescriptionLabel}
-                    </span>
-                    {isSwap && dstAsset ? (
-                      <>
-                        <span className="SendingTransaction__Summary__Description__Label Verb">
-                          {`${t("to")} `}
-                        </span>
-                        <span className="SendingTransaction__Summary__Description__Label">
-                          {formatAmount(trimTrailingZeros(destinationAmount))}{" "}
-                          {dstAsset.code}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="SendingTransaction__Summary__Description__Label Verb">
-                          {`${t("to")} `}
-                        </span>
-                        <span className="SendingTransaction__Summary__Description__Label">
-                          {destinationDisplayLabel}
-                        </span>
-                      </>
-                    )}
-                  </>
-                )}
-                {isSuccess && (
-                  <>
-                    <span
-                      className="SendingTransaction__Summary__Description__Label"
-                      data-testid="sending-transaction-summary-description-label"
-                    >
-                      {summaryDescriptionLabel}
-                    </span>
-                    {isSwap && dstAsset ? (
-                      <>
-                        <span className="SendingTransaction__Summary__Description__Label Verb">
-                          {`${t("was swapped to")} `}
-                        </span>
-                        <span className="SendingTransaction__Summary__Description__Label">
-                          {formatAmount(trimTrailingZeros(destinationAmount))}{" "}
-                          {dstAsset.code}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="SendingTransaction__Summary__Description__Label Verb">
-                          {`${t("was sent to")} `}
-                        </span>
-                        <span
-                          className="SendingTransaction__Summary__Description__Label"
-                          data-testid="sending-transaction-summary-description-label-destination-address"
-                        >
-                          {destinationDisplayLabel}
-                        </span>
-                      </>
-                    )}
-                  </>
-                )}
+              <div className="SendingTransaction__Summary">
+                <div
+                  className={`SendingTransaction__Summary__Assets ${isCollectible ? "SendingTransaction__Summary__Assets--collectible" : ""}`}
+                >
+                  {isCollectible ? (
+                    <div className="SendingTransaction__Summary__Assets__Image">
+                      <CollectibleInfoImage
+                        image={collectibleData.image}
+                        name={collectibleData.name}
+                        isSmall
+                      />
+                    </div>
+                  ) : (
+                    <AssetIcon
+                      assetIcons={assetIcons}
+                      code={srcAsset.code}
+                      issuerKey={srcAsset.issuer}
+                      icon={assetIcon}
+                      isSuspicious={false}
+                    />
+                  )}
+                  <div className="SendingTransaction__Summary__Assets__Divider">
+                    <Icon.ChevronRightDouble />
+                  </div>
+                  <IdenticonImg publicKey={destination} />
+                </div>
+                <div className="SendingTransaction__Summary__Description">
+                  {isLoading && (
+                    <>
+                      <span className="SendingTransaction__Summary__Description__Label">
+                        {summaryDescriptionLabel}
+                      </span>
+                      <span className="SendingTransaction__Summary__Description__Label Verb">
+                        {`${t("to")} `}
+                      </span>
+                      <span className="SendingTransaction__Summary__Description__Label">
+                        {destinationDisplayLabel}
+                      </span>
+                    </>
+                  )}
+                  {isSuccess && (
+                    <>
+                      <span
+                        className="SendingTransaction__Summary__Description__Label"
+                        data-testid="sending-transaction-summary-description-label"
+                      >
+                        {summaryDescriptionLabel}
+                      </span>
+                      <span className="SendingTransaction__Summary__Description__Label Verb">
+                        {`${t("was sent to")} `}
+                      </span>
+                      <span
+                        className="SendingTransaction__Summary__Description__Label"
+                        data-testid="sending-transaction-summary-description-label-destination-address"
+                      >
+                        {destinationDisplayLabel}
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </View.Content>
       )}
     </>
@@ -368,21 +385,34 @@ export const SendingTransaction = ({
 export const TransactionConfirm = ({
   xdr,
   goBack,
+  onDone,
+  onClose,
+  onDismissError,
 }: {
   xdr: string;
   goBack: () => void;
+  onDone?: () => void;
+  onClose?: () => void;
+  onDismissError?: () => void;
 }) => {
   const submission = useSelector(transactionSubmissionSelector);
 
   const render = () => {
     switch (submission.submitStatus) {
       case ActionStatus.ERROR:
-        return <SubmitFail />;
+        return <SubmitFail onDismiss={onDismissError} />;
       case ActionStatus.IDLE:
       case ActionStatus.PENDING:
       case ActionStatus.SUCCESS:
       default:
-        return <SendingTransaction xdr={xdr} goBack={goBack} />;
+        return (
+          <SendingTransaction
+            xdr={xdr}
+            goBack={goBack}
+            onDone={onDone}
+            onClose={onClose}
+          />
+        );
     }
   };
 

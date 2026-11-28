@@ -155,6 +155,8 @@ describe("Swap flow stage telemetry", () => {
       expect(emitScreenViewedMock).toHaveBeenCalledWith("swap_processing", {
         flow: "swap",
         step: "processing",
+        // Opened from Home's Swap tile.
+        source: "home",
       });
     });
     expect(callsFor("swap_processing")).toHaveLength(1);
@@ -171,6 +173,8 @@ describe("Swap flow stage telemetry", () => {
       expect(emitScreenViewedMock).toHaveBeenCalledWith("swap_success", {
         flow: "swap",
         step: "success",
+        // Opened from Home's Swap tile.
+        source: "home",
       });
     });
     expect(callsFor("swap_success")).toHaveLength(1);

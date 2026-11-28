@@ -1,23 +1,19 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ActionStatus } from "@shared/api/types";
-import { STEPS, isSwapSource } from "popup/constants/swap";
-import {
-  emitMetric,
-  emitScreenViewed,
-  ScreenViewedProps,
-} from "helpers/metrics";
+import { STEPS, SwapSource, isSwapSource } from "popup/constants/swap";
+import { emitMetric, emitScreenViewed } from "helpers/metrics";
 import { InputType } from "helpers/transaction";
 import { TransactionConfirm } from "popup/components/InternalTransaction/SubmitTransaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { getQuoteExpiredOperationCodes } from "popup/helpers/quoteExpiry";
 import { SwapAsset } from "popup/components/swap/SwapAsset";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
+import { useSwapSubmitScreenViews } from "popup/components/swap/hooks/useSwapSubmitScreenViews";
+import { SWAP_SCREEN_BY_STEP, swapSourceProps } from "popup/metrics/swap";
+import { useSwapSubmitQuoteExpiry } from "popup/components/swap/hooks/useSwapSubmitQuoteExpiry";
 import { AppDispatch, AppState } from "popup/App";
 import {
   resetSubmission,
-  resetSubmitStatus,
   saveAmount,
   saveAmountUsd,
   saveAsset,
@@ -42,35 +38,20 @@ import {
   NETWORKS,
 } from "@shared/constants/stellar";
 
-// Each swap sub-step emits the consolidated `screen.viewed` event; the step's
-// identity lives in `screen_name`, declared as a literal below.
-const SWAP_SCREEN_BY_STEP: Partial<
-  Record<STEPS, { screen_name: string } & ScreenViewedProps>
-> = {
-  // STEPS.SWAP_CONFIRM is deliberately absent. It renders the submitting
-  // screen, which the user only reaches after approving, so it is not the
-  // `confirm` stage — SwapAmount's review modal is, and it emits
-  // `swap_confirm` itself. This screen's own stages are covered by the
-  // submitStatus effect below (processing, then success).
-  [STEPS.SET_DST_ASSET]: { screen_name: "swap_to_asset", flow: "swap" },
-  [STEPS.AMOUNT]: { screen_name: "swap_amount", flow: "swap" },
-  [STEPS.CONFIRM_AMOUNT]: { screen_name: "swap_amount_review", flow: "swap" },
-  [STEPS.SET_FROM_ASSET]: { screen_name: "swap_from_asset", flow: "swap" },
-};
-
 export const Swap = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const location = useLocation();
   const [activeStep, setActiveStep] = useState(STEPS.AMOUNT);
   const lastEmittedStep = useRef<STEPS | null>(null);
-  const hasEmittedProcessing = useRef(false);
-  const hasEmittedSuccess = useRef(false);
-  // The submission status lives in the store, so it outlives this component.
-  // A mount that finds a stale terminal status would report a stage the user
-  // never reached, so wait until the status has been seen idle. The reset
-  // this component dispatches on mount guarantees that happens.
-  const hasSeenIdle = useRef(false);
+  // Where the swap was opened from, read off the URL rather than the store:
+  // the first screen view fires before the mount effect saves it there.
+  // Whitelisted so arbitrary query values never reach analytics; anything
+  // else, or no param at all, is Home's Swap tile.
+  const swapSource = useMemo(() => {
+    const sourceParam = new URLSearchParams(location.search).get("source");
+    return isSwapSource(sourceParam) ? sourceParam : SwapSource.Home;
+  }, [location.search]);
 
   // Emit a screen-view metric only once per step transition.
   useEffect(() => {
@@ -80,8 +61,12 @@ export const Swap = () => {
     const screen = SWAP_SCREEN_BY_STEP[activeStep];
     if (screen) {
       const { screen_name, ...props } = screen;
-      emitScreenViewed(screen_name, props);
+      emitScreenViewed(screen_name, {
+        ...props,
+        ...swapSourceProps(swapSource),
+      });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeStep]);
 
   const submission = useSelector(transactionSubmissionSelector);
@@ -90,30 +75,9 @@ export const Swap = () => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const store = useStore<AppState>();
 
-  // Quote expired at submit (op_under_dest_min / op_too_few_offers): recover to
-  // the review screen with a fresh quote instead of dead-ending in SubmitFail.
-  const isQuoteExpiredAtSubmit =
-    submission.submitStatus === ActionStatus.ERROR &&
-    submission.isSwapQuoteExpired;
-  useEffect(() => {
-    if (!isQuoteExpiredAtSubmit) {
-      return;
-    }
-    // Amounts intentionally dropped (parity with swap.completed/failed, which
-    // carry no amounts). Assets are bare codes (getAssetFromCanonical) so
-    // from_asset_code/to_asset_code match mobile rather than being canonical ids.
-    emitMetric(METRIC_NAMES.swapQuoteExpired, {
-      from_asset_code: getAssetFromCanonical(transactionData.asset).code,
-      to_asset_code: getAssetFromCanonical(transactionData.destinationAsset)
-        .code,
-      result_code: getQuoteExpiredOperationCodes(submission.error).join(", "),
-    });
-    // Clear only the ERROR status (keep the transaction data + the
-    // isSwapQuoteExpired flag, which drives the amount-screen notification).
-    dispatch(resetSubmitStatus());
-    setActiveStep(STEPS.AMOUNT);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isQuoteExpiredAtSubmit]);
+  const { isQuoteExpiredAtSubmit } = useSwapSubmitQuoteExpiry({
+    onRecover: () => setActiveStep(STEPS.AMOUNT),
+  });
 
   const [inputType, setInputType] = useState<InputType>("crypto");
   // Children fetch in their own mount effects, and React runs child effects
@@ -146,11 +110,7 @@ export const Swap = () => {
       dispatch(saveIsToken(false));
     }
 
-    // Whitelisted so arbitrary query values never reach analytics.
-    const sourceParam = params.get("source");
-    if (isSwapSource(sourceParam)) {
-      dispatch(saveSwapSource(sourceParam));
-    }
+    dispatch(saveSwapSource(swapSource));
 
     // Pre-populate destination asset if provided and valid; otherwise default
     // to the network's USDC — or to native when the flow starts from USDC
@@ -200,40 +160,10 @@ export const Swap = () => {
     return () => {
       isCancelled = true;
     };
-  }, [dispatch, location.search, networkDetails.network, store]);
+  }, [dispatch, location.search, networkDetails.network, store, swapSource]);
 
-  // The in-flight submission and its terminal success are internal states of
-  // the submitting screen rather than distinct steps/routes, so emit their
-  // `screen.viewed` here as the submission status advances. Mirrors the send
-  // flow's effect so both internal flows report the same stages. Each emits
-  // once per submission; the guards reset on IDLE and on ERROR, so a retry
-  // after a failure re-emits.
-  useEffect(() => {
-    if (!hasSeenIdle.current && submission.submitStatus !== ActionStatus.IDLE) {
-      return;
-    }
-    if (submission.submitStatus === ActionStatus.PENDING) {
-      if (!hasEmittedProcessing.current) {
-        hasEmittedProcessing.current = true;
-        emitScreenViewed("swap_processing", {
-          flow: "swap",
-          step: "processing",
-        });
-      }
-    } else if (submission.submitStatus === ActionStatus.SUCCESS) {
-      if (!hasEmittedSuccess.current) {
-        hasEmittedSuccess.current = true;
-        emitScreenViewed("swap_success", { flow: "swap", step: "success" });
-      }
-    } else if (
-      submission.submitStatus === ActionStatus.IDLE ||
-      submission.submitStatus === ActionStatus.ERROR
-    ) {
-      hasSeenIdle.current = true;
-      hasEmittedProcessing.current = false;
-      hasEmittedSuccess.current = false;
-    }
-  }, [submission.submitStatus]);
+  // The submission's processing and success screen views.
+  useSwapSubmitScreenViews(swapSource);
 
   const renderStep = (step: STEPS) => {
     switch (step) {
@@ -276,7 +206,8 @@ export const Swap = () => {
                 asset_code: details?.tokenCode,
                 asset_issuer: details?.issuer,
                 requires_trustline: details?.requiresTrustline,
-                source: details?.source,
+                list: details?.source,
+                ...swapSourceProps(swapSource),
               });
               setActiveStep(STEPS.AMOUNT);
             }}
@@ -335,7 +266,8 @@ export const Swap = () => {
               emitMetric(METRIC_NAMES.swapSourceSelected, {
                 asset_code: getAssetFromCanonical(canonical).code,
                 asset_issuer: getAssetFromCanonical(canonical).issuer,
-                source: "balances",
+                list: "balances",
+                ...swapSourceProps(swapSource),
               });
               setActiveStep(STEPS.AMOUNT);
             }}

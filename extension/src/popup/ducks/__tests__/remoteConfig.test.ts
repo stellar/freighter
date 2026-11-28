@@ -6,6 +6,7 @@ import {
   maintenanceScreenSelector,
   isRemoteConfigInitializedSelector,
   balancesV2Selector,
+  earnDepositSelector,
   tokenPriceHistoryEnabledSelector,
   reducer,
 } from "../remoteConfig";
@@ -393,6 +394,84 @@ describe("remoteConfig selectors", () => {
     const store = makeStore();
     await store.dispatch(fetchFeatureFlags());
     expect(balancesV2Selector(store.getState())).toBe(false);
+  });
+
+  describe("earnDepositSelector in a dev build (defaults on, fails closed)", () => {
+    it("is false before the flags settle, although the flag defaults to true", () => {
+      const store = makeStore();
+      expect(getState(store).earn_deposit).toBe(true);
+      expect(earnDepositSelector(store.getState())).toBe(false);
+    });
+
+    it("is true once the flags settle with the flag omitted", async () => {
+      (getExperimentClient as jest.Mock).mockReturnValue(makeClient());
+
+      const store = makeStore();
+      await store.dispatch(fetchFeatureFlags());
+      expect(earnDepositSelector(store.getState())).toBe(true);
+    });
+
+    it("is false when the variant is off", async () => {
+      (getExperimentClient as jest.Mock).mockReturnValue(
+        makeClient({ earn_deposit: { value: "off" } }),
+      );
+
+      const store = makeStore();
+      await store.dispatch(fetchFeatureFlags());
+      expect(earnDepositSelector(store.getState())).toBe(false);
+    });
+  });
+
+  describe("earnDepositSelector in a production build (defaults off)", () => {
+    // DEV_EXTENSION is read when the duck loads, so load a copy built as
+    // production, with its own instance of the mocked experiment client.
+    const loadProductionDuck = () => {
+      let duck!: typeof import("../remoteConfig");
+      let experiment!: typeof import("helpers/experimentClient");
+      jest.isolateModules(() => {
+        jest.doMock("@shared/constants/services", () => ({
+          ...jest.requireActual("@shared/constants/services"),
+          DEV_EXTENSION: false,
+        }));
+        duck = require("../remoteConfig");
+        experiment = require("helpers/experimentClient");
+      });
+      const store = configureStore({
+        reducer: { remoteConfig: duck.reducer },
+      });
+      return { duck, experiment, store };
+    };
+
+    it("stays off once the flags settle with the flag omitted", async () => {
+      const { duck, experiment, store } = loadProductionDuck();
+      (experiment.getExperimentClient as jest.Mock).mockReturnValue(
+        makeClient(),
+      );
+
+      expect(store.getState().remoteConfig.earn_deposit).toBe(false);
+      await store.dispatch(duck.fetchFeatureFlags());
+      expect(duck.earnDepositSelector(store.getState())).toBe(false);
+    });
+
+    it("stays off when the flag fetch rejects", async () => {
+      const { duck, experiment, store } = loadProductionDuck();
+      const client = makeClient();
+      client.fetch.mockRejectedValue(new Error("Amplitude unreachable"));
+      (experiment.getExperimentClient as jest.Mock).mockReturnValue(client);
+
+      await store.dispatch(duck.fetchFeatureFlags());
+      expect(duck.earnDepositSelector(store.getState())).toBe(false);
+    });
+
+    it("turns on when the variant is on", async () => {
+      const { duck, experiment, store } = loadProductionDuck();
+      (experiment.getExperimentClient as jest.Mock).mockReturnValue(
+        makeClient({ earn_deposit: { value: "on" } }),
+      );
+
+      await store.dispatch(duck.fetchFeatureFlags());
+      expect(duck.earnDepositSelector(store.getState())).toBe(true);
+    });
   });
 
   describe("tokenPriceHistoryEnabledSelector (kill switch, fails closed)", () => {

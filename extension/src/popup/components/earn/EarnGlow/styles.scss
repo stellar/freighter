@@ -1,0 +1,13 @@
+@use "../../../styles/utils.scss" as *;
+
+// The design's 401px disc of #6AF17F at 15% under a 100px Gaussian, the same in
+// both themes: at that opacity it reads as a pale wash on white and a deep one
+// on black. The blur paints past the element's box, and the hosts clip it.
+.EarnGlow {
+  width: pxToRem(401);
+  height: pxToRem(401);
+  border-radius: 50%;
+  background: rgba(106, 241, 127, 0.15);
+  filter: blur(#{pxToRem(100)});
+  pointer-events: none;
+}

@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { FeesPane } from "../index";
+import { FeesPane, buildFeesPaneTotal } from "../index";
 import { RequestState } from "constants/request";
 import type { State } from "constants/request";
 import type { SimulateTxData } from "types/transactions";
@@ -168,5 +168,15 @@ describe("FeesPane", () => {
         `${BASE_FEE} XLM`,
       );
     });
+  });
+});
+
+describe("buildFeesPaneTotal", () => {
+  it("adds the simulated resource fee to the inclusion fee", () => {
+    expect(buildFeesPaneTotal("0.00001", "0.0546")).toBe("0.05461");
+  });
+
+  it("is the inclusion fee alone when there is no resource fee", () => {
+    expect(buildFeesPaneTotal("0.00001", undefined)).toBe("0.00001");
   });
 });

@@ -72,6 +72,13 @@
     &:hover {
       background-color: var(--sds-clr-gray-04);
     }
+
+    // Rendered in place of the button when the direction cannot be flipped: the
+    // seam still needs its notch, but there is nothing to press.
+    &--static {
+      cursor: default;
+      pointer-events: none;
+    }
   }
 
   &__percentage-buttons {

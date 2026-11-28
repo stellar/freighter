@@ -996,7 +996,9 @@ export const accountNameSelector = createSelector(
   publicKeySelector,
   allAccountsSelector,
   (publicKey, allAccounts) => {
-    const { name } = allAccounts.find(
+    // Tolerates an account saved without its list, so a screen that names the
+    // account (the Send and Swap reviews do) never fails on it.
+    const { name } = (allAccounts || []).find(
       ({ publicKey: accountPublicKey }) => accountPublicKey === publicKey,
     ) || { publicKey: "", name: "" };
 

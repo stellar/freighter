@@ -1,0 +1,197 @@
+@use "../../../styles/utils.scss" as *;
+
+// Figma: Varial 4464:110863 "Choose a token". Structured like EarnIntro rather
+// than View/SubviewHeader — the design's header is a bare close icon with the
+// title in the body, which View's centred app header cannot express.
+.EarnTokenPicker {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: pxToRem(24) pxToRem(24) 0;
+  overflow: hidden;
+
+  // The X sits 16px in from the left edge.
+  &__header {
+    flex: 0 0 auto;
+    display: flex;
+    padding-bottom: pxToRem(24);
+    margin-left: pxToRem(-8);
+  }
+
+  // One column with 24px between its blocks, the footnote included, scrolling
+  // as a whole. The fade at the bottom stands in for View.Content's.
+  &__content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(24);
+    padding-bottom: pxToRem(24);
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      black calc(100% - #{pxToRem(16)}),
+      transparent
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      black calc(100% - #{pxToRem(16)}),
+      transparent
+    );
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  &__copy {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(4);
+  }
+
+  // Text/MD/500.
+  &__title {
+    margin: 0;
+    @include text(md, medium);
+    color: var(--sds-clr-gray-12);
+  }
+
+  // Text/XS/400.
+  &__subtitle {
+    margin: 0;
+    @include text(xs);
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__deposit-into {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: pxToRem(8);
+  }
+
+  // Text/XS/500.
+  &__label {
+    @include text(xs, medium);
+    color: var(--sds-clr-gray-11);
+  }
+
+  // The chip hugs its content: mark, "Blend · <pool>", then the external-link
+  // glyph 8px after the text.
+  &__protocol {
+    display: inline-flex;
+    align-items: center;
+    gap: pxToRem(4);
+    height: pxToRem(32);
+    padding: pxToRem(4) pxToRem(10);
+    border: none;
+    border-radius: pxToRem(8);
+    background: var(--sds-clr-gray-03);
+    color: var(--sds-clr-gray-12);
+    cursor: pointer;
+
+    .PoolIcon {
+      border-radius: pxToRem(4);
+    }
+
+    svg {
+      width: pxToRem(14);
+      height: pxToRem(14);
+      margin-left: pxToRem(4);
+      color: var(--sds-clr-gray-09);
+      flex: none;
+    }
+  }
+
+  // Text/SM/500.
+  &__protocol-name {
+    @include text(sm, medium);
+    white-space: nowrap;
+  }
+
+  // Stands in for the held section when the account holds none of the pool's
+  // reserves. Figma 13701:332629.
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(4);
+    color: var(--sds-clr-gray-12);
+  }
+
+  // Figma's Text/SM/400, which is 14/20 where SDS's Text--sm is 14/22.
+  &__empty-body {
+    @include text(sm);
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__sections {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(24);
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8);
+  }
+
+  // Text/SM/500.
+  &__section-title {
+    margin: 0;
+    @include text(sm, medium);
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__rows {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8);
+  }
+
+  // The shared row supplies the structure and type the mock draws — icon, name
+  // over balance, right slot — so only the card and spacing differ.
+  .BalanceRow {
+    padding: pxToRem(12) pxToRem(16);
+    border-radius: pxToRem(16);
+    background: var(--sds-clr-gray-03);
+  }
+
+  .BalanceRow__value {
+    gap: 0;
+  }
+
+  // The shared 32px icon, 16px from the text, with the mock's 1px ring drawn
+  // over the artwork so the icon keeps its box.
+  .BalanceRow__left .AccountAssets__asset--logo {
+    margin-right: pxToRem(16);
+
+    @include asset-logo-ring;
+  }
+
+  // Text/XS/500 on a pale green pill.
+  &__apy {
+    background: var(--sds-clr-green-04);
+    color: var(--sds-clr-green-11);
+    border-radius: pxToRem(100);
+    padding: pxToRem(4) pxToRem(6);
+    @include text(xs, medium);
+    white-space: nowrap;
+  }
+
+  &__loader {
+    display: flex;
+    justify-content: center;
+    padding-top: pxToRem(48);
+  }
+
+  // Text/XS/400, flowing after the last section.
+  &__disclaimer {
+    margin: 0;
+    @include text(xs);
+    color: var(--sds-clr-gray-11);
+  }
+}

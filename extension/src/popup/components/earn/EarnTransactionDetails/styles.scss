@@ -1,0 +1,22 @@
+@use "../../../styles/utils.scss" as *;
+
+// The header is SheetLayout's, pinned while the breakdown scrolls (the
+// invocation routinely outgrows the popup).
+.EarnTransactionDetails {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(12);
+
+  // The summary on the card every other host of these pieces gives it
+  // (ReviewTx__TxDetails__Summary, SignTransaction).
+  &__summary {
+    padding: pxToRem(12);
+    border-radius: pxToRem(16);
+    background-color: var(--sds-clr-gray-03);
+
+    > div:not(:first-child) {
+      margin-top: pxToRem(16);
+      color: var(--sds-clr-gray-11);
+    }
+  }
+}

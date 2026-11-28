@@ -63,7 +63,10 @@ import { newTabHref } from "helpers/urls";
 import { AMOUNT_ERROR, InputType } from "helpers/transaction";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { EditSettings } from "popup/components/InternalTransaction/EditSettings";
-import { FeesPane } from "popup/components/InternalTransaction/FeesPane";
+import {
+  FeesPane,
+  buildFeesPaneTotal,
+} from "popup/components/InternalTransaction/FeesPane";
 import { EditMemo } from "popup/components/InternalTransaction/EditMemo";
 import { ReviewTx } from "popup/components/InternalTransaction/ReviewTransaction";
 import { AddressTile } from "popup/components/send/AddressTile";
@@ -77,6 +80,11 @@ import { SlideupModal } from "popup/components/SlideupModal";
 import { MemoEditingContext } from "popup/constants/send-payment";
 import { AmountCard } from "popup/components/amount/AmountCard";
 import { PercentageButtons } from "popup/components/amount/PercentageButtons";
+import { getPercentageAmount } from "popup/components/amount/helpers/percentageAmount";
+import {
+  DEFAULT_AMOUNT,
+  DEFAULT_AMOUNT_USD,
+} from "popup/components/amount/constants";
 import {
   checkIsMuxedSupported,
   getMemoDisabledState,
@@ -85,19 +93,6 @@ import { captureException } from "@sentry/browser";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import "../styles.scss";
-
-// Returns the value to show in FeesPane's total row given the user's current
-// draft inclusion fee and the simulated resource fee.  For classic (no
-// resource fee) the inclusion fee IS the total.
-function buildFeesPaneTotal(
-  inclusionFee: string,
-  resourceFee: string | undefined,
-): string {
-  if (!resourceFee) {
-    return inclusionFee;
-  }
-  return new BigNumber(inclusionFee).plus(resourceFee).toFixed();
-}
 
 export const SendAmount = ({
   goBack,
@@ -627,8 +622,8 @@ export const SendAmount = ({
   const goBackAction = () => {
     dispatch(saveAsset("native"));
     dispatch(saveIsToken(false));
-    dispatch(saveAmount("0"));
-    dispatch(saveAmountUsd("0.00"));
+    dispatch(saveAmount(DEFAULT_AMOUNT));
+    dispatch(saveAmountUsd(DEFAULT_AMOUNT_USD));
     // Clear any manually-saved fee so the next send session always starts from
     // the simulated base fee rather than a stale override.
     dispatch(saveTransactionFee(""));
@@ -667,10 +662,11 @@ export const SendAmount = ({
     // Always a fraction of the crypto available balance, so the committed
     // amount is identical in crypto and fiat display. In fiat mode the fiat
     // field mirrors it (rounded to cents) for display only.
-    const pctAmount = new BigNumber(cleanAmount(availableBalance))
-      .multipliedBy(new BigNumber(pct).dividedBy(100))
-      .decimalPlaces(assetDecimals)
-      .toString();
+    const pctAmount = getPercentageAmount({
+      availableBalance: cleanAmount(availableBalance),
+      pct,
+      decimals: assetDecimals,
+    });
     formik.setFieldValue("amount", pctAmount);
     dispatch(saveAmount(pctAmount));
     if (inputType === "fiat" && assetPrice) {

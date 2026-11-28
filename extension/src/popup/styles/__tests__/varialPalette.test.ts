@@ -112,6 +112,19 @@ const ALLOWED_RAW_COLORS: Record<string, string[]> = {
     "rgba(33, 33, 33, 0.83)",
     "rgba(153, 153, 153, 0.15)",
   ],
+  // Earn intro artwork (Varial 4464:110421 and 4478:117384): the glow is the
+  // same translucent green in both themes, and the sparkles around the Blend
+  // mark are illustration colours, a light and a dark set. No SDS token
+  // carries them.
+  "popup/components/earn/EarnGlow/styles.scss": ["rgba(106, 241, 127, 0.15)"],
+  "popup/components/earn/EarnIntro/styles.scss": [
+    "#a8c6ff",
+    "#d8f3f6",
+    "#5bb98c",
+    "#19478d",
+    "#07303b",
+    "#236e4a",
+  ],
   // Home's empty card: Figma's Empty (1429:165964) fills the light card with
   // this raw hex rather than a token, as mobile's EmptyState does.
   "popup/components/account/HomeEmptyState/styles.scss": ["#f5f7f9"],

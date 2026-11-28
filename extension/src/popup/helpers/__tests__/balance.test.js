@@ -3,7 +3,14 @@ import BigNumber from "bignumber.js";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 
-import { getBalanceByKey, findAssetBalance, sortBalancesByValue, getBalanceCanonicalKey, getTotalUsd, getTotalInWholeUnits } from "../balance";
+import {
+  getBalanceByKey,
+  findAssetBalance,
+  sortBalancesByValue,
+  getBalanceCanonicalKey,
+  getTotalUsd,
+  getTotalInWholeUnits,
+} from "../balance";
 
 const CONTRACT_ID = "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC";
 const TOKEN_BALANCE_KEY = `DT:${CONTRACT_ID}`;
@@ -107,7 +114,8 @@ describe("sortBalancesByValue", () => {
     total: new BigNumber("50"),
     available: new BigNumber("50"),
   };
-  const USDC_ISSUER = "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
+  const USDC_ISSUER =
+    "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
   const USDC = {
     token: { code: "USDC", issuer: { key: USDC_ISSUER } },
     total: new BigNumber("100"),
@@ -214,14 +222,18 @@ describe("getBalanceCanonicalKey", () => {
   const CLASSIC_USDC = {
     token: {
       code: "USDC",
-      issuer: { key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM" },
+      issuer: {
+        key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      },
     },
     total: new BigNumber("100"),
   };
   const SOROBAN = {
     token: {
       code: "DT",
-      issuer: { key: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC" },
+      issuer: {
+        key: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+      },
     },
     contractId: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
     total: new BigNumber("1"),
@@ -274,7 +286,8 @@ describe("getBalanceCanonicalKey", () => {
 describe("SEP-41 balances are valued in whole units", () => {
   const SOLVBTC_ID = "CBIJBDNZNF4X35BJ4FFZWCDBSCKOP5NB4PLG4SNENRMLAPYG4P5FM6VN";
   const SOLVBTC_CANONICAL = `SolvBTC:${SOLVBTC_ID}`;
-  const USDC_ISSUER = "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
+  const USDC_ISSUER =
+    "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
   const USDC_CANONICAL = `USDC:${USDC_ISSUER}`;
   // Raw i128 227 at 8 decimals = 0.00000227 SolvBTC ≈ $0.185.
   const SOLVBTC = {
@@ -310,9 +323,18 @@ describe("SEP-41 balances are valued in whole units", () => {
 
 describe("getTotalInWholeUnits", () => {
   it("leaves the raw total unscaled when decimals isn't a positive number, like the display", () => {
-    const base = { contractId: "CBIJBDNZNF4X35BJ4FFZWCDBSCKOP5NB4PLG4SNENRMLAPYG4P5FM6VN", total: new BigNumber(227) };
-    expect(getTotalInWholeUnits({ ...base, decimals: undefined }).toString()).toBe("227");
-    expect(getTotalInWholeUnits({ ...base, decimals: 0 }).toString()).toBe("227");
-    expect(getTotalInWholeUnits({ ...base, decimals: 8 }).toString()).toBe("0.00000227");
+    const base = {
+      contractId: "CBIJBDNZNF4X35BJ4FFZWCDBSCKOP5NB4PLG4SNENRMLAPYG4P5FM6VN",
+      total: new BigNumber(227),
+    };
+    expect(
+      getTotalInWholeUnits({ ...base, decimals: undefined }).toString(),
+    ).toBe("227");
+    expect(getTotalInWholeUnits({ ...base, decimals: 0 }).toString()).toBe(
+      "227",
+    );
+    expect(getTotalInWholeUnits({ ...base, decimals: 8 }).toString()).toBe(
+      "0.00000227",
+    );
   });
 });

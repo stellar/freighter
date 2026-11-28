@@ -6,6 +6,8 @@ import { Notification } from "@stellar/design-system";
 import { getAssetFromCanonical } from "@shared/helpers/stellar";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { SwapSource } from "popup/constants/swap";
+import { swapSourceProps } from "popup/metrics/swap";
 
 interface UseSwapQuoteExpiryParams {
   /** In-screen expiry flagged by the simulate hook (op_under_dest_min / op_too_few_offers). */
@@ -14,6 +16,8 @@ interface UseSwapQuoteExpiryParams {
   isSwapQuoteExpired: boolean;
   asset: string;
   destinationAsset: string;
+  /** Where the swap was opened from, tagged on the metric. */
+  swapSource: SwapSource | null;
 }
 
 /**
@@ -26,6 +30,7 @@ export const useSwapQuoteExpiry = ({
   isSwapQuoteExpired,
   asset,
   destinationAsset,
+  swapSource,
 }: UseSwapQuoteExpiryParams) => {
   const { t } = useTranslation();
 
@@ -61,6 +66,7 @@ export const useSwapQuoteExpiry = ({
     emitMetric(METRIC_NAMES.swapQuoteExpired, {
       from_asset_code: getAssetFromCanonical(asset).code,
       to_asset_code: getAssetFromCanonical(destinationAsset).code,
+      ...swapSourceProps(swapSource),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isQuoteExpired]);

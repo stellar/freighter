@@ -332,20 +332,12 @@ describe("decodeSwapTx", () => {
 
     it("refuses a transfer of a token other than the one sold", () => {
       expect(() =>
-        decodeToken(
-          sorobanTx(OTHER_CONTRACT, BigInt(1)),
-          TOKEN,
-          USDC,
-          18,
-          "1",
-        ),
+        decodeToken(sorobanTx(OTHER_CONTRACT, BigInt(1)), TOKEN, USDC, 18, "1"),
       ).toThrow(/transfer/);
     });
 
     it("refuses a classic path payment for a contract token", () => {
-      expect(() =>
-        decodeToken(classicTx(), "native", TOKEN, 7, "10"),
-      ).toThrow(
+      expect(() => decodeToken(classicTx(), "native", TOKEN, 7, "10")).toThrow(
         /does not match/,
       );
     });

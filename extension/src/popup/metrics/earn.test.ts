@@ -1,0 +1,370 @@
+import { emitMetric } from "helpers/metrics";
+import { PriceFreshness, PriceSource } from "helpers/confirmationPriceSnapshot";
+import {
+  AssetKind,
+  buildSourceLegUsdProps,
+  FailureCategory,
+} from "helpers/usdVolume";
+import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
+import { NETWORKS } from "@shared/constants/stellar";
+import { NotEnoughVariant } from "popup/constants/earn";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
+
+import {
+  trackEarnBalanceInsufficientShown,
+  trackEarnDepositDismissed,
+  trackEarnDepositCompleted,
+  trackEarnDepositFailed,
+  trackEarnFundingActionSelected,
+  trackEarnPercentAmountSelected,
+  trackEarnPoolDetailsOpened,
+  trackEarnPoolFrozenInfoOpened,
+  trackEarnSimulationFailed,
+  trackEarnTokenSelected,
+  trackEarnXlmFeeInsufficientShown,
+  POOL_FROZEN_INFO_SOURCE,
+} from "./earn";
+
+jest.mock("helpers/metrics", () => ({
+  emitMetric: jest.fn(),
+}));
+
+const mockEmitMetric = emitMetric as jest.MockedFunction<typeof emitMetric>;
+
+const POOL_ID = BLEND_FIXED_POOL_IDS[NETWORKS.PUBLIC]!;
+
+describe("Earn funnel metrics", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("tags every earn event with its protocol", () => {
+    trackEarnPoolDetailsOpened({ poolId: POOL_ID });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnPoolDetailsOpened,
+      expect.objectContaining({ protocol: "blend" }),
+    );
+  });
+
+  it("reports the token selection with its pool and rate", () => {
+    trackEarnTokenSelected({
+      assetCode: "USDC",
+      poolId: POOL_ID,
+      apy: 0.1694,
+    });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnTokenSelected,
+      {
+        protocol: "blend",
+        asset_code: "USDC",
+        pool_id: POOL_ID,
+        apy: 0.1694,
+      },
+    );
+  });
+
+  it("keeps a null rate null rather than coercing it to zero", () => {
+    trackEarnTokenSelected({ assetCode: "EURC", poolId: POOL_ID, apy: null });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnTokenSelected,
+      {
+        protocol: "blend",
+        asset_code: "EURC",
+        pool_id: POOL_ID,
+        apy: null,
+      },
+    );
+  });
+
+  it("reports the insufficient-balance sheet with the variant shown", () => {
+    trackEarnBalanceInsufficientShown({
+      assetCode: "EURC",
+      variant: NotEnoughVariant.SWAP_OR_TRANSFER,
+    });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnBalanceInsufficientShown,
+      {
+        protocol: "blend",
+        asset_code: "EURC",
+        variant: "swap-or-transfer",
+      },
+    );
+  });
+
+  it.each(["buy", "swap", "transfer"] as const)(
+    "reports the %s remedy",
+    (action) => {
+      trackEarnFundingActionSelected({ assetCode: "USDC", action });
+
+      expect(mockEmitMetric).toHaveBeenCalledWith(
+        METRIC_NAMES.earnFundingActionSelected,
+        {
+          protocol: "blend",
+          asset_code: "USDC",
+          action,
+        },
+      );
+    },
+  );
+
+  it("tells the two XLM-fee shortfalls apart", () => {
+    // Same drop-off, different remedy: one account has no XLM at all and gets
+    // the buy/swap sheet, the other allocated it all to the deposit.
+    trackEarnXlmFeeInsufficientShown({ assetCode: "USDC", reason: "no_xlm" });
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnXlmFeeInsufficientShown,
+      {
+        protocol: "blend",
+        asset_code: "USDC",
+        reason: "no_xlm",
+      },
+    );
+
+    trackEarnXlmFeeInsufficientShown({
+      assetCode: "XLM",
+      reason: "fee_not_covered",
+    });
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnXlmFeeInsufficientShown,
+      {
+        protocol: "blend",
+        asset_code: "XLM",
+        reason: "fee_not_covered",
+      },
+    );
+  });
+
+  it("reports a simulation failure with its reason", () => {
+    trackEarnSimulationFailed({
+      assetCode: "XLM",
+      reasonCode: "simulation failed",
+    });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnSimulationFailed,
+      {
+        protocol: "blend",
+        asset_code: "XLM",
+        reason_code: "simulation failed",
+      },
+    );
+  });
+
+  it("reports the pool details opened, with the pool", () => {
+    trackEarnPoolDetailsOpened({ poolId: POOL_ID });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnPoolDetailsOpened,
+      {
+        protocol: "blend",
+        pool_id: POOL_ID,
+      },
+    );
+  });
+
+  it("reports which frozen pool's sheet opened, its status and screen", () => {
+    trackEarnPoolFrozenInfoOpened({
+      poolId: POOL_ID,
+      poolStatus: "FROZEN",
+      source: POOL_FROZEN_INFO_SOURCE.EARN_SELECT_TOKEN,
+    });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnPoolFrozenInfoOpened,
+      {
+        protocol: "blend",
+        pool_id: POOL_ID,
+        pool_status: "FROZEN",
+        source: "earn_select_token",
+      },
+    );
+  });
+
+  it("reports Max as percent 100", () => {
+    trackEarnPercentAmountSelected({ assetCode: "XLM", percent: 100 });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnMaxAmountSelected,
+      {
+        protocol: "blend",
+        asset_code: "XLM",
+        percent: 100,
+      },
+    );
+  });
+
+  it.each([25, 50, 75])(
+    "does not report a %i%% shortcut as a set-max",
+    (percent) => {
+      trackEarnPercentAmountSelected({ assetCode: "XLM", percent });
+
+      expect(mockEmitMetric).not.toHaveBeenCalled();
+    },
+  );
+
+  it("reports an in-flight deposit the user stopped watching", () => {
+    trackEarnDepositDismissed({ assetCode: "USDC", poolId: POOL_ID });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnDepositDismissed,
+      {
+        protocol: "blend",
+        asset_code: "USDC",
+        pool_id: POOL_ID,
+      },
+    );
+  });
+
+  it("reports a completed deposit with its swap attribution", () => {
+    trackEarnDepositCompleted({
+      assetCode: "USDC",
+      poolId: POOL_ID,
+      apy: 0.1694,
+      viaSwap: true,
+    });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnDepositCompleted,
+      {
+        protocol: "blend",
+        asset_code: "USDC",
+        pool_id: POOL_ID,
+        apy: 0.1694,
+        via_swap: true,
+      },
+    );
+  });
+
+  it("carries no amount or fiat value for a deposit without volume", () => {
+    trackEarnDepositCompleted({
+      assetCode: "USDC",
+      poolId: POOL_ID,
+      apy: 0.1694,
+      viaSwap: false,
+    });
+
+    const [, body] = mockEmitMetric.mock.calls[0];
+    expect(Object.keys(body || {})).toEqual([
+      "asset_code",
+      "pool_id",
+      "apy",
+      "via_swap",
+      "protocol",
+    ]);
+  });
+
+  it("reports a failed deposit with a result code", () => {
+    trackEarnDepositFailed({
+      assetCode: "USDC",
+      poolId: POOL_ID,
+      reasonCode: "op_underfunded",
+    });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnDepositFailed,
+      {
+        protocol: "blend",
+        asset_code: "USDC",
+        pool_id: POOL_ID,
+        reason_code: "op_underfunded",
+      },
+    );
+  });
+});
+
+// A deposit that reached the network carries its USD volume under
+// payment.completed's names, so one SUM(amount_usd) covers deposits too.
+describe("Earn deposit volume", () => {
+  const USDC_ISSUER =
+    "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
+  const volume = {
+    identity: { code: "USDC", issuer: USDC_ISSUER, type: AssetKind.CLASSIC },
+    amount: 10,
+    usdProps: buildSourceLegUsdProps("10", "2", {
+      pricesById: null,
+      source: PriceSource.TOKEN_PRICES_V2,
+      freshness: PriceFreshness.CONFIRMATION_FETCH,
+    }).usdProps,
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("carries a completed deposit's token, amount and USD value", () => {
+    trackEarnDepositCompleted({
+      assetCode: "USDC",
+      poolId: POOL_ID,
+      apy: 0.1694,
+      viaSwap: false,
+      volume,
+    });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnDepositCompleted,
+      {
+        protocol: "blend",
+        asset_code: "USDC",
+        asset_issuer: USDC_ISSUER,
+        asset_type: "classic",
+        pool_id: POOL_ID,
+        apy: 0.1694,
+        via_swap: false,
+        amount: 10,
+        amount_usd_status: "ok",
+        amount_usd: 20,
+        amount_usd_rate: 2,
+        amount_usd_source: "token_prices_v2",
+        amount_usd_price_freshness: "confirmation_fetch",
+      },
+    );
+  });
+
+  it("adds the failure category to a failed deposit's volume", () => {
+    trackEarnDepositFailed({
+      assetCode: "USDC",
+      poolId: POOL_ID,
+      reasonCode: "op_underfunded",
+      volume: { ...volume, failureCategory: FailureCategory.BALANCE },
+    });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnDepositFailed,
+      {
+        protocol: "blend",
+        asset_code: "USDC",
+        asset_issuer: USDC_ISSUER,
+        asset_type: "classic",
+        pool_id: POOL_ID,
+        reason_code: "op_underfunded",
+        failure_category: "balance",
+        amount: 10,
+        amount_usd_status: "ok",
+        amount_usd: 20,
+        amount_usd_rate: 2,
+        amount_usd_source: "token_prices_v2",
+        amount_usd_price_freshness: "confirmation_fetch",
+      },
+    );
+  });
+
+  it("leaves the issuer off an XLM deposit", () => {
+    trackEarnDepositCompleted({
+      assetCode: "XLM",
+      poolId: POOL_ID,
+      apy: 0.1694,
+      viaSwap: false,
+      volume: { ...volume, identity: { code: "XLM", type: AssetKind.NATIVE } },
+    });
+
+    const [, body] = mockEmitMetric.mock.calls[0];
+    expect(body).toEqual(
+      expect.objectContaining({ asset_code: "XLM", asset_type: "native" }),
+    );
+    expect(body).not.toHaveProperty("asset_issuer");
+  });
+});

@@ -211,21 +211,9 @@
     }
   }
 
+  // The shared TransactionDetailsButton, 12px under the metadata card.
   &__TransactionDetailsBtn {
-    display: flex;
-    padding: pxToRem(12px) pxToRem(16px);
-    border-radius: pxToRem(16px);
-    background-color: var(--sds-clr-gray-03);
     margin-top: pxToRem(12px);
-    color: var(--sds-clr-lilac-11);
-    cursor: pointer;
-
-    svg {
-      margin-right: pxToRem(8px);
-      // lilac-09 icon with lilac-11 text matches mobile's trigger
-      // (Icon themeColor resolves to the ramp's step 9 there)
-      color: var(--sds-clr-lilac-09);
-    }
   }
 
   &__TransactionDetails {

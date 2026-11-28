@@ -1,3 +1,5 @@
+@use "sass:list";
+@use "sass:map";
 @use "sass:math";
 
 // Convert px to rem
@@ -38,4 +40,60 @@ $base-font-size: 16px;
     var(--sds-clr-base-00) 80.714%,
     transparent 93.214%
   );
+}
+
+// The Varial type scale (Figma's Text/XS…LG): font size and line height per
+// step, with SDS's font weights. Figma's Text/SM is 14/20, not SDS
+// `Text--sm`'s 14/22, which is why screens that follow the frames set type
+// with this rather than SDS's Text sizes.
+$text-scale: (
+  xs: (
+    12px,
+    18px,
+  ),
+  sm: (
+    14px,
+    20px,
+  ),
+  md: (
+    16px,
+    24px,
+  ),
+  lg: (
+    18px,
+    26px,
+  ),
+);
+$text-weights: (
+  regular: var(--sds-fw-regular),
+  medium: var(--sds-fw-medium),
+  semi-bold: var(--sds-fw-semi-bold),
+);
+
+@mixin text($size, $weight: regular) {
+  $metrics: map.get($text-scale, $size);
+  font-size: pxToRem(list.nth($metrics, 1));
+  line-height: pxToRem(list.nth($metrics, 2));
+  font-weight: map.get($text-weights, $weight);
+}
+
+// Resizes AssetIcon's logo from outside. Include inside the
+// `.AccountAssets__asset--logo` rule; its margin is the host's to set.
+@mixin asset-logo-size($size) {
+  width: pxToRem($size);
+  height: pxToRem($size);
+  min-width: pxToRem($size);
+}
+
+// The designs' 1px ring around a token icon, drawn over the artwork so the
+// icon keeps its box. Include inside the `.AccountAssets__asset--logo` rule.
+@mixin asset-logo-ring {
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px solid var(--sds-clr-gray-06);
+    pointer-events: none;
+  }
 }

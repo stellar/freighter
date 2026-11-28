@@ -23,6 +23,7 @@ import {
   SigningKind,
   SigningSource,
 } from "popup/metrics/signing";
+import { swapSourceProps } from "popup/metrics/swap";
 import {
   getAssetFromCanonical,
   getCanonicalFromAsset,
@@ -34,6 +35,7 @@ import { allAccountsSelector } from "popup/ducks/accountServices";
 import { balancesSelector, tokenPricesSelector } from "popup/ducks/cache";
 import { getResultCodes } from "popup/helpers/parseTransaction";
 import {
+  buildSourceLegUsdProps,
   classifyAssetIdentity,
   computeExecutionSlippagePct,
   computeUsdSlippagePct,
@@ -41,9 +43,9 @@ import {
   getFailureCategory,
   LegUsdResult,
   LegUsdStatus,
+  pickReasonCode,
 } from "helpers/usdVolume";
 import {
-  ConfirmationPriceSnapshot,
   ConfirmationSnapshotHandle,
   startConfirmationPriceSnapshot,
 } from "helpers/confirmationPriceSnapshot";
@@ -65,35 +67,6 @@ interface SubmitTxData {
  * text, which would give `reason_code` unbounded cardinality.
  */
 const PRE_SUBMISSION_REASON_CODE = "unknown";
-
-/**
- * The `amount_usd`-family properties are named identically on all four
- * terminal events so `SUM(amount_usd)` works across event names.
- * Everything else about a leg (its identity, its token amount) is named
- * differently per event (`asset_*`/`amount` for payment, `from_asset_*`/
- * `from_amount` for swap) and is added by each call site instead.
- */
-const buildSourceLegUsdProps = (
-  tokenAmount: string,
-  priceStr: string | undefined,
-  snapshot: ConfirmationPriceSnapshot,
-): { leg: LegUsdResult; usdProps: Record<string, unknown> } => {
-  const leg = deriveLegUsd(tokenAmount, priceStr);
-  return {
-    leg,
-    usdProps: {
-      amount_usd_status: leg.status,
-      ...(leg.status === LegUsdStatus.OK
-        ? {
-            amount_usd: leg.value,
-            amount_usd_rate: leg.rate,
-            amount_usd_source: snapshot.source,
-            amount_usd_price_freshness: snapshot.freshness,
-          }
-        : {}),
-    },
-  };
-};
 
 function useSubmitTxData({
   isHardwareWallet,
@@ -260,6 +233,7 @@ function useSubmitTxData({
               from_asset_code: getAssetFromCanonical(asset).code,
               to_asset_code: getAssetFromCanonical(destinationAsset).code,
               reason_code: PRE_SUBMISSION_REASON_CODE,
+              ...swapSourceProps(swapSource),
             });
           } else {
             emitMetric(METRIC_NAMES.paymentFailed, {
@@ -441,9 +415,7 @@ function useSubmitTxData({
                 ? { execution_slippage_pct: executionSlippagePct }
                 : {}),
               ...sourceUsd.usdProps,
-              // Entry-point tag, present only when the swap flow was entered
-              // from the token detail view (`source: "token_details"`).
-              ...(swapSource ? { source: swapSource } : {}),
+              ...swapSourceProps(swapSource),
             });
             // Trustline added only once the combined changeTrust +
             // pathPaymentStrictSend transaction confirmed it. Gate on the
@@ -459,6 +431,7 @@ function useSubmitTxData({
               emitMetric(METRIC_NAMES.swapTrustlineAdded, {
                 asset_code: "code" in line ? line.code : undefined,
                 asset_issuer: "issuer" in line ? line.issuer : undefined,
+                ...swapSourceProps(swapSource),
               });
             }
           }
@@ -544,16 +517,10 @@ function useSubmitTxData({
         // (signing, simulation) never reaches here, since nothing above this
         // point calls submitFreighterTransaction.
         const error = submitResp.payload;
-        const resultCodes = getResultCodes(error);
         // A swap prepending a changeTrust operation reports one code per
         // operation (e.g. ["op_success", "op_under_dest_min"]) - the first
         // code that actually explains the failure isn't always index 0.
-        const reasonCode =
-          resultCodes.operations?.find(
-            (code) => code !== "op_success" && code !== "op_not_attempted",
-          ) ||
-          resultCodes.transaction ||
-          "unknown";
+        const reasonCode = pickReasonCode(getResultCodes(error));
         const failureCategory = getFailureCategory(error, reasonCode);
 
         if (!isCustom) {
@@ -601,6 +568,7 @@ function useSubmitTxData({
               reason_code: reasonCode,
               failure_category: failureCategory,
               ...sourceUsd.usdProps,
+              ...swapSourceProps(swapSource),
             });
           } else {
             if (!sourceIdentity || !snapshotHandle) {
