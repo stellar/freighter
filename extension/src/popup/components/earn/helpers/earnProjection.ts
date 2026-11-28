@@ -4,7 +4,7 @@ import { ApiTokenPrices } from "@shared/api/types";
 import { AssetType } from "@shared/api/types/account-balance";
 import { BlendEarnAssetOption } from "@shared/api/types/blend";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { getBalanceByKey } from "popup/helpers/balance";
+import { getBalanceByKey, getTotalInWholeUnits } from "popup/helpers/balance";
 
 import { getCatalogAssetIdentity } from "./earnAssetIcons";
 
@@ -74,18 +74,20 @@ export const projectAnnualEarnings = ({
 
     const balance = getBalanceByKey(option.assetId, balances, networkDetails);
     // What could actually be deposited: XLM's `total` includes the minimum
-    // balance the account must keep, which no deposit can use.
+    // balance the account must keep, which no deposit can use. In whole
+    // tokens, as the price is: a contract token's balance reports raw units.
     const spendable = !balance
       ? null
       : "available" in balance && balance.available
         ? balance.available
-        : balance.total;
+        : getTotalInWholeUnits(balance);
     if (!spendable || new BigNumber(spendable).lte(0)) {
       return;
     }
 
-    // Prices are keyed by canonical ("CODE:ISSUER", or "native" for XLM), which
-    // is exactly what getCatalogAssetIdentity resolves.
+    // Prices are keyed by canonical ("CODE:ISSUER", "CODE:CONTRACT" for a
+    // contract token, or "native" for XLM), which is exactly what
+    // getCatalogAssetIdentity resolves.
     const { canonical } = getCatalogAssetIdentity({
       symbol: option.symbol,
       name: option.name,

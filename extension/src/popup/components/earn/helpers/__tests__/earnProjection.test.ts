@@ -1,4 +1,5 @@
 import BigNumber from "bignumber.js";
+import { StrKey } from "stellar-sdk";
 
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { PUBLIC_SACS } from "@shared/api/__tests__/fixtures/sac";
@@ -131,6 +132,35 @@ describe("projectAnnualEarnings", () => {
     });
 
     expect(result.usd).toBeNull();
+  });
+
+  // A contract token's balance reports raw units, and it is priced under
+  // "CODE:CONTRACT", the key its catalog identity now lands on.
+  it("values a held contract token in whole tokens", () => {
+    const FOO_CONTRACT = StrKey.encodeContract(Buffer.alloc(32, 7));
+    const result = projectAnnualEarnings({
+      options: [{ ...option(FOO_CONTRACT, [0.1], "FOO"), name: "Foo Token" }],
+      balances: [
+        {
+          contractId: FOO_CONTRACT,
+          token: { code: "FOO", issuer: { key: FOO_CONTRACT } },
+          name: "Foo Token",
+          symbol: "FOO",
+          decimals: 18,
+          total: new BigNumber("250000000000000000000"),
+        },
+      ] as never,
+      tokenPrices: {
+        [`FOO:${FOO_CONTRACT}`]: {
+          currentPrice: "2.00",
+          percentagePriceChange24h: "0",
+        },
+      } as never,
+      networkDetails,
+    });
+
+    // 250 FOO * $2 * 0.1 = 50.00
+    expect(result.usd).toBe("50.00");
   });
 
   it("returns nothing to show when the catalog never arrived", () => {

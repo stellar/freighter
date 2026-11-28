@@ -91,6 +91,38 @@ describe("resolveSwapDestination", () => {
     expect(getTokenDetails).not.toHaveBeenCalled();
   });
 
+  // A contract issuer is what the catalog gives a token it can't tie to a
+  // classic asset, which a SAC reported without its canonical also is.
+  it("asks the contract when the row's issuer is a contract", async () => {
+    (getTokenDetails as jest.Mock).mockResolvedValue({
+      name: `EURC:${EURC_ISSUER}`,
+    });
+
+    expect(await resolve({ ...eurc, issuer: EURC_SAC })).toEqual(
+      expect.objectContaining({
+        canonical: `EURC:${EURC_ISSUER}`,
+        details: expect.objectContaining({ issuer: EURC_ISSUER }),
+      }),
+    );
+    expect(getTokenDetails).toHaveBeenCalledTimes(1);
+  });
+
+  it("declines a contract token, which Swap can't buy", async () => {
+    const tokenContract = new Asset("FOO", OTHER_ISSUER).contractId(
+      networkPassphrase,
+    );
+    (getTokenDetails as jest.Mock).mockResolvedValue({ name: "Foo Token" });
+
+    expect(
+      await resolve({
+        ...eurc,
+        assetId: tokenContract,
+        code: "FOO",
+        issuer: tokenContract,
+      }),
+    ).toBeNull();
+  });
+
   it("declines when the token has no name", async () => {
     (getTokenDetails as jest.Mock).mockResolvedValue(null);
 

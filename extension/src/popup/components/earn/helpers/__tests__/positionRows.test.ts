@@ -187,4 +187,20 @@ describe("toPositionTokenRows", () => {
 
     expect(row.suppliedTokens).toBe("2.5");
   });
+
+  // Its own contract is its issuer, as for the contract tokens Home lists, so
+  // its icon and a deposit from it land on the same "CODE:CONTRACT" key.
+  it("gives a Soroban-only token its contract as issuer", () => {
+    const FOO_CONTRACT =
+      "CAJJZSGMMM3PD7N33TAPHGBUGTB43OC73HVIK2L2G6BNGGGYOSSYBXBD";
+    const [row] = toPositionTokenRows({
+      position: poolPosition([
+        supplyRow({ assetId: FOO_CONTRACT, symbol: "FOO", name: "Foo Token" }),
+      ]),
+      networkDetails,
+    });
+
+    expect(row.code).toBe("FOO");
+    expect(row.issuer).toBe(FOO_CONTRACT);
+  });
 });
