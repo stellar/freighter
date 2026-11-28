@@ -56,14 +56,14 @@ const ITEMS = [
   item({ id: "3:0", type: "claim", txHash: "claim-hash" }),
 ];
 
-const renderList = () =>
+const renderList = (decimals: number | null = 7) =>
   render(
     <Wrapper state={{}} routes={["/"]}>
       <PositionActivity
         poolId="CPOOL"
         assetId="CUSDC"
         code="USDC"
-        decimals={7}
+        decimals={decimals}
         assetIcons={{}}
         poolName="Fixed v2.1"
         networkDetails={TESTNET_NETWORK_DETAILS}
@@ -90,6 +90,26 @@ describe("PositionActivity", () => {
     const [withdraw, deposit] = screen.getAllByTestId("position-activity-row");
     expect(withdraw).toHaveTextContent("-120.00 USDC");
     expect(deposit).toHaveTextContent("+620.00 USDC");
+  });
+
+  it("reads an amount it can't know as --, rather than a guess", () => {
+    (usePositionActivity as jest.Mock).mockReturnValue([
+      item({ id: "4:0", type: PositionActivityType.WITHDRAW, amount: null }),
+    ]);
+    renderList();
+
+    expect(screen.getByTestId("position-activity-row")).toHaveTextContent("--");
+    expect(screen.getByTestId("position-activity-row")).not.toHaveTextContent(
+      "USDC",
+    );
+  });
+
+  it("reads every amount as -- for a token of unknown scale", () => {
+    renderList(null);
+
+    const [withdraw, deposit] = screen.getAllByTestId("position-activity-row");
+    expect(withdraw).not.toHaveTextContent("USDC");
+    expect(deposit).not.toHaveTextContent("USDC");
   });
 
   it("opens a withdrawal's details, unsigned", () => {

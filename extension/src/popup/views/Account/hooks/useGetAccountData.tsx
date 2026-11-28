@@ -528,7 +528,9 @@ function useGetAccountData(options: {
           return;
         }
         dispatchData({ ...latest, positions, hasPositionsError: false });
-        if (hasDepositLanded(positions, awaitedDeposit)) {
+        if (
+          hasDepositLanded(positions, awaitedDeposit, latest.networkDetails)
+        ) {
           reduxDispatch(saveAwaitedDeposit(null));
           return;
         }

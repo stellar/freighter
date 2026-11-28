@@ -160,7 +160,9 @@ describe("getBlendActivityFromHistory", () => {
     expect(item.amount).toBe("502300000");
   });
 
-  it("falls back to a withdraw's requested amount when no transfer is reported", () => {
+  it("leaves a withdraw's amount unknown when no transfer is reported", () => {
+    // A Soroban-only token leaves no balance change, and the request can't
+    // stand in: a "withdraw max" asks for more than the pool pays out.
     const [item] = decode([
       operation({
         envelope: submitEnvelope([
@@ -169,7 +171,7 @@ describe("getBlendActivityFromHistory", () => {
       }),
     ]);
 
-    expect(item.amount).toBe("502300000");
+    expect(item.amount).toBeNull();
   });
 
   it("ignores a transfer of a different token when reading a withdraw", () => {
@@ -190,7 +192,8 @@ describe("getBlendActivityFromHistory", () => {
       }),
     ]);
 
-    expect(item.amount).toBe("502300000");
+    // Not the 1 XLM the other transfer moved.
+    expect(item.amount).toBeNull();
   });
 
   it("gives each request of one submit its own row", () => {

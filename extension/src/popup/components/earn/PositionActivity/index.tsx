@@ -15,6 +15,7 @@ import { SlideupModal } from "popup/components/SlideupModal";
 import { formatActivityDate } from "popup/components/earn/helpers/formatActivityDate";
 import { formatEarnAmount } from "popup/components/earn/helpers/formatEarnAmount";
 import { toDisplayTokens } from "popup/components/earn/helpers/positionRows";
+import { NO_FIAT_VALUE } from "popup/helpers/formatters";
 import {
   trackPositionActivityDetailsActionSelected,
   trackPositionActivityRowSelected,
@@ -75,8 +76,8 @@ interface PositionActivityProps {
   assetId: string;
   code: string;
   issuer?: string;
-  /** The token's decimals, to scale the items' integer amounts. */
-  decimals: number;
+  /** The token's decimals, to scale the items' integer amounts; null if unknown. */
+  decimals: number | null;
   assetIcons: AssetIcons;
   /** The pool's backend name, for the details sheet. */
   poolName?: string | null;
@@ -138,7 +139,7 @@ export const PositionActivity = ({
       <div className="PositionActivity__list">
         {items.map((item) => {
           const kind = ACTIVITY_KINDS[item.type] ?? GENERIC_KIND;
-          const amount = formatEarnAmount(toTokens(item));
+          const tokens = toTokens(item);
           // A button only where a tap leads somewhere.
           const Row = kind.detailsType ? "button" : "div";
 
@@ -183,7 +184,9 @@ export const PositionActivity = ({
                     kind.isPositive ? " PositionActivity__amount--positive" : ""
                   }`}
                 >
-                  {`${kind.sign}${amount} ${code}`}
+                  {tokens === null
+                    ? NO_FIAT_VALUE
+                    : `${kind.sign}${formatEarnAmount(tokens)} ${code}`}
                 </div>
                 <div className="PositionActivity__date">
                   {formatActivityDate(item.occurredAt, language)}
@@ -208,7 +211,7 @@ export const PositionActivity = ({
             // A fresh sheet per event: its Horizon read is keyed on the hash.
             key={selected.id}
             type={selectedType}
-            amount={toTokens(selected)}
+            amount={toTokens(selected) ?? NO_FIAT_VALUE}
             assetCode={code}
             assetIssuer={issuer}
             assetIcons={assetIcons}

@@ -46,8 +46,12 @@ export interface PositionActivityItem {
   /** The token contract the event moved. */
   assetId: string;
   type: PositionActivityType | string;
-  /** Integer amount in the token's smallest unit. */
-  amount: string;
+  /**
+   * Integer amount in the token's smallest unit. Null when it can't be read:
+   * a withdraw of a token that reports no balance change (see
+   * `getBlendActivityFromHistory`).
+   */
+  amount: string | null;
   /** ISO 8601. */
   occurredAt: string;
   txHash: string;
@@ -141,7 +145,7 @@ const getBalanceChangeAssetId = (
  * What the pool actually paid out for a withdraw, in the token's smallest
  * unit. A withdraw request can ask for more than the position holds ("withdraw
  * max"), and the pool caps it, so the request's amount can overstate. Only SAC
- * tokens leave a balance change; null means "use the request".
+ * tokens leave a balance change; null means the payout can't be read.
  */
 const getWithdrawnAmount = ({
   operation,
@@ -177,7 +181,8 @@ const getWithdrawnAmount = ({
  * - Only calls the account made itself (`from` is the account). Liquidations,
  *   and deposits routed through another contract, are not seen.
  * - Withdraw amounts come from the token transfer the pool made, which only
- *   SAC tokens report; for any other token the request's amount stands.
+ *   SAC tokens report. For a Soroban-only (SEP-41) token the amount is
+ *   unknown rather than the request's, which "withdraw max" overstates.
  * - No USD value at the time of the event.
  *
  * Newest first, as History is.
@@ -231,17 +236,17 @@ export const getBlendActivityFromHistory = ({
         return;
       }
 
-      const requested = request.amount.toString();
+      // A deposit moves exactly what it asked for.
       const amount =
         type === PositionActivityType.WITHDRAW
-          ? (getWithdrawnAmount({
+          ? getWithdrawnAmount({
               operation,
               poolId,
               recipient,
               assetId: request.address,
               networkPassphrase: networkDetails.networkPassphrase,
-            }) ?? requested)
-          : requested;
+            })
+          : request.amount.toString();
 
       items.push({
         id: `${operation.id}:${index}`,

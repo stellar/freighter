@@ -11,13 +11,12 @@ import {
   formatAccountUsd,
   formatRate,
 } from "popup/components/earn/helpers/formatPoolStats";
-import { formatEarnAmount } from "popup/components/earn/helpers/formatEarnAmount";
 import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
 import { getPoolPositionSummary } from "popup/components/earn/helpers/poolPositionSummary";
 import { PositionTokenRow } from "popup/components/earn/helpers/positionRows";
 
 import { PositionFigures, PositionTokenLine, Section } from "./PositionParts";
-import { formatPositionGain } from "./positionFigures";
+import { formatPositionGain, formatPositionTokens } from "./positionFigures";
 
 interface PoolPositionScreenProps {
   position: PoolPosition;
@@ -83,7 +82,7 @@ export const PoolPositionScreen = ({
                 subtitleTestId={`position-apy-${row.code}`}
                 value={formatAccountUsd(row.suppliedUsd)}
                 valueTestId={`position-value-${row.code}`}
-                amount={`${formatEarnAmount(row.suppliedTokens)} ${row.code}`}
+                amount={formatPositionTokens(row.suppliedTokens, row.code)}
                 onClick={() => onSelectToken(row)}
                 testId={`position-row-${row.code}`}
               />

@@ -10,9 +10,9 @@ export interface PositionAssetRow {
   assetId: string;
   code: string;
   issuer?: string;
-  decimals: number;
-  /** Display units, already scaled. */
-  tokens: string;
+  decimals: number | null;
+  /** Display units, already scaled; null when the token's scale is unknown. */
+  tokens: string | null;
   usd: number | null;
 }
 

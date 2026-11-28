@@ -1,7 +1,16 @@
+import { formatEarnAmount } from "popup/components/earn/helpers/formatEarnAmount";
 import {
   formatAccountUsd,
   formatRatePercent,
 } from "popup/components/earn/helpers/formatPoolStats";
+import { NO_FIAT_VALUE } from "popup/helpers/formatters";
+
+/**
+ * A token amount with its code, "1,218.6488 USDC", or "--" when the amount is
+ * unknown (a Soroban-only token whose decimals the backend didn't report).
+ */
+export const formatPositionTokens = (tokens: string | null, code: string) =>
+  tokens === null ? NO_FIAT_VALUE : `${formatEarnAmount(tokens)} ${code}`;
 
 /**
  * A position's gain: "+$31.75 (2.54%)", the interest in dollars, truncated to

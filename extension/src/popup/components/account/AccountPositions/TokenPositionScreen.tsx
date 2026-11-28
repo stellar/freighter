@@ -20,7 +20,6 @@ import {
   formatAccountUsd,
   formatRate,
 } from "popup/components/earn/helpers/formatPoolStats";
-import { formatEarnAmount } from "popup/components/earn/helpers/formatEarnAmount";
 import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
 import { getGainPercent } from "popup/components/earn/helpers/poolPositionSummary";
 import { PositionTokenRow } from "popup/components/earn/helpers/positionRows";
@@ -38,7 +37,11 @@ import { NO_FIAT_VALUE } from "popup/helpers/formatters";
 import { EarnLeafIcon } from "./PositionIcons";
 import { PositionFigures, PositionTokenLine, Section } from "./PositionParts";
 import { PositionTabs } from "./PositionTabs";
-import { formatPositionGain, getGainModifier } from "./positionFigures";
+import {
+  formatPositionGain,
+  formatPositionTokens,
+  getGainModifier,
+} from "./positionFigures";
 
 interface TokenPositionScreenProps {
   position: PoolPosition;
@@ -168,9 +171,10 @@ export const TokenPositionScreen = ({
                   code={row.code}
                   value={formatAccountUsd(deposit?.usd ?? null)}
                   valueTestId={`earn-position-deposit-usd-${row.code}`}
-                  amount={`${formatEarnAmount(deposit?.tokens ?? "0")} ${
-                    row.code
-                  }`}
+                  amount={formatPositionTokens(
+                    deposit ? deposit.tokens : "0",
+                    row.code,
+                  )}
                 />
               </Section>
 
@@ -198,9 +202,10 @@ export const TokenPositionScreen = ({
                       interestUsd,
                     )}`}
                     valueTestId={`earn-position-earnings-usd-${row.code}`}
-                    amount={`${formatEarnAmount(earning?.tokens ?? "0")} ${
-                      row.code
-                    }`}
+                    amount={formatPositionTokens(
+                      earning ? earning.tokens : "0",
+                      row.code,
+                    )}
                   />
                   <div className="PositionScreen__divider" />
                   {/* One group, so the rows' own divider and spacing apply

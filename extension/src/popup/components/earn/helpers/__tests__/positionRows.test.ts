@@ -10,7 +10,7 @@ const POOL_ID = "CAJJZSGMMM3PD7N33TAPHGBUGTB43OC73HVIK2L2G6BNGGGYOSSYBXBD";
 const supplyRow = (over: Record<string, unknown> = {}) => ({
   assetId: USDC_SAC,
   symbol: "USDC",
-  name: "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+  name: "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
   decimals: 7,
   suppliedTokens: "0",
   collateralTokens: "5001223000",
@@ -124,7 +124,7 @@ describe("toPositionTokenRows", () => {
     ["an 18-decimal token", 18, "1500000000000000000", "1.5"],
     ["a 0-decimal token", 0, "15", "15"],
     ["a 7-decimal token", 7, "5001223000", "500.1223"],
-    ["a token with no decimals in the payload", null, "5001223000", "500.1223"],
+    ["a SAC with no decimals in the payload", null, "5001223000", "500.1223"],
   ])("scales %s by its own decimals", (_, decimals, totalTokens, expected) => {
     const [row] = toPositionTokenRows({
       position: poolPosition([supplyRow({ decimals, totalTokens })]),
@@ -132,5 +132,59 @@ describe("toPositionTokenRows", () => {
     });
 
     expect(row.suppliedTokens).toBe(expected);
+  });
+
+  it("scales native XLM with no decimals in the payload by 7", () => {
+    const [row] = toPositionTokenRows({
+      position: poolPosition([
+        supplyRow({
+          assetId: XLM_SAC,
+          symbol: null,
+          name: null,
+          decimals: null,
+          totalTokens: "1200400000",
+        }),
+      ]),
+      networkDetails,
+    });
+
+    expect(row.suppliedTokens).toBe("120.04");
+  });
+
+  it("leaves a Soroban-only token's amounts unknown without its decimals", () => {
+    // A SEP-41 token can use any scale; 7 would be a guess.
+    const [row] = toPositionTokenRows({
+      position: poolPosition([
+        supplyRow({
+          assetId: "CAJJZSGMMM3PD7N33TAPHGBUGTB43OC73HVIK2L2G6BNGGGYOSSYBXBD",
+          symbol: "FOO",
+          name: "Foo Token",
+          decimals: null,
+        }),
+      ]),
+      networkDetails,
+    });
+
+    expect(row.code).toBe("FOO");
+    expect(row.decimals).toBeNull();
+    expect(row.suppliedTokens).toBeNull();
+    expect(row.suppliedUsd).toBe(500.12);
+  });
+
+  it("scales a Soroban-only token by the decimals the payload reports", () => {
+    const [row] = toPositionTokenRows({
+      position: poolPosition([
+        supplyRow({
+          assetId: "CAJJZSGMMM3PD7N33TAPHGBUGTB43OC73HVIK2L2G6BNGGGYOSSYBXBD",
+          symbol: "FOO",
+          name: "Foo Token",
+          decimals: 18,
+          totalTokens: "2500000000000000000",
+        }),
+      ]),
+      networkDetails,
+    });
+
+    expect(row.suppliedTokens).toBe("2.5");
   });
 });

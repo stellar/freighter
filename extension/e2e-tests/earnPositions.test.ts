@@ -37,11 +37,14 @@
  * stubBlendEarn documents: getCatalogAssetIdentity resolves a row's displayed
  * code by deriving its SAC, so a placeholder id would leave it blank.
  *
- * No switchToMainnet here: Testnet (where login lands) has its own
+ * Most tests stay on Testnet (where login lands): it has its own
  * BLEND_FIXED_POOL_IDS entry, so the Positions tab and its screens are
  * reachable straight after login — see earnDeposit.test.ts's network-gating
  * test for the same reasoning, and @shared/constants/blend for the map
- * itself. The tab needs the `positions_enabled` flag and its deposit entry points
+ * itself. Two switch to Mainnet, the network the fixture's ids belong to: the
+ * Activity test, whose withdrawal amount is the transfer Horizon reports,
+ * matched by the token's SAC on the current network; and the Deposit test,
+ * since Deposit is offered only on the network's own Fixed pool. The tab needs the `positions_enabled` flag and its deposit entry points
  * the `earn_deposit` flag; stubAmplitudeFlags pins them on before login.
  *
  * testid index:
@@ -74,6 +77,7 @@
 
 import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
 import { NETWORKS } from "@shared/constants/stellar";
+import { Networks } from "stellar-sdk";
 
 import { test, expect } from "./test-fixtures";
 import { loginToTestAccount, switchToMainnet } from "./helpers/login";
@@ -210,6 +214,7 @@ test("a supplied token shows its position, activity and pool links", async ({
     context,
     stubOverrides: async () => {
       const history = blendActivityHistory({
+        networkPassphrase: Networks.PUBLIC,
         events: [
           {
             id: "2",
@@ -234,6 +239,9 @@ test("a supplied token shows its position, activity and pool links", async ({
       await stubBlendEarn(page, context, { positions: positionsFixture() });
     },
   });
+  // On the network the fixture's ids belong to: a withdrawal's amount is the
+  // transfer Horizon reports, matched by its token's SAC on this network.
+  await switchToMainnet(page);
 
   await page.getByTestId("account-tab-positions").click();
   await page.getByTestId(`pool-card-${POOL_ID}`).click();
@@ -293,7 +301,7 @@ test("a supplied token shows its position, activity and pool links", async ({
   await page.getByTestId("token-position-explorer-link").click();
   const explorer = await explorerPromise;
   await expect(explorer).toHaveURL(
-    new RegExp(`stellar\\.expert/explorer/testnet/contract/${POOL_ID}`),
+    new RegExp(`stellar\\.expert/explorer/public/contract/${POOL_ID}`),
   );
 });
 
