@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
-import { getAssetFromCanonical } from "helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 import { STEPS } from "popup/constants/earn";
 import { navigateTo } from "popup/helpers/navigate";
@@ -31,13 +30,9 @@ import {
   setDidSwapInFlow,
   setEarnSubmitFailed,
 } from "popup/ducks/earn";
-import {
-  trackEarnDepositFailed,
-  trackEarnTokenSelected,
-} from "popup/metrics/earn";
+import { trackEarnTokenSelected } from "popup/metrics/earn";
 import { showToast } from "popup/basics/shadcn/Toast";
 import { formatAmount } from "popup/helpers/formatters";
-import { getFailureReasonCode } from "popup/components/earn/helpers/failureReasonCode";
 import { EarnIntro } from "popup/components/earn/EarnIntro";
 import { useEarnIntroSeen } from "popup/components/earn/EarnIntro/hooks/useEarnIntroSeen";
 import { EarnTokenPicker } from "popup/components/earn/EarnTokenPicker";
@@ -81,7 +76,7 @@ export const Earn = () => {
   const { t } = useTranslation();
   const { hasSeenIntro, dismissIntro } = useEarnIntroSeen();
   const submission = useSelector(transactionSubmissionSelector);
-  const { pool, selectedAssetId } = useSelector(earnSelector);
+  const { selectedAssetId } = useSelector(earnSelector);
   const tokenPrices = useSelector(tokenPricesSelector);
 
   // No step until the persisted intro flag has resolved: the flow opens on the
@@ -105,7 +100,10 @@ export const Earn = () => {
     source: string;
   } | null>(null);
 
-  const isFirstSubmitStatusRun = useRef(true);
+  // Whether this visit has submitted a deposit. Closing a deposit in flight
+  // doesn't stop it, so it can fail after Earn has been opened again. That
+  // failure belongs to the visit that made it, whose submit hook reports it.
+  const hasSubmittedDeposit = useRef(false);
   // True while a submission the swap branch started is unsettled. The swap and
   // the deposit share the submission slice, so this is how a swap's outcome is
   // told apart from a deposit's, including a swap whose sheet was closed while
@@ -142,24 +140,12 @@ export const Earn = () => {
   //
   // Every way a deposit can fail lands in `submitStatus: ERROR` (see
   // transactionSubmission's extraReducers), so this effect owns the UI response
-  // to all of them. It does *not* own all of the metric: the submit step's own
-  // failures are emitted by useSubmitEarnTxData, whose continuation outlives the
-  // in-flight screen the user is invited to close. Emitting here as well would
-  // double count, so the emit is skipped while that step is active. What is left
-  // for this effect is everything that fails earlier — a device-rejected
-  // signature at the review sheet, which never reaches DEPOSIT_CONFIRM.
+  // to all of them. It does not emit the metric: the deposit step's
+  // useSubmitEarnTxData does, and its continuation outlives the in-flight
+  // screen the user is invited to close. A device that refuses to sign never
+  // gets that far, and never sets ERROR either: HardwareSign shows the refusal
+  // on the review sheet.
   useEffect(() => {
-    if (isFirstSubmitStatusRun.current) {
-      // Whatever the status was at mount cannot belong to this flow: a fresh
-      // flow has not submitted anything yet. It is the leftover of a deposit
-      // abandoned in a previous visit, whose thunk settled after
-      // `closeEarnFlow` had already reset the submission — acting on it would
-      // report a failure against an empty asset and drop this flow onto the
-      // amount screen with nothing selected. The mount effect above clears it.
-      isFirstSubmitStatusRun.current = false;
-      return;
-    }
-
     // A swap's outcome is the swap's to show: its sheet renders the success
     // and failure screens itself. Treating it as a deposit failure would report
     // earn.deposit_failed for a deposit nobody made and drop the user onto the
@@ -189,13 +175,14 @@ export const Earn = () => {
     if (submission.submitStatus !== ActionStatus.ERROR) {
       return;
     }
-    if (activeStep !== STEPS.DEPOSIT_CONFIRM) {
-      trackEarnDepositFailed({
-        assetCode: getAssetFromCanonical(submission.transactionData.asset).code,
-        poolId: pool?.id || "",
-        reasonCode: getFailureReasonCode(submission.error),
-      });
+    if (!hasSubmittedDeposit.current) {
+      // A deposit from an earlier visit, closed in flight and failing now (or
+      // before this one opened). Acting on it would show its failure on a flow
+      // that has submitted nothing, so clear it instead.
+      dispatch(resetSubmitStatus());
+      return;
     }
+    hasSubmittedDeposit.current = false;
     dispatch(setEarnSubmitFailed(true));
     // Keeps transactionData and the simulation so the amount screen comes back
     // populated and the user can retry without re-entering anything.
@@ -316,8 +303,10 @@ export const Earn = () => {
             onClose={closeEarnFlow}
             onConfirm={() => {
               // The deposit owns the next submission, even if a swap closed
-              // in flight has still not settled.
+              // in flight has still not settled. A hardware wallet arrives
+              // here too, once the device has signed.
               isSwapSubmitting.current = false;
+              hasSubmittedDeposit.current = true;
               goToStep(STEPS.DEPOSIT_CONFIRM, "from-right");
             }}
           />
