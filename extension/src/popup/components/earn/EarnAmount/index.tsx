@@ -107,6 +107,8 @@ import "./styles.scss";
 type BuildFailure =
   | { kind: "stale" }
   | { kind: "needs_xlm" }
+  /** An XLM deposit that leaves this much XLM short of its fees. */
+  | { kind: "xlm_fee_short"; shortfall: string }
   | { kind: "message"; message: string };
 
 interface EarnAmountProps {
@@ -302,7 +304,7 @@ export const EarnAmount = ({
   // Nets out the base reserve and the inclusion fee. A Blend submit's resource
   // fee is far larger, but nothing is held back for it here: the whole balance
   // stays depositable and buildDeposit checks the measured fee once simulation
-  // reports it.
+  // reports it (`handleContinue` lowers an XLM deposit at Max by it).
   const availableBalance = asset
     ? getAvailableBalance({
         assetCanonical: asset,
@@ -443,23 +445,19 @@ export const EarnAmount = ({
       });
 
       if (new BigNumber(shortfall).gt(0)) {
-        trackEarnXlmFeeInsufficientShown({
-          assetCode: selected?.code || "",
-          reason: "fee_not_covered",
-        });
         // Only an XLM deposit can trade amount for fee. For anything else the
         // deposit is not competing with the fee at all, so the remedy is more
         // XLM — the same sheet the pre-simulation gate opens.
         if (!isXlm) {
+          trackEarnXlmFeeInsufficientShown({
+            assetCode: selected?.code || "",
+            reason: "fee_not_covered",
+          });
           return { kind: "needs_xlm" };
         }
-        return {
-          kind: "message",
-          message: t(
-            "Not enough XLM left for the network fee. Reduce your deposit by at least {{amount}} XLM.",
-            { amount: formatAmount(shortfall) },
-          ),
-        };
+        // Reported where the message is shown: a deposit at Max is lowered
+        // and built again instead (see `handleContinue`).
+        return { kind: "xlm_fee_short", shortfall };
       }
 
       setIsBuildCurrent(true);
@@ -506,18 +504,71 @@ export const EarnAmount = ({
     }
   };
 
+  // Puts a token amount in the field. In dollar mode the dollar field mirrors
+  // it for display.
+  const applyAmount = (tokenAmount: string) => {
+    dispatch(saveAmount(tokenAmount));
+    if (inputType === "fiat") {
+      dispatch(saveAmountUsd(getUsdValue(tokenAmount) ?? DEFAULT_AMOUNT_USD));
+    }
+  };
+
+  // The message for an XLM deposit short of its fees, reported as shown.
+  const describeXlmFeeShortfall = (shortfall: string) => {
+    trackEarnXlmFeeInsufficientShown({
+      assetCode: selected?.code || "",
+      reason: "fee_not_covered",
+    });
+    return t(
+      "Not enough XLM left for the network fee. Reduce your deposit by at least {{amount}} XLM.",
+      { amount: formatAmount(shortfall) },
+    );
+  };
+
   const handleContinue = async () => {
-    const amountToReview = depositAmount;
-    const failure = await buildDeposit({
+    let amountToReview = depositAmount;
+    let failure = await buildDeposit({
       amountToReview,
       inclusionFee: fee,
       timeout: transactionTimeout,
     });
+
+    // Max fills the whole spendable XLM, which leaves nothing for the
+    // resource fee, known only now. So an XLM deposit at Max is lowered by
+    // the measured fee and built again, as on mobile. Any other amount is the
+    // user's to change.
+    if (
+      failure?.kind === "xlm_fee_short" &&
+      new BigNumber(amountToReview).eq(
+        getPercentageAmount({ availableBalance, pct: 100, decimals }),
+      )
+    ) {
+      const fittedAmount = new BigNumber(amountToReview)
+        .minus(failure.shortfall)
+        .decimalPlaces(decimals, BigNumber.ROUND_DOWN);
+      if (fittedAmount.gt(0)) {
+        amountToReview = fittedAmount.toFixed();
+        // The build checks the field once it finishes; it says this now.
+        latestFieldRef.current = {
+          ...latestFieldRef.current,
+          amount: amountToReview,
+        };
+        applyAmount(amountToReview);
+        failure = await buildDeposit({
+          amountToReview,
+          inclusionFee: fee,
+          timeout: transactionTimeout,
+        });
+      }
+    }
+
     if (failure) {
       // Said on this screen. A stale build says nothing: the CTA is back for
       // the amount the field has now.
       if (failure.kind === "needs_xlm") {
         setIsFeeSheetOpen(true);
+      } else if (failure.kind === "xlm_fee_short") {
+        setSimulationError(describeXlmFeeShortfall(failure.shortfall));
       } else if (failure.kind === "message") {
         setSimulationError(failure.message);
       }
@@ -549,10 +600,12 @@ export const EarnAmount = ({
       timeout,
     });
     if (failure && failure.kind !== "stale") {
-      const reason =
-        failure.kind === "needs_xlm"
-          ? t("Not enough XLM for network fees")
-          : failure.message;
+      let reason = t("Not enough XLM for network fees");
+      if (failure.kind === "xlm_fee_short") {
+        reason = describeXlmFeeShortfall(failure.shortfall);
+      } else if (failure.kind === "message") {
+        reason = failure.message;
+      }
       showToast(() => <Notification variant="error" title={reason} />);
     }
     returnToReview();
@@ -685,18 +738,14 @@ export const EarnAmount = ({
                 assetCode: selected?.code || "",
                 percent: pct,
               });
-              const pctAmount = getPercentageAmount({
-                availableBalance,
-                pct,
-                decimals,
-              });
-              dispatch(saveAmount(pctAmount));
-              // Always a share of the token balance; in dollar mode the dollar
-              // field mirrors it for display.
-              if (inputType === "fiat") {
-                const pctUsd = getUsdValue(pctAmount);
-                dispatch(saveAmountUsd(pctUsd ?? DEFAULT_AMOUNT_USD));
-              }
+              // Always a share of the token balance.
+              applyAmount(
+                getPercentageAmount({
+                  availableBalance,
+                  pct,
+                  decimals,
+                }),
+              );
             }}
           />
         </div>
