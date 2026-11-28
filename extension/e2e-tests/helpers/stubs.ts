@@ -4047,7 +4047,11 @@ export const stubBlendEarn = async (
             {
               asset_id: USDC_SAC,
               symbol: "USDC",
-              name: "USD Coin",
+              // The backend passes the contract's own name() through, and a
+              // SAC's is its classic canonical. The client reads the issuer
+              // from it; a friendly name here would make USDC look like a
+              // contract token, which the live catalog never does.
+              name: "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
               decimals: 7,
               pools: [offer(0.1694)],
             },
@@ -4064,7 +4068,7 @@ export const stubBlendEarn = async (
             {
               asset_id: EURC_SAC,
               symbol: "EURC",
-              name: "Euro Coin",
+              name: "EURC:GDHU6WRG4IEQXM5NZ4BMPKOXHW76MZM4Y2IEMFDVXBSDP6SJY4ITNPP2",
               decimals: 7,
               pools: [offer(0.1059)],
             },
