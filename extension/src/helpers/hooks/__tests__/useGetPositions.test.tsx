@@ -14,6 +14,7 @@ import {
 } from "popup/__testHelpers__";
 
 jest.mock("@shared/api/helpers/blend", () => ({
+  ...jest.requireActual("@shared/api/helpers/blend"),
   getBlendPositions: jest.fn(),
 }));
 jest.mock("@sentry/browser", () => ({ captureException: jest.fn() }));

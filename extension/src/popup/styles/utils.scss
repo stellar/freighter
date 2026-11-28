@@ -87,6 +87,20 @@ $text-weights: (
 
 // The designs' 1px ring around a token icon, drawn over the artwork so the
 // icon keeps its box. Include inside the `.AccountAssets__asset--logo` rule.
+// A disc pinned to a bottom corner of an icon, as a badge on a token. The
+// host sets `position: relative` and the disc's colour.
+@mixin corner-badge($size, $side: right, $offset: 0) {
+  position: absolute;
+  #{$side}: pxToRem($offset);
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: pxToRem($size);
+  height: pxToRem($size);
+  border-radius: 50%;
+}
+
 @mixin asset-logo-ring {
   &::after {
     content: "";

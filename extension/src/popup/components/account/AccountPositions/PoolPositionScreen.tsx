@@ -16,9 +16,8 @@ import { formatPoolName } from "popup/components/earn/helpers/formatPoolName";
 import { getPoolPositionSummary } from "popup/components/earn/helpers/poolPositionSummary";
 import { PositionTokenRow } from "popup/components/earn/helpers/positionRows";
 
-import { NO_FIAT_VALUE } from "popup/helpers/formatters";
-
-import { formatPositionGain, getGainModifier } from "./positionFigures";
+import { PositionFigures, PositionTokenLine, Section } from "./PositionParts";
+import { formatPositionGain } from "./positionFigures";
 
 interface PoolPositionScreenProps {
   position: PoolPosition;
@@ -61,64 +60,35 @@ export const PoolPositionScreen = ({
             </span>
           </div>
 
-          <div className="PositionScreen__figures">
-            <div
-              className="PositionScreen__total"
-              data-testid="pool-position-total"
-            >
-              {formatAccountUsd(summary.totalUsd)}
-            </div>
-            <div
-              className={`PositionScreen__gain${getGainModifier(
-                "PositionScreen__gain",
-                summary.interestUsd,
-              )}`}
-              data-testid="pool-position-gain"
-            >
-              {gain ?? NO_FIAT_VALUE}
-            </div>
-          </div>
+          <PositionFigures
+            totalUsd={summary.totalUsd}
+            gain={gain}
+            gainValue={summary.interestUsd}
+            testIdPrefix="pool-position"
+          />
 
-          <div className="PositionScreen__section">
-            <div className="PositionScreen__section-title">
-              {t("Supplied tokens")}
-            </div>
+          <Section title={t("Supplied tokens")}>
             {rows.map((row) => (
-              <button
+              <PositionTokenLine
                 key={row.assetId}
-                type="button"
-                className="PositionScreen__card PositionScreen__token"
+                icon={
+                  <AssetIcon
+                    assetIcons={assetIcons}
+                    code={row.code}
+                    issuerKey={row.issuer}
+                  />
+                }
+                code={row.code}
+                subtitle={t("{{rate}} APY", { rate: formatRate(row.apy) })}
+                subtitleTestId={`position-apy-${row.code}`}
+                value={formatAccountUsd(row.suppliedUsd)}
+                valueTestId={`position-value-${row.code}`}
+                amount={`${formatEarnAmount(row.suppliedTokens)} ${row.code}`}
                 onClick={() => onSelectToken(row)}
-                data-testid={`position-row-${row.code}`}
-              >
-                <AssetIcon
-                  assetIcons={assetIcons}
-                  code={row.code}
-                  issuerKey={row.issuer}
-                />
-                <span className="PositionScreen__token__name">
-                  <span className="PositionScreen__primary">{row.code}</span>
-                  <span
-                    className="PositionScreen__positive-small"
-                    data-testid={`position-apy-${row.code}`}
-                  >
-                    {t("{{rate}} APY", { rate: formatRate(row.apy) })}
-                  </span>
-                </span>
-                <span className="PositionScreen__token__figures">
-                  <span
-                    className="PositionScreen__primary"
-                    data-testid={`position-value-${row.code}`}
-                  >
-                    {formatAccountUsd(row.suppliedUsd)}
-                  </span>
-                  <span className="PositionScreen__secondary-small">
-                    {`${formatEarnAmount(row.suppliedTokens)} ${row.code}`}
-                  </span>
-                </span>
-              </button>
+                testId={`position-row-${row.code}`}
+              />
             ))}
-          </div>
+          </Section>
         </div>
       </View.Content>
     </View>

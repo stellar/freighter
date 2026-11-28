@@ -27,7 +27,7 @@ import {
   saveSelectedAssetApy,
   saveSelectedAssetId,
 } from "popup/ducks/earn";
-import { positionsEnabledSelector } from "popup/ducks/remoteConfig";
+import { canShowPositionsSelector } from "popup/components/earn/helpers/positionsAvailability";
 import { closeWindow, navigateTo, openTab } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { useSwapTopTokensPrewarm } from "popup/helpers/useSwapTopTokensPrewarm";
@@ -47,7 +47,6 @@ import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 import { onAccountValue } from "helpers/accountFunding";
 import { newTabHref } from "helpers/urls";
 import { getTotalUsd, getTotalUsdLabel } from "popup/helpers/balance";
-import { isEarnSupportedNetwork } from "@shared/constants/blend";
 import { BlendCatalogPool } from "@shared/api/types/blend";
 import { projectAnnualEarnings } from "popup/components/earn/helpers/earnProjection";
 import { PositionTokenRow } from "popup/components/earn/helpers/positionRows";
@@ -89,9 +88,7 @@ export const Account = () => {
   const reduxPublicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { activeTab, setActiveTab } = useContext(AccountTabsContext);
-  const isPositionsEnabled = useSelector(positionsEnabledSelector);
-  const canShowPositions =
-    isPositionsEnabled && isEarnSupportedNetwork(networkDetails);
+  const canShowPositions = useSelector(canShowPositionsSelector);
 
   // The Positions button is hidden while its flag is off and where Earn is
   // unsupported. Switching networks while that tab is active, or a `?tab=`

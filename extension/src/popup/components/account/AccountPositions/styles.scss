@@ -8,19 +8,19 @@
 .AccountPositions {
   display: flex;
   flex-direction: column;
-  gap: pxToRem(12px);
-  padding-top: pxToRem(8px);
+  gap: pxToRem(12);
+  padding-top: pxToRem(8);
 
   &__loader {
     display: flex;
     justify-content: center;
-    padding: pxToRem(32px) 0;
+    padding: pxToRem(32) 0;
   }
 
   &__list {
     display: flex;
     flex-direction: column;
-    gap: pxToRem(8px);
+    gap: pxToRem(8);
   }
 
   // The pool and token screens: full-height sheets on the page color, as the
@@ -44,8 +44,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: pxToRem(4px);
-    padding: pxToRem(8px) pxToRem(16px);
+    gap: pxToRem(4);
+    padding: pxToRem(8) pxToRem(16);
 
     &__label {
       @include text(xs, medium);
@@ -56,7 +56,7 @@
       display: flex;
       align-items: center;
       // The space after "/": a flex item drops trailing whitespace.
-      gap: pxToRem(4px);
+      gap: pxToRem(4);
       white-space: nowrap;
     }
 
@@ -83,12 +83,12 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: pxToRem(12px);
+  gap: pxToRem(12);
   width: 100%;
-  padding: pxToRem(8px) pxToRem(16px);
+  padding: pxToRem(8) pxToRem(16);
   overflow: hidden;
   border: none;
-  border-radius: pxToRem(8px) pxToRem(16px) pxToRem(16px) pxToRem(8px);
+  border-radius: pxToRem(8) pxToRem(16) pxToRem(16) pxToRem(8);
   background-color: var(--sds-clr-gray-02);
   text-align: left;
   cursor: pointer;
@@ -98,7 +98,7 @@
     top: 0;
     bottom: 0;
     left: 0;
-    width: pxToRem(3px);
+    width: pxToRem(3);
     background-color: var(--sds-clr-lilac-09);
   }
 
@@ -106,7 +106,7 @@
     display: flex;
 
     .PoolIcon {
-      border-radius: pxToRem(7.6px);
+      border-radius: pxToRem(7.6);
     }
   }
 
@@ -119,7 +119,7 @@
   &__name {
     display: flex;
     align-items: baseline;
-    gap: pxToRem(2px);
+    gap: pxToRem(2);
     white-space: nowrap;
   }
 
@@ -148,7 +148,7 @@
 
   &__gain {
     @include text(xs, semi-bold);
-    padding: pxToRem(2px) pxToRem(4px);
+    padding: pxToRem(2) pxToRem(4);
     color: var(--sds-clr-green-11);
 
     // Unknown, or a loss: grey, so a negative figure never reads as a gain.
@@ -166,17 +166,17 @@
 
 .PositionTabs {
   display: flex;
-  gap: pxToRem(4px);
-  padding: pxToRem(4px);
-  border-radius: pxToRem(1000px);
+  gap: pxToRem(4);
+  padding: pxToRem(4);
+  border-radius: pxToRem(1000);
   background-color: var(--sds-clr-gray-02);
 
   &__tab {
     @include text(xs, semi-bold);
     flex: 1;
-    padding: pxToRem(4px) pxToRem(8px);
+    padding: pxToRem(4) pxToRem(8);
     border: none;
-    border-radius: pxToRem(1000px);
+    border-radius: pxToRem(1000);
     background: none;
     color: var(--sds-clr-gray-11);
     cursor: pointer;
@@ -191,8 +191,8 @@
 .PositionScreen {
   display: flex;
   flex-direction: column;
-  gap: pxToRem(16px);
-  padding-bottom: pxToRem(24px);
+  gap: pxToRem(16);
+  padding-bottom: pxToRem(24);
 
   .AccountAssets__asset--logo {
     @include asset-logo-size(32);
@@ -203,21 +203,21 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: pxToRem(8px);
+    gap: pxToRem(8);
   }
 
   &__provider {
     @include text(sm, medium);
     display: flex;
     align-items: center;
-    gap: pxToRem(4px);
-    padding: pxToRem(4px) pxToRem(10px);
-    border-radius: pxToRem(8px);
+    gap: pxToRem(4);
+    padding: pxToRem(4) pxToRem(10);
+    border-radius: pxToRem(8);
     background-color: var(--sds-clr-gray-03);
     color: var(--sds-clr-gray-12);
 
     .PoolIcon {
-      border-radius: pxToRem(4px);
+      border-radius: pxToRem(4);
     }
   }
 
@@ -230,7 +230,7 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: pxToRem(8px);
+    gap: pxToRem(8);
   }
 
   &__token-mark {
@@ -239,8 +239,8 @@
 
   // Figma's Display/XS: 24px on 32px, tracked in by 4%.
   &__total {
-    font-size: pxToRem(24px);
-    line-height: pxToRem(32px);
+    font-size: pxToRem(24);
+    line-height: pxToRem(32);
     font-weight: var(--sds-fw-regular);
     letter-spacing: -0.04em;
     color: var(--sds-clr-gray-12);
@@ -260,7 +260,7 @@
   &__section {
     display: flex;
     flex-direction: column;
-    gap: pxToRem(8px);
+    gap: pxToRem(8);
   }
 
   &__section-title {
@@ -270,9 +270,9 @@
 
   &__card {
     width: 100%;
-    padding: pxToRem(12px) pxToRem(16px);
+    padding: pxToRem(12) pxToRem(16);
     border: none;
-    border-radius: pxToRem(16px);
+    border-radius: pxToRem(16);
     background-color: var(--sds-clr-gray-03);
     text-align: left;
   }
@@ -284,7 +284,7 @@
   &__token {
     display: flex;
     align-items: center;
-    gap: pxToRem(12px);
+    gap: pxToRem(12);
 
     &__name {
       display: flex;
@@ -330,7 +330,7 @@
   &__earnings {
     display: flex;
     flex-direction: column;
-    gap: pxToRem(12px);
+    gap: pxToRem(12);
   }
 
   // The token with the earn leaf badged at its bottom right, 12px on lilac.
@@ -340,15 +340,7 @@
     flex: none;
 
     &__badge {
-      position: absolute;
-      right: pxToRem(-2px);
-      bottom: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: pxToRem(12px);
-      height: pxToRem(12px);
-      border-radius: 50%;
+      @include corner-badge(12, right, -2);
       background-color: var(--sds-clr-lilac-03);
       color: var(--sds-clr-lilac-09);
     }
@@ -360,21 +352,10 @@
     background-color: var(--sds-clr-gray-06);
   }
 
-  &__estimate {
-    display: flex;
-    justify-content: space-between;
-    white-space: nowrap;
-
-    &__label {
-      @include text(sm, medium);
-      color: var(--sds-clr-gray-11);
-    }
-  }
-
   &__overview {
     display: flex;
     flex-direction: column;
-    gap: pxToRem(16px);
+    gap: pxToRem(16);
   }
 
   &__body {
@@ -385,10 +366,10 @@
   &__provider-row {
     display: flex;
     align-items: center;
-    gap: pxToRem(12px);
+    gap: pxToRem(12);
 
     .PoolIcon {
-      border-radius: pxToRem(10px);
+      border-radius: pxToRem(10);
     }
   }
 
@@ -396,24 +377,24 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: pxToRem(12px);
+    gap: pxToRem(12);
   }
 
   &__link {
     @include text(sm, semi-bold);
     display: flex;
     align-items: center;
-    gap: pxToRem(4px);
-    padding: pxToRem(6px) pxToRem(10px);
+    gap: pxToRem(4);
+    padding: pxToRem(6) pxToRem(10);
     border: 1px solid var(--sds-clr-gray-06);
-    border-radius: pxToRem(100px);
+    border-radius: pxToRem(100);
     background: none;
     color: var(--sds-clr-lilac-09);
     cursor: pointer;
 
     svg {
-      width: pxToRem(14px);
-      height: pxToRem(14px);
+      width: pxToRem(14);
+      height: pxToRem(14);
     }
   }
 }

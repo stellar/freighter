@@ -13,6 +13,7 @@ import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import { BlendRequestType } from "@shared/helpers/soroban/blend";
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
+  CLASSIC_ASSET_DECIMALS,
   SOROBAN_OPERATION_TYPES,
   addressToString,
 } from "popup/helpers/soroban";
@@ -69,8 +70,6 @@ const BLEND_REQUEST_ACTIVITY: Partial<Record<number, PositionActivityType>> = {
 };
 
 /** Classic assets, and so every SAC, have 7 decimals. */
-const CLASSIC_DECIMALS = 7;
-
 interface BlendRequest {
   address: string;
   amount: bigint;
@@ -165,7 +164,7 @@ const getWithdrawnAmount = ({
   );
 
   return change
-    ? new BigNumber(change.amount).shiftedBy(CLASSIC_DECIMALS).toFixed(0)
+    ? new BigNumber(change.amount).shiftedBy(CLASSIC_ASSET_DECIMALS).toFixed(0)
     : null;
 };
 

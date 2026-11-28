@@ -14,6 +14,7 @@ import {
   PoolFrozenBanner,
   PoolFrozenSheet,
 } from "popup/components/earn/PoolFrozenBanner";
+import { StatRow } from "popup/components/earn/StatRow";
 import { formatProjection } from "popup/components/earn/EarnReview/helpers/projectEarnings";
 import {
   formatAccountUsd,
@@ -32,10 +33,11 @@ import {
 } from "popup/helpers/account";
 import { openTab } from "popup/helpers/navigate";
 
-import { EarnLeafIcon } from "./PositionIcons";
-import { PositionTabs } from "./PositionTabs";
 import { NO_FIAT_VALUE } from "popup/helpers/formatters";
 
+import { EarnLeafIcon } from "./PositionIcons";
+import { PositionFigures, PositionTokenLine, Section } from "./PositionParts";
+import { PositionTabs } from "./PositionTabs";
 import { formatPositionGain, getGainModifier } from "./positionFigures";
 
 interface TokenPositionScreenProps {
@@ -58,38 +60,6 @@ interface TokenPositionScreenProps {
   /** Fires when the frozen banner's tap opens its sheet. */
   onFrozenInfoOpen?: () => void;
 }
-
-/** A section's small grey heading over its content. */
-const Section = ({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) => (
-  <div className="PositionScreen__section">
-    <div className="PositionScreen__section-title">{title}</div>
-    {children}
-  </div>
-);
-
-/** One "label  value" line inside the earnings card. */
-const EstimateLine = ({
-  label,
-  value,
-  testId,
-}: {
-  label: string;
-  value: string;
-  testId: string;
-}) => (
-  <div className="PositionScreen__estimate">
-    <span className="PositionScreen__estimate__label">{label}</span>
-    <span className="PositionScreen__primary" data-testid={testId}>
-      {value}
-    </span>
-  </div>
-);
 
 /**
  * One supplied token's position (Figma Varial 4470:113013 and 4470:113073):
@@ -158,24 +128,13 @@ export const TokenPositionScreen = ({
         }
       >
         <div className="PositionScreen" data-testid="token-position-screen">
-          <div className="PositionScreen__figures">
-            <div className="PositionScreen__token-mark">{tokenIcon}</div>
-            <div
-              className="PositionScreen__total"
-              data-testid="token-position-total"
-            >
-              {formatAccountUsd(summary.currentBalanceUsd)}
-            </div>
-            <div
-              className={`PositionScreen__gain${getGainModifier(
-                "PositionScreen__gain",
-                interestUsd,
-              )}`}
-              data-testid="token-position-gain"
-            >
-              {gain ?? NO_FIAT_VALUE}
-            </div>
-          </div>
+          <PositionFigures
+            mark={tokenIcon}
+            totalUsd={summary.currentBalanceUsd}
+            gain={gain}
+            gainValue={interestUsd}
+            testIdPrefix="token-position"
+          />
 
           {canDeposit && isPoolFrozen && (
             <>
@@ -204,75 +163,60 @@ export const TokenPositionScreen = ({
           {tab === "your_position" ? (
             <>
               <Section title={t("Your deposits")}>
-                <div className="PositionScreen__card PositionScreen__token">
-                  {tokenIcon}
-                  <span className="PositionScreen__token__name">
-                    <span className="PositionScreen__primary">{row.code}</span>
-                  </span>
-                  <span className="PositionScreen__token__figures">
-                    <span
-                      className="PositionScreen__primary"
-                      data-testid={`earn-position-deposit-usd-${row.code}`}
-                    >
-                      {formatAccountUsd(deposit?.usd ?? null)}
-                    </span>
-                    <span className="PositionScreen__secondary-small">
-                      {`${formatEarnAmount(deposit?.tokens ?? "0")} ${
-                        row.code
-                      }`}
-                    </span>
-                  </span>
-                </div>
+                <PositionTokenLine
+                  icon={tokenIcon}
+                  code={row.code}
+                  value={formatAccountUsd(deposit?.usd ?? null)}
+                  valueTestId={`earn-position-deposit-usd-${row.code}`}
+                  amount={`${formatEarnAmount(deposit?.tokens ?? "0")} ${
+                    row.code
+                  }`}
+                />
               </Section>
 
               <Section title={t("Your earnings")}>
                 <div className="PositionScreen__card PositionScreen__earnings">
-                  <div className="PositionScreen__token">
-                    <span className="PositionScreen__earning-mark">
-                      {tokenIcon}
-                      <span className="PositionScreen__earning-mark__badge">
-                        <EarnLeafIcon />
+                  <PositionTokenLine
+                    isCard={false}
+                    icon={
+                      <span className="PositionScreen__earning-mark">
+                        {tokenIcon}
+                        <span className="PositionScreen__earning-mark__badge">
+                          <EarnLeafIcon />
+                        </span>
                       </span>
-                    </span>
-                    <span className="PositionScreen__token__name">
-                      <span className="PositionScreen__primary">
-                        {row.code}
-                      </span>
-                      <span className="PositionScreen__positive-small">
-                        {t("{{rate}} Deposit APY", {
-                          rate: formatRate(summary.apy),
-                        })}
-                      </span>
-                    </span>
-                    <span className="PositionScreen__token__figures">
-                      <span
-                        className={`PositionScreen__positive${getGainModifier(
-                          "PositionScreen__positive",
-                          interestUsd,
-                        )}`}
-                        data-testid={`earn-position-earnings-usd-${row.code}`}
-                      >
-                        {formatPositionGain(interestUsd, null) ?? NO_FIAT_VALUE}
-                      </span>
-                      <span className="PositionScreen__secondary-small">
-                        {`${formatEarnAmount(earning?.tokens ?? "0")} ${
-                          row.code
-                        }`}
-                      </span>
-                    </span>
+                    }
+                    code={row.code}
+                    subtitle={t("{{rate}} Deposit APY", {
+                      rate: formatRate(summary.apy),
+                    })}
+                    value={
+                      formatPositionGain(interestUsd, null) ?? NO_FIAT_VALUE
+                    }
+                    valueClassName={`PositionScreen__positive${getGainModifier(
+                      "PositionScreen__positive",
+                      interestUsd,
+                    )}`}
+                    valueTestId={`earn-position-earnings-usd-${row.code}`}
+                    amount={`${formatEarnAmount(earning?.tokens ?? "0")} ${
+                      row.code
+                    }`}
+                  />
+                  <div className="PositionScreen__divider" />
+                  {/* One group, so the rows' own divider and spacing apply
+                      between them rather than the card's gap. */}
+                  <div>
+                    <StatRow
+                      label={t("Est. monthly earnings")}
+                      value={formatProjection(summary.estMonthlyUsd)}
+                      testId="earn-position-est-monthly"
+                    />
+                    <StatRow
+                      label={t("Est. yearly earnings")}
+                      value={formatProjection(summary.estYearlyUsd)}
+                      testId="earn-position-est-yearly"
+                    />
                   </div>
-                  <div className="PositionScreen__divider" />
-                  <EstimateLine
-                    label={t("Est. monthly earnings")}
-                    value={formatProjection(summary.estMonthlyUsd)}
-                    testId="earn-position-est-monthly"
-                  />
-                  <div className="PositionScreen__divider" />
-                  <EstimateLine
-                    label={t("Est. yearly earnings")}
-                    value={formatProjection(summary.estYearlyUsd)}
-                    testId="earn-position-est-yearly"
-                  />
                 </div>
               </Section>
 

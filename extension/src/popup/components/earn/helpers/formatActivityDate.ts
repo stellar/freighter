@@ -1,3 +1,5 @@
+import { formatEarnDay } from "./formatDepositDate";
+
 /**
  * The date on an Activity row, in the app's language: "Aug 28" within the
  * current year, "Aug 28 2025" outside it, where the day alone is ambiguous.
@@ -13,11 +15,9 @@ export const formatActivityDate = (
     return "";
   }
 
-  return date
-    .toLocaleDateString(language, {
-      month: "short",
-      day: "numeric",
-      ...(date.getFullYear() === now.getFullYear() ? {} : { year: "numeric" }),
-    })
-    .replace(/,/g, "");
+  return formatEarnDay(
+    date,
+    language,
+    date.getFullYear() !== now.getFullYear(),
+  );
 };

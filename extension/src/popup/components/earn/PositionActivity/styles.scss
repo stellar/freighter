@@ -1,16 +1,9 @@
 @use "../../../styles/utils.scss" as *;
 
 // Figma: Varial 4470:113064 (light), 4478:118152 (dark).
+// Laid out as a position screen Section (PositionParts), which draws its
+// "Activity" heading.
 .PositionActivity {
-  display: flex;
-  flex-direction: column;
-  gap: pxToRem(8px);
-
-  &__title {
-    @include text(xs, medium);
-    color: var(--sds-clr-gray-11);
-  }
-
   &__list {
     display: flex;
     flex-direction: column;
@@ -19,8 +12,8 @@
   &__row {
     display: flex;
     align-items: center;
-    gap: pxToRem(12px);
-    padding: pxToRem(12px) 0;
+    gap: pxToRem(12);
+    padding: pxToRem(12) 0;
 
     // A deposit or withdrawal opens its details: a button, reset to the row.
     &--tappable {
@@ -40,29 +33,23 @@
   &__icon {
     position: relative;
     flex: none;
-    width: pxToRem(32px);
-    height: pxToRem(32px);
+    width: pxToRem(32);
+    height: pxToRem(32);
     border-radius: 50%;
     background-color: var(--sds-clr-gray-01);
 
     &__token {
       position: absolute;
-      inset: pxToRem(2px);
+      inset: pxToRem(2);
       display: flex;
     }
 
     &__badge {
-      position: absolute;
-      left: 0;
-      bottom: 0;
-      display: flex;
-      width: pxToRem(16px);
-      height: pxToRem(16px);
-      border-radius: 50%;
+      @include corner-badge(16, left);
       background-color: var(--sds-clr-gray-01);
 
       .PoolIcon {
-        border-radius: pxToRem(4px);
+        border-radius: pxToRem(4);
       }
     }
   }
@@ -71,7 +58,7 @@
     display: flex;
     flex: 1;
     flex-direction: column;
-    gap: pxToRem(2px);
+    gap: pxToRem(2);
     min-width: 0;
   }
 
@@ -79,7 +66,7 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: pxToRem(2px);
+    gap: pxToRem(2);
     text-align: right;
     white-space: nowrap;
   }

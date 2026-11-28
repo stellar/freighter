@@ -14,8 +14,7 @@ import classnames from "classnames";
 import { TabsList } from "popup/views/Account/contexts/activeTabContext";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { isCustomNetwork } from "@shared/helpers/stellar";
-import { isEarnSupportedNetwork } from "@shared/constants/blend";
-import { positionsEnabledSelector } from "popup/ducks/remoteConfig";
+import { canShowPositionsSelector } from "popup/components/earn/helpers/positionsAvailability";
 
 import { useActiveTab } from "./hooks/useActiveTab";
 
@@ -30,7 +29,7 @@ import "./styles.scss";
 export const TabButtons = () => {
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const isPositionsEnabled = useSelector(positionsEnabledSelector);
+  const canShowPositions = useSelector(canShowPositionsSelector);
   const { activeTab, setActiveTab } = useActiveTab();
 
   const tabLabels: Record<string, string> = {
@@ -48,10 +47,7 @@ export const TabButtons = () => {
 
         // Earn, and therefore any position, exists only where we have an
         // allowlisted pool, and the tab waits on its flag.
-        if (
-          tab === TabsList.POSITIONS &&
-          (!isPositionsEnabled || !isEarnSupportedNetwork(networkDetails))
-        ) {
+        if (tab === TabsList.POSITIONS && !canShowPositions) {
           return null;
         }
 

@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { TFunction } from "i18next";
 
 import { AssetIcons } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { AssetIcon } from "popup/components/account/AccountAssets";
+import { Section } from "popup/components/account/AccountPositions/PositionParts";
 import {
   EarnDepositDetailsSheet,
   EarnDetailsType,
@@ -14,6 +14,7 @@ import { PoolIcon } from "popup/components/earn/PoolIcon";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { formatActivityDate } from "popup/components/earn/helpers/formatActivityDate";
 import { formatEarnAmount } from "popup/components/earn/helpers/formatEarnAmount";
+import { toDisplayTokens } from "popup/components/earn/helpers/positionRows";
 import {
   trackPositionActivityDetailsActionSelected,
   trackPositionActivityRowSelected,
@@ -118,7 +119,7 @@ export const PositionActivity = ({
 
   // The items carry integer amounts in the token's smallest unit.
   const toTokens = (item: PositionActivityItem) =>
-    new BigNumber(item.amount).shiftedBy(-decimals).toFixed();
+    toDisplayTokens(item.amount, decimals);
 
   // What every Activity event reports about the row it came from.
   const eventProps = (item: PositionActivityItem) => ({
@@ -129,8 +130,11 @@ export const PositionActivity = ({
   });
 
   return (
-    <div className="PositionActivity" data-testid="position-activity">
-      <div className="PositionActivity__title">{t("Activity")}</div>
+    <Section
+      title={t("Activity")}
+      className="PositionActivity"
+      testId="position-activity"
+    >
       <div className="PositionActivity__list">
         {items.map((item) => {
           const kind = ACTIVITY_KINDS[item.type] ?? GENERIC_KIND;
@@ -224,6 +228,6 @@ export const PositionActivity = ({
           <></>
         )}
       </SlideupModal>
-    </div>
+    </Section>
   );
 };

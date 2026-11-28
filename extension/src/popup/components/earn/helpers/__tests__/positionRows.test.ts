@@ -26,38 +26,24 @@ const supplyRow = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-const accountPositions = (supply: unknown[]) =>
+const poolPosition = (supply: unknown[]) =>
   ({
-    address: "G…",
-    totalValueUsd: 500.12,
+    protocol: "blend",
+    id: POOL_ID,
+    name: "Fixed Pool v2",
+    netUsd: 500.12,
+    suppliedUsd: 500.12,
+    borrowedUsd: 0,
     netApy: 0.1694,
-    positions: [
-      {
-        protocol: "blend",
-        id: POOL_ID,
-        name: "Fixed Pool v2",
-        netUsd: 500.12,
-        suppliedUsd: 500.12,
-        borrowedUsd: 0,
-        netApy: 0.1694,
-        blend: { supply, borrow: [] },
-      },
-    ],
-    backstop: [],
+    blend: { supply, borrow: [] },
   }) as never;
 
 describe("toPositionTokenRows", () => {
-  it("returns nothing for a null payload", () => {
-    expect(toPositionTokenRows({ positions: null, networkDetails })).toEqual(
-      [],
-    );
-  });
-
   it("scales raw token amounts by the row's decimals", () => {
     // Raw integer strings in the asset's smallest unit — parsing to Number
     // would lose precision on large balances.
     const [row] = toPositionTokenRows({
-      positions: accountPositions([supplyRow()]),
+      position: poolPosition([supplyRow()]),
       networkDetails,
     });
 
@@ -67,7 +53,7 @@ describe("toPositionTokenRows", () => {
 
   it("carries the pool and protocol so the row can open the right sheet", () => {
     const [row] = toPositionTokenRows({
-      positions: accountPositions([supplyRow()]),
+      position: poolPosition([supplyRow()]),
       networkDetails,
     });
 
@@ -78,9 +64,7 @@ describe("toPositionTokenRows", () => {
 
   it("rates a row on supply interest alone, leaving emissions out", () => {
     const [row] = toPositionTokenRows({
-      positions: accountPositions([
-        supplyRow({ apy: 0.1, emissionsApr: 0.05 }),
-      ]),
+      position: poolPosition([supplyRow({ apy: 0.1, emissionsApr: 0.05 })]),
       networkDetails,
     });
 
@@ -89,9 +73,7 @@ describe("toPositionTokenRows", () => {
 
   it("keeps an unavailable rate null rather than treating it as zero", () => {
     const [row] = toPositionTokenRows({
-      positions: accountPositions([
-        supplyRow({ apy: null, emissionsApr: 0.05 }),
-      ]),
+      position: poolPosition([supplyRow({ apy: null, emissionsApr: 0.05 })]),
       networkDetails,
     });
 
@@ -102,7 +84,7 @@ describe("toPositionTokenRows", () => {
     // Its SAC is the only clue — reading `symbol` alone would render a
     // truncated contract address as the token code.
     const [row] = toPositionTokenRows({
-      positions: accountPositions([
+      position: poolPosition([
         supplyRow({ assetId: XLM_SAC, symbol: null, name: null }),
       ]),
       networkDetails,
@@ -113,7 +95,7 @@ describe("toPositionTokenRows", () => {
 
   it("emits one row per supplied asset in a pool", () => {
     const rows = toPositionTokenRows({
-      positions: accountPositions([
+      position: poolPosition([
         supplyRow(),
         supplyRow({ assetId: XLM_SAC, symbol: null, name: null }),
       ]),
@@ -124,25 +106,31 @@ describe("toPositionTokenRows", () => {
     expect(rows.every((r) => r.poolId === POOL_ID)).toBe(true);
   });
 
-  it("skips a pool row carrying no blend detail", () => {
-    const positions = {
-      address: "G…",
-      totalValueUsd: null,
+  it("returns nothing for a pool carrying no blend detail", () => {
+    const position = {
+      protocol: "blend",
+      id: POOL_ID,
+      name: null,
+      netUsd: null,
+      suppliedUsd: null,
+      borrowedUsd: null,
       netApy: null,
-      positions: [
-        {
-          protocol: "blend",
-          id: POOL_ID,
-          name: null,
-          netUsd: null,
-          suppliedUsd: null,
-          borrowedUsd: null,
-          netApy: null,
-        },
-      ],
-      backstop: [],
     } as never;
 
-    expect(toPositionTokenRows({ positions, networkDetails })).toEqual([]);
+    expect(toPositionTokenRows({ position, networkDetails })).toEqual([]);
+  });
+
+  it.each([
+    ["an 18-decimal token", 18, "1500000000000000000", "1.5"],
+    ["a 0-decimal token", 0, "15", "15"],
+    ["a 7-decimal token", 7, "5001223000", "500.1223"],
+    ["a token with no decimals in the payload", null, "5001223000", "500.1223"],
+  ])("scales %s by its own decimals", (_, decimals, totalTokens, expected) => {
+    const [row] = toPositionTokenRows({
+      position: poolPosition([supplyRow({ decimals, totalTokens })]),
+      networkDetails,
+    });
+
+    expect(row.suppliedTokens).toBe(expected);
   });
 });

@@ -113,11 +113,9 @@ export const AccountPositions = ({
   const poolRows = useMemo(
     () =>
       selectedPosition
-        ? toPositionTokenRows({ positions, networkDetails }).filter(
-            (row) => row.poolId === selectedPosition.id,
-          )
+        ? toPositionTokenRows({ position: selectedPosition, networkDetails })
         : [],
-    [positions, networkDetails, selectedPosition],
+    [networkDetails, selectedPosition],
   );
   const selectedRow =
     poolRows.find((row) => row.assetId === selectedAssetId) ?? null;

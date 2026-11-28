@@ -2,18 +2,17 @@ import { useCallback, useMemo, useReducer } from "react";
 import { useDispatch, useStore } from "react-redux";
 import { captureException } from "@sentry/browser";
 
-import { getBlendPositions } from "@shared/api/helpers/blend";
+import {
+  emptyAccountPositions,
+  getBlendPositions,
+} from "@shared/api/helpers/blend";
 import { AccountPositions } from "@shared/api/types/blend";
-import { isEarnSupportedNetwork } from "@shared/constants/blend";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { State } from "constants/request";
 import { initialState, isCacheValid, reducer } from "helpers/request";
 import { AppDispatch, AppState } from "popup/App";
 import { positionsSelector, savePositions } from "popup/ducks/cache";
-import {
-  positionsEnabledSelector,
-  waitForRemoteConfig,
-} from "popup/ducks/remoteConfig";
+import { waitForPositionsAvailable } from "popup/components/earn/helpers/positionsAvailability";
 
 export interface FetchPositionsParams {
   publicKey: string;
@@ -29,28 +28,6 @@ export interface FetchPositionsParams {
   useCache?: boolean;
 }
 
-/** What an account with nothing supplied looks like, and the short-circuit
- *  result on networks where Earn is unavailable or while `positions_enabled` is
- *  off. */
-export const EMPTY_POSITIONS = (address: string): AccountPositions => ({
-  address,
-  totalValueUsd: null,
-  netApy: null,
-  positions: [],
-  backstop: [],
-});
-
-/**
- * The account's Blend positions, cached per network and public key.
- *
- * Modelled on `useGetCollectibles`: a local request reducer for the caller's
- * loading/error state, with the resolved payload mirrored into the `cache`
- * slice so other screens can read it without a second round trip.
- *
- * Unlike collectibles, a rejection is NOT swallowed. The Positions tab draws a
- * real error state, and returning an empty result on failure would tell the
- * account it holds nothing when the truth is unknown.
- */
 function useGetPositions({ useCache = true }: { useCache?: boolean } = {}) {
   const [state, dispatch] = useReducer(
     reducer<AccountPositions, Error>,
@@ -79,13 +56,8 @@ function useGetPositions({ useCache = true }: { useCache?: boolean } = {}) {
       // production backend may not serve positions yet. Read from the store at
       // call time, once the flags settle, so the 30-second refresh follows a
       // flag that changes mid-session.
-      if (
-        !isEarnSupportedNetwork(networkDetails) ||
-        !(await waitForRemoteConfig(store).then(() =>
-          positionsEnabledSelector(store.getState()),
-        ))
-      ) {
-        const empty = EMPTY_POSITIONS(publicKey);
+      if (!(await waitForPositionsAvailable(store, networkDetails))) {
+        const empty = emptyAccountPositions(publicKey);
         dispatch({ type: "FETCH_DATA_SUCCESS", payload: empty });
         return empty;
       }

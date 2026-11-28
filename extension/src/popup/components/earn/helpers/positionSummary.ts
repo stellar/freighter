@@ -2,10 +2,9 @@ import BigNumber from "bignumber.js";
 
 import { BlendSupplyRow, PoolPosition } from "@shared/api/types/blend";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
 import { projectEarnings } from "popup/components/earn/EarnReview/helpers/projectEarnings";
 
-import { getCatalogAssetIdentity } from "./earnAssetIcons";
+import { getSupplyRowIdentity, toDisplayTokens } from "./positionRows";
 
 export interface PositionAssetRow {
   assetId: string;
@@ -28,25 +27,6 @@ export interface PositionSummary {
   estYearlyUsd: string | null;
 }
 
-const scale = (raw: string, decimals: number) =>
-  new BigNumber(raw).dividedBy(new BigNumber(10).pow(decimals)).toFixed();
-
-const identity = (row: BlendSupplyRow, networkDetails: NetworkDetails) => {
-  // Native XLM arrives with a null symbol AND a null name, recognisable only by
-  // its SAC — reading `symbol` alone renders a contract address as the code.
-  const { code, issuer } = getCatalogAssetIdentity({
-    symbol: row.symbol,
-    name: row.name,
-    assetId: row.assetId,
-    networkDetails,
-  });
-  return {
-    code: code || `${row.assetId.slice(0, 4)}…`,
-    issuer,
-    decimals: row.decimals ?? CLASSIC_ASSET_DECIMALS,
-  };
-};
-
 /**
  * Deposits mean PRINCIPAL, not the current total.
  *
@@ -61,7 +41,7 @@ const toDepositRow = (
   row: BlendSupplyRow,
   networkDetails: NetworkDetails,
 ): PositionAssetRow => {
-  const { code, issuer, decimals } = identity(row, networkDetails);
+  const { code, issuer, decimals } = getSupplyRowIdentity(row, networkDetails);
   const totalTokens = new BigNumber(row.totalTokens);
   const interestEarned = new BigNumber(row.interestEarned);
 
@@ -86,7 +66,7 @@ const toDepositRow = (
     decimals,
     tokens: isOutOfRange
       ? "0"
-      : scale(totalTokens.minus(interestEarned).toFixed(0), decimals),
+      : toDisplayTokens(totalTokens.minus(interestEarned).toFixed(0), decimals),
     usd:
       isOutOfRange || row.usdValue === null || row.interestEarnedUsd === null
         ? null
@@ -98,64 +78,34 @@ const toEarningsRow = (
   row: BlendSupplyRow,
   networkDetails: NetworkDetails,
 ): PositionAssetRow => {
-  const { code, issuer, decimals } = identity(row, networkDetails);
+  const { code, issuer, decimals } = getSupplyRowIdentity(row, networkDetails);
 
   return {
     assetId: row.assetId,
     code,
     issuer,
     decimals,
-    tokens: scale(row.interestEarned, decimals),
+    tokens: toDisplayTokens(row.interestEarned, decimals),
     usd: row.interestEarnedUsd,
   };
 };
 
-/**
- * The rows this summary is scoped to. The ONLY place the focused-asset
- * resolution rule lives — `getPositionSummary` and `hasResolvableSupply`
- * both call this rather than each encoding their own idea of a match.
- *
- * `focusedAssetId` genuinely absent (undefined) falls back to the first
- * supplied row: the sheet can be opened from a pool card that names no
- * asset, and a guess at the position the account most likely means beats an
- * empty panel. A `focusedAssetId` that is PRESENT but matches no supplied
- * row is a mismatch, not an absence -- `EarnAmount` always names the asset
- * it is depositing, so this fires when the account has no position in that
- * asset yet. Falling back to `supply[0]` there would show a different
- * asset's figures under this asset's headers, so it resolves to an empty
- * scope instead.
- */
+/** The focused token's supply row, or none when the pool holds none of it. */
 const resolveRows = ({
   position,
   focusedAssetId,
 }: {
   position: PoolPosition;
-  focusedAssetId?: string;
+  focusedAssetId: string;
 }): BlendSupplyRow[] => {
-  const supply = position.blend?.supply || [];
-  if (focusedAssetId === undefined) {
-    return [supply[0]].filter(Boolean);
-  }
-  const match = supply.find((row) => row.assetId === focusedAssetId);
+  const match = (position.blend?.supply || []).find(
+    (row) => row.assetId === focusedAssetId,
+  );
   return match ? [match] : [];
 };
 
 /**
- * Whether `getPositionSummary` would resolve to any row at all, for this same
- * `position`/`focusedAssetId`. `PoolDetailsSheet` uses this to decide whether
- * "Your position" has anything to show, so it never renders a tab whose panel
- * would be empty (see `resolveRows`).
- */
-export const hasResolvableSupply = ({
-  position,
-  focusedAssetId,
-}: {
-  position: PoolPosition;
-  focusedAssetId?: string;
-}): boolean => resolveRows({ position, focusedAssetId }).length > 0;
-
-/**
- * The sheet's "Your position" figures for one supplied asset.
+ * A token position screen's "Your position" figures, for one supplied token.
  *
  * Pool-level totals are a different surface with a different helper — see
  * `getPoolPositionSummary`. This one never aggregates.
@@ -166,7 +116,7 @@ export const getPositionSummary = ({
   networkDetails,
 }: {
   position: PoolPosition;
-  focusedAssetId?: string;
+  focusedAssetId: string;
   networkDetails: NetworkDetails;
 }): PositionSummary => {
   const rows = resolveRows({ position, focusedAssetId });

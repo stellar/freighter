@@ -29,11 +29,6 @@ export interface BalanceRowProps {
   retryAssetIconFetch?: (arg: { key: string; code: string }) => void;
   /** Formatted token balance, e.g. "123.45". */
   amount: string;
-  /**
-   * Replaces the token-amount line under the code. Used by the Positions tab,
-   * whose rows carry a coloured APY there instead of a balance.
-   */
-  amountSlot?: React.ReactNode;
   /** Formatted fiat balance incl. symbol, e.g. "$12.34". When null the fiat
    * cell is omitted entirely (matches the account-home no-price row). */
   fiatAmount?: string | null;
@@ -69,7 +64,6 @@ export const BalanceRow = ({
   isLPShare = false,
   retryAssetIconFetch,
   amount,
-  amountSlot,
   fiatAmount,
   percentChange,
   rightSlot,
@@ -126,7 +120,7 @@ export const BalanceRow = ({
         <div className="BalanceRow__value">
           <span className="BalanceRow__code">{displayName}</span>
           <div className="BalanceRow__amount" data-testid={amountTestId}>
-            {amountSlot ?? amount}
+            {amount}
           </div>
         </div>
       </div>

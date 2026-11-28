@@ -1,12 +1,15 @@
 import BigNumber from "bignumber.js";
 
-import { AccountPositions, BlendSupplyRow } from "@shared/api/types/blend";
+import { BlendSupplyRow, PoolPosition } from "@shared/api/types/blend";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
+import {
+  CLASSIC_ASSET_DECIMALS,
+  formatTokenAmount,
+} from "popup/helpers/soroban";
 
 import { getCatalogAssetIdentity } from "./earnAssetIcons";
 
-/** One row on the Positions tab. */
+/** One supplied token on a pool's position screen. */
 export interface PositionTokenRow {
   poolId: string;
   poolName: string | null;
@@ -23,71 +26,65 @@ export interface PositionTokenRow {
   interestEarnedUsd: number | null;
 }
 
-const toRow = ({
-  row,
-  poolId,
-  poolName,
-  protocol,
-  networkDetails,
-}: {
-  row: BlendSupplyRow;
-  poolId: string;
-  poolName: string | null;
-  protocol: string;
-  networkDetails: NetworkDetails;
-}): PositionTokenRow => {
-  // The payload reports native XLM with a null symbol AND a null name, leaving
-  // its SAC as the only clue. Deriving the identity rather than reading `symbol`
-  // is what keeps an XLM position from rendering a contract address.
+/**
+ * A supply row's token: its code, issuer and decimals. Every Positions figure
+ * names its token through this, so the rules live once:
+ * - native XLM arrives with a null symbol AND a null name, leaving its SAC as
+ *   the only clue, so the identity is derived rather than read off `symbol`
+ *   (which would render a contract address as the code);
+ * - a token the catalog can't name reads as its contract's first characters;
+ * - decimals default to the classic 7 when the payload has none.
+ */
+export const getSupplyRowIdentity = (
+  row: BlendSupplyRow,
+  networkDetails: NetworkDetails,
+) => {
   const { code, issuer } = getCatalogAssetIdentity({
     symbol: row.symbol,
     name: row.name,
     assetId: row.assetId,
     networkDetails,
   });
-  const decimals = row.decimals ?? CLASSIC_ASSET_DECIMALS;
-
   return {
-    poolId,
-    poolName,
-    protocol,
-    assetId: row.assetId,
     code: code || `${row.assetId.slice(0, 4)}…`,
     issuer,
-    decimals,
-    suppliedTokens: new BigNumber(row.totalTokens)
-      .dividedBy(new BigNumber(10).pow(decimals))
-      .toFixed(),
-    suppliedUsd: row.usdValue,
-    // Interest only: BLND emissions are left out, as everywhere in Earn.
-    apy: row.apy,
-    interestEarnedUsd: row.interestEarnedUsd,
+    decimals: row.decimals ?? CLASSIC_ASSET_DECIMALS,
   };
 };
 
 /**
- * Flattens the pool-shaped payload into the token-shaped rows the v1 design
- * draws — one row per supplied asset, each carrying the pool it belongs to.
- *
- * This is the ONLY place that flattening happens. The multi-pool design
- * (Figma 9848-110100) lists pools rather than tokens; switching to it is a
- * change here plus a row component, with no data-layer change at all.
+ * An integer amount in the token's smallest unit, in display units: the app's
+ * `formatTokenAmount`, which the deposit screen also uses.
  */
+export const toDisplayTokens = (raw: string, decimals: number): string =>
+  formatTokenAmount(new BigNumber(raw), decimals);
+
+/** The supplied tokens of one pool, one row each, carrying the pool they're in. */
 export const toPositionTokenRows = ({
-  positions,
+  position,
   networkDetails,
 }: {
-  positions: AccountPositions | null;
+  position: PoolPosition;
   networkDetails: NetworkDetails;
 }): PositionTokenRow[] =>
-  (positions?.positions || []).flatMap((position) =>
-    (position.blend?.supply || []).map((row) =>
-      toRow({
-        row,
-        poolId: position.id,
-        poolName: position.name,
-        protocol: position.protocol,
-        networkDetails,
-      }),
-    ),
-  );
+  (position.blend?.supply || []).map((row) => {
+    const { code, issuer, decimals } = getSupplyRowIdentity(
+      row,
+      networkDetails,
+    );
+
+    return {
+      poolId: position.id,
+      poolName: position.name,
+      protocol: position.protocol,
+      assetId: row.assetId,
+      code,
+      issuer,
+      decimals,
+      suppliedTokens: toDisplayTokens(row.totalTokens, decimals),
+      suppliedUsd: row.usdValue,
+      // Interest only: BLND emissions are left out, as everywhere in Earn.
+      apy: row.apy,
+      interestEarnedUsd: row.interestEarnedUsd,
+    };
+  });

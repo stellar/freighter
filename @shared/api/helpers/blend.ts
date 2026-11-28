@@ -234,6 +234,15 @@ export const getBlendPools = async ({
  * An account unknown to the indexer still gets an entry with empty `positions`,
  * so an empty result is a legitimate answer rather than an error.
  */
+/** An account with no positions: what a missing entry, or a gated read, returns. */
+export const emptyAccountPositions = (address: string): AccountPositions => ({
+  address,
+  totalValueUsd: null,
+  netApy: null,
+  positions: [],
+  backstop: [],
+});
+
 export const getBlendPositions = async ({
   publicKey,
   networkDetails,
@@ -250,13 +259,7 @@ export const getBlendPositions = async ({
 
   const entry = data[0];
   if (!entry) {
-    return {
-      address: publicKey,
-      totalValueUsd: null,
-      netApy: null,
-      positions: [],
-      backstop: [],
-    };
+    return emptyAccountPositions(publicKey);
   }
 
   return {

@@ -36,8 +36,8 @@ export const getGainPercent = (
 };
 
 /**
- * The pool-level figures behind a Positions pool card and the My position
- * header.
+ * The pool-level figures behind a Positions pool card and the pool position
+ * screen's header.
  *
  * Deliberately separate from `getPositionSummary`, which is supply-scoped and
  * answers a different question (what one asset is doing). Keeping them apart
@@ -45,7 +45,7 @@ export const getGainPercent = (
  *
  * The gain is measured against PRINCIPAL, not the current total: an account
  * that put in 1252.57 and now holds 1284.32 has gained 2.54% of what it
- * committed, not 2.47% of what it now has. Same convention the sheet already
+ * committed, not 2.47% of what it now has. Same convention the token screen
  * uses for deposits.
  *
  * Borrows are deliberately not surfaced on this screen: `totalUsd` is the

@@ -20,7 +20,6 @@ import {
   BlendCatalogPool,
   BlendEarnAssetOption,
 } from "@shared/api/types/blend";
-import { isEarnSupportedNetwork } from "@shared/constants/blend";
 import {
   AppDataType,
   NeedsReRoute,
@@ -30,10 +29,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { AppDispatch, AppState } from "popup/App";
-import {
-  positionsEnabledSelector,
-  waitForRemoteConfig,
-} from "popup/ducks/remoteConfig";
+import { waitForPositionsAvailable } from "popup/components/earn/helpers/positionsAvailability";
 import { makeAccountActive } from "popup/ducks/accountServices";
 import { awaitedDepositSelector, saveAwaitedDeposit } from "popup/ducks/earn";
 import {
@@ -98,6 +94,10 @@ interface ResolvedAccountData {
 
 type AccountData = NeedsReRoute | ResolvedAccountData;
 
+/** One account on one network: which read a positions result belongs to. */
+const accountKey = (network: string, publicKey: string) =>
+  `${network}:${publicKey}`;
+
 function useGetAccountData(options: {
   showHidden: boolean;
   includeIcons: boolean;
@@ -141,7 +141,10 @@ function useGetAccountData(options: {
       positionsReadCountRef.current += 1;
       const readNumber = positionsReadCountRef.current;
       const positions = await fetchPositions(params);
-      const account = `${params.networkDetails.network}:${params.publicKey}`;
+      const account = accountKey(
+        params.networkDetails.network,
+        params.publicKey,
+      );
       const newest = newestPositionsRef.current;
       if (
         !newest ||
@@ -160,7 +163,7 @@ function useGetAccountData(options: {
     const isSameAccount =
       payload.type === AppDataType.RESOLVED &&
       newest?.account ===
-        `${payload.networkDetails.network}:${payload.publicKey}`;
+        accountKey(payload.networkDetails.network, payload.publicKey);
     dispatch({
       type: "FETCH_DATA_SUCCESS",
       payload:
@@ -244,11 +247,10 @@ function useGetAccountData(options: {
       // both also wait on `positions_enabled`: with it off, Home makes none of
       // the tab's requests. Resolved once the flags settle, without holding up
       // the requests started above.
-      const isPositionsEnabledRequest = isEarnSupportedNetwork(networkDetails)
-        ? waitForRemoteConfig(store).then(() =>
-            positionsEnabledSelector(store.getState()),
-          )
-        : Promise.resolve(false);
+      const isPositionsEnabledRequest = waitForPositionsAvailable(
+        store,
+        networkDetails,
+      );
       const poolsRequest = isPositionsEnabledRequest.then((isEnabled) =>
         isEnabled ? getBlendPools({ networkDetails }) : null,
       );
@@ -490,13 +492,14 @@ function useGetAccountData(options: {
   // that read is what replaces the pre-deposit copy Home loaded from the cache.
   const loadedAccount =
     state.data?.type === AppDataType.RESOLVED && state.data.hasLoadedPositions
-      ? `${state.data.networkDetails.network}:${state.data.publicKey}`
+      ? accountKey(state.data.networkDetails.network, state.data.publicKey)
       : null;
 
   useEffect(() => {
     if (
       !awaitedDeposit ||
-      loadedAccount !== `${awaitedDeposit.network}:${awaitedDeposit.publicKey}`
+      loadedAccount !==
+        accountKey(awaitedDeposit.network, awaitedDeposit.publicKey)
     ) {
       return undefined;
     }

@@ -1,6 +1,6 @@
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { PUBLIC_SACS } from "@shared/api/__tests__/fixtures/sac";
-import { getPositionSummary, hasResolvableSupply } from "../positionSummary";
+import { getPositionSummary } from "../positionSummary";
 
 const networkDetails = MAINNET_NETWORK_DETAILS;
 const USDC_SAC = PUBLIC_SACS.USDC!;
@@ -146,20 +146,10 @@ describe("getPositionSummary", () => {
     expect(result.estMonthlyUsd).toBeNull();
   });
 
-  it("falls back to the first supplied row when no asset was named", () => {
-    const result = getPositionSummary({
-      position: position([usdcSupply, xlmSupply]),
-      networkDetails,
-    });
-
-    expect(result.deposits[0].code).toBe("USDC");
-  });
-
   it("resolves to an empty scope when the focused asset matches nothing, instead of the first row", () => {
-    // EarnAmount always names the asset it is depositing, so a mismatch means
-    // the account has no position in THAT asset yet -- not "no asset was
-    // named". Falling back to supply[0] would show a different asset's
-    // figures under this asset's headers.
+    // A mismatch means the pool holds none of THAT token. Falling back to
+    // another supplied row would show a different token's figures under this
+    // token's headers.
     const result = summary("UNRELATED_ASSET_ID_NOT_IN_SUPPLY");
 
     expect(result.currentBalanceUsd).toBeNull();
@@ -219,35 +209,5 @@ describe("getPositionSummary", () => {
       expect(result.deposits[0].tokens).toBe("0");
       expect(result.deposits[0].usd).not.toBeNull();
     });
-  });
-});
-
-describe("hasResolvableSupply", () => {
-  it("is true when the focused asset matches a supplied row", () => {
-    expect(
-      hasResolvableSupply({
-        position: position([usdcSupply]),
-        focusedAssetId: USDC_SAC,
-      }),
-    ).toBe(true);
-  });
-
-  it("is true when no asset was named, falling back to the first row", () => {
-    expect(hasResolvableSupply({ position: position([usdcSupply]) })).toBe(
-      true,
-    );
-  });
-
-  it("is false when the focused asset matches nothing", () => {
-    expect(
-      hasResolvableSupply({
-        position: position([usdcSupply]),
-        focusedAssetId: XLM_SAC,
-      }),
-    ).toBe(false);
-  });
-
-  it("is false when the position has no supply rows at all", () => {
-    expect(hasResolvableSupply({ position: position([]) })).toBe(false);
   });
 });

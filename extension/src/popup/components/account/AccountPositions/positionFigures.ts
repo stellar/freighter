@@ -1,6 +1,7 @@
-import BigNumber from "bignumber.js";
-
-import { formatRatePercent } from "popup/components/earn/helpers/formatPoolStats";
+import {
+  formatAccountUsd,
+  formatRatePercent,
+} from "popup/components/earn/helpers/formatPoolStats";
 
 /**
  * A position's gain: "+$31.75 (2.54%)", the interest in dollars, truncated to
@@ -18,12 +19,8 @@ export const formatPositionGain = (
     return null;
   }
 
-  const interest = new BigNumber(interestUsd);
-  const sign = interest.isNegative() ? "-" : "+";
-  const amount = `$${interest
-    .abs()
-    .decimalPlaces(2, BigNumber.ROUND_DOWN)
-    .toFormat(2)}`;
+  const sign = interestUsd < 0 ? "-" : "+";
+  const amount = formatAccountUsd(Math.abs(interestUsd));
 
   return gainPercent === null
     ? `${sign}${amount}`
