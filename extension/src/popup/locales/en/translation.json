@@ -816,7 +816,7 @@
   "This is not a valid contract id.": "This is not a valid contract id.",
   "This message is too large for your Ledger to display. Ask the site for a shorter message.": "This message is too large for your Ledger to display. Ask the site for a shorter message.",
   "This pool is frozen, so it isn’t accepting new deposits right now.": "This pool is frozen, so it isn’t accepting new deposits right now.",
-  "This pool is frozen, which means it isn’t accepting new deposits. Blend pools are frozen to protect the funds already in them.": "This pool is frozen, which means it isn’t accepting new deposits. Blend pools are frozen to protect the funds already in them.",
+  "This pool is frozen, which means it isn’t accepting new deposits for now.": "This pool is frozen, which means it isn’t accepting new deposits for now.",
   "This site does not appear safe for the following reasons": "This site does not appear safe for the following reasons",
   "This site has been flagged with potential concerns": "This site has been flagged with potential concerns",
   "This site was flagged as malicious": "This site was flagged as malicious",
