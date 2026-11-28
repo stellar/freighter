@@ -59,6 +59,8 @@ describe("isOnrampableAsset", () => {
 describe("hasSwappableBalance", () => {
   const targetCanonical = `EURC:${EURC_ISSUER}`;
   const FEE = "0.00001";
+  // Pays the swap's 0.00001 XLM fee and leaves nothing above the reserve.
+  const feeOnlyXlm = native("1.00001");
   // EURC with an existing trustline: no new reserve to lock.
   const swappable = (balances: AssetType[], requiresTrustline = false) =>
     hasSwappableBalance({
@@ -81,13 +83,33 @@ describe("hasSwappableBalance", () => {
   });
 
   it("counts a held classic asset", () => {
-    expect(swappable([native("1"), classic("USDC", USDC_ISSUER, "500")])).toBe(
+    expect(swappable([feeOnlyXlm, classic("USDC", USDC_ISSUER, "500")])).toBe(
       true,
     );
   });
 
+  // Whatever is swapped, the swap's fee is paid in XLM.
+  it("can't swap another token without the XLM to pay the fee", () => {
+    const usdc = classic("USDC", USDC_ISSUER, "500");
+    expect(swappable([usdc])).toBe(false);
+    expect(swappable([native("1"), usdc])).toBe(false);
+  });
+
+  // XLM held only as its reserve can't pay for a swap into more XLM. The XLM
+  // row has no issuer, so the picker passes an empty target.
+  it("can't swap into XLM when the account's XLM is all reserve", () => {
+    expect(
+      hasSwappableBalance({
+        balances: [native("1"), classic("USDC", USDC_ISSUER, "500")],
+        targetCanonical: "",
+        transactionFee: FEE,
+        requiresTrustline: false,
+      }),
+    ).toBe(false);
+  });
+
   it("ignores zero balances", () => {
-    expect(swappable([native("1"), classic("USDC", USDC_ISSUER, "0")])).toBe(
+    expect(swappable([feeOnlyXlm, classic("USDC", USDC_ISSUER, "0")])).toBe(
       false,
     );
   });
@@ -95,13 +117,13 @@ describe("hasSwappableBalance", () => {
   it("ignores the target asset itself", () => {
     // A dust balance of the target must not read as "can swap into the target".
     expect(
-      swappable([native("1"), classic("EURC", EURC_ISSUER, "0.0001")]),
+      swappable([feeOnlyXlm, classic("EURC", EURC_ISSUER, "0.0001")]),
     ).toBe(false);
   });
 
   it("ignores Soroban-only balances", () => {
     // Swap builds a classic pathPaymentStrictSend and rejects contract assets.
-    expect(swappable([native("1"), soroban(PUBLIC_SACS.USDC!, "9")])).toBe(
+    expect(swappable([feeOnlyXlm, soroban(PUBLIC_SACS.USDC!, "9")])).toBe(
       false,
     );
   });
